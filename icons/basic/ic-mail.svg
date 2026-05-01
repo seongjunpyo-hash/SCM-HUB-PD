@@ -1,0 +1,32 @@
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="basic/ic-mail" clip-path="url(#clip0_3933_2956)">
+<g id="weight=light, filled=false">
+<g id="UIIcon">
+<path id="Vector" d="M3 4.5L9.81474 9.85437C9.92352 9.93984 10.0766 9.93984 10.1854 9.85437L17 4.5M3.3 15.5H16.7C16.8657 15.5 17 15.3657 17 15.2V4.8C17 4.63431 16.8657 4.5 16.7 4.5H3.3C3.13431 4.5 3 4.63431 3 4.8V15.2C3 15.3657 3.13431 15.5 3.3 15.5Z" stroke="currentColor" stroke-miterlimit="10"/>
+</g>
+</g>
+<g id="weight=regular, filled=false">
+<g id="UIIcon_2">
+<path id="Vector_2" d="M39 4.5L45.8147 9.85437C45.9235 9.93984 46.0766 9.93984 46.1854 9.85437L53 4.5M39.3 15.5H52.7C52.8657 15.5 53 15.3657 53 15.2V4.8C53 4.63431 52.8657 4.5 52.7 4.5H39.3C39.1343 4.5 39 4.63431 39 4.8V15.2C39 15.3657 39.1343 15.5 39.3 15.5Z" stroke="currentColor" stroke-width="1.4" stroke-miterlimit="10"/>
+</g>
+</g>
+<g id="weight=bold, filled=false">
+<g id="UIIcon_3">
+<path id="Vector_3" d="M75 4.5L81.8147 9.85437C81.9235 9.93984 82.0766 9.93984 82.1854 9.85437L89 4.5M75.3 15.5H88.7C88.8657 15.5 89 15.3657 89 15.2V4.8C89 4.63431 88.8657 4.5 88.7 4.5H75.3C75.1343 4.5 75 4.63431 75 4.8V15.2C75 15.3657 75.1343 15.5 75.3 15.5Z" stroke="currentColor" stroke-width="2" stroke-miterlimit="10"/>
+</g>
+</g>
+<g id="weight=regular, filled=true">
+<g id="UIIcon_4">
+<g id="Vector_4">
+<path d="M125.7 15.2002C125.7 15.7523 125.252 16.2001 124.7 16.2002H111.3C110.748 16.2001 110.3 15.7523 110.3 15.2002V4.81738L117.437 10.6201L117.444 10.626C117.771 10.8822 118.229 10.8821 118.556 10.626L118.564 10.6201L125.7 4.81738V15.2002Z" fill="currentColor"/>
+<path d="M124.7 3.7998C124.802 3.79982 124.9 3.81536 124.993 3.84375L118 9.53027L111.006 3.84375C111.099 3.81518 111.198 3.79982 111.3 3.7998H124.7Z" fill="currentColor"/>
+</g>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_3933_2956">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+</defs>
+</svg>

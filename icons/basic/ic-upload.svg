@@ -1,0 +1,29 @@
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="basic/ic-upload" clip-path="url(#clip0_108_477)">
+<g id="weight=light, filled=false">
+<g id="UIIcon">
+<path id="Vector" d="M3 3.5H17M10 6.5V16.5M10 6.5L14 10.5M10 6.5L6 10.5" stroke="currentColor" stroke-miterlimit="10"/>
+</g>
+</g>
+<g id="weight=regular, filled=false">
+<g id="UIIcon_2">
+<path id="Vector_2" d="M39 3.5H53M46 6.5V16.5M46 6.5L50 10.5M46 6.5L42 10.5" stroke="currentColor" stroke-width="1.4" stroke-miterlimit="10"/>
+</g>
+</g>
+<g id="weight=bold, filled=false">
+<g id="UIIcon_3">
+<path id="Vector_3" d="M75 3.5H89M82 6.5V16.5M82 6.5L86 10.5M82 6.5L78 10.5" stroke="currentColor" stroke-width="2" stroke-miterlimit="10"/>
+</g>
+</g>
+<g id="weight=regular, filled=true">
+<g id="UIIcon_4">
+<path id="Vector_4" d="M125 4.20038V2.79999H111V4.20038H125ZM118.7 16.5002V8.19061L121.505 10.9953L122.495 10.0051L118 5.50995L113.505 10.0051L114.495 10.9953L117.3 8.19061V16.5002H118.7Z" fill="currentColor"/>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_108_477">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+</defs>
+</svg>

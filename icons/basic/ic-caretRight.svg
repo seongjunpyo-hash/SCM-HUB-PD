@@ -1,0 +1,29 @@
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="basic/ic-caretRight" clip-path="url(#clip0_3745_1371)">
+<g id="weight=light, filled=false">
+<g id="UIIcon">
+<path id="Vector" d="M13.2879 10.2121L8.01213 15.4879C7.82314 15.6769 7.5 15.543 7.5 15.2757L7.5 4.72426C7.5 4.45699 7.82314 4.32314 8.01213 4.51213L13.2879 9.78787C13.405 9.90503 13.405 10.095 13.2879 10.2121Z" stroke="currentColor"/>
+</g>
+</g>
+<g id="weight=regular, filled=false">
+<g id="UIIcon_2">
+<path id="Vector_2" d="M49.2879 10.2121L44.0121 15.4879C43.8231 15.6769 43.5 15.543 43.5 15.2757V4.72426C43.5 4.45699 43.8231 4.32314 44.0121 4.51213L49.2879 9.78787C49.405 9.90503 49.405 10.095 49.2879 10.2121Z" stroke="currentColor" stroke-width="1.4"/>
+</g>
+</g>
+<g id="weight=bold, filled=false">
+<g id="UIIcon_3">
+<path id="Vector_3" d="M85.2879 10.2121L80.0121 15.4879C79.8231 15.6769 79.5 15.543 79.5 15.2757V4.72426C79.5 4.45699 79.8231 4.32314 80.0121 4.51213L85.2879 9.78787C85.405 9.90503 85.405 10.095 85.2879 10.2121Z" stroke="currentColor" stroke-width="2"/>
+</g>
+</g>
+<g id="weight=regular, filled=true">
+<g id="UIIcon_4">
+<path id="Vector_4" d="M114.8 4.72421C114.8 3.88949 115.746 3.4447 116.384 3.91073L116.507 4.01718L121.783 9.29257C122.173 9.68297 122.173 10.3161 121.783 10.7066L116.507 15.982C115.877 16.612 114.8 16.1659 114.8 15.275V4.72421Z" fill="currentColor"/>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_3745_1371">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+</defs>
+</svg>

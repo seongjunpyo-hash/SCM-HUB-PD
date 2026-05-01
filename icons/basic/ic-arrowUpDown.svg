@@ -1,0 +1,44 @@
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="basic/ic-arrowUpDown" clip-path="url(#clip0_2027_768)">
+<g id="weight=light, filled=false" clip-path="url(#clip1_2027_768)">
+<g id="UIIcon">
+<path id="Vector" d="M14.1667 3.33334V16.6667M14.1667 16.6667L10.8333 13.3333M14.1667 16.6667L17.5 13.3333M5.83333 16.6667V3.33334M5.83333 3.33334L2.5 6.66668M5.83333 3.33334L9.16667 6.66668" stroke="currentColor" stroke-linejoin="round"/>
+</g>
+</g>
+<g id="weight=regular, filled=false" clip-path="url(#clip2_2027_768)">
+<g id="UIIcon_2">
+<path id="Vector_2" d="M50.1667 3.33334V16.6667M50.1667 16.6667L46.8333 13.3333M50.1667 16.6667L53.5 13.3333M41.8333 16.6667V3.33334M41.8333 3.33334L38.5 6.66668M41.8333 3.33334L45.1667 6.66668" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+</g>
+</g>
+<g id="weight=bold, filled=false" clip-path="url(#clip3_2027_768)">
+<g id="UIIcon_3">
+<path id="Vector_3" d="M86.1667 3.33334V16.6667M86.1667 16.6667L82.8333 13.3333M86.1667 16.6667L89.5 13.3333M77.8333 16.6667V3.33334M77.8333 3.33334L74.5 6.66668M77.8333 3.33334L81.1667 6.66668" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+</g>
+</g>
+<g id="weight=regular, filled=true" clip-path="url(#clip4_2027_768)">
+<g id="UIIcon_4">
+<g id="Vector_4">
+<path d="M119.328 12.7384L121.467 14.8007V3.56882H122.866V14.8017L125.005 12.7384L125.995 13.6938L122.662 16.9092C122.389 17.1729 121.945 17.1728 121.672 16.9092L118.338 13.6938L119.328 12.7384ZM113.338 3.09116C113.611 2.82744 114.055 2.82744 114.328 3.09116L117.662 6.30661L116.672 7.26192L114.533 5.19962V16.4315H113.134V5.19868L110.995 7.26192L110.005 6.30661L113.338 3.09116Z" fill="currentColor"/>
+<path d="M119.328 12.7384L121.467 14.8007V3.56882H122.866V14.8017L125.005 12.7384L125.995 13.6938L122.662 16.9092C122.389 17.1729 121.945 17.1728 121.672 16.9092L118.338 13.6938L119.328 12.7384ZM113.338 3.09116C113.611 2.82744 114.055 2.82744 114.328 3.09116L117.662 6.30661L116.672 7.26192L114.533 5.19962V16.4315H113.134V5.19868L110.995 7.26192L110.005 6.30661L113.338 3.09116Z" fill="currentColor"/>
+</g>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_2027_768">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+<clipPath id="clip1_2027_768">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+<clipPath id="clip2_2027_768">
+<rect width="20" height="20" fill="white" transform="translate(36)"/>
+</clipPath>
+<clipPath id="clip3_2027_768">
+<rect width="20" height="20" fill="white" transform="translate(72)"/>
+</clipPath>
+<clipPath id="clip4_2027_768">
+<rect width="20" height="20" fill="white" transform="translate(108)"/>
+</clipPath>
+</defs>
+</svg>

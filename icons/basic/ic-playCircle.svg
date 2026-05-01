@@ -1,0 +1,38 @@
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="basic/ic-playCircle" clip-path="url(#clip0_3749_1511)">
+<g id="weight=light, filled=false">
+<g id="UIIcon">
+<g id="Vector">
+<path d="M10 17C13.866 17 17 13.866 17 10C17 6.13401 13.866 3 10 3C6.13401 3 3 6.13401 3 10C3 13.866 6.13401 17 10 17Z" stroke="currentColor"/>
+<path d="M12.242 10.2258L8.99755 13.0646C8.80358 13.2344 8.5 13.0966 8.5 12.8389V7.16113C8.5 6.90338 8.80358 6.76563 8.99755 6.93536L12.242 9.77423C12.3786 9.89375 12.3786 10.1062 12.242 10.2258Z" stroke="currentColor"/>
+</g>
+</g>
+</g>
+<g id="weight=regular, filled=false">
+<g id="UIIcon_2">
+<g id="Vector_2">
+<path d="M46 17C49.866 17 53 13.866 53 10C53 6.13401 49.866 3 46 3C42.134 3 39 6.13401 39 10C39 13.866 42.134 17 46 17Z" stroke="currentColor" stroke-width="1.4"/>
+<path d="M48.242 10.2258L44.9976 13.0646C44.8036 13.2344 44.5 13.0966 44.5 12.8389V7.16113C44.5 6.90338 44.8036 6.76563 44.9976 6.93536L48.242 9.77423C48.3786 9.89375 48.3786 10.1062 48.242 10.2258Z" stroke="currentColor" stroke-width="1.4"/>
+</g>
+</g>
+</g>
+<g id="weight=bold, filled=false">
+<g id="UIIcon_3">
+<g id="Vector_3">
+<path d="M82 17C85.866 17 89 13.866 89 10C89 6.13401 85.866 3 82 3C78.134 3 75 6.13401 75 10C75 13.866 78.134 17 82 17Z" stroke="currentColor" stroke-width="2"/>
+<path d="M84.242 10.2258L80.9976 13.0646C80.8036 13.2344 80.5 13.0966 80.5 12.8389V7.16113C80.5 6.90338 80.8036 6.76563 80.9976 6.93536L84.242 9.77423C84.3786 9.89375 84.3786 10.1062 84.242 10.2258Z" stroke="currentColor" stroke-width="2"/>
+</g>
+</g>
+</g>
+<g id="weight=regular, filled=true">
+<g id="UIIcon_4">
+<path id="Vector_4" fill-rule="evenodd" clip-rule="evenodd" d="M118 2.2998C122.253 2.2998 125.7 5.74741 125.7 10C125.7 14.2526 122.253 17.7002 118 17.7002C113.747 17.7002 110.3 14.2526 110.3 10C110.3 5.74741 113.747 2.2998 118 2.2998ZM117.227 6.4834C116.711 6.15358 116 6.51696 116 7.16113V12.8389C116 13.5261 116.81 13.893 117.327 13.4404L120.571 10.6016C120.935 10.2828 120.935 9.71611 120.571 9.39746L117.327 6.55859L117.227 6.4834Z" fill="currentColor"/>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_3749_1511">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+</defs>
+</svg>

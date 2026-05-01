@@ -1,0 +1,29 @@
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="basic/ic-shoppingBag" clip-path="url(#clip0_3955_1458)">
+<g id="weight=light, filled=false">
+<g id="UIIcon">
+<path id="Vector" d="M7.5 8V5C7.5 3.61929 8.61929 2.5 10 2.5C11.3807 2.5 12.5 3.61929 12.5 5V8M4.3 17H15.7C15.8657 17 16 16.8657 16 16.7V6.3C16 6.13431 15.8657 6 15.7 6H4.3C4.13431 6 4 6.13431 4 6.3V16.7C4 16.8657 4.13432 17 4.3 17Z" stroke="currentColor"/>
+</g>
+</g>
+<g id="weight=regular, filled=false">
+<g id="UIIcon_2">
+<path id="Vector_2" d="M43.5 8V5C43.5 3.61929 44.6193 2.5 46 2.5C47.3807 2.5 48.5 3.61929 48.5 5V8M40.3 17H51.7C51.8657 17 52 16.8657 52 16.7V6.3C52 6.13431 51.8657 6 51.7 6H40.3C40.1343 6 40 6.13431 40 6.3V16.7C40 16.8657 40.1343 17 40.3 17Z" stroke="currentColor" stroke-width="1.4"/>
+</g>
+</g>
+<g id="weight=bold, filled=false">
+<g id="UIIcon_3">
+<path id="Vector_3" d="M79.5 8V5C79.5 3.61929 80.6193 2.5 82 2.5C83.3807 2.5 84.5 3.61929 84.5 5V8M76.3 17H87.7C87.8657 17 88 16.8657 88 16.7V6.3C88 6.13431 87.8657 6 87.7 6H76.3C76.1343 6 76 6.13431 76 6.3V16.7C76 16.8657 76.1343 17 76.3 17Z" stroke="currentColor" stroke-width="2"/>
+</g>
+</g>
+<g id="weight=regular, filled=true">
+<g id="UIIcon_4">
+<path id="Vector_4" d="M119.8 5C119.8 4.00589 118.994 3.2002 118 3.2002C117.006 3.2002 116.2 4.00589 116.2 5V5.2998H119.8V5ZM121.2 5.2998H123.7C124.252 5.29991 124.7 5.74767 124.7 6.2998V16.7002C124.7 17.2523 124.252 17.7001 123.7 17.7002H112.3C111.748 17.7001 111.3 17.2523 111.3 16.7002V6.2998C111.3 5.74768 111.748 5.29991 112.3 5.2998H114.8V5C114.8 3.23269 116.233 1.7998 118 1.7998C119.767 1.7998 121.2 3.23269 121.2 5V5.2998Z" fill="currentColor"/>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_3955_1458">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+</defs>
+</svg>

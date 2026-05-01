@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1440" />
+  <title>SCM-Hub · SKU 등록</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <link rel="stylesheet" href="../design-system/layer-desktop.css" />
+  <!-- LNB 상태 복원 — first paint 전에 적용해서 view transition flicker 방지 -->
+  <script>
+    try { if (localStorage.getItem('scm-lnb-open') === '1') document.documentElement.classList.add('is-lnb-open'); } catch(_) {}
+  </script>
+  <!-- Speculation Rules — .html 링크 hover 시 prerender → 클릭하면 instant 이동 (Chrome 121+) -->
+  <script type="speculationrules">
+  {
+    "prerender": [
+      { "where": { "href_matches": "*.html" }, "eagerness": "moderate" }
+    ]
+  }
+  </script>
+  <style>
+    /* PBOAssets icon system (sprite + currentColor) */
+    /* 페이지 이동 시 백색 깜빡임 제거 — same-origin 네비게이션을 cross-fade 처리 (Chrome 126+/Safari 18+) */
+    @view-transition { navigation: auto; }
+    ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.15s; }
+
+    .ic { display:inline-block; flex-shrink:0; vertical-align:middle; width:20px; height:20px; }
+    .ic--16 { width:16px; height:16px; }
+    .ic--14 { width:14px; height:14px; }
+
+    /* App shell — Figma 구조: topbar(64) 풀폭 위, 그 아래 LNB+main */
+    html, body { margin:0; padding:0; background:var(--ld-bg); font-family:var(--ld-font-family-base); color:var(--ld-fg); }
+    html { min-height:100%; }
+    body { min-width:1440px; display:flex; flex-direction:column; min-height:100vh; }
+
+    /* Top bar (GNB) — Figma dev export */
+    .topbar { background:#fff; border-bottom:1px solid #E5E5E5; box-shadow:0 1px 1px rgba(0,0,0,.08); padding:0 12px 0 0; height:64px; display:flex; align-items:center; flex-shrink:0; min-width:1440px; position:sticky; top:0; z-index:20; }
+    .topbar .topbar-left { min-width:188px; height:64px; padding:0 24px 0 0; display:flex; align-items:center; gap:8px; flex-shrink:0; }
+    .topbar .menu-btn { background:transparent; border:none; color:var(--ld-fg); cursor:pointer; padding:0 16px 0 16px; display:flex; align-items:center; justify-content:flex-start; width:56px; height:64px; box-sizing:border-box; }
+    .topbar .menu-btn:hover { background:var(--ld-bg-low); }
+    .topbar .menu-btn svg { width:24px; height:24px; }
+    .topbar .logo { display:inline-flex; align-items:center; height:18px; width:96px; color:#000; }
+    .topbar .logo svg { width:100%; height:100%; display:block; }
+    /* DEMO 태그 — 로고 옆 작은 배지 */
+    .topbar .demo-tag {
+      display:inline-flex; align-items:center;
+      height:18px; padding:0 6px; margin-left:-4px;
+      border-radius:3px;
+      background:#4F46E5; color:#fff;
+      font-size:10px; font-weight:700; line-height:1; letter-spacing:0.4px;
+      flex-shrink:0;
+    }
+    .topbar .topbar-right { margin-left:auto; padding:8px 12px; border-radius:4px; display:flex; align-items:center; gap:8px; cursor:pointer; }
+    .topbar .topbar-right .avatar-text { width:32px; height:32px; border-radius:9999px; background:#EEEEEE; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:500; line-height:32px; color:#000; }
+    .topbar .topbar-right .name-group { display:flex; align-items:center; gap:4px; }
+    .topbar .topbar-right .name-group .name { display:flex; align-items:center; gap:2px; }
+    .topbar .topbar-right .name-group .name .first { font-size:15px; font-weight:500; line-height:20.4px; color:#000; }
+    .topbar .topbar-right .name-group .name .nim { font-size:14px; font-weight:500; line-height:17.64px; color:#000; }
+    .topbar .topbar-right .name-group .chev { width:16px; height:16px; color:#000; display:inline-flex; align-items:center; justify-content:center; }
+    .topbar .topbar-right .name-group .chev svg { width:16px; height:16px; }
+
+    /* App grid — topbar 아래 */
+    .app { display:grid; grid-template-columns:var(--scm-lnb-width, 56px) minmax(0, 1fr); flex:1; min-width:1440px; transition:grid-template-columns .2s ease; }
+    .app > * { min-width:0; }
+
+
+/* ============================================================
+       LNB — 단일 확장형 컴포넌트 (56 collapsed → 260 expanded, 아이콘 위치 고정)
+       ============================================================ */
+    html.is-lnb-open, body.is-lnb-open { --scm-lnb-width:260px; }
+    .lnb {
+      width:var(--scm-lnb-width, 56px);
+      background:#fff; border-right:1px solid #EBEBEB;
+      position:sticky; top:64px; height:calc(100vh - 64px);
+      z-index:15;
+      overflow-x:hidden; overflow-y:auto;
+      transition:width .2s ease;
+      display:flex; flex-direction:column; padding:8px 0;
+    }
+    .lnb-item { display:flex; flex-direction:column; }
+    .lnb-row {
+      position:relative;
+      display:flex; align-items:center; gap:14px;
+      width:260px; min-height:48px; padding:12px 16px;
+      border:0; background:transparent; cursor:pointer; text-decoration:none;
+      font-family:inherit; color:inherit;
+      box-sizing:border-box;
+    }
+    .lnb-row:hover { background:#FAFAFA; }
+    .lnb-row::before {
+      content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:transparent;
+    }
+    .lnb-item.is-active > .lnb-row { background:#F5F5F5; }
+    .lnb-item.is-active > .lnb-row::before { background:#245EFF; }
+    .lnb-icon { width:24px; height:24px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; color:#1A1A1A; }
+    .lnb-icon svg { width:24px; height:24px; }
+    .lnb-label {
+      flex:1; min-width:0;
+      font-size:15px; font-weight:600; line-height:1.36; color:#000;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:left;
+      opacity:0; transition:opacity .12s ease;
+    }
+    body.is-lnb-open .lnb-label { opacity:1; }
+    .lnb-chev {
+      width:16px; height:16px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; color:#000;
+      transition:transform .18s ease, opacity .12s ease;
+      transform:rotate(180deg); opacity:0;
+    }
+    body.is-lnb-open .lnb-chev { opacity:1; }
+    .lnb-chev svg { width:16px; height:16px; }
+    .lnb-item.is-open > .lnb-row .lnb-chev { transform:rotate(0deg); }
+    .lnb-l2-list { display:none; padding:0 0 8px; }
+    body.is-lnb-open .lnb-item.is-open .lnb-l2-list { display:flex; flex-direction:column; }
+    /* LNB collapsed 상태 hover → 레이어 오버레이 (콘텐츠 push 없이 위로 띄움) */
+    body:not(.is-lnb-open) .lnb:hover {
+      width:260px;
+      z-index:30;
+      box-shadow:2px 0 6px rgba(0,0,0,0.05);
+    }
+    body:not(.is-lnb-open) .lnb:hover .lnb-label { opacity:1; }
+    body:not(.is-lnb-open) .lnb:hover .lnb-chev { opacity:1; }
+    body:not(.is-lnb-open) .lnb:hover .lnb-item.is-open .lnb-l2-list { display:flex; flex-direction:column; }
+    .lnb-l2 {
+      display:flex; align-items:center; height:36px; padding:8px 16px 8px 54px;
+      width:260px; box-sizing:border-box;
+      text-decoration:none;
+      font-size:15px; font-weight:400; line-height:1.4; color:#000;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .lnb-l2:hover { background:#FAFAFA; }
+    .lnb-l2.is-active { font-weight:600; color:#000; }
+
+    /* LNB 2뎁스 태그 — NEW(완료) / 작업중(미구현). subtle */
+    .lnb-tag {
+      display:inline-flex; align-items:center;
+      height:16px; padding:0 5px;
+      margin-left:6px;
+      border-radius:2px;
+      font-size:10px; font-weight:600; line-height:1;
+      white-space:nowrap; flex-shrink:0;
+      letter-spacing:0.2px;
+    }
+    .lnb-tag--new { background:#E2F1FF; color:#1A56DB; }
+    .lnb-tag--wip { background:transparent; color:#B0B0B0; font-weight:400; padding:0 2px; letter-spacing:0; }
+
+
+    /* Page */
+    main.page { padding:0 28px 120px; background:var(--ld-bg); }
+    /* 헤더 영역 — 스크롤 시 상단 고정 (topbar 64 아래로 sticky) */
+    .mp-page-head {
+      display:flex; align-items:center; padding:20px 0 16px; gap:8px;
+      position:sticky; top:64px;
+      background:var(--ld-bg);
+      z-index:12;
+      margin:0 -28px;
+      padding-left:28px; padding-right:28px;
+    }
+    .mp-page-title { margin:0; font-size:26px; font-weight:600; color:#000; line-height:36.4px; }
+    .mp-back-btn {
+      width:36px; height:36px; padding:6px; border:0; background:transparent; cursor:pointer;
+      border-radius:4px; display:inline-flex; align-items:center; justify-content:center; color:#000;
+      margin-right:4px;
+    }
+    .mp-back-btn:hover { background:var(--ld-bg-low); }
+    .mp-back-btn svg { width:24px; height:24px; }
+
+    /* Info banner — gray tone (sku-management.html 와 동일). reg-card 와 동일하게 1200 max */
+    .mp-info-banner { display:flex; align-items:flex-start; gap:8px; background:rgba(224,224,224,0.20); border:1px solid #EBEBEB; border-radius:4px; padding:16px 12px; margin-bottom:24px; color:#000; position:relative; overflow:hidden; max-width:1200px; box-sizing:border-box; }
+    .mp-info-banner > .ic { width:20px; height:20px; color:#8A8A8A; margin-top:0; flex-shrink:0; }
+    .mp-info-banner-body { flex:1; min-width:0; padding:0 8px; display:flex; flex-direction:column; gap:8px; }
+    .mp-info-banner-title { font-size:15px; font-weight:500; line-height:20.4px; color:#000; }
+    .mp-info-banner-text { font-size:14px; font-weight:400; line-height:19.6px; color:#000; }
+    .mp-info-banner .toggle { background:transparent; border:0; color:#000; cursor:pointer; padding:0; flex-shrink:0; width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; }
+    .mp-info-banner .toggle svg { width:20px; height:20px; }
+    .mp-info-banner.is-collapsed .mp-info-banner-text { display:none; }
+
+    /* ================================================================
+       Form section card
+       ================================================================ */
+    .reg-card {
+      background:#fff;
+      border:1px solid #E0E0E0;
+      border-radius:4px;
+      margin-bottom:16px;
+      max-width:1200px;     /* 회색 그룹 박스가 우측 끝까지 늘어나지 않게 컨텐츠(1200) 폭으로 제한 */
+    }
+    .reg-card--gray {
+      background:#F8F9FC;
+      border-color:#EBEBEB;
+    }
+    .reg-card-title {
+      font-size:18px; font-weight:600; line-height:24.48px; color:#000;
+      padding:24px 24px 16px;
+    }
+    .reg-card-section {
+      padding:0 24px 24px;
+    }
+    .reg-card-section--padded { padding:24px; }
+    .reg-card-divider { height:1px; background:#EBEBEB; }
+
+    /* Sub-section title (e.g. "물류/발주 속성", "기타 속성") */
+    .reg-subsection-title {
+      font-size:18px; font-weight:600; line-height:24.48px; color:#000;
+      padding-top:8px; padding-bottom:16px;
+    }
+
+    /* Field row (label + control) */
+    .form-row {
+      display:flex; align-items:flex-start;
+      padding:12px 0;
+      gap:16px;
+    }
+    .form-row + .form-row { border-top:1px dashed transparent; } /* spacing only */
+    .form-label {
+      flex-shrink:0;
+      font-size:14px; font-weight:500; line-height:19.6px; color:#000;
+      padding-top:10px;
+      display:inline-flex; align-items:center; gap:4px;
+    }
+    .form-label .req-dot { width:4px; height:4px; border-radius:50%; background:#245EFF; flex-shrink:0; }
+    .form-label--w140 { width:140px; }
+    .form-label--w120 { width:120px; }
+    .form-label--w60  { width:60px; }
+    .form-control { min-width:0; }
+    .form-control--w320 { width:320px; flex-shrink:0; }
+    .form-control--w360 { width:360px; flex-shrink:0; }
+    .form-control--full { flex:1; min-width:0; }
+
+    /* Two-column layout for "기본 정보 설정" */
+    .form-2col {
+      display:flex; gap:40px; align-items:flex-start;
+    }
+    .form-2col .col-left  { width:580px; flex-shrink:0; display:flex; flex-direction:column; }
+    .form-2col .col-right { width:400px; flex-shrink:0; display:flex; flex-direction:column; }
+
+    /* Two-column layout for radio groups (분리 기준 속성) */
+    .form-radio-2col {
+      display:flex; flex-wrap:wrap;
+      gap:12px 100px;
+      max-width:1200px;
+    }
+    .form-radio-2col > .form-row {
+      flex:1 1 calc(50% - 50px);
+      min-width:380px;
+    }
+
+    /* 1200-grid layout for "옵션 조합 등록" */
+    .form-grid-1200 { max-width:1200px; }
+
+    /* Text input */
+    .form-input {
+      width:100%;
+      height:44px;
+      padding:12px 16px;
+      background:#fff;
+      border:1px solid #E0E0E0;
+      border-radius:4px;
+      font-family:inherit; font-size:15px; font-weight:400; line-height:20.4px; color:#000;
+      outline:none; box-sizing:border-box;
+    }
+    .form-input::placeholder { color:#8A8A8A; font-weight:500; }
+    .form-input:focus { border-color:#000; }
+
+    .form-input-wrap {
+      position:relative;
+      display:flex; align-items:center;
+    }
+    .form-input-wrap .char-count {
+      position:absolute; right:12px; top:50%; transform:translateY(-50%);
+      font-size:12px; line-height:18px; color:#8A8A8A; pointer-events:none;
+    }
+    .form-input-wrap .form-input { padding-right:64px; }
+
+    /* Select (decorative) */
+    .form-select {
+      width:100%;
+      height:44px;
+      padding:12px 16px;
+      background:#fff;
+      border:1px solid #E0E0E0;
+      border-radius:4px;
+      font-family:inherit; font-size:15px; font-weight:400; line-height:20.4px; color:#000;
+      display:inline-flex; align-items:center; justify-content:space-between; gap:8px;
+      cursor:pointer; box-sizing:border-box;
+      text-align:left;
+    }
+    .form-select .value { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .form-select[data-state="placeholder"] .value { color:#8A8A8A; font-weight:500; }
+    .form-select .chev { width:16px; height:16px; flex-shrink:0; color:#000; }
+    .form-select:hover { border-color:#000; }
+
+    /* Disabled state */
+    .form-input:disabled,
+    .form-select.is-disabled,
+    .form-select[disabled] {
+      background:rgba(138,138,138,0.10);
+      border-color:#EBEBEB;
+      color:rgba(0,0,0,0.20);
+      cursor:not-allowed;
+    }
+    .form-input:disabled::placeholder { color:rgba(0,0,0,0.20); }
+    .form-select.is-disabled .chev,
+    .form-select[disabled] .chev { color:rgba(0,0,0,0.20); }
+    .form-select.is-disabled .value,
+    .form-select[disabled] .value { color:rgba(0,0,0,0.20); font-weight:400; }
+
+    /* Radio group */
+    .form-radio-group {
+      display:inline-flex; align-items:center; gap:32px;
+      padding-top:12px;
+      flex-wrap:wrap;
+    }
+    .form-radio {
+      display:inline-flex; align-items:center; gap:8px;
+      cursor:pointer;
+      font-size:15px; font-weight:400; line-height:20.4px; color:#000;
+    }
+    .form-radio input[type="radio"] {
+      appearance:none; -webkit-appearance:none;
+      width:16px; height:16px;
+      border:1px solid #CCCCCC;
+      border-radius:50%;
+      background:#fff;
+      cursor:pointer; flex-shrink:0;
+      margin:0; box-sizing:border-box;
+    }
+    .form-radio input[type="radio"]:checked {
+      border-color:#000;
+      background:radial-gradient(circle, #fff 0 3.5px, transparent 4px) center/100% 100% no-repeat, #000;
+    }
+    .form-radio input[type="radio"]:disabled {
+      background:rgba(138,138,138,0.10); border-color:#EBEBEB; cursor:not-allowed;
+    }
+
+    /* Indented option-row box */
+    .option-indent {
+      padding-left:24px;
+      border-left:2px solid #EBEBEB;
+      margin-left:140px;
+      margin-top:0;
+    }
+    .option-indent .form-row { padding:8px 0; }
+    .option-row-controls {
+      display:inline-flex; align-items:center; gap:8px;
+      flex-wrap:wrap;
+    }
+    .option-row-controls .form-input { width:360px; height:44px; }
+    .option-btn {
+      height:44px; min-width:64px; padding:12px 16px;
+      background:rgba(138,138,138,0.10);
+      border:1px solid #EBEBEB; border-radius:4px;
+      font-size:15px; font-weight:500; line-height:20.4px; color:rgba(0,0,0,0.20);
+      font-family:inherit; cursor:not-allowed;
+    }
+    .option-btn--add {
+      background:#fff; border:1px dashed #E0E0E0;
+      color:rgba(0,0,0,0.20);
+    }
+
+    /* Action row (안에서 SKU 추가 / 초기화) */
+    .reg-action-row {
+      display:flex; align-items:center; gap:8px;
+      padding-top:16px;
+    }
+    .reg-action-row > .spacer { width:140px; flex-shrink:0; }
+    .btn-primary-disabled {
+      height:44px; min-width:120px; padding:12px 16px;
+      background:rgba(138,138,138,0.10);
+      border:1px solid #EBEBEB; border-radius:4px;
+      font-size:15px; font-weight:500; line-height:20.4px; color:rgba(0,0,0,0.20);
+      font-family:inherit; cursor:not-allowed;
+      display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    }
+    .btn-outline-disabled {
+      height:44px; min-width:80px; padding:12px 16px;
+      background:rgba(138,138,138,0.10);
+      border:1px solid #EBEBEB; border-radius:4px;
+      font-size:15px; font-weight:500; line-height:20.4px; color:rgba(0,0,0,0.20);
+      font-family:inherit; cursor:not-allowed;
+      display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    }
+
+    /* Section: 등록 대기 목록 */
+    .reg-pending {
+      margin-top:16px;
+    }
+    .reg-pending-title {
+      font-size:18px; font-weight:600; line-height:24.48px; color:#000;
+      padding:8px 0 16px;
+    }
+    .reg-pending-stats {
+      display:flex; align-items:center; gap:12px;
+      height:60px; padding:12px 0;
+    }
+    .reg-pending-stats .stat {
+      display:inline-flex; align-items:center; gap:6px;
+      font-size:15px; line-height:20.4px; color:#000;
+    }
+    .reg-pending-stats .stat .label { font-weight:500; }
+    .reg-pending-stats .stat .num { font-weight:600; font-variant-numeric:tabular-nums; }
+    .reg-pending-stats .stat .mini-cb {
+      display:inline-flex; align-items:center; justify-content:center;
+      width:16px; height:16px; border-radius:2px; box-sizing:border-box;
+      flex-shrink:0;
+    }
+    .reg-pending-stats .stat .mini-cb svg { width:10px; height:10px; }
+    .reg-pending-stats .stat--ok .mini-cb { background:#1EA514; color:#fff; }
+    .reg-pending-stats .stat--ok .num { color:#1EA514; }
+    .reg-pending-stats .stat--ng .mini-cb { background:#E4002B; color:#fff; }
+    .reg-pending-stats .stat--ng .num { color:#E4002B; }
+    .reg-pending-stats .v-divider { width:1px; height:16px; background:#EBEBEB; flex-shrink:0; }
+    .reg-pending-stats .mini-action {
+      display:inline-flex; align-items:center; gap:4px;
+      height:36px; min-width:80px; padding:8px 12px;
+      background:rgba(138,138,138,0.10);
+      border:1px solid #EBEBEB; border-radius:4px;
+      font-size:14px; font-weight:500; line-height:19.6px; color:rgba(0,0,0,0.20);
+      font-family:inherit; cursor:not-allowed;
+    }
+
+    /* Pending table */
+    .reg-pending-table-wrap {
+      position:relative;
+      overflow-x:auto;
+    }
+    .reg-pending-table {
+      width:100%; border-collapse:separate; border-spacing:0;
+      font-size:13px; color:var(--ld-fg);
+      min-width:1400px;
+    }
+    .reg-pending-table thead { border-top:2px solid #000; }
+    .reg-pending-table thead tr { border-top:2px solid #000; }
+    .reg-pending-table thead th {
+      background:#fff;
+      font-size:15px; font-weight:500; line-height:20.4px; color:#000;
+      height:42px; padding:8px 16px; text-align:left;
+      border-top:2px solid #000;
+      border-bottom:1px solid #E0E0E0;
+      border-left:1px solid #EBEBEB;
+      white-space:nowrap; vertical-align:middle;
+      box-sizing:border-box;
+    }
+    .reg-pending-table thead th.cb-col { padding:8px 12px; border-left:0; width:48px; }
+    .reg-pending-table thead th:last-child { border-right:0; }
+
+    /* Empty state for pending list */
+    .reg-pending-empty {
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      padding:80px 24px;
+      border-bottom:1px solid #EBEBEB;
+      gap:16px;
+      text-align:center;
+    }
+    .reg-pending-empty .icon { width:48px; height:48px; color:#FFA12A; }
+    .reg-pending-empty .icon svg { width:100%; height:100%; display:block; }
+    .reg-pending-empty .title { font-size:16px; font-weight:600; line-height:21.76px; color:#000; }
+    .reg-pending-empty .desc  { font-size:15px; font-weight:400; line-height:20.4px; color:#666; }
+
+    /* Bottom action bar (sticky bottom) — LNB 폭에 맞춰 시작 위치 동적, bg 70% opacity */
+    .reg-bottom-bar {
+      position:fixed;
+      left:var(--scm-lnb-width, 56px); right:0; bottom:0;
+      background:rgba(255,255,255,0.70);
+      backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+      box-shadow:0 -2px 4px rgba(0,0,0,0.04);
+      padding:12px 24px;
+      display:flex; align-items:center; justify-content:flex-end; gap:8px;
+      z-index:14; /* LNB(15) 보다 아래로 두어 LNB 가 확장될 때 가려지지 않게 */
+      transition:left .2s ease;
+    }
+    .reg-bottom-bar .btn {
+      height:52px; min-width:120px; padding:14px 24px;
+      border-radius:4px;
+      font-size:16px; font-weight:600; line-height:21.76px;
+      font-family:inherit; cursor:pointer;
+      display:inline-flex; align-items:center; justify-content:center;
+      box-sizing:border-box;
+    }
+    .reg-bottom-bar .btn-cancel {
+      background:#fff; border:1px solid #000; color:#000;
+    }
+    .reg-bottom-bar .btn-cancel:hover { background:var(--ld-bg-low); }
+    .reg-bottom-bar .btn-primary {
+      background:rgba(138,138,138,0.10);
+      border:1px solid #EBEBEB;
+      color:rgba(0,0,0,0.20);
+      cursor:not-allowed;
+    }
+    /* primary 활성 시 검정 (현재 disabled — placeholder) */
+    .reg-bottom-bar .btn-primary:not(:disabled) {
+      background:#000; border-color:#000; color:#fff; cursor:pointer;
+    }
+  </style>
+</head>
+<body class="ld-root">
+
+<!-- PBOAssets icon sprite (sku-management.html 와 동일) -->
+<svg width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+<defs>
+  <symbol id="ic-home" viewBox="0 0 20 20"><path d="M10 17H3.8C3.63431 17 3.5 16.8657 3.5 16.7V7.90233C3.5 7.80659 3.5457 7.7166 3.623 7.66012L9.823 3.12935C9.92842 3.0523 10.0716 3.0523 10.177 3.12935L16.377 7.66012C16.4543 7.7166 16.5 7.80659 16.5 7.90233V16.7C16.5 16.8657 16.3657 17 16.2 17H10ZM10 17V10.3611" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="ic-shoppingBag" viewBox="0 0 20 20"><path d="M7.5 8V5C7.5 3.61929 8.61929 2.5 10 2.5C11.3807 2.5 12.5 3.61929 12.5 5V8M4.3 17H15.7C15.8657 17 16 16.8657 16 16.7V6.3C16 6.13431 15.8657 6 15.7 6H4.3C4.13431 6 4 6.13431 4 6.3V16.7C4 16.8657 4.13432 17 4.3 17Z" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="ic-grid" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1" stroke="currentColor" fill="none"/><rect x="11" y="3" width="6" height="6" rx="1" stroke="currentColor" fill="none"/><rect x="3" y="11" width="6" height="6" rx="1" stroke="currentColor" fill="none"/><rect x="11" y="11" width="6" height="6" rx="1" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="ic-store" viewBox="0 0 20 20"><path d="M16.5 10V17H3.5V10M3.5 3H16.5V5.5H3.5V3ZM8 13.5H12V17H8V13.5ZM17 8.5C17 9.88071 15.8807 11 14.5 11C13.5082 11 12.654 10.4211 12.25 9.58398C11.846 10.4211 10.9918 11 10 11C9.00819 11 8.15404 10.4211 7.75 9.58398C7.34596 10.4211 6.49181 11 5.5 11C4.11929 11 3 9.88071 3 8.5V5.5H17V8.5Z" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="ic-paper" viewBox="0 0 20 20"><path d="M12 17.5V13H16.5M12 17.5H3.5V2.5H16.5V13M12 17.5L16.5 13M6 6H11M6 9H14" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="ic-menu" viewBox="0 0 24 24"><path d="M4 12H20.0714M4 6H20.0714M4 18H20.0714" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" stroke-linejoin="round" fill="none"/></symbol>
+  <!-- LNB drawer 전용 — 24x24 nav icons + 작은 보조 아이콘 -->
+  <symbol id="ic-sidebar-collapse" viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M8 3 V17" stroke="currentColor" stroke-width="1.4"/></symbol>
+  <symbol id="ic-user" viewBox="0 0 28 28"><circle cx="14" cy="11" r="4" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M5 23 C5 18 9 16 14 16 C19 16 23 18 23 23" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
+  <symbol id="ic-more-vertical" viewBox="0 0 16 16"><circle cx="8" cy="3" r="1.4" fill="currentColor"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/><circle cx="8" cy="13" r="1.4" fill="currentColor"/></symbol>
+  <symbol id="ic-chevronUp16" viewBox="0 0 16 16"><path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="ic-nav-home" viewBox="0 0 24 24"><path d="M12 20.4H4.56001C4.36119 20.4 4.20001 20.2388 4.20001 20.04V9.48281C4.20001 9.36792 4.25485 9.25993 4.34761 9.19215L11.7876 3.75522C11.9141 3.66277 12.0859 3.66277 12.2124 3.75522L19.6524 9.19215C19.7452 9.25993 19.8 9.36792 19.8 9.48281V20.04C19.8 20.2388 19.6388 20.4 19.44 20.4H12ZM12 20.4V12.4333" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
+  <symbol id="ic-nav-dashboard" viewBox="0 0 24 24"><rect x="3.6" y="3.6" width="7.2" height="7.2" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><rect x="13.2" y="3.6" width="7.2" height="4.8" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><rect x="3.6" y="13.2" width="7.2" height="7.2" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><rect x="13.2" y="10.8" width="7.2" height="9.6" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
+  <symbol id="ic-nav-store" viewBox="0 0 24 24"><path d="M4.5 13.0864V19.5C4.5 19.6989 4.57902 19.8897 4.71967 20.0303C4.86032 20.171 5.05109 20.25 5.25 20.25H18.75C18.9489 20.25 19.1397 20.171 19.2803 20.0303C19.421 19.8897 19.5 19.6989 19.5 19.5V13.0865M5.06573 3.75H18.9343C19.0973 3.75 19.2558 3.80309 19.3859 3.90124C19.516 3.99939 19.6106 4.13725 19.6554 4.29396L21 9H3L4.34458 4.29396C4.38936 4.13725 4.48396 3.99939 4.61408 3.90124C4.7442 3.80309 4.90274 3.75 5.06573 3.75ZM9 9V10.5C9 11.2956 8.68393 12.0587 8.12132 12.6213C7.55871 13.1839 6.79565 13.5 6 13.5C5.20435 13.5 4.44129 13.1839 3.87868 12.6213C3.31607 12.0587 3 11.2956 3 10.5V9M15 9V10.5C15 11.2956 14.6839 12.0587 14.1213 12.6213C13.5587 13.1839 12.7956 13.5 12 13.5C11.2044 13.5 10.4413 13.1839 9.87868 12.6213C9.31607 12.0587 9 11.2956 9 10.5V9M21 9V10.5C21 11.2956 20.6839 12.0587 20.1213 12.6213C19.5587 13.1839 18.7956 13.5 18 13.5C17.2044 13.5 16.4413 13.1839 15.8787 12.6213C15.3161 12.0587 15 11.2956 15 10.5V9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="ic-nav-hanger" viewBox="0 0 24 24"><path d="M9 6.5V7.1C9 8.75685 10.3431 10.1 12 10.1C13.6569 10.1 15 8.75685 15 7.1V6.5M9 6.5H8.51537C8.44034 6.5 8.36718 6.52344 8.30613 6.56706L4.27987 9.44295C4.22758 9.4803 4.18624 9.53097 4.16014 9.58969L1.94818 14.5666C1.86666 14.75 1.95087 14.9647 2.13534 15.0437L6 16.7M9 6.5H15M15 6.5H15.4846C15.5597 6.5 15.6328 6.52344 15.6939 6.56706L19.7201 9.44295C19.7724 9.4803 19.8138 9.53097 19.8399 9.58969L22.0518 14.5666C22.1333 14.75 22.0491 14.9647 21.8647 15.0437L18 16.7M18 12.8V16.7M18 16.7V21.74C18 21.9388 17.8388 22.1 17.64 22.1H6.36C6.16118 22.1 6 21.9388 6 21.74V16.7M6 16.7V12.8M10.4 3.18C10.4 2.25216 11.1522 1.5 12.08 1.5C13.0079 1.5 13.76 2.25216 13.76 3.18C13.76 4.10784 13.0079 4.86 12.08 4.86V6.5" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
+  <symbol id="ic-nav-order" viewBox="0 0 24 24"><path d="M20 13.0001L20.495 12.5051C20.2216 12.2317 19.7784 12.2317 19.505 12.5051L20 13.0001ZM14.0423 18.9577L13.5473 18.4627L13.4334 18.5767L13.3807 18.729L14.0423 18.9577ZM22.1213 15.1214L22.6163 15.6164C22.7476 15.4851 22.8213 15.307 22.8213 15.1214C22.8213 14.9357 22.7476 14.7577 22.6163 14.6264L22.1213 15.1214ZM16.1636 21.079L16.3923 21.7406L16.5446 21.6879L16.6586 21.574L16.1636 21.079ZM12.9215 22.1998L12.26 21.9711C12.1724 22.2243 12.2371 22.5053 12.4266 22.6947C12.616 22.8842 12.897 22.9489 13.1503 22.8614L12.9215 22.1998ZM7.42857 6.8H6.72857V8.2H7.42857V7.5V6.8ZM12.5 8.2H13.2V6.8H12.5V7.5V8.2ZM10 21.7H10.7V20.3H10V21V21.7ZM19.3 10V10.7H20.7V10H20H19.3ZM7.42857 10.7375H6.72857V12.1375H7.42857V11.4375V10.7375ZM16 12.1375H16.7V10.7375H16V11.4375V12.1375ZM20 13.0001L19.505 12.5051L13.5473 18.4627L14.0423 18.9577L14.5373 19.4527L20.495 13.495L20 13.0001ZM20 13.0001L19.505 13.495L21.6263 15.6164L22.1213 15.1214L22.6163 14.6264L20.495 12.5051L20 13.0001ZM22.1213 15.1214L21.6263 14.6264L15.6686 20.584L16.1636 21.079L16.6586 21.574L22.6163 15.6164L22.1213 15.1214ZM16.1636 21.079L15.9349 20.4174L12.6928 21.5382L12.9215 22.1998L13.1503 22.8614L16.3923 21.7406L16.1636 21.079ZM12.9215 22.1998L13.5831 22.4285L14.7039 19.1864L14.0423 18.9577L13.3807 18.729L12.26 21.9711L12.9215 22.1998ZM19.6651 3V2.3H4.3349V3V3.7H19.6651V3ZM4 3.3375H3.3V20.6625H4H4.7V3.3375H4ZM4 20.6625H3.3C3.3 21.2458 3.77734 21.7 4.34286 21.7V21V20.3C4.52967 20.3 4.7 20.4519 4.7 20.6625H4ZM4.3349 3V2.3C3.74788 2.3 3.3 2.77566 3.3 3.3375H4H4.7C4.7 3.52654 4.54321 3.7 4.3349 3.7V3ZM20 3.3375H20.7C20.7 2.77567 20.2521 2.3 19.6651 2.3V3V3.7C19.4568 3.7 19.3 3.52654 19.3 3.3375H20ZM7.42857 7.5V8.2H12.5V7.5V6.8H7.42857V7.5ZM10 21V20.3H4.34286V21V21.7H10V21ZM20 10H20.7V3.3375H20H19.3V10H20ZM7.42857 11.4375V12.1375H16V11.4375V10.7375H7.42857V11.4375Z" fill="currentColor"/></symbol>
+  <symbol id="ic-nav-stock" viewBox="0 0 24 24"><path d="M20.4 7.4769L17.2661 3.71622C17.2047 3.64256 17.1138 3.59998 17.0179 3.59998H12M20.4 7.4769V20.0769C20.4 20.2553 20.2553 20.4 20.0769 20.4H3.92305C3.74462 20.4 3.59998 20.2553 3.59998 20.0769V7.4769M20.4 7.4769H12M3.59998 7.4769L6.73387 3.71622C6.79525 3.64256 6.88618 3.59998 6.98207 3.59998H12M3.59998 7.4769H12M12 3.59998V7.4769" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="ic-nav-setting" viewBox="0 0 24 24"><path d="M10.7206 3.59998H13.2795C13.3327 3.59998 13.3796 3.63508 13.3946 3.68619L14.0781 6.01563C14.0888 6.05203 14.1161 6.08117 14.1516 6.09468C14.8012 6.34221 15.3991 6.6986 15.9238 7.14216C15.9533 7.16713 15.993 7.17678 16.0306 7.1677L18.3426 6.60887C18.3947 6.59627 18.4489 6.6198 18.4753 6.66651L19.7571 8.93636C19.7827 8.98171 19.7761 9.0384 19.7408 9.07669L18.1072 10.8491C18.0819 10.8765 18.0709 10.9141 18.0769 10.951C18.1328 11.2921 18.1619 11.6426 18.1619 12C18.1619 12.3574 18.1328 12.7078 18.0769 13.049C18.0709 13.0858 18.0819 13.1234 18.1072 13.1509L19.7408 14.9233C19.7761 14.9615 19.7827 15.0182 19.7571 15.0636L18.4753 17.3334C18.4489 17.3802 18.3947 17.4037 18.3426 17.3911L16.0306 16.8323C15.993 16.8232 15.9533 16.8328 15.9238 16.8578C15.3991 17.3013 14.8013 17.6577 14.1516 17.9053C14.1161 17.9188 14.0888 17.9479 14.0781 17.9843L13.3946 20.3138C13.3796 20.3649 13.3327 20.4 13.2795 20.4H10.7206C10.6673 20.4 10.6204 20.3649 10.6054 20.3138L9.9219 17.9843C9.91122 17.9479 9.88392 17.9188 9.84846 17.9053C9.1988 17.6577 8.60099 17.3013 8.07625 16.8578C8.04671 16.8328 8.00709 16.8232 7.96949 16.8323L5.65745 17.3911C5.60531 17.4037 5.55114 17.3802 5.52476 17.3334L4.24299 15.0636C4.21738 15.0182 4.22395 14.9616 4.25924 14.9233L5.89289 13.1509C5.91817 13.1234 5.92919 13.0858 5.92315 13.049C5.86723 12.7078 5.83812 12.3574 5.83812 12C5.83812 11.6426 5.86723 11.2921 5.92315 10.951C5.92919 10.9141 5.91817 10.8765 5.89289 10.8491L4.25924 9.07669C4.22395 9.0384 4.21738 8.98171 4.24299 8.93636L5.52476 6.66651C5.55114 6.6198 5.60531 6.59627 5.65745 6.60887L7.96949 7.1677C8.00709 7.17678 8.04671 7.16713 8.07625 7.14216C8.60099 6.6986 9.1988 6.34221 9.84846 6.09468C9.88392 6.08117 9.91122 6.05203 9.9219 6.01563L10.6054 3.68619C10.6204 3.63508 10.6673 3.59998 10.7206 3.59998Z" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M14.4 12C14.4 13.3255 13.3255 14.4 12 14.4C10.6745 14.4 9.60002 13.3255 9.60002 12C9.60002 10.6745 10.6745 9.59998 12 9.59998C13.3255 9.59998 14.4 10.6745 14.4 12Z" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
+  <symbol id="ic-nav-control" viewBox="0 0 24 24"><path d="M8.39998 5.99998V12M8.39998 12C7.40586 12 6.59998 12.8059 6.59998 13.8C6.59998 14.7941 7.40586 15.6 8.39998 15.6M8.39998 12C9.39409 12 10.2 12.8059 10.2 13.8C10.2 14.7941 9.39409 15.6 8.39998 15.6M8.39998 15.6V18M15.6 12V18M15.6 12C16.5941 12 17.4 11.1941 17.4 10.2C17.4 9.20586 16.5941 8.39998 15.6 8.39998M15.6 12C14.6059 12 13.8 11.1941 13.8 10.2C13.8 9.20586 14.6059 8.39998 15.6 8.39998M15.6 5.99998V8.39998M3.89998 20.4H20.1C20.2657 20.4 20.4 20.2657 20.4 20.1V3.89998C20.4 3.73429 20.2657 3.59998 20.1 3.59998H3.89998C3.73429 3.59998 3.59998 3.73429 3.59998 3.89998V20.1C3.59998 20.2657 3.73429 20.4 3.89998 20.4Z" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
+  <symbol id="ic-funnel" viewBox="0 0 20 20"><path d="M6.14286 10H13.8571M4 6L16 6M8.28571 14L11.7143 14" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="ic-search" viewBox="0 0 20 20"><path d="M12 12L16.5 16.5M13.5 8.5C13.5 11.2614 11.2614 13.5 8.5 13.5C5.73858 13.5 3.5 11.2614 3.5 8.5C3.5 5.73858 5.73858 3.5 8.5 3.5C11.2614 3.5 13.5 5.73858 13.5 8.5Z" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
+  <symbol id="ic-close" viewBox="0 0 20 20"><path d="M5 5L15 15M15 5L5 15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/></symbol>
+  <symbol id="ic-chevronDown" viewBox="0 0 20 20"><path d="M4 8L10 14L16 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="ic-chevronUp" viewBox="0 0 20 20"><path d="M16 13L10.2121 7.2121C10.095 7.09497 9.90503 7.09497 9.78787 7.2121L4 13" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="ic-chevronLeft" viewBox="0 0 20 20"><path d="M12.5 16L6.71213 10.212C6.59497 10.0948 6.59498 9.90486 6.71213 9.7877L12.5 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="ic-chevronRight" viewBox="0 0 20 20"><path d="M7.5 16L13.2879 10.2121C13.405 10.095 13.405 9.90503 13.2879 9.78787L7.5 4" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="ic-arrowLeft" viewBox="0 0 20 20"><path d="M16.5 10H3.5M3.5 10L9 4.5M3.5 10L9 15.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="ic-download" viewBox="0 0 20 20"><path d="M3 16.5H17M10 13.5V3.5M10 13.5L14 9.5M10 13.5L6 9.5" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="ic-alertCircle" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7" stroke="currentColor" fill="none"/><path d="M10 6V11M10 14V14.5" stroke="currentColor" stroke-linecap="round"/></symbol>
+  <symbol id="ic-alertCircle-filled" viewBox="0 0 20 20"><path fill-rule="evenodd" clip-rule="evenodd" d="M10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18ZM10 5.25C10.4142 5.25 10.75 5.58579 10.75 6V10.5C10.75 10.9142 10.4142 11.25 10 11.25C9.58579 11.25 9.25 10.9142 9.25 10.5V6C9.25 5.58579 9.58579 5.25 10 5.25ZM10 14.75C10.5523 14.75 11 14.3023 11 13.75C11 13.1977 10.5523 12.75 10 12.75C9.44772 12.75 9 13.1977 9 13.75C9 14.3023 9.44772 14.75 10 14.75Z" fill="currentColor"/></symbol>
+  <symbol id="ic-alertTriangle" viewBox="0 0 20 20"><path d="M10 14.7499V12.8832M10 11.9499V7.28322M2.30694 16.4999H17.6931C17.9272 16.4999 18.0711 16.2437 17.9493 16.0438L10.2562 3.42025C10.1393 3.22841 9.86077 3.22841 9.74386 3.42025L2.05076 16.0438C1.92893 16.2437 2.07283 16.4999 2.30694 16.4999Z" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="ic-creditCard" viewBox="0 0 20 20"><path d="M3 8H17M12 12.5H15M3.3 15H16.7C16.8657 15 17 14.8657 17 14.7V5.3C17 5.13431 16.8657 5 16.7 5H3.3C3.13431 5 3 5.13431 3 5.3V14.7C3 14.8657 3.13431 15 3.3 15Z" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="ic-plus" viewBox="0 0 20 20"><path d="M10 4V16M4 10H16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/></symbol>
+  <symbol id="ic-refresh" viewBox="0 0 20 20"><path d="M16.5 4V8H12.5M3.5 16V12H7.5M5.07 8C5.5 6.46 6.4 5.1 7.65 4.16C8.91 3.21 10.45 2.7 12.04 2.7C13.62 2.7 15.16 3.21 16.42 4.16C17.67 5.1 18.58 6.46 19 8M3 12C3.42 13.54 4.33 14.9 5.58 15.84C6.84 16.79 8.38 17.3 9.96 17.3C11.55 17.3 13.09 16.79 14.35 15.84C15.6 14.9 16.5 13.54 16.93 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="ic-check" viewBox="0 0 20 20"><path d="M4 10.5L8 14.5L16 6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="logo-scm-hub" viewBox="0 0 96 18">
+    <path d="M85.3496 1.61133V6.90625C85.7984 6.47277 86.9465 5.55859 88.8203 5.55859C91.9664 5.55882 94.2324 8.02321 94.2324 11.1191C94.2323 14.215 91.9663 16.6785 88.8203 16.6787C86.817 16.6787 85.6764 15.6848 85.2168 15.1523L84.6914 16.4482L84.666 16.5107H83.1973V1.61133H85.3496ZM88.6729 7.62793C86.6351 7.62794 85.3076 9.19315 85.3076 11.1191C85.3077 13.045 86.6351 14.6103 88.6729 14.6104C90.7106 14.6104 92.038 13.045 92.0381 11.1191C92.0381 9.19314 90.7107 7.62793 88.6729 7.62793Z" fill="currentColor"/>
+    <path d="M74.9072 5.81055V12.5674C74.9073 13.4123 75.113 13.9079 75.4238 14.2188C75.7602 14.5551 76.2172 14.7353 76.7393 14.7354C77.2613 14.7354 77.7183 14.5551 78.0547 14.2188C78.3658 13.9077 78.5713 13.4329 78.5713 12.5674V5.81055H80.7451V16.5098H79.2812L78.9209 15.7891C78.5897 16.1418 77.7942 16.7411 76.3408 16.7412C74.3798 16.7412 72.7129 15.3361 72.7129 13.1338V5.81055H74.9072Z" fill="currentColor"/>
+    <path d="M59.9746 1.61133V7.78516H67.6074V1.61133H69.9287V16.5107H67.6074V10.0635H59.9746V16.5107H57.6543V1.61133H59.9746Z" fill="currentColor"/>
+    <path d="M55.085 9.69727V11.9971H48.9004V9.69727H55.085Z" fill="currentColor"/>
+    <path d="M33.2148 1.61133L33.2441 1.6582L38.4297 10.0664L43.6367 1.6582L43.666 1.61133H46.3213V16.5107H44.0215V5.16895L39.4814 12.4941L39.4521 12.542H37.4082L37.3789 12.4941L32.8604 5.1709V16.5107H30.5605V1.61133H33.2148Z" fill="currentColor"/>
+    <path d="M20.8125 1.40039C24.402 1.40039 27.1131 3.42106 27.9238 6.51465L27.9561 6.63965H25.4473L25.4238 6.5752C24.7679 4.833 23.1271 3.6582 20.8125 3.6582C17.6172 3.65842 15.4953 6.02401 15.4951 9.05957C15.4951 12.0935 17.6362 14.4617 20.9385 14.4619C23.2565 14.4619 25.0415 13.2841 25.6963 11.5449L25.7207 11.4805H28.2295L28.1963 11.6055C27.3849 14.7011 24.5254 16.7197 20.9385 16.7197C16.3491 16.7195 13.1113 13.5053 13.1113 9.05957C13.1115 4.61571 16.2847 1.4006 20.8125 1.40039Z" fill="currentColor"/>
+    <path d="M6.58008 1.40039C8.00725 1.40041 9.16335 1.8319 9.96289 2.61523C10.7625 3.39871 11.1952 4.52346 11.1953 5.88867V5.98926H8.76855V5.61621C8.76855 4.9693 8.54277 4.47783 8.16309 4.14746C7.78158 3.81556 7.23461 3.63673 6.58008 3.63672C5.91491 3.63672 5.3783 3.81593 5.00977 4.12988C4.64309 4.44242 4.43268 4.89677 4.43262 5.46875C4.43262 5.97 4.57135 6.33564 4.92578 6.66309C5.28822 6.99784 5.88072 7.29742 6.80371 7.64355L7.64453 7.95801C8.9502 8.44273 9.74471 8.86969 10.3906 9.55859C11.0368 10.2478 11.4258 11.0278 11.4258 12.252C11.4258 14.6421 9.42384 16.7197 6.60059 16.7197C5.21506 16.7196 3.97684 16.2828 3.08398 15.46C2.18996 14.6359 1.65039 13.4321 1.65039 11.916V11.8164H4.07617V12.126C4.07617 12.8674 4.33961 13.4538 4.78125 13.8555C5.2239 14.258 5.85415 14.4833 6.60059 14.4834C7.34821 14.4834 7.94765 14.2683 8.3584 13.8975C8.76809 13.5275 9 12.9936 9 12.3359C8.99999 11.9579 8.93955 11.6633 8.82812 11.4238C8.71705 11.1853 8.55272 10.9951 8.33398 10.8301C7.88946 10.4948 7.23524 10.27 6.37695 9.95215L5.36914 9.57324C4.25265 9.15193 3.47465 8.74531 2.91113 8.05176C2.35254 7.36415 2.00684 6.58617 2.00684 5.51074C2.0069 4.54201 2.3672 3.51388 3.12109 2.72754C3.87671 1.93954 5.02247 1.40039 6.58008 1.40039Z" fill="currentColor"/>
+  </symbol>
+</defs>
+</svg>
+
+<!-- Top bar (GNB) -->
+<header class="topbar">
+  <div class="topbar-left">
+    <button class="menu-btn" type="button" aria-label="메뉴 토글"><svg class="ic ic-menu"><use href="#ic-menu"/></svg></button>
+    <a class="logo" href="#" aria-label="SCM-Hub 홈"><svg viewBox="0 0 96 18"><use href="#logo-scm-hub"/></svg></a>
+    <span class="demo-tag" aria-label="데모 환경">DEMO</span>
+  </div>
+  <div class="topbar-right">
+    <span class="avatar-text">홍</span>
+    <div class="name-group">
+      <span class="name">
+        <span class="first">홍길동</span>
+        <span class="nim">님</span>
+      </span>
+      <span class="chev"><svg class="ic ic-chevronDown"><use href="#ic-chevronDown"/></svg></span>
+    </div>
+  </div>
+</header>
+
+<!-- Expanded LNB drawer — push layout, sits in .app first column -->
+
+<script>
+(function init(){
+  const LNB_KEY = 'scm-lnb-open';
+  function readLnbState() {
+    try { return localStorage.getItem(LNB_KEY) === '1'; } catch(_) { return false; }
+  }
+  function writeLnbState(open) {
+    try { localStorage.setItem(LNB_KEY, open ? '1' : '0'); } catch(_) {}
+  }
+  if (readLnbState() && document.body) document.body.classList.add('is-lnb-open');
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
+  else wire();
+  function wire() {
+    if (readLnbState() && !document.body.classList.contains('is-lnb-open')) {
+      document.body.classList.add('is-lnb-open');
+    }
+    function isOpen() { return document.body.classList.contains('is-lnb-open'); }
+    function openLnb()  { document.body.classList.add('is-lnb-open'); writeLnbState(true); }
+    function closeLnb() { document.body.classList.remove('is-lnb-open'); writeLnbState(false); }
+    function toggleLnb(){ isOpen() ? closeLnb() : openLnb(); }
+
+    const menuBtn = document.querySelector('.topbar .menu-btn');
+    if (menuBtn) menuBtn.addEventListener('click', toggleLnb);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && isOpen()) closeLnb(); });
+
+    document.querySelectorAll('.lnb [data-nav-toggle]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!isOpen()) { openLnb(); btn.closest('.lnb-item')?.classList.add('is-open'); return; }
+        btn.closest('.lnb-item')?.classList.toggle('is-open');
+      });
+    });
+  }
+})();
+</script>
+
+
+<div class="app">
+  <!-- LNB — 6 items, SKU 관리 active -->
+  <nav class="lnb" aria-label="주메뉴">
+    <div class="lnb-item">
+      <a class="lnb-row" href="dashboard.html">
+        <span class="lnb-icon"><svg viewBox="0 0 24 24"><use href="#ic-nav-dashboard"/></svg></span>
+        <span class="lnb-label">대시보드</span>
+      </a>
+    </div>
+    <div class="lnb-item is-open">
+      <button class="lnb-row" type="button" data-nav-toggle>
+        <span class="lnb-icon"><svg viewBox="0 0 24 24"><use href="#ic-nav-store"/></svg></span>
+        <span class="lnb-label">스토어</span>
+        <span class="lnb-chev"><svg viewBox="0 0 16 16"><use href="#ic-chevronUp16"/></svg></span>
+      </button>
+      <div class="lnb-l2-list">
+        <a class="lnb-l2" href="#">무탠 재고 보충 현황<span class="lnb-tag lnb-tag--wip">작업중</span></a>
+        <a class="lnb-l2" href="#">무탠 재고 보충 요청<span class="lnb-tag lnb-tag--wip">작업중</span></a>
+        <a class="lnb-l2" href="index.html">무탠 전개상품 관리<span class="lnb-tag lnb-tag--new">NEW</span></a>
+        <a class="lnb-l2" href="editshop-restock-status.html">편집샵 재고 보충 현황<span class="lnb-tag lnb-tag--new">NEW</span></a>
+        <a class="lnb-l2" href="editshop-restock-request.html">편집샵 재고 보충 요청<span class="lnb-tag lnb-tag--new">NEW</span></a>
+        <a class="lnb-l2" href="#">편집샵 전개상품 관리<span class="lnb-tag lnb-tag--wip">작업중</span></a>
+      </div>
+    </div>
+    <div class="lnb-item is-active is-open">
+      <button class="lnb-row" type="button" data-nav-toggle>
+        <span class="lnb-icon"><svg viewBox="0 0 24 24"><use href="#ic-nav-hanger"/></svg></span>
+        <span class="lnb-label">상품 관리</span>
+        <span class="lnb-chev"><svg viewBox="0 0 16 16"><use href="#ic-chevronUp16"/></svg></span>
+      </button>
+      <div class="lnb-l2-list">
+        <a class="lnb-l2 is-active" href="sku-management.html">SKU 관리<span class="lnb-tag lnb-tag--new">NEW</span></a>
+        <a class="lnb-l2" href="#">위탁 상품 미매핑 관리<span class="lnb-tag lnb-tag--wip">작업중</span></a>
+      </div>
+    </div>
+    <div class="lnb-item is-open">
+      <button class="lnb-row" type="button" data-nav-toggle>
+        <span class="lnb-icon"><svg viewBox="0 0 24 24"><use href="#ic-nav-order"/></svg></span>
+        <span class="lnb-label">발주/입고 관리</span>
+        <span class="lnb-chev"><svg viewBox="0 0 16 16"><use href="#ic-chevronUp16"/></svg></span>
+      </button>
+      <div class="lnb-l2-list">
+        <a class="lnb-l2" href="#">위탁 상품 입고 승인<span class="lnb-tag lnb-tag--wip">작업중</span></a>
+        <a class="lnb-l2" href="#">위탁 상품 입고 현황<span class="lnb-tag lnb-tag--wip">작업중</span></a>
+        <a class="lnb-l2" href="#">PB 상품 입고 검토<span class="lnb-tag lnb-tag--wip">작업중</span></a>
+        <a class="lnb-l2" href="#">PB 상품 ASN 등록/확정<span class="lnb-tag lnb-tag--wip">작업중</span></a>
+      </div>
+    </div>
+    <div class="lnb-item is-open">
+      <button class="lnb-row" type="button" data-nav-toggle>
+        <span class="lnb-icon"><svg viewBox="0 0 24 24"><use href="#ic-nav-stock"/></svg></span>
+        <span class="lnb-label">재고 관리</span>
+        <span class="lnb-chev"><svg viewBox="0 0 16 16"><use href="#ic-chevronUp16"/></svg></span>
+      </button>
+      <div class="lnb-l2-list">
+        <a class="lnb-l2" href="#">재고내역 조회<span class="lnb-tag lnb-tag--wip">작업중</span></a>
+        <a class="lnb-l2" href="#">재고이동<span class="lnb-tag lnb-tag--wip">작업중</span></a>
+        <a class="lnb-l2" href="#">불량/정상 전환<span class="lnb-tag lnb-tag--wip">작업중</span></a>
+      </div>
+    </div>
+    <div class="lnb-item is-open">
+      <button class="lnb-row" type="button" data-nav-toggle>
+        <span class="lnb-icon"><svg viewBox="0 0 24 24"><use href="#ic-nav-control"/></svg></span>
+        <span class="lnb-label">운영 설정</span>
+        <span class="lnb-chev"><svg viewBox="0 0 16 16"><use href="#ic-chevronUp16"/></svg></span>
+      </button>
+      <div class="lnb-l2-list">
+        <a class="lnb-l2" href="#">수기 재고 조정</a>
+        <a class="lnb-l2" href="#">운영 정책 설정</a>
+      </div>
+    </div>
+    <div class="lnb-item is-open">
+      <button class="lnb-row" type="button" data-nav-toggle>
+        <span class="lnb-icon"><svg viewBox="0 0 24 24"><use href="#ic-nav-setting"/></svg></span>
+        <span class="lnb-label">관리자</span>
+        <span class="lnb-chev"><svg viewBox="0 0 16 16"><use href="#ic-chevronUp16"/></svg></span>
+      </button>
+      <div class="lnb-l2-list">
+        <a class="lnb-l2" href="#">계정 관리</a>
+        <a class="lnb-l2" href="#">권한 관리</a>
+        <a class="lnb-l2" href="#">로그 조회</a>
+      </div>
+    </div>
+  </nav>
+
+  <div>
+    <main class="page">
+      <!-- Page header (back arrow + title) -->
+      <div class="mp-page-head">
+        <button class="mp-back-btn" type="button" aria-label="뒤로 가기" onclick="location.href='sku-management.html'">
+          <svg class="ic"><use href="#ic-arrowLeft"/></svg>
+        </button>
+        <h1 class="mp-page-title">SKU 등록</h1>
+      </div>
+
+      <!-- Info banner — collapsible -->
+      <div class="mp-info-banner" id="reg-info-banner">
+        <svg class="ic"><use href="#ic-alertCircle-filled"/></svg>
+        <div class="mp-info-banner-body">
+          <div class="mp-info-banner-title">신규 SKU 등록 시 주의사항</div>
+          <div class="mp-info-banner-text">
+            기본 정보 설정 : 매입형태, 제조구분, 소유사, 공급사, 행거 사용 여부를 입력합니다.<br/>
+            분리 기준 속성 : 설정한 분리 기준 속성에 따라 SKU를 구분하여 생성해야 합니다.<br/>
+            옵션 조합 SKU 생성 : 상품 옵션 조합 단위로 SKU를 생성할 수 있으며, 대표 SKU명, 표준 카테고리, 스타일넘버, 입수 정보, 옵션 조합을 기준으로 SKU가 생성됩니다.<br/>
+            스타일넘버 : 상품 옵션 구성에 따라 하나의 상품으로 묶거나, 상품 단위로 분리할 수 있는 상품 식별 번호입니다.
+          </div>
+        </div>
+        <button class="toggle" type="button" aria-label="배너 토글" onclick="document.getElementById('reg-info-banner').classList.toggle('is-collapsed')">
+          <svg class="ic"><use href="#ic-chevronUp"/></svg>
+        </button>
+      </div>
+
+      <!-- ============================================================
+           Section 1: 기본 정보 설정 (white card)
+           ============================================================ -->
+      <section class="reg-card">
+        <h2 class="reg-card-title">기본 정보 설정</h2>
+        <div class="reg-card-section">
+          <div class="form-2col">
+            <!-- Left col: 580w -->
+            <div class="col-left">
+              <!-- 매입형태 (disabled, value="매입") -->
+              <div class="form-row">
+                <label class="form-label form-label--w140">
+                  매입형태 <span class="req-dot"></span>
+                </label>
+                <div class="form-control form-control--w320">
+                  <button class="form-select is-disabled" type="button" disabled>
+                    <span class="value">매입</span>
+                    <span class="chev"><svg class="ic"><use href="#ic-chevronDown"/></svg></span>
+                  </button>
+                </div>
+              </div>
+              <!-- 소유사 (disabled, value="무신사") -->
+              <div class="form-row">
+                <label class="form-label form-label--w140">
+                  소유사 <span class="req-dot"></span>
+                </label>
+                <div class="form-control form-control--w320">
+                  <button class="form-select is-disabled" type="button" disabled>
+                    <span class="value">무신사</span>
+                    <span class="chev"><svg class="ic"><use href="#ic-chevronDown"/></svg></span>
+                  </button>
+                </div>
+              </div>
+              <!-- 공급사(ID) (active) -->
+              <div class="form-row">
+                <label class="form-label form-label--w140">
+                  공급사(ID) <span class="req-dot"></span>
+                </label>
+                <div class="form-control form-control--w320">
+                  <button class="form-select" type="button" data-state="filled">
+                    <span class="value">Adidas_korea/adidas/Adidas/(MX) 0382023...</span>
+                    <span class="chev"><svg class="ic"><use href="#ic-chevronDown"/></svg></span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right col: 400w -->
+            <div class="col-right">
+              <div class="form-row">
+                <label class="form-label form-label--w120">
+                  제조구분 <span class="req-dot"></span>
+                </label>
+                <div class="form-control">
+                  <div class="form-radio-group">
+                    <label class="form-radio">
+                      <input type="radio" name="reg-mfg" checked />
+                      <span>완제품 매입</span>
+                    </label>
+                    <label class="form-radio">
+                      <input type="radio" name="reg-mfg" />
+                      <span>자체제작(PB)</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================
+           Section 2+3: SKU 분리 기준 속성 + 옵션 조합 등록 (gray card)
+           ============================================================ -->
+      <section class="reg-card reg-card--gray">
+        <!-- 2-1. SKU 분리 기준 속성 -->
+        <div class="reg-card-section--padded">
+          <h2 class="reg-card-title" style="padding:0 0 16px;">SKU 분리 기준 속성</h2>
+
+          <div class="form-radio-2col">
+            <!-- 상품 컨디션 -->
+            <div class="form-row">
+              <label class="form-label form-label--w140">
+                상품 컨디션 <span class="req-dot"></span>
+              </label>
+              <div class="form-control">
+                <div class="form-radio-group">
+                  <label class="form-radio"><input type="radio" name="reg-cond" checked /><span>신상품</span></label>
+                  <label class="form-radio"><input type="radio" name="reg-cond" /><span>중고</span></label>
+                  <label class="form-radio"><input type="radio" name="reg-cond" /><span>리퍼</span></label>
+                  <label class="form-radio"><input type="radio" name="reg-cond" /><span>전시상품</span></label>
+                </div>
+              </div>
+            </div>
+
+            <!-- 미대상 -->
+            <div class="form-row">
+              <label class="form-label form-label--w140">
+                미대상 <span class="req-dot"></span>
+              </label>
+              <div class="form-control">
+                <div class="form-radio-group">
+                  <label class="form-radio"><input type="radio" name="reg-target" checked /><span>미대상</span></label>
+                  <label class="form-radio"><input type="radio" name="reg-target" /><span>정식 유통</span></label>
+                  <label class="form-radio"><input type="radio" name="reg-target" /><span>병행수입</span></label>
+                </div>
+              </div>
+            </div>
+
+            <!-- 유통/조달 유형 -->
+            <div class="form-row">
+              <label class="form-label form-label--w140">
+                유통/조달 유형 <span class="req-dot"></span>
+              </label>
+              <div class="form-control">
+                <div class="form-radio-group">
+                  <label class="form-radio"><input type="radio" name="reg-distrib" checked /><span>미대상</span></label>
+                  <label class="form-radio"><input type="radio" name="reg-distrib" /><span>공식 인증 상품</span></label>
+                  <label class="form-radio"><input type="radio" name="reg-distrib" /><span>미인증 상품</span></label>
+                </div>
+              </div>
+            </div>
+
+            <!-- 판매단위 -->
+            <div class="form-row">
+              <label class="form-label form-label--w140">
+                판매단위 <span class="req-dot"></span>
+              </label>
+              <div class="form-control">
+                <div class="form-radio-group">
+                  <label class="form-radio"><input type="radio" name="reg-unit" checked /><span>단품</span></label>
+                  <label class="form-radio"><input type="radio" name="reg-unit" /><span>박스</span></label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- separator -->
+        <div class="reg-card-divider"></div>
+
+        <!-- 2-2. 옵션 조합 등록 -->
+        <div class="reg-card-section--padded">
+          <h2 class="reg-card-title" style="padding:0 0 16px;">옵션 조합 등록</h2>
+
+          <div class="form-grid-1200">
+            <!-- 대표 SKU명 (full-width input + char count) -->
+            <div class="form-row">
+              <label class="form-label form-label--w140">
+                대표 SKU명 <span class="req-dot"></span>
+              </label>
+              <div class="form-control form-control--full">
+                <div class="form-input-wrap">
+                  <input class="form-input" type="text" placeholder="입력" />
+                  <span class="char-count">0/100</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 스타일넘버(SKU) -->
+            <div class="form-row">
+              <label class="form-label form-label--w140">
+                스타일넘버(SKU) <span class="req-dot"></span>
+              </label>
+              <div class="form-control form-control--w320">
+                <input class="form-input" type="text" placeholder="입력" />
+              </div>
+            </div>
+
+            <!-- divider -->
+            <div class="reg-card-divider" style="margin:8px 0;"></div>
+
+            <!-- 표준 카테고리 -->
+            <div class="form-row">
+              <label class="form-label form-label--w140">
+                표준 카테고리 <span class="req-dot"></span>
+              </label>
+              <div class="form-control form-control--w320">
+                <button class="form-select" type="button" data-state="placeholder">
+                  <span class="value">선택</span>
+                  <span class="chev"><svg class="ic"><use href="#ic-chevronDown"/></svg></span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 옵션 사용 여부 -->
+            <div class="form-row">
+              <label class="form-label form-label--w140">
+                옵션 사용 여부 <span class="req-dot"></span>
+              </label>
+              <div class="form-control">
+                <div class="form-radio-group">
+                  <label class="form-radio"><input type="radio" name="reg-opt-use" checked /><span>사용함</span></label>
+                  <label class="form-radio"><input type="radio" name="reg-opt-use" /><span>사용안함(단품)</span></label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Indented option-row -->
+            <div class="option-indent">
+              <div class="form-row">
+                <label class="form-label form-label--w60">
+                  옵션 1 <span class="req-dot"></span>
+                </label>
+                <div class="form-control form-control--full">
+                  <div class="option-row-controls">
+                    <input class="form-input" type="text" placeholder="옵션명" disabled style="width:360px;" />
+                    <input class="form-input" type="text" placeholder="옵션값" disabled style="width:360px;" />
+                    <button class="option-btn" type="button" disabled>적용</button>
+                    <button class="option-btn option-btn--add" type="button" disabled>+ 옵션 2 추가</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- separator + 물류/발주 속성 -->
+            <div class="reg-card-divider" style="margin:16px 0 8px;"></div>
+            <div class="reg-subsection-title">물류/발주 속성</div>
+
+            <!-- 소비기한 관리 여부 -->
+            <div class="form-row">
+              <label class="form-label form-label--w140">
+                소비기한 관리 여부 <span class="req-dot"></span>
+              </label>
+              <div class="form-control">
+                <div class="form-radio-group">
+                  <label class="form-radio"><input type="radio" name="reg-expire" checked /><span>사용안함</span></label>
+                  <label class="form-radio"><input type="radio" name="reg-expire" /><span>사용</span></label>
+                </div>
+              </div>
+            </div>
+
+            <!-- 박스 입수(PCS) (disabled, value="1") -->
+            <div class="form-row">
+              <label class="form-label form-label--w140">
+                박스 입수(PCS) <span class="req-dot"></span>
+              </label>
+              <div class="form-control form-control--w320">
+                <input class="form-input" type="text" value="1" disabled />
+              </div>
+            </div>
+
+            <!-- 팔레트 입수(PCS) (no required, disabled, placeholder) -->
+            <div class="form-row">
+              <label class="form-label form-label--w140">
+                팔레트 입수(PCS)
+              </label>
+              <div class="form-control form-control--w320">
+                <input class="form-input" type="text" placeholder="입력" disabled />
+              </div>
+            </div>
+
+            <!-- 행거 사용 여부 -->
+            <div class="form-row">
+              <label class="form-label form-label--w140">
+                행거 사용 여부 <span class="req-dot"></span>
+              </label>
+              <div class="form-control">
+                <div class="form-radio-group">
+                  <label class="form-radio"><input type="radio" name="reg-hanger" checked /><span>사용안함</span></label>
+                  <label class="form-radio"><input type="radio" name="reg-hanger" /><span>사용</span></label>
+                </div>
+              </div>
+            </div>
+
+            <!-- separator + 기타 속성 -->
+            <div class="reg-card-divider" style="margin:16px 0 8px;"></div>
+            <div class="reg-subsection-title">기타 속성</div>
+
+            <!-- 시즌 정보 (no required, disabled) -->
+            <div class="form-row">
+              <label class="form-label form-label--w140">
+                시즌 정보
+              </label>
+              <div class="form-control form-control--w320">
+                <button class="form-select is-disabled" type="button" disabled data-state="placeholder">
+                  <span class="value">선택하세요</span>
+                  <span class="chev"><svg class="ic"><use href="#ic-chevronDown"/></svg></span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 출시연도 -->
+            <div class="form-row">
+              <label class="form-label form-label--w140">
+                출시연도
+              </label>
+              <div class="form-control form-control--w320">
+                <button class="form-select is-disabled" type="button" disabled data-state="placeholder">
+                  <span class="value">선택하세요</span>
+                  <span class="chev"><svg class="ic"><use href="#ic-chevronDown"/></svg></span>
+                </button>
+              </div>
+            </div>
+
+            <!-- separator -->
+            <div class="reg-card-divider" style="margin:16px 0 0;"></div>
+
+            <!-- Action row: + 20개 SKU 추가 / 초기화 -->
+            <div class="reg-action-row">
+              <div class="spacer"></div>
+              <button class="btn-primary-disabled" type="button" disabled>
+                <svg class="ic ic--16"><use href="#ic-plus"/></svg>
+                <span>20개 SKU 추가</span>
+              </button>
+              <button class="btn-outline-disabled" type="button" disabled>
+                <svg class="ic ic--16"><use href="#ic-refresh"/></svg>
+                <span>초기화</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================
+           Section 4: 등록 대기 목록
+           ============================================================ -->
+      <section class="reg-pending">
+        <h2 class="reg-pending-title">등록 대기 목록</h2>
+
+        <!-- Stats row -->
+        <div class="reg-pending-stats">
+          <span class="stat">
+            <span class="label">전체</span>
+            <span class="num">0</span>
+          </span>
+          <span class="stat stat--ok">
+            <span class="mini-cb"><svg viewBox="0 0 10 10"><path d="M2 5L4 7L8 3" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="label">등록 가능</span>
+            <span class="num">0</span>
+          </span>
+          <span class="stat stat--ng">
+            <span class="mini-cb"><svg viewBox="0 0 10 10"><path d="M3 3L7 7M7 3L3 7" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg></span>
+            <span class="label">등록 불가</span>
+            <span class="num">0</span>
+          </span>
+          <span class="v-divider"></span>
+          <button class="mini-action" type="button" disabled>선택 제거</button>
+        </div>
+
+        <!-- Empty state table -->
+        <div class="reg-pending-table-wrap">
+          <table class="reg-pending-table">
+            <colgroup>
+              <col style="width:48px"/>
+              <col style="width:60px"/>
+              <col style="width:200px"/>
+              <col style="width:160px"/>
+              <col style="width:140px"/>
+              <col style="width:160px"/>
+              <col style="width:160px"/>
+              <col style="width:120px"/>
+              <col style="width:160px"/>
+              <col style="width:120px"/>
+              <col style="width:140px"/>
+              <col style="width:140px"/>
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="cb-col">
+                  <span class="mp-cb-placeholder" style="display:inline-block;width:16px;height:16px;border:1px solid #CCCCCC;border-radius:2px;background:#fff;"></span>
+                </th>
+                <th>NO</th>
+                <th>대표 SKU명</th>
+                <th>표준 카테고리</th>
+                <th>스타일넘버(SKU)</th>
+                <th>옵션 정보</th>
+                <th>소유 및 공급주체</th>
+                <th>물류 속성</th>
+                <th>SKU 분리 기준 속성</th>
+                <th>발주 정보</th>
+                <th>기타 정보(선택)</th>
+                <th>바코드(필수)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="12" style="padding:0; border:0;">
+                  <div class="reg-pending-empty">
+                    <span class="icon"><svg viewBox="0 0 20 20"><use href="#ic-alertTriangle"/></svg></span>
+                    <div class="title">목록이 비어 있습니다.</div>
+                    <div class="desc">정보 입력 후 'SKU 추가'를 하면 여기에 표시됩니다.</div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- Bottom action bar -->
+<div class="reg-bottom-bar">
+  <button class="btn btn-cancel" type="button" onclick="location.href='sku-management.html'">취소</button>
+  <button class="btn btn-primary" type="button" disabled>SKU 생성</button>
+</div>
+
+<script>
+  // 데모 페이지 — 인터랙션 최소
+  // info banner 토글 inline 으로 처리됨
+</script>
+
+</body>
+</html>

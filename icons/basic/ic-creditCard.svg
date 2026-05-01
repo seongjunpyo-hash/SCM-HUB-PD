@@ -1,0 +1,32 @@
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="basic/ic-creditCard" clip-path="url(#clip0_3955_1646)">
+<g id="weight=light, filled=false">
+<g id="UIIcon">
+<path id="Vector" d="M3 8H17M12 12.5H15M3.3 15H16.7C16.8657 15 17 14.8657 17 14.7V5.3C17 5.13431 16.8657 5 16.7 5H3.3C3.13431 5 3 5.13431 3 5.3V14.7C3 14.8657 3.13431 15 3.3 15Z" stroke="currentColor"/>
+</g>
+</g>
+<g id="weight=regular, filled=false">
+<g id="UIIcon_2">
+<path id="Vector_2" d="M39 8H53M48 12.5H51M39.3 15H52.7C52.8657 15 53 14.8657 53 14.7V5.3C53 5.13431 52.8657 5 52.7 5H39.3C39.1343 5 39 5.13431 39 5.3V14.7C39 14.8657 39.1343 15 39.3 15Z" stroke="currentColor" stroke-width="1.4"/>
+</g>
+</g>
+<g id="weight=bold, filled=false">
+<g id="UIIcon_3">
+<path id="Vector_3" d="M75 8H89M84 12.5H87M75.3 15H88.7C88.8657 15 89 14.8657 89 14.7V5.3C89 5.13431 88.8657 5 88.7 5H75.3C75.1343 5 75 5.13431 75 5.3V14.7C75 14.8657 75.1343 15 75.3 15Z" stroke="currentColor" stroke-width="2"/>
+</g>
+</g>
+<g id="weight=regular, filled=true">
+<g id="UIIcon_4">
+<g id="Vector_4">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M125.7 8.7002V14.7002C125.7 15.2523 125.252 15.7001 124.7 15.7002H111.3C110.748 15.7001 110.3 15.2523 110.3 14.7002V8.7002H125.7ZM120 13.2002H123V11.7998H120V13.2002Z" fill="currentColor"/>
+<path d="M124.7 4.2998C125.252 4.29991 125.7 4.74767 125.7 5.2998V7.2998H110.3V5.2998C110.3 4.74768 110.748 4.29991 111.3 4.2998H124.7Z" fill="currentColor"/>
+</g>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_3955_1646">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+</defs>
+</svg>

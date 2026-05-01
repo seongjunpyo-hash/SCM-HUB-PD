@@ -1,0 +1,41 @@
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="basic/ic-arrowRightLeft" clip-path="url(#clip0_2027_779)">
+<g id="weight=light, filled=false" clip-path="url(#clip1_2027_779)">
+<g id="UIIcon">
+<path id="Vector" d="M16.6667 14.1667H3.33337M3.33337 14.1667L6.66671 10.8333M3.33337 14.1667L6.66671 17.5M3.33337 5.83333H16.6667M16.6667 5.83333L13.3334 2.5M16.6667 5.83333L13.3334 9.16667" stroke="currentColor" stroke-linejoin="round"/>
+</g>
+</g>
+<g id="weight=regular, filled=false" clip-path="url(#clip2_2027_779)">
+<g id="UIIcon_2">
+<path id="Vector_2" d="M52.6667 14.1667H39.3334M39.3334 14.1667L42.6667 10.8333M39.3334 14.1667L42.6667 17.5M39.3334 5.83333H52.6667M52.6667 5.83333L49.3334 2.5M52.6667 5.83333L49.3334 9.16667" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+</g>
+</g>
+<g id="weight=bold, filled=false" clip-path="url(#clip3_2027_779)">
+<g id="UIIcon_3">
+<path id="Vector_3" d="M88.6667 14.1667H75.3334M75.3334 14.1667L78.6667 10.8333M75.3334 14.1667L78.6667 17.5M75.3334 5.83333H88.6667M88.6667 5.83333L85.3334 2.5M88.6667 5.83333L85.3334 9.16667" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+</g>
+</g>
+<g id="weight=regular, filled=true" clip-path="url(#clip4_2027_779)">
+<g id="UIIcon_4">
+<path id="Vector_4" d="M115.161 11.3767L113.024 13.5936H124.666V15.0441H113.023L115.161 17.261L114.171 18.2875L110.838 14.8326C110.565 14.5493 110.565 14.0895 110.838 13.8061L114.171 10.3502L115.161 11.3767ZM125.161 5.16742C125.293 5.30342 125.366 5.48832 125.367 5.68064C125.367 5.87308 125.293 6.05779 125.161 6.19386L121.828 9.64975L120.838 8.62331L122.976 6.40644H111.333V4.95585H122.977L120.838 2.73898L121.828 1.71254L125.161 5.16742Z" fill="currentColor"/>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_2027_779">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+<clipPath id="clip1_2027_779">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+<clipPath id="clip2_2027_779">
+<rect width="20" height="20" fill="white" transform="translate(36)"/>
+</clipPath>
+<clipPath id="clip3_2027_779">
+<rect width="20" height="20" fill="white" transform="translate(72)"/>
+</clipPath>
+<clipPath id="clip4_2027_779">
+<rect width="20" height="20" fill="white" transform="translate(108)"/>
+</clipPath>
+</defs>
+</svg>
