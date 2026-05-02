@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>초대 수락 · SCM HUB</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <style>
+    :root {
+      --bg:#0E0E14; --surface:#15151D; --surface-h:#1B1B25; --line:#25252F; --line-2:#34344A;
+      --fg:#FFFFFF; --fg-mute:rgba(255,255,255,0.62); --fg-dim:rgba(255,255,255,0.40);
+      --accent:#6E6BFF; --accent-bg:rgba(110,107,255,0.14); --error:#FF6B6B; --success:#10B981;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin:0; padding:0; height:100%; }
+    body {
+      background: var(--bg); color: var(--fg);
+      font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+      letter-spacing: -0.01em;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 48px 44px;
+      width: 460px;
+      max-width: calc(100vw - 32px);
+    }
+    .brand { font-size: 20px; font-weight: 800; letter-spacing: 1.5px; text-align: center; margin-bottom: 8px; }
+    .eyebrow {
+      font-size: 11px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;
+      color: var(--accent); text-align: center; margin-bottom: 28px;
+    }
+    h1 { font-size: 22px; font-weight: 700; margin: 0 0 8px; text-align: center; letter-spacing: -0.3px; }
+    .sub { font-size: 13px; color: var(--fg-mute); text-align: center; margin-bottom: 28px; line-height: 1.6; }
+    .info {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 24px;
+      font-size: 13px;
+    }
+    .info__row { display: flex; justify-content: space-between; align-items: center; }
+    .info__row + .info__row { margin-top: 8px; }
+    .info__label { color: var(--fg-mute); }
+    .info__val { color: var(--fg); font-weight: 600; }
+    .badge {
+      display: inline-block; padding: 3px 10px; border-radius: 999px;
+      background: var(--accent-bg); color: var(--accent);
+      font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 12px; color: var(--fg-mute); margin-bottom: 8px; font-weight: 600; }
+    .field input {
+      width: 100%; height: 48px; padding: 0 16px;
+      background: var(--bg); border: 1px solid var(--line); border-radius: 10px;
+      color: var(--fg); font-size: 14px; font-family: inherit;
+      transition: border-color 0.15s;
+    }
+    .field input:focus { outline: none; border-color: var(--accent); }
+    .hint { font-size: 11px; color: var(--fg-dim); margin-top: 6px; line-height: 1.4; }
+    .btn {
+      width: 100%; height: 48px; margin-top: 12px;
+      background: var(--accent); color: #fff; border: 0; border-radius: 10px;
+      font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+      transition: background 0.15s;
+    }
+    .btn:hover { background: #8784ff; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .msg { margin-top: 16px; padding: 12px 14px; border-radius: 10px; font-size: 13px; line-height: 1.5; display: none; }
+    .msg--error { background: rgba(255,107,107,0.12); color: var(--error); border: 1px solid rgba(255,107,107,0.3); }
+    .msg--success { background: rgba(16,185,129,0.12); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
+    .msg.show { display: block; }
+    .footer { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--line); text-align: center; font-size: 11px; color: var(--fg-dim); }
+    a.link { color: var(--accent); text-decoration: none; }
+    a.link:hover { text-decoration: underline; }
+    .center { text-align: center; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="brand">MUSINSA</div>
+    <div class="eyebrow">PBO Product Design</div>
+    <h1>초대 수락</h1>
+    <p class="sub">비밀번호를 설정하고 SCM HUB 계정을 활성화하세요.</p>
+
+    <div id="loadingBox" class="sub center">초대 정보 확인 중...</div>
+
+    <div id="errorBox" class="msg msg--error" style="display:none;"></div>
+
+    <div id="formBox" style="display:none;">
+      <div class="info">
+        <div class="info__row"><span class="info__label">이메일</span><span class="info__val" id="userEmail">—</span></div>
+        <div class="info__row"><span class="info__label">이름</span><span class="info__val" id="userName">—</span></div>
+        <div class="info__row"><span class="info__label">역할</span><span class="info__val"><span class="badge" id="userRole">—</span></span></div>
+      </div>
+      <form id="form">
+        <div class="field">
+          <label for="password">비밀번호</label>
+          <input id="password" type="password" required minlength="8" placeholder="8자 이상" autocomplete="new-password" />
+          <div class="hint">8자 이상. 영문 + 숫자 + 기호 조합 권장.</div>
+        </div>
+        <div class="field">
+          <label for="password2">비밀번호 확인</label>
+          <input id="password2" type="password" required minlength="8" placeholder="다시 입력" autocomplete="new-password" />
+        </div>
+        <button type="submit" class="btn" id="submit">계정 활성화</button>
+        <div class="msg msg--error" id="formErr"></div>
+      </form>
+    </div>
+
+    <div id="successBox" style="display:none;" class="center">
+      <div class="msg msg--success show" style="text-align:left;">
+        계정이 활성화되었습니다. 이제 로그인할 수 있어요.
+      </div>
+      <p style="margin-top:24px;">
+        <a class="link" href="/login.html">로그인 페이지로 이동 →</a>
+      </p>
+    </div>
+
+    <div class="footer">SCM HUB Workspace · Internal</div>
+  </main>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+
+    const loadingBox = document.getElementById('loadingBox');
+    const errorBox = document.getElementById('errorBox');
+    const formBox = document.getElementById('formBox');
+    const successBox = document.getElementById('successBox');
+    const formErr = document.getElementById('formErr');
+
+    function showError(msg) {
+      loadingBox.style.display = 'none';
+      errorBox.textContent = msg;
+      errorBox.style.display = 'block';
+    }
+
+    if (!token) {
+      showError('초대 토큰이 없습니다. 초대 메일의 링크를 다시 확인해 주세요.');
+    } else {
+      // Verify the token
+      fetch('/api/invite/' + encodeURIComponent(token))
+        .then(async (r) => {
+          const data = await r.json();
+          if (!r.ok) {
+            const m =
+              data.error === 'invalid_token' ? '유효하지 않은 초대 링크입니다.' :
+              data.error === 'expired' ? '초대 링크가 만료되었습니다. 초대해 주신 분께 재발급을 요청하세요.' :
+              '초대 확인 실패: ' + (data.error || r.status);
+            showError(m);
+            return;
+          }
+          loadingBox.style.display = 'none';
+          formBox.style.display = 'block';
+          document.getElementById('userEmail').textContent = data.email || '—';
+          document.getElementById('userName').textContent = data.name || '—';
+          document.getElementById('userRole').textContent = data.role || '—';
+        })
+        .catch((e) => showError('네트워크 오류: ' + (e.message || e)));
+    }
+
+    document.getElementById('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      formErr.classList.remove('show');
+      const pw = document.getElementById('password').value;
+      const pw2 = document.getElementById('password2').value;
+      if (pw.length < 8) {
+        formErr.textContent = '비밀번호는 8자 이상이어야 합니다.';
+        formErr.classList.add('show');
+        return;
+      }
+      if (pw !== pw2) {
+        formErr.textContent = '두 번 입력한 비밀번호가 일치하지 않습니다.';
+        formErr.classList.add('show');
+        return;
+      }
+      const submit = document.getElementById('submit');
+      submit.disabled = true; submit.textContent = '활성화 중...';
+      try {
+        const r = await fetch('/api/invite/accept', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, password: pw }),
+        });
+        const data = await r.json();
+        if (!r.ok) {
+          formErr.textContent = data.error === 'invalid_or_expired'
+            ? '초대가 만료되었거나 이미 사용되었습니다.'
+            : '활성화 실패: ' + (data.error || r.status);
+          formErr.classList.add('show');
+          submit.disabled = false; submit.textContent = '계정 활성화';
+          return;
+        }
+        formBox.style.display = 'none';
+        successBox.style.display = 'block';
+      } catch (err) {
+        formErr.textContent = '네트워크 오류: ' + (err.message || err);
+        formErr.classList.add('show');
+        submit.disabled = false; submit.textContent = '계정 활성화';
+      }
+    });
+  </script>
+</body>
+</html>

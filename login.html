@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>로그인 · SCM HUB</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <style>
+    :root {
+      --bg:#0E0E14; --surface:#15151D; --surface-h:#1B1B25; --line:#25252F; --line-2:#34344A;
+      --fg:#FFFFFF; --fg-mute:rgba(255,255,255,0.62); --fg-dim:rgba(255,255,255,0.40);
+      --accent:#6E6BFF; --accent-bg:rgba(110,107,255,0.14); --error:#FF6B6B;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin:0; padding:0; height:100%; }
+    body {
+      background: var(--bg); color: var(--fg);
+      font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+      letter-spacing: -0.01em;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 48px 44px;
+      width: 420px;
+      max-width: calc(100vw - 32px);
+    }
+    .brand {
+      font-size: 20px; font-weight: 800; letter-spacing: 1.5px;
+      text-align: center; margin-bottom: 8px;
+    }
+    .eyebrow {
+      font-size: 11px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;
+      color: var(--accent); text-align: center; margin-bottom: 36px;
+    }
+    h1 { font-size: 24px; font-weight: 700; margin: 0 0 28px; text-align: center; letter-spacing: -0.3px; }
+    .field { margin-bottom: 16px; }
+    .field label {
+      display: block; font-size: 12px; color: var(--fg-mute); margin-bottom: 8px; font-weight: 600;
+    }
+    .field input {
+      width: 100%; height: 48px; padding: 0 16px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: var(--fg); font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.15s;
+    }
+    .field input:focus { outline: none; border-color: var(--accent); }
+    .field input::placeholder { color: var(--fg-dim); }
+    .btn {
+      width: 100%; height: 48px; margin-top: 12px;
+      background: var(--accent); color: #fff;
+      border: 0; border-radius: 10px;
+      font-size: 14px; font-weight: 600; letter-spacing: 0.2px;
+      cursor: pointer; font-family: inherit;
+      transition: background 0.15s;
+    }
+    .btn:hover { background: #8784ff; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .msg {
+      margin-top: 16px; padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 13px; line-height: 1.5;
+      display: none;
+    }
+    .msg--error { background: rgba(255,107,107,0.12); color: var(--error); border: 1px solid rgba(255,107,107,0.3); }
+    .msg.show { display: block; }
+    .footer {
+      margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--line);
+      text-align: center;
+      font-size: 11px; color: var(--fg-dim);
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="brand">MUSINSA</div>
+    <div class="eyebrow">PBO Product Design</div>
+    <h1>SCM HUB 로그인</h1>
+    <form id="form" autocomplete="on">
+      <div class="field">
+        <label for="email">이메일</label>
+        <input id="email" name="email" type="email" required autocomplete="username" placeholder="you@musinsa.com" />
+      </div>
+      <div class="field">
+        <label for="password">비밀번호</label>
+        <input id="password" name="password" type="password" required autocomplete="current-password" placeholder="••••••••" />
+      </div>
+      <button class="btn" type="submit" id="submit">로그인</button>
+      <div class="msg msg--error" id="errMsg"></div>
+    </form>
+    <div class="footer">SCM HUB Workspace · Internal</div>
+  </main>
+
+  <script>
+    const form = document.getElementById('form');
+    const submit = document.getElementById('submit');
+    const errMsg = document.getElementById('errMsg');
+    const params = new URLSearchParams(location.search);
+    const next = params.get('next') || '/';
+
+    // If already logged in, redirect
+    fetch('/api/auth/me', { credentials: 'same-origin' })
+      .then((r) => r.json())
+      .then((d) => { if (d.user) location.replace(next); })
+      .catch(() => {});
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errMsg.classList.remove('show');
+      submit.disabled = true;
+      submit.textContent = '로그인 중...';
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      try {
+        const r = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await r.json();
+        if (!r.ok) {
+          errMsg.textContent = data.error === 'invalid_credentials'
+            ? '이메일 또는 비밀번호가 올바르지 않습니다.'
+            : (data.error || '로그인 실패');
+          errMsg.classList.add('show');
+          submit.disabled = false;
+          submit.textContent = '로그인';
+          return;
+        }
+        location.replace(next);
+      } catch (err) {
+        errMsg.textContent = '네트워크 오류: ' + (err.message || err);
+        errMsg.classList.add('show');
+        submit.disabled = false;
+        submit.textContent = '로그인';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -41,7 +41,23 @@
     }
     .top__brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; font-size: 24px; color: var(--fg); letter-spacing: 1.5px; }
     .top__beta { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--accent-bg); color: var(--accent); font-weight: 700; letter-spacing: 0.6px; }
+    .top__right { display: inline-flex; align-items: center; gap: 12px; }
     .top__user { font-size: 13px; color: var(--fg-mute); }
+    .top__role {
+      display: inline-block; padding: 3px 10px; border-radius: 999px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+      background: var(--accent-bg); color: var(--accent);
+    }
+    .top__link {
+      font-size: 12px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px;
+      color: var(--fg-mute); transition: all 0.15s;
+    }
+    .top__link:hover { color: var(--fg); border-color: var(--line-2); }
+    .top__logout {
+      font-size: 12px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px;
+      background: transparent; color: var(--fg-mute); cursor: pointer; font-family: inherit; transition: all 0.15s;
+    }
+    .top__logout:hover { color: var(--fg); border-color: var(--line-2); }
 
     .hero { padding: 80px 0 64px; text-align: center; }
     .hero__eyebrow { font-size: 20px; font-weight: 800; letter-spacing: 2.2px; text-transform: uppercase; color: var(--accent); }
@@ -118,7 +134,12 @@
 
     <header class="top">
       <span class="top__brand">MUSINSA</span>
-      <span class="top__user">seongjun.pyo@musinsa.com</span>
+      <span class="top__right" id="topRight">
+        <span class="top__user" id="topUser">—</span>
+        <span class="top__role" id="topRole" style="display:none;">—</span>
+        <a class="top__link" id="topAdmin" href="/admin/accounts.html" style="display:none;">계정 관리</a>
+        <button class="top__logout" id="topLogout">로그아웃</button>
+      </span>
     </header>
 
     <section class="hero">
@@ -173,5 +194,37 @@
     </footer>
 
   </div>
+
+  <script>
+    // Auth gate: redirect to /login.html if not signed in.
+    (async () => {
+      try {
+        const r = await fetch('/api/auth/me', { credentials: 'same-origin' });
+        const data = await r.json();
+        if (!data.user) {
+          location.replace('/login.html?next=' + encodeURIComponent(location.pathname));
+          return;
+        }
+        const u = data.user;
+        document.getElementById('topUser').textContent = u.email;
+        const roleEl = document.getElementById('topRole');
+        roleEl.textContent = u.role;
+        roleEl.style.display = '';
+        if (u.role === 'super' || u.role === 'admin') {
+          document.getElementById('topAdmin').style.display = '';
+        }
+      } catch (e) {
+        // network error; let user retry instead of looping redirects
+        document.getElementById('topUser').textContent = '연결 오류';
+      }
+    })();
+
+    document.getElementById('topLogout').addEventListener('click', async () => {
+      try {
+        await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+      } catch {}
+      location.replace('/login.html');
+    });
+  </script>
 </body>
 </html>

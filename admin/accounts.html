@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>계정 관리 · SCM HUB</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <style>
+    :root {
+      --bg:#0E0E14; --surface:#15151D; --surface-h:#1B1B25; --line:#25252F; --line-2:#34344A;
+      --fg:#FFFFFF; --fg-mute:rgba(255,255,255,0.62); --fg-dim:rgba(255,255,255,0.40);
+      --accent:#6E6BFF; --accent-bg:rgba(110,107,255,0.14);
+      --error:#FF6B6B; --success:#10B981; --warn:#F59E0B;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin:0; padding:0; }
+    body {
+      background: var(--bg); color: var(--fg);
+      font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+      letter-spacing: -0.01em;
+      min-height: 100vh; min-width: 1200px;
+    }
+    a { color: inherit; text-decoration: none; }
+
+    .shell { max-width: 1280px; margin: 0 auto; padding: 32px 48px 96px; }
+    .top { display: flex; align-items: center; justify-content: space-between; padding: 8px 0 32px; }
+    .top__brand { font-weight: 800; font-size: 18px; letter-spacing: 1.2px; }
+    .top__right { display:flex; align-items:center; gap: 16px; font-size: 13px; color: var(--fg-mute); }
+    .top__back {
+      font-size: 12px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--fg-mute);
+    }
+    .top__back:hover { border-color: var(--line-2); color: var(--fg); }
+    .logout {
+      font-size: 12px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px;
+      background: transparent; color: var(--fg-mute); cursor: pointer; font-family: inherit;
+    }
+    .logout:hover { border-color: var(--line-2); color: var(--fg); }
+
+    h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.4px; margin: 0 0 6px; }
+    .sub { color: var(--fg-mute); font-size: 13px; line-height: 1.6; margin: 0 0 24px; }
+
+    .toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+      margin-bottom: 18px;
+    }
+    .stats { display: flex; gap: 24px; font-size: 13px; color: var(--fg-mute); }
+    .stats b { color: var(--fg); margin-left: 4px; }
+    .btn {
+      padding: 9px 16px; border-radius: 10px; border: 0; cursor: pointer;
+      font-family: inherit; font-size: 13px; font-weight: 600;
+      transition: all 0.15s;
+    }
+    .btn--primary { background: var(--accent); color: #fff; }
+    .btn--primary:hover { background: #8784ff; }
+    .btn--ghost { background: transparent; color: var(--fg-mute); border: 1px solid var(--line); }
+    .btn--ghost:hover { color: var(--fg); border-color: var(--line-2); }
+    .btn--danger { background: transparent; color: var(--error); border: 1px solid rgba(255,107,107,0.4); }
+    .btn--danger:hover { background: rgba(255,107,107,0.1); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+    th, td { text-align: left; padding: 14px 16px; font-size: 13px; }
+    thead th { background: var(--surface-h); color: var(--fg-mute); font-weight: 600; font-size: 11px; letter-spacing: 0.6px; text-transform: uppercase; border-bottom: 1px solid var(--line); }
+    tbody tr { border-top: 1px solid var(--line); }
+    tbody tr:hover { background: rgba(255,255,255,0.02); }
+    td.email { font-weight: 500; }
+    td.actions { text-align: right; white-space: nowrap; }
+    .role-badge {
+      display: inline-block; padding: 3px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .role-super { background: rgba(245,158,11,0.16); color: var(--warn); }
+    .role-admin { background: var(--accent-bg); color: var(--accent); }
+    .role-biz { background: rgba(16,185,129,0.16); color: var(--success); }
+    .role-internal { background: rgba(255,255,255,0.08); color: var(--fg-mute); }
+    .status {
+      display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--fg-mute);
+    }
+    .status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
+    .status--inactive { color: var(--fg-dim); }
+    .status--inactive::before { background: var(--fg-dim); }
+    .status--pending { color: var(--warn); }
+    .status--pending::before { background: var(--warn); }
+    .meta { color: var(--fg-dim); font-size: 11px; }
+
+    /* Modal */
+    .modal-back {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px);
+      display: none; align-items: center; justify-content: center; z-index: 100;
+    }
+    .modal-back.show { display: flex; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+      width: 460px; max-width: calc(100vw - 32px); padding: 32px;
+    }
+    .modal h2 { font-size: 20px; font-weight: 700; margin: 0 0 6px; letter-spacing: -0.3px; }
+    .modal .sub { margin-bottom: 24px; }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 12px; color: var(--fg-mute); margin-bottom: 6px; font-weight: 600; }
+    .field input, .field select {
+      width: 100%; height: 42px; padding: 0 12px;
+      background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+      color: var(--fg); font-size: 13px; font-family: inherit;
+    }
+    .field input:focus, .field select:focus { outline: none; border-color: var(--accent); }
+    .modal-row { display: flex; gap: 8px; margin-top: 24px; justify-content: flex-end; }
+    .msg { margin-top: 12px; padding: 10px 12px; border-radius: 8px; font-size: 12px; line-height: 1.5; display: none; }
+    .msg--error { background: rgba(255,107,107,0.12); color: var(--error); }
+    .msg--success { background: rgba(16,185,129,0.12); color: var(--success); }
+    .msg.show { display: block; }
+
+    .empty { text-align: center; padding: 64px 0; color: var(--fg-dim); font-size: 13px; }
+    #loadingMsg { padding: 32px; text-align: center; color: var(--fg-mute); }
+    #accessDenied { padding: 64px 0; text-align: center; color: var(--fg-mute); display: none; }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="top">
+      <span class="top__brand">SCM HUB · Admin</span>
+      <div class="top__right">
+        <a class="top__back" href="/">← 워크스페이스</a>
+        <span id="meEmail">—</span>
+        <span class="role-badge" id="meRole">—</span>
+        <button class="logout" id="logoutBtn">로그아웃</button>
+      </div>
+    </header>
+
+    <h1>계정 관리</h1>
+    <p class="sub">사용자 초대, 역할 변경, 비활성화 / 삭제 등을 관리합니다.</p>
+
+    <div id="accessDenied">
+      <p>이 페이지를 볼 권한이 없습니다.</p>
+      <p style="margin-top:12px;"><a href="/" style="color:var(--accent);">메인으로 →</a></p>
+    </div>
+
+    <div id="content" style="display:none;">
+      <div class="toolbar">
+        <div class="stats">
+          <span>전체 <b id="cntAll">0</b></span>
+          <span>활성 <b id="cntActive">0</b></span>
+          <span>대기 <b id="cntPending">0</b></span>
+          <span>비활성 <b id="cntInactive">0</b></span>
+        </div>
+        <button class="btn btn--primary" id="inviteBtn">+ 사용자 초대</button>
+      </div>
+
+      <div id="loadingMsg">불러오는 중...</div>
+      <table id="tbl" style="display:none;">
+        <thead>
+          <tr>
+            <th>이메일</th>
+            <th>이름</th>
+            <th>역할</th>
+            <th>상태</th>
+            <th>최근 로그인</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="empty" id="emptyMsg" style="display:none;">아직 등록된 사용자가 없습니다.</div>
+    </div>
+  </div>
+
+  <!-- Invite modal -->
+  <div class="modal-back" id="modal">
+    <div class="modal">
+      <h2>사용자 초대</h2>
+      <p class="sub">이메일로 초대 링크를 발송합니다. 받은 사람이 비밀번호를 설정하면 활성화됩니다.</p>
+      <form id="inviteForm">
+        <div class="field">
+          <label>이메일 *</label>
+          <input id="invEmail" type="email" required placeholder="user@musinsa.com" />
+        </div>
+        <div class="field">
+          <label>이름 (선택)</label>
+          <input id="invName" type="text" placeholder="홍길동" />
+        </div>
+        <div class="field">
+          <label>역할 *</label>
+          <select id="invRole" required>
+            <!-- populated based on actor role -->
+          </select>
+        </div>
+        <div class="msg msg--error" id="invErr"></div>
+        <div class="modal-row">
+          <button type="button" class="btn btn--ghost" id="cancelInvite">취소</button>
+          <button type="submit" class="btn btn--primary" id="submitInvite">초대 발송</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let me = null;
+
+    const $ = (id) => document.getElementById(id);
+
+    async function api(path, opts = {}) {
+      const r = await fetch(path, {
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        ...opts,
+      });
+      const data = await r.json().catch(() => ({}));
+      return { ok: r.ok, status: r.status, data };
+    }
+
+    function roleBadge(role) {
+      return `<span class="role-badge role-${role}">${role}</span>`;
+    }
+
+    function fmtTime(ts) {
+      if (!ts) return '—';
+      const d = new Date(ts * 1000);
+      return d.toLocaleString('ko-KR', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+    }
+
+    // ===== load me + gate =====
+    (async () => {
+      const meRes = await api('/api/auth/me');
+      const u = meRes.data?.user;
+      if (!u) { location.replace('/login.html?next=' + encodeURIComponent(location.pathname)); return; }
+      me = u;
+      $('meEmail').textContent = u.email;
+      $('meRole').textContent = u.role;
+      $('meRole').className = 'role-badge role-' + u.role;
+
+      if (!['super','admin'].includes(u.role)) {
+        $('accessDenied').style.display = 'block';
+        return;
+      }
+
+      $('content').style.display = 'block';
+      // populate role dropdown based on actor role
+      const sel = $('invRole');
+      const allowed = u.role === 'super' ? ['super','admin','biz','internal'] : ['biz','internal'];
+      sel.innerHTML = allowed.map(r => `<option value="${r}">${r}</option>`).join('');
+
+      await loadUsers();
+    })();
+
+    async function loadUsers() {
+      const res = await api('/api/users');
+      $('loadingMsg').style.display = 'none';
+      if (!res.ok) {
+        $('loadingMsg').style.display = 'block';
+        $('loadingMsg').textContent = '불러오기 실패: ' + (res.data?.error || res.status);
+        return;
+      }
+      const users = res.data.users || [];
+
+      $('cntAll').textContent = users.length;
+      $('cntActive').textContent = users.filter(u => u.is_active && !u.pending_invite).length;
+      $('cntPending').textContent = users.filter(u => u.pending_invite).length;
+      $('cntInactive').textContent = users.filter(u => !u.is_active).length;
+
+      const tbody = $('tbody');
+      const tbl = $('tbl');
+      const empty = $('emptyMsg');
+      if (users.length === 0) {
+        tbl.style.display = 'none'; empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none'; tbl.style.display = 'table';
+
+      tbody.innerHTML = users.map(u => {
+        const isMe = u.id === me.id;
+        const canDel = !isMe && (
+          me.role === 'super' ||
+          (me.role === 'admin' && ['biz','internal'].includes(u.role))
+        );
+        const canToggle = canDel;
+        const status = u.pending_invite
+          ? '<span class="status status--pending">대기</span>'
+          : (u.is_active
+              ? '<span class="status">활성</span>'
+              : '<span class="status status--inactive">비활성</span>');
+        const meTag = isMe ? '<span class="meta"> (나)</span>' : '';
+        return `
+        <tr>
+          <td class="email">${escapeHtml(u.email)}${meTag}</td>
+          <td>${escapeHtml(u.name || '—')}</td>
+          <td>${roleBadge(u.role)}</td>
+          <td>${status}</td>
+          <td><span class="meta">${fmtTime(u.last_login_at)}</span></td>
+          <td class="actions">
+            ${canToggle ? `<button class="btn btn--ghost" data-act="toggle" data-id="${u.id}" data-active="${u.is_active}">${u.is_active ? '비활성화' : '활성화'}</button>` : ''}
+            ${canDel ? `<button class="btn btn--danger" data-act="delete" data-id="${u.id}" data-email="${escapeHtml(u.email)}" style="margin-left:6px;">삭제</button>` : ''}
+          </td>
+        </tr>`;
+      }).join('');
+
+      tbody.querySelectorAll('button[data-act]').forEach(btn => {
+        btn.addEventListener('click', onAction);
+      });
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, (c) => ({
+        '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+      }[c]));
+    }
+
+    async function onAction(e) {
+      const btn = e.currentTarget;
+      const id = btn.dataset.id;
+      const act = btn.dataset.act;
+      if (act === 'delete') {
+        const email = btn.dataset.email;
+        if (!confirm(`정말 ${email} 계정을 삭제하시겠습니까?\n\n삭제하면 복구할 수 없으며 모든 세션이 끊깁니다.`)) return;
+        btn.disabled = true;
+        const res = await api('/api/users/' + id, { method: 'DELETE' });
+        if (!res.ok) { alert('삭제 실패: ' + (res.data?.error || res.status)); btn.disabled = false; return; }
+        await loadUsers();
+      } else if (act === 'toggle') {
+        const isActive = btn.dataset.active === '1' || btn.dataset.active === 'true';
+        btn.disabled = true;
+        const res = await api('/api/users/' + id, {
+          method: 'PATCH',
+          body: JSON.stringify({ is_active: !isActive }),
+        });
+        if (!res.ok) { alert('변경 실패: ' + (res.data?.error || res.status)); btn.disabled = false; return; }
+        await loadUsers();
+      }
+    }
+
+    // ===== Logout =====
+    $('logoutBtn').addEventListener('click', async () => {
+      await api('/api/auth/logout', { method: 'POST' });
+      location.replace('/login.html');
+    });
+
+    // ===== Invite modal =====
+    $('inviteBtn').addEventListener('click', () => {
+      $('invErr').classList.remove('show');
+      $('invEmail').value = ''; $('invName').value = '';
+      $('modal').classList.add('show');
+      setTimeout(() => $('invEmail').focus(), 50);
+    });
+    $('cancelInvite').addEventListener('click', () => $('modal').classList.remove('show'));
+    $('modal').addEventListener('click', (e) => { if (e.target === $('modal')) $('modal').classList.remove('show'); });
+
+    $('inviteForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submit = $('submitInvite');
+      submit.disabled = true; submit.textContent = '발송 중...';
+      $('invErr').classList.remove('show');
+      const body = {
+        email: $('invEmail').value.trim(),
+        name: $('invName').value.trim() || null,
+        role: $('invRole').value,
+      };
+      const res = await api('/api/users', { method: 'POST', body: JSON.stringify(body) });
+      submit.disabled = false; submit.textContent = '초대 발송';
+      if (!res.ok) {
+        const m = res.data?.error === 'email_exists' ? '이미 등록된 이메일입니다.' :
+                  res.data?.error === 'forbidden' ? '해당 역할로 초대할 권한이 없습니다.' :
+                  '초대 실패: ' + (res.data?.error || res.status);
+        $('invErr').textContent = m; $('invErr').classList.add('show');
+        return;
+      }
+      $('modal').classList.remove('show');
+      const emailStatus = res.data?.email?.status;
+      if (emailStatus === 'failed') {
+        const inviteUrl = res.data?.invite?.url || '';
+        prompt(
+          `초대 등록은 됐으나 메일 발송이 실패했습니다. 아래 링크를 직접 전달하세요:\n(${res.data?.email?.error || ''})`,
+          inviteUrl
+        );
+      } else {
+        alert('초대 메일을 발송했습니다.');
+      }
+      await loadUsers();
+    });
+  </script>
+</body>
+</html>
