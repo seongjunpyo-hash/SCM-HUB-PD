@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=1440" />
   <title>SCM-Hub · 편집샵 재고 보충 요청 (모듈 기반)</title>
+  <script src="/auth-gate.js"></script>
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
   <link rel="stylesheet" href="../design%20system/layer-desktop.css" />
@@ -942,8 +943,7 @@
       rootEl: document.getElementById('filter-popover-root'),
       filterBarEl: document.getElementById('filter-bar'),
       onSearch: () => {
-        const n = applyDataFilterER();
-        if (SCM.toast) SCM.toast.show({ variant: 'info', title: '필터 적용 완료', desc: n + '건' });
+        applyDataFilterER();
       },
       onReset: () => {
         applyDataFilterER();

@@ -461,7 +461,7 @@
  * 초기화 버튼 위 line / 마진 모두 제거 — 콘텐츠 영역 바로 다음에 부착. */
 .scm-filter-popover__footer {
   align-self: stretch;
-  padding: 12px 12px 0;       /* 하단 0 — popover 자체 padding-bottom 으로만 12px 확보해 우측 margin 과 동일하게 맞춤 */
+  padding: 0 12px;            /* 위/아래 0 — popover 자체 padding 으로만 여백 확보해 우측 margin 과 동일하게 맞춤 */
   display: flex;
   align-items: center;
   justify-content: flex-end;

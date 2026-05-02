@@ -263,6 +263,7 @@
     </div>
   </div>
 
+  <script src="/auth-gate.js"></script>
   <script>
     let me = null;
 
@@ -288,11 +289,9 @@
       return d.toLocaleString('ko-KR', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
     }
 
-    // ===== load me + gate =====
-    (async () => {
-      const meRes = await api('/api/auth/me');
-      const u = meRes.data?.user;
-      if (!u) { location.replace('/login.html?next=' + encodeURIComponent(location.pathname)); return; }
+    // ===== auth-gate 가 인증 체크 후 scm:auth-ready 이벤트 발생 =====
+    document.addEventListener('scm:auth-ready', async (ev) => {
+      const u = ev.detail.user;
       me = u;
       $('meEmail').textContent = u.email;
       $('meRole').textContent = u.role;
@@ -302,6 +301,10 @@
         $('accessDenied').style.display = 'block';
         return;
       }
+      await initContent();
+    });
+    async function initContent() {
+      const u = me;
 
       $('content').style.display = 'block';
       // populate role dropdown based on actor role
@@ -310,7 +313,7 @@
       sel.innerHTML = allowed.map(r => `<option value="${r}">${r}</option>`).join('');
 
       await loadUsers();
-    })();
+    }
 
     async function loadUsers() {
       const res = await api('/api/users');
@@ -411,10 +414,7 @@
     }
 
     // ===== Logout =====
-    $('logoutBtn').addEventListener('click', async () => {
-      await api('/api/auth/logout', { method: 'POST' });
-      location.replace('/login.html');
-    });
+    $('logoutBtn').addEventListener('click', () => SCM.logout());
 
     // ===== Change password modal =====
     function resetPwForm() {

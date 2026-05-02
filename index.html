@@ -201,37 +201,20 @@
 
   </div>
 
+  <script src="/auth-gate.js"></script>
   <script>
-    // Auth gate: redirect to /login.html if not signed in.
-    (async () => {
-      try {
-        const r = await fetch('/api/auth/me', { credentials: 'same-origin' });
-        const data = await r.json();
-        if (!data.user) {
-          location.replace('/login.html?next=' + encodeURIComponent(location.pathname));
-          return;
-        }
-        const u = data.user;
-        document.getElementById('topUser').textContent = u.email;
-        const roleEl = document.getElementById('topRole');
-        roleEl.textContent = u.role;
-        roleEl.dataset.role = u.role;
-        roleEl.style.display = '';
-        if (u.role === 'super' || u.role === 'admin') {
-          document.getElementById('topAdmin').style.display = '';
-        }
-      } catch (e) {
-        // network error; let user retry instead of looping redirects
-        document.getElementById('topUser').textContent = '연결 오류';
+    document.addEventListener('scm:auth-ready', (e) => {
+      const u = e.detail.user;
+      document.getElementById('topUser').textContent = u.email;
+      const roleEl = document.getElementById('topRole');
+      roleEl.textContent = u.role;
+      roleEl.dataset.role = u.role;
+      roleEl.style.display = '';
+      if (u.role === 'super' || u.role === 'admin') {
+        document.getElementById('topAdmin').style.display = '';
       }
-    })();
-
-    document.getElementById('topLogout').addEventListener('click', async () => {
-      try {
-        await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
-      } catch {}
-      location.replace('/login.html');
     });
+    document.getElementById('topLogout').addEventListener('click', () => SCM.logout());
   </script>
 </body>
 </html>

@@ -236,6 +236,38 @@
     }
     function isDirty() { return snapshot() !== appliedSnap; }
 
+    // "전체 필터" chip 의 카운트 갱신
+    //  - 필수 필터(req-dot 가 있음): 채워져 있으면 무조건 카운트
+    //  - 일반 필터: state=filled && 값이 '전체' 가 아님 && 페이지 디폴트가 아님 → 카운트
+    //  - 0 인 경우 카운트 배지 숨김
+    function refreshChipCount() {
+      var chip = filterBarEl.querySelector('.scm-filter-chip');
+      if (!chip) return;
+      var countEl = chip.querySelector('.scm-filter-chip__count');
+      if (!countEl) return;
+
+      var count = 0;
+      filterBarEl.querySelectorAll('.scm-filter-select').forEach(function (btn) {
+        var state = btn.getAttribute('data-state');
+        if (state !== 'filled') return;
+        var isRequired = !!btn.querySelector('.scm-filter-select__req-dot, .req-dot');
+        if (isRequired) { count++; return; }
+        var isDefault = btn.getAttribute('data-default') === 'true';
+        if (isDefault) return;
+        var valueEl = btn.querySelector('.scm-filter-select__value');
+        var value = valueEl ? valueEl.textContent.trim() : '';
+        if (value === '전체') return;
+        count++;
+      });
+
+      if (count === 0) {
+        countEl.style.display = 'none';
+      } else {
+        countEl.style.display = '';
+        countEl.textContent = String(count);
+      }
+    }
+
     function refreshActionBtns() {
       if (searchBtn) {
         // 검색: 마지막 적용 시점 대비 변경이 있을 때만 활성
@@ -256,6 +288,7 @@
         if (hasAppliedFilters()) resetBtn.removeAttribute('hidden');
         else                     resetBtn.setAttribute('hidden', '');
       }
+      refreshChipCount();
     }
     if (searchBtn) {
       searchBtn.addEventListener('click', function () {

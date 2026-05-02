@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=1440" />
   <title>SCM-Hub · SKU 관리 (모듈 기반)</title>
+  <script src="/auth-gate.js"></script>
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
   <link rel="stylesheet" href="../design%20system/layer-desktop.css" />
@@ -1068,8 +1069,7 @@
       // 매입형태=매입 은 글로벌 REGISTRY 에서 자동 인식되므로 페이지에선 SKU 관리 전용 default (skuLookup) 만 명시.
       defaultFilters: { skuLookup: 'SKU번호' },
       onSearch: () => {
-        const n = applyDataFilterSku();
-        if (SCM.toast) SCM.toast.show({ variant: 'info', title: '필터 적용 완료', desc: n + '건' });
+        applyDataFilterSku();
       },
       onReset: () => {
         // 디폴트 (매입형태=매입, SKU 조회=SKU번호) 는 라이브러리가 자동 재적용함

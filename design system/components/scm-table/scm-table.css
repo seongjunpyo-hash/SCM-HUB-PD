@@ -370,10 +370,10 @@
  *   col-large   : 320 (JS 강제), min 100, resize 가능 (SKU명·상품명)
  *   col-spacer  : 100% — 남는 가로 공간 흡수 (마지막)
  * ============================================================ */
-/* [공통] 체크박스 셀 — 좌우 padding 12 (위/아래 16), cb 는 셀 가운데 정렬
+/* [공통] 체크박스 셀 — 좌우 padding 12 (위 12, 아래 16), cb 는 셀 가운데 정렬
    (cb 16×16, 셀 48 → padding-left/right 12 + cb 16 = 40, 잔여 8px 를 좌우 4px 씩 분배) */
 .mp-table th.cb-col, .mp-table td.cb-col,
-.mp-table th.cb-col2, .mp-table td.cb-col2 { width: 48px; padding: 16px 12px; text-align: center; }
+.mp-table th.cb-col2, .mp-table td.cb-col2 { width: 48px; padding: 12px 12px 16px; text-align: center; }
 /* cb-header — padding 은 cb-col 과 동일(12px), text-align: left
    → 체크박스 시작 x = padding-left(12)
    → cb-col 의 체크박스 시작 x = padding-left(12) + (content_w - 16)/2 → content_w=16 일 때 0, 24 일 때 4
