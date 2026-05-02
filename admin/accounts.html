@@ -109,6 +109,7 @@
     .msg--error { background: rgba(255,107,107,0.12); color: var(--error); }
     .msg--success { background: rgba(16,185,129,0.12); color: var(--success); }
     .msg.show { display: block; }
+    .modal .sub { font-size: 13px; color: var(--fg-mute); line-height: 1.6; margin-bottom: 24px; }
 
     .empty { text-align: center; padding: 64px 0; color: var(--fg-dim); font-size: 13px; }
     #loadingMsg { padding: 32px; text-align: center; color: var(--fg-mute); }
@@ -123,7 +124,7 @@
         <a class="top__back" href="/">← 워크스페이스</a>
         <span id="meEmail">—</span>
         <span class="role-badge" id="meRole">—</span>
-        <a class="top__back" href="/account.html">내 계정</a>
+        <button class="logout" id="changePwBtn">비밀번호 변경</button>
         <button class="logout" id="logoutBtn">로그아웃</button>
       </div>
     </header>
@@ -162,6 +163,34 @@
         <tbody id="tbody"></tbody>
       </table>
       <div class="empty" id="emptyMsg" style="display:none;">아직 등록된 사용자가 없습니다.</div>
+    </div>
+  </div>
+
+  <!-- Change password modal -->
+  <div class="modal-back" id="pwModal">
+    <div class="modal">
+      <h2>비밀번호 변경</h2>
+      <p class="sub">변경하면 다른 기기/세션은 자동으로 로그아웃되고, 현재 기기 세션만 유지됩니다.</p>
+      <form id="pwForm" autocomplete="off">
+        <div class="field">
+          <label for="pwCur">현재 비밀번호 *</label>
+          <input id="pwCur" type="password" required autocomplete="current-password" />
+        </div>
+        <div class="field">
+          <label for="pwNew1">새 비밀번호 *</label>
+          <input id="pwNew1" type="password" required minlength="8" placeholder="8자 이상" autocomplete="new-password" />
+        </div>
+        <div class="field">
+          <label for="pwNew2">새 비밀번호 확인 *</label>
+          <input id="pwNew2" type="password" required minlength="8" autocomplete="new-password" />
+        </div>
+        <div class="msg msg--error" id="pwErr"></div>
+        <div class="msg msg--success" id="pwOk">비밀번호가 변경되었습니다.</div>
+        <div class="modal-row">
+          <button type="button" class="btn btn--ghost" id="cancelPw">취소</button>
+          <button type="submit" class="btn btn--primary" id="submitPw">변경</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -332,6 +361,62 @@
     $('logoutBtn').addEventListener('click', async () => {
       await api('/api/auth/logout', { method: 'POST' });
       location.replace('/login.html');
+    });
+
+    // ===== Change password modal =====
+    function resetPwForm() {
+      $('pwCur').value = ''; $('pwNew1').value = ''; $('pwNew2').value = '';
+      $('pwErr').classList.remove('show'); $('pwOk').classList.remove('show');
+      const sub = $('submitPw'); sub.disabled = false; sub.textContent = '변경';
+    }
+    $('changePwBtn').addEventListener('click', () => {
+      resetPwForm();
+      $('pwModal').classList.add('show');
+      setTimeout(() => $('pwCur').focus(), 50);
+    });
+    $('cancelPw').addEventListener('click', () => $('pwModal').classList.remove('show'));
+    $('pwModal').addEventListener('click', (e) => { if (e.target === $('pwModal')) $('pwModal').classList.remove('show'); });
+
+    $('pwForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      $('pwErr').classList.remove('show'); $('pwOk').classList.remove('show');
+      const cur = $('pwCur').value;
+      const n1 = $('pwNew1').value;
+      const n2 = $('pwNew2').value;
+      if (n1.length < 8) {
+        $('pwErr').textContent = '새 비밀번호는 8자 이상이어야 합니다.';
+        $('pwErr').classList.add('show'); return;
+      }
+      if (n1 !== n2) {
+        $('pwErr').textContent = '새 비밀번호가 일치하지 않습니다.';
+        $('pwErr').classList.add('show'); return;
+      }
+      if (cur === n1) {
+        $('pwErr').textContent = '현재 비밀번호와 다른 새 비밀번호를 입력하세요.';
+        $('pwErr').classList.add('show'); return;
+      }
+      const sub = $('submitPw');
+      sub.disabled = true; sub.textContent = '변경 중...';
+      const res = await api('/api/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify({ currentPassword: cur, newPassword: n1 }),
+      });
+      if (!res.ok) {
+        const m =
+          res.data?.error === 'invalid_current' ? '현재 비밀번호가 올바르지 않습니다.' :
+          res.data?.error === 'password_too_short' ? '새 비밀번호는 8자 이상이어야 합니다.' :
+          res.data?.error === 'same_password' ? '현재 비밀번호와 다른 새 비밀번호를 입력하세요.' :
+          res.data?.error === 'unauthorized' ? '로그인 세션이 만료되었습니다.' :
+          '변경 실패: ' + (res.data?.error || res.status);
+        $('pwErr').textContent = m;
+        $('pwErr').classList.add('show');
+        sub.disabled = false; sub.textContent = '변경';
+        return;
+      }
+      $('pwCur').value = ''; $('pwNew1').value = ''; $('pwNew2').value = '';
+      $('pwOk').classList.add('show');
+      sub.disabled = false; sub.textContent = '변경';
+      setTimeout(() => $('pwModal').classList.remove('show'), 1200);
     });
 
     // ===== Invite modal =====
