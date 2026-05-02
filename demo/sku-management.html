@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=1440" />
   <title>SCM-Hub · SKU 관리 (모듈 기반)</title>
   <script src="/auth-gate.js"></script>
+  <!-- SheetJS for Excel import/export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
   <link rel="stylesheet" href="../design%20system/layer-desktop.css" />
@@ -438,7 +440,7 @@
         </div>
       </div>
       <div class="scm-stats-bar__right">
-        <button class="scm-download-btn" type="button">
+        <button class="scm-download-btn" type="button" id="excel-download-btn">
           <svg viewBox="0 0 20 20"><use href="#ic-download"/></svg>
           <span>전체 엑셀 다운로드</span>
         </button>
@@ -738,7 +740,11 @@
 (function () {
   // ----- Demo data (legacy 17 row 그대로) -----
   // uidItems: 1 SKU → N UIDs, 각 UID마다 platform/optNo/prodOpt/baseCat 1:1 종속
-  const SKU_ROWS = [
+  // ============================================================
+  // localStorage 영속화 — 페이지 새로고침해도 추가/수정한 SKU 유지
+  // ============================================================
+  const SKU_LS_KEY = 'scm.demo.sku-management.rows.v1';
+  const SKU_DEFAULT_ROWS = [
     { no:1,  skuNo:'10669591', barcode:'180K/13029/EFGH', op:'active', map:'mapped', name:'삼바 OG - 블랙:크림화이트 / JQ5141 [블랙:크림화이트][280]', opt:['블랙:크림화이트','280'], cat:'신발 > 스포츠화 > 러닝화', styleNo:'12345678', brand:'라이즈앤빌로우', uidItems:[
       { uid:'383838', platform:{name:'MUSINSA',color:'blue'},   optNo:'111111', prodOpt:'블랙^280', baseCat:'신발 > 스포츠화 > 러닝화' },
       { uid:'456789', platform:{name:'MUSINSA',color:'blue'},   optNo:'222222', prodOpt:'BLK^XL',   baseCat:'신발 > 스포츠화 > 러닝화' },
@@ -780,6 +786,27 @@
     ], purchase:'위탁', mfg:'OEM', owner:'외부 브랜드', supplier:'Vendor_korea(M00000088)', hanger:'미사용', expiryMgmt:'미사용', expiryDays:'-', boxIn:1, pallet:'-', season:'26FW', year:2026, dt:'25.01.21 14:12', user:'박지수(jisoo.park)' },
     { no:17, skuNo:'10669607', barcode:'196K/13029/EFGH', op:'inactive', map:'unmapped', name:'에코백 캔버스 [네추럴][FREE]', opt:['네추럴','FREE'], cat:'잡화 > 가방 > 에코백', styleNo:'MMJBG6Z03', brand:'MUSINSA', uidItems:[], purchase:'위탁', mfg:'완제품 매입', owner:'외부 브랜드', supplier:'-', hanger:'미사용', expiryMgmt:'미사용', expiryDays:'-', boxIn:1, pallet:'-', season:'26FW', year:2026, dt:'25.01.22 10:00', user:'박지수(jisoo.park)' },
   ];
+
+  // localStorage 에서 복원, 없으면 기본 시드 데이터
+  let SKU_ROWS;
+  try {
+    const stored = localStorage.getItem(SKU_LS_KEY);
+    SKU_ROWS = stored ? JSON.parse(stored) : JSON.parse(JSON.stringify(SKU_DEFAULT_ROWS));
+  } catch (e) {
+    console.warn('[sku-management] localStorage parse failed, using defaults:', e);
+    SKU_ROWS = JSON.parse(JSON.stringify(SKU_DEFAULT_ROWS));
+  }
+  function persistRows() {
+    try { localStorage.setItem(SKU_LS_KEY, JSON.stringify(SKU_ROWS)); } catch (e) { console.warn('[sku-management] persist failed:', e); }
+  }
+  function resetRowsToDefault() {
+    SKU_ROWS = JSON.parse(JSON.stringify(SKU_DEFAULT_ROWS));
+    persistRows();
+    document.getElementById('data-tbody').innerHTML = SKU_ROWS.map(rowHtml).join('');
+  }
+  // dev console 에서 데이터 초기화하고 싶을 때: SCM_DEMO.reset()
+  window.SCM_DEMO = window.SCM_DEMO || {};
+  window.SCM_DEMO.resetSku = resetRowsToDefault;
 
   function escapeHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -954,16 +981,297 @@
   });
 
   // 일괄 업로드 모달 — scm-bulk-upload-modal 모듈로 위임 (open/close + warning toggle 자동)
+  let bulkUploadInstance = null;
   if (window.SCM && SCM.bulkUploadModal) {
-    const bm = SCM.bulkUploadModal.mount({
+    bulkUploadInstance = SCM.bulkUploadModal.mount({
       modal: document.getElementById('bu-modal'),
       backdrop: document.getElementById('bu-backdrop'),
     });
     const openBtn = document.getElementById('open-bulk-upload');
     const cancelBtn = document.getElementById('bu-cancel');
-    if (openBtn) openBtn.addEventListener('click', bm.open);
-    if (cancelBtn) cancelBtn.addEventListener('click', bm.close);
+    if (openBtn) openBtn.addEventListener('click', bulkUploadInstance.open);
+    if (cancelBtn) cancelBtn.addEventListener('click', bulkUploadInstance.close);
   }
+
+  // ============================================================
+  // Excel 다운로드 / 업로드 (SheetJS 사용)
+  // ------------------------------------------------------------
+  // 다운로드: 현재 SKU_ROWS 전체 → xlsx 파일로 저장
+  // 업로드: 파일 선택 → 비동기 행 단위 처리 (진행률 모달) → 중복 SKU skip → SKU_ROWS 에 append → localStorage 저장
+  // ============================================================
+  const EXCEL_HEADERS = [
+    'No','SKU번호','바코드','운영상태','매핑상태','상품명','옵션','카테고리',
+    '스타일넘버','브랜드','매입형태','제조','소유','공급사','행거사용','유효기간관리',
+    '유효기간','입수정보','팔레트','시즌','연도','처리일시','처리자','UID정보(JSON)'
+  ];
+  const OP_LABEL = { active:'운영중', inactive:'중지' };
+  const MAP_LABEL = { mapped:'매핑완료', unmapped:'미매핑' };
+  const OP_REVERSE = { '운영중':'active', '중지':'inactive' };
+  const MAP_REVERSE = { '매핑완료':'mapped', '미매핑':'unmapped' };
+
+  function rowToExcel(r) {
+    return {
+      'No': r.no,
+      'SKU번호': r.skuNo,
+      '바코드': r.barcode,
+      '운영상태': OP_LABEL[r.op] || r.op,
+      '매핑상태': MAP_LABEL[r.map] || r.map,
+      '상품명': r.name,
+      '옵션': Array.isArray(r.opt) ? r.opt.join(',') : (r.opt || ''),
+      '카테고리': r.cat || '',
+      '스타일넘버': r.styleNo || '',
+      '브랜드': r.brand || '',
+      '매입형태': r.purchase || '',
+      '제조': r.mfg || '',
+      '소유': r.owner || '',
+      '공급사': r.supplier || '',
+      '행거사용': r.hanger || '',
+      '유효기간관리': r.expiryMgmt || '',
+      '유효기간': r.expiryDays || '',
+      '입수정보': r.boxIn ?? '',
+      '팔레트': r.pallet || '',
+      '시즌': r.season || '',
+      '연도': r.year ?? '',
+      '처리일시': r.dt || '',
+      '처리자': r.user || '',
+      'UID정보(JSON)': r.uidItems && r.uidItems.length ? JSON.stringify(r.uidItems) : '',
+    };
+  }
+
+  function excelToRow(e, fallbackNo) {
+    let uidItems = [];
+    if (e['UID정보(JSON)']) {
+      try { uidItems = JSON.parse(e['UID정보(JSON)']); if (!Array.isArray(uidItems)) uidItems = []; }
+      catch (_) { uidItems = []; }
+    }
+    return {
+      no: Number(e['No']) || fallbackNo,
+      skuNo: String(e['SKU번호'] || '').trim(),
+      barcode: String(e['바코드'] || '').trim(),
+      op: OP_REVERSE[e['운영상태']] || 'active',
+      map: MAP_REVERSE[e['매핑상태']] || 'unmapped',
+      name: String(e['상품명'] || '').trim(),
+      opt: e['옵션'] ? String(e['옵션']).split(',').map(s => s.trim()).filter(Boolean) : [],
+      cat: String(e['카테고리'] || '').trim(),
+      styleNo: String(e['스타일넘버'] || '').trim(),
+      brand: String(e['브랜드'] || '').trim(),
+      purchase: String(e['매입형태'] || '매입').trim(),
+      mfg: String(e['제조'] || '').trim(),
+      owner: String(e['소유'] || '').trim(),
+      supplier: String(e['공급사'] || '').trim(),
+      hanger: String(e['행거사용'] || '미사용').trim(),
+      expiryMgmt: String(e['유효기간관리'] || '미사용').trim(),
+      expiryDays: String(e['유효기간'] || '-').trim(),
+      boxIn: Number(e['입수정보']) || 1,
+      pallet: String(e['팔레트'] || '-').trim(),
+      season: String(e['시즌'] || '').trim(),
+      year: Number(e['연도']) || new Date().getFullYear(),
+      dt: String(e['처리일시'] || new Date().toLocaleString('ko-KR')).trim(),
+      user: String(e['처리자'] || (window.SCM_USER?.email || '익명')).trim(),
+      uidItems: uidItems,
+    };
+  }
+
+  // 엑셀 다운로드
+  document.getElementById('excel-download-btn')?.addEventListener('click', () => {
+    if (!window.XLSX) { alert('SheetJS 라이브러리가 로드되지 않았습니다.'); return; }
+    const data = SKU_ROWS.map(rowToExcel);
+    const ws = XLSX.utils.json_to_sheet(data, { header: EXCEL_HEADERS });
+    // 컬럼 폭 자동 조정 (대략)
+    ws['!cols'] = EXCEL_HEADERS.map(h => ({ wch: Math.max(8, Math.min(40, h.length * 1.5 + 4)) }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'SKU');
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    XLSX.writeFile(wb, `SKU_관리_${today}.xlsx`);
+    if (window.SCM && SCM.toast) {
+      SCM.toast.show({ variant: 'success', title: '엑셀 다운로드 완료', desc: `${SKU_ROWS.length}건 저장됨` });
+    }
+  });
+
+  // ============================================================
+  // 진행률 모달 — 동적 생성 (1회만)
+  // ============================================================
+  function ensureProgressModal() {
+    let pm = document.getElementById('scm-upload-progress');
+    if (pm) return pm;
+    pm = document.createElement('div');
+    pm.id = 'scm-upload-progress';
+    pm.innerHTML = `
+      <div class="scm-up-backdrop"></div>
+      <div class="scm-up-panel" role="dialog" aria-labelledby="scm-up-title">
+        <h3 id="scm-up-title">엑셀 업로드 처리 중…</h3>
+        <div class="scm-up-meta"><span id="scm-up-status">대기 중</span></div>
+        <div class="scm-up-bar"><div class="scm-up-bar__fill" id="scm-up-fill"></div></div>
+        <div class="scm-up-counts">
+          <span>전체 <b id="scm-up-total">0</b></span>
+          <span>성공 <b id="scm-up-success">0</b></span>
+          <span>스킵(중복) <b id="scm-up-skip">0</b></span>
+          <span>실패 <b id="scm-up-fail">0</b></span>
+        </div>
+        <div class="scm-up-errors" id="scm-up-errors" hidden></div>
+        <div class="scm-up-actions">
+          <button type="button" class="scm-button scm-button--primary" id="scm-up-close" disabled>닫기</button>
+        </div>
+      </div>
+    `;
+    const style = document.createElement('style');
+    style.textContent = `
+      #scm-upload-progress { position: fixed; inset: 0; z-index: 1000; display: none; }
+      #scm-upload-progress.is-open { display: block; }
+      .scm-up-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.5); }
+      .scm-up-panel {
+        position: relative; background: #fff; border-radius: 8px; max-width: 480px;
+        margin: 80px auto 0; padding: 24px; box-shadow: 0 12px 32px rgba(0,0,0,0.32);
+      }
+      .scm-up-panel h3 { margin: 0 0 12px; font-size: 18px; font-weight: 700; }
+      .scm-up-meta { font-size: 13px; color: #555; margin-bottom: 12px; }
+      .scm-up-bar { width: 100%; height: 8px; background: #EEE; border-radius: 4px; overflow: hidden; margin-bottom: 16px; }
+      .scm-up-bar__fill { height: 100%; background: #245EFF; width: 0%; transition: width 0.15s; }
+      .scm-up-counts { display: flex; gap: 18px; font-size: 13px; color: #555; margin-bottom: 12px; }
+      .scm-up-counts b { color: #000; margin-left: 4px; }
+      .scm-up-errors {
+        max-height: 140px; overflow-y: auto; padding: 12px;
+        background: #FFF6F6; border: 1px solid #FFD9D9; border-radius: 4px;
+        font-size: 12px; color: #B71C1C; line-height: 1.5; margin-bottom: 12px;
+      }
+      .scm-up-errors:not([hidden]) + .scm-up-actions { margin-top: 4px; }
+      .scm-up-actions { display: flex; justify-content: flex-end; }
+    `;
+    pm.appendChild(style);
+    document.body.appendChild(pm);
+    pm.querySelector('#scm-up-close').addEventListener('click', () => pm.classList.remove('is-open'));
+    pm.querySelector('.scm-up-backdrop').addEventListener('click', () => {
+      // 처리 중이면 무시
+      if (!pm.querySelector('#scm-up-close').disabled) pm.classList.remove('is-open');
+    });
+    return pm;
+  }
+
+  function openProgress({ total, status }) {
+    const pm = ensureProgressModal();
+    pm.querySelector('#scm-up-total').textContent = total;
+    pm.querySelector('#scm-up-success').textContent = '0';
+    pm.querySelector('#scm-up-skip').textContent = '0';
+    pm.querySelector('#scm-up-fail').textContent = '0';
+    pm.querySelector('#scm-up-fill').style.width = '0%';
+    pm.querySelector('#scm-up-status').textContent = status || '처리 중...';
+    pm.querySelector('#scm-up-errors').hidden = true;
+    pm.querySelector('#scm-up-errors').textContent = '';
+    pm.querySelector('#scm-up-close').disabled = true;
+    pm.classList.add('is-open');
+    return pm;
+  }
+  function updateProgress(pm, { processed, total, success, skip, fail }) {
+    pm.querySelector('#scm-up-success').textContent = success;
+    pm.querySelector('#scm-up-skip').textContent = skip;
+    pm.querySelector('#scm-up-fail').textContent = fail;
+    const pct = total ? Math.round((processed / total) * 100) : 0;
+    pm.querySelector('#scm-up-fill').style.width = pct + '%';
+    pm.querySelector('#scm-up-status').textContent = `${processed} / ${total} (${pct}%)`;
+  }
+  function finishProgress(pm, { success, skip, fail, errors }) {
+    pm.querySelector('#scm-up-status').textContent = '처리 완료';
+    pm.querySelector('#scm-up-fill').style.width = '100%';
+    pm.querySelector('#scm-up-close').disabled = false;
+    if (fail > 0 && errors && errors.length) {
+      const errEl = pm.querySelector('#scm-up-errors');
+      errEl.hidden = false;
+      errEl.innerHTML = errors.slice(0, 30).map(e => `· ${escapeHtml(e)}`).join('<br>') +
+        (errors.length > 30 ? `<br>... 외 ${errors.length - 30}건` : '');
+    }
+  }
+
+  // ============================================================
+  // 업로드 — file picker + 비동기 처리
+  // ============================================================
+  // hidden file input (1회만 생성)
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = '.xlsx,.xls,.csv';
+  fileInput.style.display = 'none';
+  document.body.appendChild(fileInput);
+
+  document.getElementById('bu-submit')?.addEventListener('click', () => {
+    fileInput.value = '';
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!window.XLSX) { alert('SheetJS 라이브러리가 로드되지 않았습니다.'); return; }
+    if (bulkUploadInstance) bulkUploadInstance.close();
+
+    let workbook;
+    try {
+      const buf = await file.arrayBuffer();
+      workbook = XLSX.read(buf, { type: 'array' });
+    } catch (err) {
+      alert('엑셀 파일 읽기 실패: ' + (err.message || err));
+      return;
+    }
+    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+    if (!rows.length) { alert('엑셀에 데이터가 없습니다.'); return; }
+
+    const pm = openProgress({ total: rows.length, status: '시작...' });
+
+    const existingSku = new Set(SKU_ROWS.map(r => r.skuNo));
+    let processed = 0, success = 0, skip = 0, fail = 0;
+    const errors = [];
+    let nextNo = SKU_ROWS.reduce((m, r) => Math.max(m, r.no || 0), 0) + 1;
+
+    // 청크 단위 처리 (50건씩, 비동기 느낌)
+    const CHUNK = 50;
+    let i = 0;
+    function processChunk() {
+      const end = Math.min(i + CHUNK, rows.length);
+      for (; i < end; i++) {
+        const raw = rows[i];
+        const sku = String(raw['SKU번호'] || '').trim();
+        if (!sku) {
+          fail++;
+          errors.push(`행 ${i + 2}: SKU번호 누락`);
+        } else if (existingSku.has(sku)) {
+          skip++;
+        } else {
+          try {
+            const rec = excelToRow(raw, nextNo++);
+            SKU_ROWS.push(rec);
+            existingSku.add(sku);
+            success++;
+          } catch (err) {
+            fail++;
+            errors.push(`행 ${i + 2}: ${err.message || err}`);
+          }
+        }
+        processed++;
+      }
+      updateProgress(pm, { processed, total: rows.length, success, skip, fail });
+
+      if (i < rows.length) {
+        // 다음 청크 — UI 가 갱신될 시간 확보
+        setTimeout(processChunk, 30);
+      } else {
+        // 완료
+        if (success > 0) {
+          persistRows();
+          document.getElementById('data-tbody').innerHTML = SKU_ROWS.map(rowHtml).join('');
+        }
+        finishProgress(pm, { success, skip, fail, errors });
+        if (window.SCM && SCM.toast) {
+          if (fail === 0 && skip === 0) {
+            SCM.toast.show({ variant: 'success', title: '엑셀 업로드 완료', desc: `${success}건 등록됨` });
+          } else if (fail === 0) {
+            SCM.toast.show({ variant: 'info', title: '엑셀 업로드 완료', desc: `${success}건 등록 / ${skip}건 중복 스킵` });
+          } else {
+            SCM.toast.show({ variant: 'critical', title: '일부 실패', desc: `성공 ${success} / 스킵 ${skip} / 실패 ${fail}` });
+          }
+        }
+      }
+    }
+    processChunk();
+  });
 
   // 필터 popover (글로벌 REGISTRY 기반)
   // 검색 클릭 시 SKU_ROWS 를 chip 값에 맞춰 필터링 → tbody 행 display:none 으로 숨김.
