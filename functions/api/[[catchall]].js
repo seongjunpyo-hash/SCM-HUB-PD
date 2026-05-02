@@ -318,6 +318,45 @@ export async function onRequest(context) {
       return json({ user: { id: user.id, email: user.email, name: user.name, role: user.role } });
     }
 
+    // ========== /api/auth/change-password ==========
+    if (path === '/api/auth/change-password' && method === 'POST') {
+      const me = await getCurrentUser(request, env);
+      if (!me) return json({ error: 'unauthorized' }, 401);
+
+      const { currentPassword, newPassword } = await readBody();
+      if (!currentPassword || !newPassword) return json({ error: 'invalid' }, 400);
+      if (newPassword.length < 8) return json({ error: 'password_too_short' }, 400);
+      if (currentPassword === newPassword) return json({ error: 'same_password' }, 400);
+
+      // re-fetch full user record to get password_hash
+      const row = await env.DB.prepare(`SELECT id, password_hash FROM users WHERE id = ?`)
+        .bind(me.id)
+        .first();
+      if (!row || !row.password_hash) {
+        await audit(env, request, me.id, me.id, 'change_password_failed', { reason: 'no_user' });
+        return json({ error: 'unauthorized' }, 401);
+      }
+      const ok = await verifyPassword(currentPassword, row.password_hash);
+      if (!ok) {
+        await audit(env, request, me.id, me.id, 'change_password_failed', { reason: 'bad_current' });
+        return json({ error: 'invalid_current' }, 401);
+      }
+
+      const newHash = await hashPassword(newPassword);
+      await env.DB.prepare(`UPDATE users SET password_hash = ? WHERE id = ?`)
+        .bind(newHash, me.id)
+        .run();
+
+      // Optional: invalidate all OTHER sessions (keep current one)
+      const currentSid = getCookie(request, 'session');
+      await env.DB.prepare(`DELETE FROM sessions WHERE user_id = ? AND id != ?`)
+        .bind(me.id, currentSid || '')
+        .run();
+
+      await audit(env, request, me.id, me.id, 'change_password', null);
+      return json({ ok: true });
+    }
+
     // ========== /api/users (list / create) ==========
     if (path === '/api/users') {
       const actor = await getCurrentUser(request, env);
