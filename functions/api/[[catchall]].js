@@ -152,37 +152,14 @@ async function getCurrentUser(request, env) {
   return row || null;
 }
 
-// Send invite email via Resend
-async function sendInviteEmail(env, toEmail, inviteUrl, role) {
-  const body = {
-    from: 'SCM HUB <onboarding@resend.dev>',
-    to: [toEmail],
-    subject: 'SCM HUB 계정 초대',
-    html: `
-<div style="font-family:-apple-system,Segoe UI,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#222;">
-  <h2 style="margin:0 0 16px;">SCM HUB 계정에 초대되었습니다</h2>
-  <p style="line-height:1.6;color:#444;">아래 버튼을 눌러 비밀번호를 설정하고 계정을 활성화하세요.</p>
-  <p style="line-height:1.6;color:#444;">역할: <b style="color:#6E6BFF;">${role}</b></p>
-  <p style="margin:32px 0;">
-    <a href="${inviteUrl}" style="display:inline-block;background:#6E6BFF;color:#fff;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:600;">초대 수락하기</a>
-  </p>
-  <p style="color:#888;font-size:12px;line-height:1.5;">이 링크는 7일간 유효합니다. 본인이 요청하지 않은 메일이라면 무시하셔도 됩니다.</p>
-  <hr style="border:none;border-top:1px solid #eee;margin:24px 0;">
-  <p style="color:#aaa;font-size:11px;">SCM HUB · MUSINSA Internal</p>
-</div>`,
-  };
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`resend ${res.status}: ${errText}`);
-  }
+// Generate a memorable but strong initial password (e.g., "k3rgs8nt-9f2a")
+function generateInitialPassword() {
+  const bytes = new Uint8Array(12);
+  crypto.getRandomValues(bytes);
+  const alphabet = 'abcdefghijkmnpqrstuvwxyz23456789';
+  const main = [...bytes].slice(0, 8).map((b) => alphabet[b % alphabet.length]).join('');
+  const suffix = ((bytes[8] << 16) | (bytes[9] << 8) | bytes[10]).toString(36).slice(0, 4);
+  return `${main}-${suffix}`;
 }
 
 // Send welcome email with first password (used by /api/_seed-super)
@@ -386,39 +363,24 @@ export async function onRequest(context) {
           .first();
         if (exists) return json({ error: 'email_exists' }, 409);
 
-        const inviteToken = randomHex(32);
-        const expiresAt = nowUnix() + INVITE_DAYS * 86400;
+        const initialPassword = generateInitialPassword();
+        const hash = await hashPassword(initialPassword);
         const result = await env.DB.prepare(
-          `INSERT INTO users (email, name, role, invite_token, invite_expires_at, created_by_user_id)
-           VALUES (?, ?, ?, ?, ?, ?) RETURNING id`
+          `INSERT INTO users (email, name, role, password_hash, is_active, created_by_user_id)
+           VALUES (?, ?, ?, ?, 1, ?) RETURNING id`
         )
-          .bind(emailLower, name || null, role, inviteToken, expiresAt, actor.id)
+          .bind(emailLower, name || null, role, hash, actor.id)
           .first();
 
-        const origin = url.origin;
-        const inviteUrl = `${origin}/invite-accept.html?token=${inviteToken}`;
-
-        let emailStatus = 'sent';
-        let emailError = null;
-        try {
-          await sendInviteEmail(env, emailLower, inviteUrl, role);
-        } catch (e) {
-          emailStatus = 'failed';
-          emailError = String(e.message || e);
-          console.error('invite email failed:', emailError);
-        }
-
-        await audit(env, request, actor.id, result.id, 'invite_create', {
+        await audit(env, request, actor.id, result.id, 'user_create', {
           email: emailLower,
           role,
-          emailStatus,
-          emailError,
         });
 
+        // Return the initial password ONCE — admin must copy and share via Slack/etc.
         return json({
           user: { id: result.id, email: emailLower, name: name || null, role },
-          invite: { token: inviteToken, url: inviteUrl, expires_at: expiresAt },
-          email: { status: emailStatus, error: emailError },
+          password: initialPassword,
         });
       }
 
@@ -475,42 +437,41 @@ export async function onRequest(context) {
       return json({ error: 'method_not_allowed' }, 405);
     }
 
-    // ========== /api/invite/:token (verify) ==========
-    const inviteTokenMatch = path.match(/^\/api\/invite\/([a-f0-9]+)$/);
-    if (inviteTokenMatch && method === 'GET') {
-      const token = inviteTokenMatch[1];
-      const row = await env.DB.prepare(
-        `SELECT email, name, role, invite_expires_at FROM users
-         WHERE invite_token = ? AND password_hash IS NULL`
+    // ========== /api/users/:id/reset-password (super only) ==========
+    const resetPwMatch = path.match(/^\/api\/users\/(\d+)\/reset-password$/);
+    if (resetPwMatch && method === 'POST') {
+      const actor = await getCurrentUser(request, env);
+      if (!actor) return json({ error: 'unauthorized' }, 401);
+      if (actor.role !== 'super') return json({ error: 'forbidden' }, 403);
+
+      const targetId = parseInt(resetPwMatch[1], 10);
+      if (targetId === actor.id) return json({ error: 'use_change_password' }, 400);
+
+      const target = await env.DB.prepare(
+        `SELECT id, email, role FROM users WHERE id = ?`
       )
-        .bind(token)
+        .bind(targetId)
         .first();
-      if (!row) return json({ error: 'invalid_token' }, 404);
-      if (row.invite_expires_at < nowUnix()) return json({ error: 'expired' }, 410);
-      return json({ email: row.email, name: row.name, role: row.role });
-    }
+      if (!target) return json({ error: 'not_found' }, 404);
 
-    // ========== /api/invite/accept ==========
-    if (path === '/api/invite/accept' && method === 'POST') {
-      const { token, password } = await readBody();
-      if (!token || !password || password.length < 8) return json({ error: 'invalid' }, 400);
-
-      const user = await env.DB.prepare(
-        `SELECT id, email FROM users
-         WHERE invite_token = ? AND password_hash IS NULL AND invite_expires_at > ?`
-      )
-        .bind(token, nowUnix())
-        .first();
-      if (!user) return json({ error: 'invalid_or_expired' }, 410);
-
-      const hash = await hashPassword(password);
-      await env.DB.prepare(
-        `UPDATE users SET password_hash = ?, invite_token = NULL, invite_expires_at = NULL WHERE id = ?`
-      )
-        .bind(hash, user.id)
+      const newPassword = generateInitialPassword();
+      const hash = await hashPassword(newPassword);
+      await env.DB.prepare(`UPDATE users SET password_hash = ? WHERE id = ?`)
+        .bind(hash, targetId)
         .run();
-      await audit(env, request, user.id, user.id, 'invite_accept', null);
-      return json({ ok: true, email: user.email });
+      // Invalidate all sessions for the target user
+      await env.DB.prepare(`DELETE FROM sessions WHERE user_id = ?`).bind(targetId).run();
+
+      await audit(env, request, actor.id, target.id, 'password_reset', {
+        email: target.email,
+        role: target.role,
+      });
+
+      return json({
+        ok: true,
+        user: { id: target.id, email: target.email, role: target.role },
+        password: newPassword,
+      });
     }
 
     // ========== /api/_seed-super (one-time bootstrap) ==========

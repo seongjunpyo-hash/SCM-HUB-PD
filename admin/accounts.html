@@ -110,6 +110,22 @@
     .msg--success { background: rgba(16,185,129,0.12); color: var(--success); }
     .msg.show { display: block; }
     .modal .sub { font-size: 13px; color: var(--fg-mute); line-height: 1.6; margin-bottom: 24px; }
+    .cred { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
+    .cred__row { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
+    .cred__row + .cred__row { border-top: 1px solid var(--line); }
+    .cred__label { font-size: 11px; color: var(--fg-mute); width: 96px; flex-shrink: 0; font-weight: 600; }
+    .cred__val { flex: 1; font-family: ui-monospace, monospace; font-size: 13px; color: var(--fg); user-select: all; word-break: break-all; }
+    .cred__val--big { font-size: 16px; font-weight: 700; color: var(--accent); letter-spacing: 0.5px; }
+    .cred__copy { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--fg-mute); cursor: pointer; font-size: 11px; font-family: inherit; transition: all 0.15s; }
+    .cred__copy:hover { color: var(--fg); border-color: var(--line-2); }
+    .cred__copy.copied { background: var(--success); color: #fff; border-color: var(--success); }
+    .cred__combined {
+      width: 100%; padding: 10px 12px; margin-bottom: 12px;
+      background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+      color: var(--fg); font-size: 12px; font-family: ui-monospace, monospace; resize: none;
+      line-height: 1.5;
+    }
+    .cred__combined:focus { outline: none; border-color: var(--accent); }
 
     .empty { text-align: center; padding: 64px 0; color: var(--fg-dim); font-size: 13px; }
     #loadingMsg { padding: 32px; text-align: center; color: var(--fg-mute); }
@@ -142,10 +158,9 @@
         <div class="stats">
           <span>전체 <b id="cntAll">0</b></span>
           <span>활성 <b id="cntActive">0</b></span>
-          <span>대기 <b id="cntPending">0</b></span>
           <span>비활성 <b id="cntInactive">0</b></span>
         </div>
-        <button class="btn btn--primary" id="inviteBtn">+ 사용자 초대</button>
+        <button class="btn btn--primary" id="inviteBtn">+ 사용자 등록</button>
       </div>
 
       <div id="loadingMsg">불러오는 중...</div>
@@ -194,32 +209,57 @@
     </div>
   </div>
 
-  <!-- Invite modal -->
+  <!-- Register / reset-password result modal -->
   <div class="modal-back" id="modal">
     <div class="modal">
-      <h2>사용자 초대</h2>
-      <p class="sub">이메일로 초대 링크를 발송합니다. 받은 사람이 비밀번호를 설정하면 활성화됩니다.</p>
-      <form id="inviteForm">
-        <div class="field">
-          <label>이메일 *</label>
-          <input id="invEmail" type="email" required placeholder="user@musinsa.com" />
+      <!-- Form view -->
+      <div id="modalForm">
+        <h2>사용자 등록</h2>
+        <p class="sub">등록 후 화면에 표시되는 초기 비밀번호를 복사해 Slack 등으로 직접 전달하세요. 메일은 발송되지 않습니다.</p>
+        <form id="inviteForm">
+          <div class="field">
+            <label>이메일 *</label>
+            <input id="invEmail" type="email" required placeholder="user@musinsa.com" />
+          </div>
+          <div class="field">
+            <label>이름 (선택)</label>
+            <input id="invName" type="text" placeholder="홍길동" />
+          </div>
+          <div class="field">
+            <label>역할 *</label>
+            <select id="invRole" required></select>
+          </div>
+          <div class="msg msg--error" id="invErr"></div>
+          <div class="modal-row">
+            <button type="button" class="btn btn--ghost" id="cancelInvite">취소</button>
+            <button type="submit" class="btn btn--primary" id="submitInvite">등록</button>
+          </div>
+        </form>
+      </div>
+      <!-- Result view -->
+      <div id="modalResult" style="display:none;">
+        <h2 id="resultTitle">등록 완료</h2>
+        <p class="sub" id="resultSub">아래 초기 비밀번호를 복사해 본인에게 직접 전달하세요. 이 화면을 닫으면 비밀번호를 다시 볼 수 없습니다.</p>
+
+        <div class="cred">
+          <div class="cred__row">
+            <span class="cred__label">이메일</span>
+            <code class="cred__val" id="resEmail">—</code>
+            <button type="button" class="cred__copy" data-copy="resEmail">복사</button>
+          </div>
+          <div class="cred__row">
+            <span class="cred__label">초기 비밀번호</span>
+            <code class="cred__val cred__val--big" id="resPw">—</code>
+            <button type="button" class="cred__copy" data-copy="resPw">복사</button>
+          </div>
         </div>
-        <div class="field">
-          <label>이름 (선택)</label>
-          <input id="invName" type="text" placeholder="홍길동" />
-        </div>
-        <div class="field">
-          <label>역할 *</label>
-          <select id="invRole" required>
-            <!-- populated based on actor role -->
-          </select>
-        </div>
-        <div class="msg msg--error" id="invErr"></div>
+
+        <textarea readonly id="resCombined" class="cred__combined" rows="3"></textarea>
         <div class="modal-row">
-          <button type="button" class="btn btn--ghost" id="cancelInvite">취소</button>
-          <button type="submit" class="btn btn--primary" id="submitInvite">초대 발송</button>
+          <button type="button" class="btn btn--ghost" id="copyAll">전체 복사</button>
+          <button type="button" class="btn btn--primary" id="closeResult">닫기</button>
         </div>
-      </form>
+      </div>
     </div>
   </div>
 
@@ -283,8 +323,7 @@
       const users = res.data.users || [];
 
       $('cntAll').textContent = users.length;
-      $('cntActive').textContent = users.filter(u => u.is_active && !u.pending_invite).length;
-      $('cntPending').textContent = users.filter(u => u.pending_invite).length;
+      $('cntActive').textContent = users.filter(u => u.is_active).length;
       $('cntInactive').textContent = users.filter(u => !u.is_active).length;
 
       const tbody = $('tbody');
@@ -303,11 +342,10 @@
           (me.role === 'admin' && ['biz','internal'].includes(u.role))
         );
         const canToggle = canDel;
-        const status = u.pending_invite
-          ? '<span class="status status--pending">대기</span>'
-          : (u.is_active
-              ? '<span class="status">활성</span>'
-              : '<span class="status status--inactive">비활성</span>');
+        const canReset = !isMe && me.role === 'super';
+        const status = u.is_active
+          ? '<span class="status">활성</span>'
+          : '<span class="status status--inactive">비활성</span>';
         const meTag = isMe ? '<span class="meta"> (나)</span>' : '';
         return `
         <tr>
@@ -317,7 +355,8 @@
           <td>${status}</td>
           <td><span class="meta">${fmtTime(u.last_login_at)}</span></td>
           <td class="actions">
-            ${canToggle ? `<button class="btn btn--ghost" data-act="toggle" data-id="${u.id}" data-active="${u.is_active}">${u.is_active ? '비활성화' : '활성화'}</button>` : ''}
+            ${canReset ? `<button class="btn btn--ghost" data-act="reset" data-id="${u.id}" data-email="${escapeHtml(u.email)}">비번 재설정</button>` : ''}
+            ${canToggle ? `<button class="btn btn--ghost" data-act="toggle" data-id="${u.id}" data-active="${u.is_active}" style="margin-left:6px;">${u.is_active ? '비활성화' : '활성화'}</button>` : ''}
             ${canDel ? `<button class="btn btn--danger" data-act="delete" data-id="${u.id}" data-email="${escapeHtml(u.email)}" style="margin-left:6px;">삭제</button>` : ''}
           </td>
         </tr>`;
@@ -353,6 +392,20 @@
           body: JSON.stringify({ is_active: !isActive }),
         });
         if (!res.ok) { alert('변경 실패: ' + (res.data?.error || res.status)); btn.disabled = false; return; }
+        await loadUsers();
+      } else if (act === 'reset') {
+        const email = btn.dataset.email;
+        if (!confirm(`${email} 의 비밀번호를 재설정하시겠습니까?\n\n새 비밀번호가 생성되고 해당 사용자의 모든 세션이 끊깁니다.`)) return;
+        btn.disabled = true;
+        const res = await api('/api/users/' + id + '/reset-password', { method: 'POST' });
+        btn.disabled = false;
+        if (!res.ok) { alert('재설정 실패: ' + (res.data?.error || res.status)); return; }
+        showCredentialResult({
+          title: '비밀번호 재설정 완료',
+          sub: '새 비밀번호를 본인에게 직접 전달하세요. 이 화면을 닫으면 다시 볼 수 없습니다.',
+          email: res.data.user.email,
+          password: res.data.password,
+        });
         await loadUsers();
       }
     }
@@ -419,20 +472,42 @@
       setTimeout(() => $('pwModal').classList.remove('show'), 1200);
     });
 
-    // ===== Invite modal =====
-    $('inviteBtn').addEventListener('click', () => {
+    // ===== Register / result modal =====
+    function showFormView() {
+      $('modalForm').style.display = 'block';
+      $('modalResult').style.display = 'none';
       $('invErr').classList.remove('show');
       $('invEmail').value = ''; $('invName').value = '';
+      const sub = $('submitInvite'); sub.disabled = false; sub.textContent = '등록';
+    }
+    function showCredentialResult({ title, sub, email, password }) {
+      $('modalForm').style.display = 'none';
+      $('modalResult').style.display = 'block';
+      $('resultTitle').textContent = title;
+      $('resultSub').textContent = sub;
+      $('resEmail').textContent = email;
+      $('resPw').textContent = password;
+      $('resCombined').value =
+        `SCM HUB 계정\n로그인: https://scm-hub-pd.pages.dev/login.html\n이메일: ${email}\n초기 비밀번호: ${password}`;
+      // reset copy button states
+      document.querySelectorAll('.cred__copy').forEach(b => { b.classList.remove('copied'); b.textContent = '복사'; });
+      $('modal').classList.add('show');
+    }
+    function closeModal() { $('modal').classList.remove('show'); }
+
+    $('inviteBtn').addEventListener('click', () => {
+      showFormView();
       $('modal').classList.add('show');
       setTimeout(() => $('invEmail').focus(), 50);
     });
-    $('cancelInvite').addEventListener('click', () => $('modal').classList.remove('show'));
-    $('modal').addEventListener('click', (e) => { if (e.target === $('modal')) $('modal').classList.remove('show'); });
+    $('cancelInvite').addEventListener('click', closeModal);
+    $('closeResult').addEventListener('click', closeModal);
+    $('modal').addEventListener('click', (e) => { if (e.target === $('modal')) closeModal(); });
 
     $('inviteForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const submit = $('submitInvite');
-      submit.disabled = true; submit.textContent = '발송 중...';
+      submit.disabled = true; submit.textContent = '등록 중...';
       $('invErr').classList.remove('show');
       const body = {
         email: $('invEmail').value.trim(),
@@ -440,26 +515,44 @@
         role: $('invRole').value,
       };
       const res = await api('/api/users', { method: 'POST', body: JSON.stringify(body) });
-      submit.disabled = false; submit.textContent = '초대 발송';
+      submit.disabled = false; submit.textContent = '등록';
       if (!res.ok) {
         const m = res.data?.error === 'email_exists' ? '이미 등록된 이메일입니다.' :
-                  res.data?.error === 'forbidden' ? '해당 역할로 초대할 권한이 없습니다.' :
-                  '초대 실패: ' + (res.data?.error || res.status);
+                  res.data?.error === 'forbidden' ? '해당 역할로 등록할 권한이 없습니다.' :
+                  '등록 실패: ' + (res.data?.error || res.status);
         $('invErr').textContent = m; $('invErr').classList.add('show');
         return;
       }
-      $('modal').classList.remove('show');
-      const emailStatus = res.data?.email?.status;
-      if (emailStatus === 'failed') {
-        const inviteUrl = res.data?.invite?.url || '';
-        prompt(
-          `초대 등록은 됐으나 메일 발송이 실패했습니다. 아래 링크를 직접 전달하세요:\n(${res.data?.email?.error || ''})`,
-          inviteUrl
-        );
-      } else {
-        alert('초대 메일을 발송했습니다.');
-      }
+      // Show password result
+      showCredentialResult({
+        title: '등록 완료',
+        sub: '아래 초기 비밀번호를 복사해 본인에게 직접 전달하세요. 이 화면을 닫으면 다시 볼 수 없습니다.',
+        email: res.data.user.email,
+        password: res.data.password,
+      });
       await loadUsers();
+    });
+
+    // Copy buttons (per-field + combined)
+    function copyText(text, btn) {
+      navigator.clipboard.writeText(text).then(() => {
+        if (btn) {
+          const orig = btn.textContent;
+          btn.classList.add('copied'); btn.textContent = '✓ 복사됨';
+          setTimeout(() => { btn.classList.remove('copied'); btn.textContent = orig || '복사'; }, 1500);
+        }
+      });
+    }
+    document.querySelectorAll('.cred__copy').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.dataset.copy;
+        const txt = $(targetId)?.textContent || '';
+        copyText(txt, btn);
+      });
+    });
+    $('copyAll').addEventListener('click', () => {
+      const txt = $('resCombined').value;
+      copyText(txt, $('copyAll'));
     });
   </script>
 </body>
