@@ -1,0 +1,28 @@
+/* scm-pending-stats — 등록 대기 통계 (mini-checkbox + count + v-divider + action) */
+.scm-pending-stats {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0;
+}
+.scm-pending-stats__stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #000;
+  line-height: 19.6px;
+}
+.scm-pending-stats__stat-num { font-weight: 600; font-variant-numeric: tabular-nums; }
+.scm-pending-stats__stat--ok .scm-pending-stats__stat-num   { color: #1EA514; }
+.scm-pending-stats__stat--ng .scm-pending-stats__stat-num   { color: #F31110; }
+.scm-pending-stats__mini-cb {
+  width: 16px; height: 16px; border-radius: 2px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #F5F5F5;
+}
+.scm-pending-stats__mini-cb--ok { background: #ECFFEC; color: #1EA514; }
+.scm-pending-stats__mini-cb--ng { background: #FFECEC; color: #F31110; }
+.scm-pending-stats__mini-cb svg { width: 12px; height: 12px; }
+.scm-pending-stats__v-divider { width: 1px; height: 16px; background: #EBEBEB; flex-shrink: 0; }

@@ -1,0 +1,40 @@
+<!-- ============================================================
+     scm-button — canonical markers
+     ============================================================ -->
+
+<!-- 기본 (outlined) -->
+<button class="scm-button" type="button">일괄 업로드</button>
+
+<!-- Primary -->
+<button class="scm-button scm-button--primary" type="button">SKU 등록</button>
+
+<!-- Ghost -->
+<button class="scm-button scm-button--ghost" type="button">취소</button>
+
+<!-- Sizes -->
+<button class="scm-button scm-button--sm" type="button">Small</button>
+<button class="scm-button" type="button">Medium (default)</button>
+<button class="scm-button scm-button--lg scm-button--primary" type="button">Large primary</button>
+
+<!-- Block (full width) -->
+<button class="scm-button scm-button--block" type="button">Full width</button>
+
+<!-- Disabled -->
+<button class="scm-button" type="button" disabled>Disabled</button>
+<button class="scm-button scm-button--primary" type="button" disabled>Disabled primary</button>
+
+<!-- 페이지 헤드 액션 (진행 카운터 포함) — Figma: SKU 페이지 액션 버튼 -->
+<button class="scm-button" type="button">
+  <span>일괄 업로드</span>
+  <span class="scm-button__v-divider"></span>
+  <span class="scm-button__progress">
+    <span class="scm-button__progress-label">진행</span>
+    <span class="scm-button__progress-num">2</span>
+  </span>
+</button>
+
+<!-- SVG 아이콘 + 텍스트 -->
+<button class="scm-button" type="button">
+  <svg viewBox="0 0 20 20"><use href="#ic-download"/></svg>
+  <span>다운로드</span>
+</button>

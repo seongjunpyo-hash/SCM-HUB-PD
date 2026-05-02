@@ -1,0 +1,61 @@
+<!-- ============================================================
+     scm-stats-bar — canonical marker
+     ============================================================ -->
+
+<div class="scm-stats-bar scm-stats-bar--sticky">
+  <div class="scm-stats-bar__left">
+    <div class="scm-stats-bar__counts-wrap">
+      <div class="scm-stats-bar__counts">
+        <span class="scm-stat scm-stat--all">
+          <span class="scm-stat__label">전체</span>
+          <span class="scm-stat__num">500</span>
+        </span>
+        <span class="scm-stat-divider"></span>
+        <span class="scm-stat scm-stat--deployed">
+          <span class="scm-stat__label">전개중</span>
+          <span class="scm-stat__num">320</span>
+        </span>
+        <span class="scm-stat-divider"></span>
+        <span class="scm-stat scm-stat--undeployed">
+          <span class="scm-stat__label">미전개</span>
+          <span class="scm-stat__num">180</span>
+        </span>
+      </div>
+    </div>
+    <div class="scm-stats-bar__mini-actions">
+      <span class="scm-mini-wrap">
+        <button class="scm-mini-action" type="button" aria-haspopup="listbox" aria-expanded="false">
+          코드 복사
+          <svg viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
+        </button>
+      </span>
+      <span class="scm-mini-wrap">
+        <button class="scm-mini-action" type="button" disabled>
+          전개 여부 변경
+          <svg viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
+        </button>
+      </span>
+    </div>
+  </div>
+  <div class="scm-stats-bar__right">
+    <span class="scm-stats-bar__ts">25.10.24 12:00 업데이트</span>
+    <button class="scm-download-btn" type="button">
+      <svg viewBox="0 0 20 20"><path d="M10 3v10m0 0l-4-4m4 4l4-4M4 16h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      <span>전체 엑셀 다운로드</span>
+    </button>
+    <span class="scm-stats-bar__v-divider"></span>
+    <span class="scm-pager">
+      <strong class="scm-pager__current">1</strong>
+      <span class="scm-pager__total">/ <span>99</span> 페이지</span>
+      <button class="scm-pager-btn" type="button" aria-label="이전 페이지" disabled><svg viewBox="0 0 20 20"><path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></button>
+      <button class="scm-pager-btn" type="button" aria-label="다음 페이지"><svg viewBox="0 0 20 20"><path d="M8 4L14 10L8 16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></button>
+    </span>
+    <span class="scm-pgsize-wrap">
+      <button class="scm-pgsize" type="button" aria-haspopup="listbox" aria-expanded="false">
+        <span class="scm-pgsize__label">100개씩</span>
+        <svg class="scm-pgsize__chev" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
+      </button>
+      <ul class="scm-pgsize-popup" role="listbox"></ul>
+    </span>
+  </div>
+</div>

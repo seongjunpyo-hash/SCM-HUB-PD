@@ -1,0 +1,65 @@
+/* scm-barcode-card — sku-detail 의 바코드 카드 */
+.scm-barcode-card {
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #E0E0E0;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 24px;
+  box-sizing: border-box;
+}
+.scm-barcode-card__inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.scm-barcode-card__icon {
+  width: 32px; height: 32px;
+  flex-shrink: 0;
+  display: block;
+}
+.scm-barcode-card__num {
+  width: 140px;
+  flex-shrink: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20.4px;
+  color: #1A1A1A;
+  word-break: break-all;
+}
+.scm-barcode-card__chip {
+  min-width: 60px;
+  padding: 6px 10px;
+  background: #fff;
+  border: 1px solid #E0E0E0;
+  border-radius: 99px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 19.5px;
+  color: #000;
+  cursor: pointer;
+}
+.scm-barcode-card__chip svg { width: 16px; height: 16px; }
+
+/* Add button (72×72 + 아이콘) */
+.scm-barcode-add {
+  width: 72px; height: 72px;
+  padding: 16px;
+  background: #F5F5F5;
+  border: 1px solid #E0E0E0;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #1A1A1A;
+  flex-shrink: 0;
+}
+.scm-barcode-add:hover { background: #EBEBEB; }
+.scm-barcode-add svg { width: 20px; height: 20px; }

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<!--
+  data-list-page.html — 데이터 리스트 페이지 템플릿
+  ============================================================
+  무탠 / SKU 관리 / 편집샵 보충 요청 / 편집샵 보충 현황 패턴.
+
+  골격:
+    [topbar] → [LNB | main]
+    main: scm-page-head--list → scm-filter-bar → scm-stats-bar→ table → 모달/드로어 (전역)
+
+  사용:
+    이 파일을 복사 → 페이지 specific 데이터/타이틀로 교체.
+    {{TITLE}}, {{ACTIONS}}, {{FILTERS}}, {{COUNTS}}, {{TABLE}} 등을 채워서 사용.
+============================================================ -->
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1440" />
+  <title>{{TITLE}}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <link rel="stylesheet" href="../layer-desktop.css" />
+  <!-- 전체 모듈 import — 페이지별로 미사용 모듈 제거 가능 -->
+  {{MODULE_CSS_LINKS}}
+  {{PAGE_LOCAL_STYLES}}
+</head>
+<body>
+  <header class="topbar">{{TOPBAR}}</header>
+  <div class="app">
+    <nav class="lnb" aria-label="주메뉴">{{LNB}}</nav>
+    <main>
+      <!-- Page head -->
+      <div class="scm-page-head scm-page-head--list scm-page-head--sticky">
+        <h1 class="scm-page-head__title">{{TITLE}}</h1>
+        <div class="scm-page-head__actions">{{ACTIONS}}</div>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="scm-filter-bar" id="filter-bar">
+        <button class="scm-filter-chip" type="button" id="filter-drawer-open">
+          <svg viewBox="0 0 20 20"><path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/></svg>
+          <span>전체 필터</span>
+          <span class="scm-filter-chip__count">{{FILTER_COUNT}}</span>
+        </button>
+        <div class="scm-filter-overflow">
+          <div class="scm-filter-overflow__track">
+            {{FILTER_SELECTS}}
+          </div>
+          <div class="scm-filter-overflow__fade scm-filter-overflow__fade--left"></div>
+          <div class="scm-filter-overflow__fade scm-filter-overflow__fade--right"></div>
+        </div>
+        <div class="scm-filter-actions">
+          <button class="scm-search-btn" type="button">검색</button>
+          <button class="scm-filter-reset-btn" type="button" hidden>
+            <svg viewBox="0 0 20 20"><path d="M4 4V8H8M16 16V12H12M4 8C4.5 6 7 3 10 3C13 3 16 5 16 9M16 12C15.5 14 13 17 10 17C7 17 4 15 4 11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+            <span>초기화</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats bar -->
+      <div class="scm-stats-bar scm-stats-bar--sticky">
+        <div class="scm-stats-bar__left">
+          <div class="scm-stats-bar__counts-wrap">
+            <div class="scm-stats-bar__counts">{{STATS_COUNTS}}</div>
+          </div>
+          <div class="scm-stats-bar__mini-actions">{{MINI_ACTIONS}}</div>
+        </div>
+        <div class="scm-stats-bar__right">
+          <span class="scm-stats-bar__ts">{{TIMESTAMP}}</span>
+          <button class="scm-download-btn" type="button">
+            <svg viewBox="0 0 20 20"><path d="M10 3v10m0 0l-4-4m4 4l4-4M4 16h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+            <span>전체 엑셀 다운로드</span>
+          </button>
+          <span class="scm-stats-bar__v-divider"></span>
+          {{PAGER}}
+          {{PGSIZE}}
+        </div>
+      </div>
+
+      <!-- Data table — 현재는 mp-table (Stage 12 마이그레이션 시 scm-table-* 로 리네임) -->
+      <div class="mp-table-host">
+        <table class="mp-table is-cell-selectable">
+          <thead>{{TABLE_HEAD}}</thead>
+          <tbody>{{TABLE_BODY}}</tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- Filter drawer -->
+  <div class="scm-filter-drawer-backdrop" id="fd-backdrop" hidden></div>
+  <aside class="scm-filter-drawer" id="filter-drawer" hidden role="dialog" aria-label="전체 필터">
+    {{FILTER_DRAWER_CONTENT}}
+  </aside>
+
+  <!-- Bulk upload modal (옵션) -->
+  {{BULK_UPLOAD_MODAL}}
+
+  <!-- 전역 module JS -->
+  {{MODULE_JS_SCRIPTS}}
+
+  <!-- 페이지 logic -->
+  <script>{{PAGE_SCRIPT}}</script>
+</body>
+</html>

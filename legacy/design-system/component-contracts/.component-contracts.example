@@ -1,0 +1,20 @@
+# SCM Hub — Component Contracts 환경 설정
+# 실제 사용 시 이 파일을 `.component-contracts` 로 복사하고 값을 채우세요.
+# .component-contracts 는 .gitignore 에 포함됩니다 (FIGMA_ACCESS_TOKEN 보호).
+
+# 1) Figma 접근 토큰 — Personal Access Token (settings/account)
+FIGMA_ACCESS_TOKEN=figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# 2) 토큰/컴포넌트가 build 될 Figma 파일 키
+#    URL 형식: figma.com/design/<FILE_KEY>/<file-name>
+#    예시: nm6vlOA9stZAf03Q1LvsHa  (LayerDesktop)
+FIGMA_FILE_KEY=nm6vlOA9stZAf03Q1LvsHa
+
+# 3) 토큰 디렉토리 (W3C DTCG primitive/semantic)
+TOKENS_DIR=./tokens
+
+# 4) Contract 디렉토리
+CONTRACTS_DIR=./contracts
+
+# 5) Schema 위치 (검증용)
+SCHEMA_PATH=./schema/schema.json

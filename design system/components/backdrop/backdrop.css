@@ -1,0 +1,33 @@
+/* ============================================================
+ * scm-backdrop — overlay backdrop
+ * ------------------------------------------------------------
+ * 모달 / 드로어 / 팝오버 뒤의 어두운 배경. 또는 외부 클릭 감지를
+ * 위한 투명 영역.
+ *
+ * Variants:
+ *   기본                              어두운 dim (rgba(0,0,0,0.32))
+ *   .scm-backdrop--transparent       투명 (팝오버 외부 클릭용)
+ *
+ * States:
+ *   .is-open                         표시됨
+ *
+ * z-index 정책:
+ *   기본 80. 더 위에 띄울 backdrop 은 inline style 또는
+ *   --scm-backdrop-z 변수로 오버라이드.
+ * ============================================================ */
+
+.scm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+  z-index: var(--scm-backdrop-z, 80);
+  display: none;
+}
+
+.scm-backdrop.is-open {
+  display: block;
+}
+
+.scm-backdrop--transparent {
+  background: transparent;
+}

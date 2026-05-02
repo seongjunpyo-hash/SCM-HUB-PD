@@ -1,0 +1,127 @@
+{
+  "$schema": "../schema/schema.json",
+  "id": "button",
+  "version": "2.26.0",
+  "displayName": "Button",
+  "description": "SCM Hub action button. Used in page header, filter bar actions, modal footers, and inline cell actions.",
+  "status": "stable",
+  "platforms": ["web"],
+  "tokens": {
+    "color": {
+      "background.primary":           "fg.default",
+      "background.primary.hover":     "fg.default",
+      "background.primary.disabled":  "bg.disabled",
+      "background.secondary":         "bg.default",
+      "background.secondary.hover":   "bg.low",
+      "background.ghost":             "transparent",
+      "background.ghost.hover":       "bg.low",
+      "background.critical":          "bg.critical",
+      "text.primary":                 "fg.on-contrast",
+      "text.secondary":               "fg.default",
+      "text.ghost":                   "fg.default",
+      "text.critical":                "fg.on-contrast",
+      "text.disabled":                "fg.disabled",
+      "border.secondary":             "fg.default",
+      "border.ghost":                 "border.default",
+      "border.critical":              "bg.critical",
+      "focus.ring":                   "focus.outline"
+    },
+    "typography": {
+      "label.size":   "fontSize.125",
+      "label.weight": "fontWeight.medium",
+      "label.lineHeight": "lineHeight.140"
+    },
+    "spacing": {
+      "padding.x.sm": "space.150",
+      "padding.x.md": "space.200",
+      "padding.x.lg": "space.300",
+      "padding.y.sm": "space.100",
+      "padding.y.md": "space.150",
+      "padding.y.lg": "space.200",
+      "icon.gap":     "space.100"
+    },
+    "border": {
+      "radius": "radius.sm",
+      "width":  "border.width"
+    },
+    "motion": {
+      "transition": "duration.fast"
+    }
+  },
+  "props": {
+    "variant": {
+      "type": "enum",
+      "description": "Visual style. primary=검정 filled, secondary=outlined, ghost=text-only, critical=red filled.",
+      "values": ["primary", "secondary", "ghost", "critical"],
+      "default": "secondary",
+      "tokenMapped": true
+    },
+    "size": {
+      "type": "enum",
+      "description": "h36 = sd-btn-outline (수정/추가), h40 = mp-mini-action, h44 = mp-action-btn (page header).",
+      "values": ["sm", "md", "lg"],
+      "default": "md",
+      "tokenMapped": true
+    },
+    "label":     { "type": "string", "description": "Visible text.", "required": true },
+    "disabled":  { "type": "boolean", "default": false },
+    "loading":   { "type": "boolean", "default": false },
+    "iconStart": { "type": "ref", "ref": "icon" },
+    "iconEnd":   { "type": "ref", "ref": "icon" },
+    "iconOnly":  { "type": "boolean", "default": false },
+    "fullWidth": { "type": "boolean", "default": false },
+    "onPress":   { "type": "function", "required": true },
+    "type":      { "type": "enum", "values": ["button", "submit", "reset"], "default": "button" }
+  },
+  "states": ["default", "hover", "focus", "active", "disabled", "loading"],
+  "variants": [
+    { "id": "primary-md",   "props": { "variant": "primary",   "size": "md", "label": "검색 적용" } },
+    { "id": "secondary-md", "props": { "variant": "secondary", "size": "md", "label": "취소"     } },
+    { "id": "secondary-sm", "props": { "variant": "secondary", "size": "sm", "label": "추가"     } },
+    { "id": "ghost-md",     "props": { "variant": "ghost",     "size": "md", "label": "전체 초기화" } },
+    { "id": "primary-lg",   "props": { "variant": "primary",   "size": "lg", "label": "SKU 단건 등록" } },
+    { "id": "icon-only",    "props": { "variant": "ghost",     "iconOnly": true, "label": "메뉴 토글" } },
+    { "id": "loading",      "props": { "variant": "primary",   "loading": true, "label": "저장 중" } }
+  ],
+  "composition": {
+    "slots": {
+      "trigger": {
+        "description": "Interactive surface.",
+        "required": true,
+        "childOrder": ["iconStart", "label", "iconEnd"],
+        "children": {
+          "iconStart": { "type": "icon", "figma": { "visible": false, "booleanProp": "iconStart" } },
+          "label":     { "type": "text", "figma": { "textProp": "label" } },
+          "iconEnd":   { "type": "icon", "figma": { "visible": false, "booleanProp": "iconEnd" } }
+        }
+      }
+    },
+    "forbiddenParents": ["button"]
+  },
+  "behavior": {
+    "focusable": true,
+    "pressable": true,
+    "keyboardShortcuts": [
+      { "key": "Enter", "action": "Activate button" },
+      { "key": "Space", "action": "Activate button" }
+    ]
+  },
+  "accessibility": { "role": "button", "labelSource": "prop", "wcagLevel": "AA" },
+  "usage": {
+    "do": [
+      "Use one primary button per modal / section.",
+      "Use sm size (h36) for inline cell actions (수정·추가).",
+      "Use lg size (h44) for page header primary actions.",
+      "Use loading to prevent duplicate submissions."
+    ],
+    "dont": [
+      "Avoid stacking multiple primary buttons in the same row.",
+      "Don't use ghost variant on a colored background — contrast fails.",
+      "Don't put an icon-only button without aria-label."
+    ]
+  },
+  "changelog": [
+    { "version": "2.26.0", "date": "2026-04-29", "summary": "Added sm size (h36) for sd-btn-outline (수정/추가)." },
+    { "version": "2.20.0", "date": "2026-04-15", "summary": "Initial contract." }
+  ]
+}

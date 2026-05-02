@@ -1,0 +1,33 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Node / Build
+node_modules/
+dist/
+build/
+*.log
+.cache/
+
+# 환경변수 / 비밀
+.env
+.env.local
+.env.*.local
+*.pem
+
+# Cloudflare Wrangler
+.wrangler/
+.dev.vars
+
+# 임시
+*.tmp
+*.bak
+.tmp/
+legacy/design-system/component-contracts-figma/

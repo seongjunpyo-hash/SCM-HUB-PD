@@ -1,0 +1,38 @@
+<!-- ============================================================
+     scm-toast — canonical markers
+     자체 마운트 시 stack 은 자동 생성. 수동으로 마크업하려면 아래.
+     ============================================================ -->
+
+<!-- Stack 컨테이너 (페이지에 1개만) -->
+<div class="scm-toast-stack" aria-live="polite"></div>
+
+<!-- 단일 토스트 (success) -->
+<div class="scm-toast scm-toast--success">
+  <svg class="scm-toast__icon" aria-hidden="true"><use href="#ic-checkCircle-filled"/></svg>
+  <div class="scm-toast__body">
+    <div class="scm-toast__title">저장 완료</div>
+    <div class="scm-toast__desc">변경사항이 적용됐습니다.</div>
+  </div>
+  <button class="scm-toast__close" aria-label="닫기">
+    <svg width="14" height="14" aria-hidden="true"><use href="#ic-close"/></svg>
+  </button>
+</div>
+
+<!-- info -->
+<div class="scm-toast scm-toast--info">
+  <svg class="scm-toast__icon"><use href="#ic-checkCircle-filled"/></svg>
+  <div class="scm-toast__body">
+    <div class="scm-toast__title">필터 적용 완료</div>
+  </div>
+  <button class="scm-toast__close" aria-label="닫기"><svg width="14" height="14"><use href="#ic-close"/></svg></button>
+</div>
+
+<!-- critical -->
+<div class="scm-toast scm-toast--critical">
+  <svg class="scm-toast__icon"><use href="#ic-alertTriangle"/></svg>
+  <div class="scm-toast__body">
+    <div class="scm-toast__title">처리 실패</div>
+    <div class="scm-toast__desc">네트워크 오류가 발생했습니다.</div>
+  </div>
+  <button class="scm-toast__close" aria-label="닫기"><svg width="14" height="14"><use href="#ic-close"/></svg></button>
+</div>

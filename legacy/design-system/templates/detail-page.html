@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<!--
+  detail-page.html — 상세 페이지 템플릿
+  ============================================================
+  sku-detail 패턴. 좌측 aside (이미지/기본정보) + 우측 main (섹션화).
+
+  골격:
+    [topbar] → [LNB | main]
+    main: scm-page-head--detail → 2-column grid (aside 320 + main flex)
+============================================================ -->
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1440" />
+  <title>{{TITLE}}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <link rel="stylesheet" href="../layer-desktop.css" />
+  {{MODULE_CSS_LINKS}}
+  <style>
+    .detail-grid { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 68px; align-items: start; padding: 0 0 40px; }
+    .detail-aside { display: flex; flex-direction: column; gap: 16px; }
+    .detail-aside__cover { width: 320px; height: 384px; border-radius: 4px; background: #F5F5F5; flex-shrink: 0; }
+    .detail-main { display: flex; flex-direction: column; gap: 40px; min-width: 0; }
+  </style>
+</head>
+<body>
+  <header class="topbar">{{TOPBAR}}</header>
+  <div class="app">
+    <nav class="lnb" aria-label="주메뉴">{{LNB}}</nav>
+    <main>
+      <!-- Page head (back + title) -->
+      <div class="scm-page-head scm-page-head--detail scm-page-head--sticky">
+        <button class="scm-back-btn" type="button" aria-label="뒤로">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <h1 class="scm-page-head__title">{{TITLE}}</h1>
+      </div>
+
+      <div class="detail-grid">
+        <aside class="detail-aside">
+          <div class="detail-aside__cover" style="background-image:url('{{COVER_IMAGE}}');background-size:cover;"></div>
+          {{ASIDE_CONTENT}}
+        </aside>
+
+        <div class="detail-main">{{MAIN_SECTIONS}}</div>
+      </div>
+    </main>
+  </div>
+  {{MODULE_JS_SCRIPTS}}
+  <script>{{PAGE_SCRIPT}}</script>
+</body>
+</html>

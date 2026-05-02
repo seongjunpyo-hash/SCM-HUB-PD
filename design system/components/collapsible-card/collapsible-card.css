@@ -1,0 +1,80 @@
+/* ============================================================
+ * scm-collapsible-card — 확장/축소 카드
+ * ------------------------------------------------------------
+ * sku-detail 의 UID 카드 같은 collapsible. head 클릭으로 토글.
+ * head 우측에 minus/plus 토글 아이콘 (둘 다 마크업에 존재,
+ * is-collapsed 상태에 따라 자동 표시 전환).
+ *
+ * Marker:
+ *   <div class="scm-collapsible-card">
+ *     <div class="scm-collapsible-card__head">
+ *       <div class="scm-collapsible-card__head-left">
+ *         ... 제목 / 부속 정보 ...
+ *       </div>
+ *       <span class="scm-collapsible-card__toggle">
+ *         <svg class="minus">...</svg>
+ *         <svg class="plus">...</svg>
+ *       </span>
+ *     </div>
+ *     <div class="scm-collapsible-card__body">
+ *       ... 컨텐츠 ...
+ *     </div>
+ *   </div>
+ *
+ * States:
+ *   .is-collapsed     body 숨김 + toggle 아이콘 plus 표시
+ * ============================================================ */
+
+.scm-collapsible-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.scm-collapsible-card__head {
+  padding: 16px 16px 16px 0;
+  border-bottom: 1px solid rgba(138, 138, 138, 0.10);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.scm-collapsible-card__head-left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.scm-collapsible-card__toggle {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #1A1A1A;
+  flex-shrink: 0;
+}
+
+.scm-collapsible-card__toggle svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Body */
+.scm-collapsible-card__body {
+  padding-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Collapsed state */
+.scm-collapsible-card.is-collapsed .scm-collapsible-card__body { display: none; }
+.scm-collapsible-card.is-collapsed .scm-collapsible-card__toggle svg.minus { display: none; }
+.scm-collapsible-card.is-collapsed .scm-collapsible-card__toggle svg.plus  { display: inline-block; }
+
+.scm-collapsible-card .scm-collapsible-card__toggle svg.minus { display: inline-block; }
+.scm-collapsible-card .scm-collapsible-card__toggle svg.plus  { display: none; }

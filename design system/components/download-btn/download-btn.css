@@ -1,0 +1,37 @@
+/* ============================================================
+ * scm-download-btn — 다운로드 버튼 (stats bar 우측)
+ * ------------------------------------------------------------
+ * h36 outlined. 좌측 download 아이콘 + 텍스트. gap 2.
+ * 4개 데이터리스트 페이지의 stats bar 우측에서 공용.
+ * ============================================================ */
+
+.scm-download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 36px;
+  min-width: 64px;
+  padding: 8px 12px;
+  border: 1px solid #E0E0E0;
+  border-radius: 4px;
+  background: #fff;
+  color: #000;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 19.6px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.scm-download-btn svg {
+  width: 20px;
+  height: 20px;
+  color: #000;
+  flex-shrink: 0;
+}
+
+.scm-download-btn:hover {
+  background: var(--ld-bg-low, #FAFBFC);
+}

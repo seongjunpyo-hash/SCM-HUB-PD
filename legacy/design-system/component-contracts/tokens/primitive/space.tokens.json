@@ -1,0 +1,68 @@
+{
+  "space": {
+    "50": {
+      "$value": "2px",
+      "$type": "dimension"
+    },
+    "100": {
+      "$value": "4px",
+      "$type": "dimension"
+    },
+    "150": {
+      "$value": "6px",
+      "$type": "dimension"
+    },
+    "200": {
+      "$value": "8px",
+      "$type": "dimension"
+    },
+    "250": {
+      "$value": "10px",
+      "$type": "dimension"
+    },
+    "300": {
+      "$value": "12px",
+      "$type": "dimension"
+    },
+    "400": {
+      "$value": "16px",
+      "$type": "dimension"
+    },
+    "500": {
+      "$value": "20px",
+      "$type": "dimension"
+    },
+    "600": {
+      "$value": "24px",
+      "$type": "dimension"
+    },
+    "800": {
+      "$value": "32px",
+      "$type": "dimension"
+    },
+    "900": {
+      "$value": "36px",
+      "$type": "dimension"
+    },
+    "1000": {
+      "$value": "40px",
+      "$type": "dimension"
+    },
+    "1500": {
+      "$value": "60px",
+      "$type": "dimension"
+    },
+    "1800": {
+      "$value": "72px",
+      "$type": "dimension"
+    },
+    "2000": {
+      "$value": "80px",
+      "$type": "dimension"
+    },
+    "2400": {
+      "$value": "96px",
+      "$type": "dimension"
+    }
+  }
+}

@@ -1,0 +1,56 @@
+/* ============================================================
+ * scm-checkbox — 16×16 SVG 기반 체크박스
+ * ------------------------------------------------------------
+ * 데이터 리스트 페이지의 row/cell 선택, 폼 페이지의 컨트롤,
+ * 모든 곳에서 공용으로 쓰이는 체크박스.
+ *
+ * Marker:
+ *   role="checkbox" + aria-checked 속성으로 상태 표현 (input 없음).
+ *   div/span 기반이라 자유롭게 부착 가능.
+ *
+ * States:
+ *   aria-checked="false"  체크 해제
+ *   aria-checked="true"   체크됨 (검정 배경 + 흰색 ✓)
+ *   aria-checked="mixed"  indeterminate (대시 — 일부만 선택)
+ *   .is-disabled          비활성
+ * ============================================================ */
+
+.scm-checkbox {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 1px solid #CCCCCC;
+  border-radius: 2px;
+  background: #fff;
+  cursor: pointer;
+  vertical-align: middle;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+/* 체크 상태 — 검정 배경 + 곡선 체크 SVG */
+.scm-checkbox[aria-checked="true"] {
+  border: 0;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'><path d='M0 2C0 0.895431 0.895431 0 2 0H14C15.1046 0 16 0.895431 16 2V14C16 15.1046 15.1046 16 14 16H2C0.895431 16 0 15.1046 0 14V2Z' fill='black'/><path d='M3.4502 7.3001L6.73154 10.5814C6.85121 10.7011 7.04613 10.6982 7.16213 10.5749L12.5502 4.8501' stroke='white'/></svg>") center/16px no-repeat;
+}
+
+/* Indeterminate — 검정 배경 + 흰 대시 */
+.scm-checkbox[aria-checked="mixed"] {
+  border: 0;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'><path d='M0 2C0 0.895431 0.895431 0 2 0H14C15.1046 0 16 0.895431 16 2V14C16 15.1046 15.1046 16 14 16H2C0.895431 16 0 15.1046 0 14V2Z' fill='black'/><path d='M4 8H12' stroke='white' stroke-width='1.6' stroke-linecap='round'/></svg>") center/16px no-repeat;
+}
+
+/* Disabled */
+.scm-checkbox.is-disabled,
+.scm-checkbox[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Focus ring (키보드 접근성) */
+.scm-checkbox:focus-visible {
+  outline: 2px solid #245EFF;
+  outline-offset: 2px;
+}

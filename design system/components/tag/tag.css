@@ -1,0 +1,38 @@
+/* ============================================================
+ * scm-tag — h28 인라인 태그
+ * ------------------------------------------------------------
+ * 시즌 / 도메인 메타 / 상태 라벨 등 작은 인라인 라벨.
+ * 폰트 14/500, padding 4px 8px, border-radius 4px, height 28px.
+ *
+ * Variants:
+ *   기본                          rgba(0,0,0,0.05) 배경, 검정 텍스트 (시즌 태그)
+ *   .scm-tag--blue                #E2F1FF 배경 (예: 초도)
+ *   .scm-tag--green               #ECFFEC 배경 (예: 자동)
+ *   .scm-tag--gray                rgba(138,138,138,0.10) (예: 재발주, 수동)
+ * ============================================================ */
+
+.scm-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.05);
+  color: #000;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.scm-tag--blue  { background: #E2F1FF; }
+.scm-tag--green { background: #ECFFEC; }
+.scm-tag--gray  { background: rgba(138, 138, 138, 0.10); }
+
+/* Stack (여러 태그를 가로로 묶을 때) */
+.scm-tag-stack {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}

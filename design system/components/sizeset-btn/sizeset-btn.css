@@ -1,0 +1,74 @@
+/* ============================================================
+ * scm-sizeset-btn — "사이즈 개별 설정" 셀 안 outlined 버튼
+ * ------------------------------------------------------------
+ * "전개 5/9" 형식의 카운트 표시. 파란 강조 숫자 + 회색 구분/
+ * 분모. 클릭 시 사이즈 detail drawer 오픈.
+ *
+ * Marker:
+ *   <button class="scm-sizeset-btn">
+ *     <span>전개</span>
+ *     <span class="scm-sizeset-btn__num">
+ *       <em>5</em>
+ *       <span class="divider">/</span>
+ *       <span class="total">9</span>
+ *     </span>
+ *   </button>
+ *
+ * Spec: h36 outlined, padding 8 12, gap 4, font 14/500.
+ * ============================================================ */
+
+.scm-sizeset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 36px;
+  min-width: 64px;
+  padding: 8px 12px;
+  border: 1px solid #E0E0E0;
+  border-radius: 4px;
+  background: #fff;
+  color: #000;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 19.6px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.scm-sizeset-btn:hover {
+  background: var(--ld-bg-low, #FAFBFC);
+}
+
+.scm-sizeset-btn__num {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.scm-sizeset-btn__num em {
+  color: #245EFF;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.scm-sizeset-btn__num .divider,
+.scm-sizeset-btn__num .total {
+  color: #666;
+  font-weight: 400;
+}
+
+/* Disabled (사이즈 데이터 없거나 전체 미운영 시) */
+.scm-sizeset-btn:disabled,
+.scm-sizeset-btn[disabled] {
+  background: rgba(138, 138, 138, 0.10);
+  border-color: #EBEBEB;
+  color: rgba(0, 0, 0, 0.20);
+  cursor: not-allowed;
+}
+.scm-sizeset-btn:disabled .scm-sizeset-btn__num em,
+.scm-sizeset-btn[disabled] .scm-sizeset-btn__num em {
+  color: rgba(0, 0, 0, 0.20);
+}

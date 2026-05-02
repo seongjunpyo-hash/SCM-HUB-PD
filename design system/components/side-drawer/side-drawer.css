@@ -1,0 +1,131 @@
+/* ============================================================
+ * scm-side-drawer — 우측 슬라이드 드로어
+ * ------------------------------------------------------------
+ * sd-drawer 패턴 generic 화. 우측에서 슬라이드 인. head + body +
+ * footer 슬롯. 자체 backdrop 포함.
+ *
+ * Marker:
+ *   <div class="scm-side-drawer-backdrop"></div>
+ *   <aside class="scm-side-drawer" role="dialog">
+ *     <header class="scm-side-drawer__head">
+ *       <span class="scm-side-drawer__head-meta">메타</span>
+ *       <button class="scm-side-drawer__close" aria-label="닫기">
+ *         <svg>...×...</svg>
+ *       </button>
+ *     </header>
+ *     <div class="scm-side-drawer__body">...</div>
+ *     <footer class="scm-side-drawer__footer">
+ *       <button>닫기</button>
+ *       <button class="primary">저장</button>
+ *     </footer>
+ *   </aside>
+ *
+ * Sizes:
+ *   기본              848 (사이즈 detail drawer 기본)
+ *   --sm              480 (좁은 패널)
+ *   --md              640
+ *   --lg              848 (= 기본)
+ *
+ * States:
+ *   .is-open                       transform: translateX(0)
+ *   [hidden]                       완전히 안 보임 (애니메이션 끝나면)
+ * ============================================================ */
+
+.scm-side-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+  z-index: 50;
+}
+
+.scm-side-drawer-backdrop[hidden] {
+  display: none;
+}
+
+.scm-side-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 848px;
+  max-width: 96vw;
+  background: #fff;
+  box-shadow: -8px 0 16px rgba(0, 0, 0, 0.06), -2px 0 4px rgba(0, 0, 0, 0.04);
+  z-index: 51;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+}
+
+.scm-side-drawer[hidden] {
+  display: none;
+}
+
+.scm-side-drawer.is-open {
+  transform: translateX(0);
+}
+
+/* Sizes */
+.scm-side-drawer--sm { width: 480px; }
+.scm-side-drawer--md { width: 640px; }
+.scm-side-drawer--lg { width: 848px; }
+
+/* Head */
+.scm-side-drawer__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 24px 0;
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.scm-side-drawer__head-meta {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 19.6px;
+  color: #666;
+}
+
+.scm-side-drawer__close {
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+  flex-shrink: 0;
+}
+
+.scm-side-drawer__close:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.scm-side-drawer__close svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Body */
+.scm-side-drawer__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 24px 24px;
+}
+
+/* Footer */
+.scm-side-drawer__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 24px;
+  border-top: 1px solid #EBEBEB;
+  flex-shrink: 0;
+}

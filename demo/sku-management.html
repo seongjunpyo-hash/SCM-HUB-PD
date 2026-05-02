@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1440" />
+  <title>SCM-Hub · SKU 관리 (모듈 기반)</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <link rel="stylesheet" href="../design%20system/layer-desktop.css" />
+
+  <!-- SCM Components — 데이터 리스트 + 도메인 -->
+  <link rel="stylesheet" href="../design%20system/components/backdrop/backdrop.css" />
+  <link rel="stylesheet" href="../design%20system/components/checkbox/checkbox.css" />
+  <link rel="stylesheet" href="../design%20system/components/tag/tag.css" />
+  <link rel="stylesheet" href="../design%20system/components/toast/toast.css" />
+  <link rel="stylesheet" href="../design%20system/components/button/button.css" />
+  <link rel="stylesheet" href="../design%20system/components/search-btn/search-btn.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-reset-btn/filter-reset-btn.css" />
+  <link rel="stylesheet" href="../design%20system/components/download-btn/download-btn.css" />
+  <link rel="stylesheet" href="../design%20system/components/pager/pager.css" />
+  <link rel="stylesheet" href="../design%20system/components/pgsize-select/pgsize-select.css" />
+  <link rel="stylesheet" href="../design%20system/components/mini-action/mini-action.css" />
+  <link rel="stylesheet" href="../design%20system/components/info-banner/info-banner.css" />
+  <link rel="stylesheet" href="../design%20system/components/code-link/code-link.css" />
+  <link rel="stylesheet" href="../design%20system/components/code-popover/code-popover.css" />
+  <link rel="stylesheet" href="../design%20system/components/confirm-modal/confirm-modal.css" />
+  <link rel="stylesheet" href="../design%20system/components/bulk-upload-modal/bulk-upload-modal.css" />
+  <link rel="stylesheet" href="../design%20system/components/radio/radio.css" />
+  <link rel="stylesheet" href="../design%20system/components/select/select.css" />
+  <link rel="stylesheet" href="../design%20system/components/platform-tag/platform-tag.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-chip/filter-chip.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-select/filter-select.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-bar/filter-bar.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-popover/filter-popover.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-drawer/filter-drawer.css" />
+  <link rel="stylesheet" href="../design%20system/components/stat/stat.css" />
+  <link rel="stylesheet" href="../design%20system/components/stats-bar/stats-bar.css" />
+  <link rel="stylesheet" href="../design%20system/components/page-head/page-head.css" />
+  <link rel="stylesheet" href="../design%20system/components/scm-table/scm-table.css" />
+  <link rel="stylesheet" href="../design%20system/components/scm-table/column-more-menu.css" />
+  <link rel="stylesheet" href="../design%20system/components/scm-table/column-filter-popover.css" />
+  <!-- 공용 셸 (GNB + LNB) -->
+  <link rel="stylesheet" href="../design%20system/components/topbar/topbar.css" />
+  <link rel="stylesheet" href="../design%20system/components/lnb/lnb.css" />
+  <!-- 도메인 -->
+  <link rel="stylesheet" href="../design%20system/components/product-name/product-name.css" />
+
+  <style>
+    :root {
+      --scm-lnb-width: 56px;
+      --scm-sticky-gnb: 64px;
+      --scm-sticky-filter: 76px;
+    }
+    html.is-lnb-open { --scm-lnb-width: 260px; }
+
+    body { margin: 0; font-family: var(--ld-font-family-base); color: var(--ld-fg); background: #fff; min-width: 1440px; }
+
+    .app { display: grid; grid-template-columns: var(--scm-lnb-width) minmax(0, 1fr); transition: grid-template-columns 0.2s ease; }
+
+    main { min-width: 0; padding: 0 28px 40px; }
+
+    /* sticky stack */
+    .scm-filter-bar { top: var(--scm-sticky-gnb); }
+    .scm-stats-bar--sticky { top: calc(var(--scm-sticky-gnb) + var(--scm-sticky-filter)); }
+    .mp-table-host { margin-top: 0; }
+
+    /* 일괄 업로드 / SKU 단건 등록 버튼 — sticky 제거, page-head 안의 일반 flow → 스크롤하면 자연스럽게 사라짐 */
+    .mp-table .cell-numeric { font-variant-numeric: tabular-nums; text-align: right; }
+
+    /* === Domain — SKU 관리 (legacy 인라인 보조) === */
+    /* 운영상태 / 매핑상태 pill — dot + label (legacy sku-status-pill 재현) */
+    .sku-status-pill { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 2px 8px; border-radius: 4px; font-size: 13px; font-weight: 500; line-height: 18px; }
+    .sku-status-pill .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .sku-status-pill[data-state="active"]   { background: #E2F1FF; color: #245EFF; }
+    .sku-status-pill[data-state="active"]   .dot { background: #245EFF; }
+    .sku-status-pill[data-state="inactive"] { background: rgba(138,138,138,0.10); color: #666; }
+    .sku-status-pill[data-state="inactive"] .dot { background: #999; }
+    .sku-status-pill[data-state="mapped"]   { background: #E8F5E9; color: #2E7D32; }
+    .sku-status-pill[data-state="mapped"]   .dot { background: #43A047; }
+    .sku-status-pill[data-state="unmapped"] { background: #FFF3E0; color: #E65100; }
+    .sku-status-pill[data-state="unmapped"] .dot { background: #FF9800; }
+
+    /* 옵션 chip wrap — 다중 chip 한 줄 (max 260) */
+    .sku-opt-chips { display: inline-flex; align-items: center; gap: 8px; flex-wrap: nowrap; max-width: 260px; white-space: nowrap; }
+
+    /* 숫자 셀 — tabular-nums */
+    .sku-num { font-variant-numeric: tabular-nums; }
+
+    /* info-banner 하단 마진 (legacy 8px) */
+    #sku-info-banner { margin-bottom: 8px; }
+
+    /* === confirm-modal 안내문 — 상품 등록 후 매핑 callout (legacy 재현, page-scope) === */
+    .scm-confirm-modal__desc .mp-modal-body-text { font-size: 15px; line-height: 20.4px; color: #1A1A1A; margin-bottom: 12px; }
+    .scm-confirm-modal__desc .mp-modal-callout { background: #F5F5F5; border-radius: 4px; padding: 12px 16px; }
+    .scm-confirm-modal__desc .mp-modal-callout .callout-title { font-size: 14px; font-weight: 500; line-height: 19.6px; color: #000; padding-bottom: 8px; }
+    .scm-confirm-modal__desc .mp-modal-callout .callout-text { font-size: 14px; font-weight: 400; line-height: 19.6px; color: #1A1A1A; }
+    .scm-confirm-modal__desc strong.accent { color: #245EFF; font-weight: 700; }
+
+    /* stat 선택됨 상태 (action sync 시 추가됨) — legacy mp-stat--selected 재현 */
+    .scm-stat--selected .scm-stat__num { color: #245EFF; font-weight: 700; }
+
+    /* === filter-bar joined group + input (legacy mp-filter-group / mp-filter-input 페이지 스코프) === */
+    .scm-filter-group { display: inline-flex; align-items: center; }
+    .scm-filter-group > * { border-radius: 0 !important; }
+    .scm-filter-group > *:first-child { border-top-left-radius: 4px !important; border-bottom-left-radius: 4px !important; }
+    .scm-filter-group > *:last-child { border-top-right-radius: 4px !important; border-bottom-right-radius: 4px !important; }
+    .scm-filter-group > *:not(:last-child) { border-right-width: 0 !important; }
+    .scm-filter-input { display: inline-flex; align-items: center; gap: 8px; min-width: 120px; padding: 12px 16px; background: #fff; border: 1px solid #E0E0E0; border-radius: 4px; box-sizing: border-box; height: 44px; }
+    .scm-filter-input input { flex: 1; min-width: 64px; border: 0; outline: none; background: transparent; font-size: 15px; font-weight: 500; line-height: 20.4px; color: #000; font-family: inherit; padding: 0; }
+    .scm-filter-input input::placeholder { color: #8A8A8A; font-weight: 500; }
+    .scm-filter-input__chev { width: 16px; height: 16px; flex-shrink: 0; color: rgba(0,0,0,0.20); }
+    .scm-filter-input:focus-within { border-color: #000; }
+  </style>
+
+  <script>
+    try { if (localStorage.getItem('scm-lnb-open') === '1') document.documentElement.classList.add('is-lnb-open'); } catch(_) {}
+  </script>
+</head>
+<body>
+
+<!-- ============== Legacy SVG sprite ============== -->
+<svg width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+<defs>
+  <symbol id="ic-menu" viewBox="0 0 24 24"><path d="M4 12H20.0714M4 6H20.0714M4 18H20.0714" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="ic-nav-dashboard" viewBox="0 0 24 24"><rect x="3.6" y="3.6" width="7.2" height="7.2" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><rect x="13.2" y="3.6" width="7.2" height="4.8" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><rect x="3.6" y="13.2" width="7.2" height="7.2" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><rect x="13.2" y="10.8" width="7.2" height="9.6" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
+  <symbol id="ic-nav-store" viewBox="0 0 24 24"><path d="M4.5 13.0864V19.5C4.5 19.6989 4.57902 19.8897 4.71967 20.0303C4.86032 20.171 5.05109 20.25 5.25 20.25H18.75C18.9489 20.25 19.1397 20.171 19.2803 20.0303C19.421 19.8897 19.5 19.6989 19.5 19.5V13.0865M5.06573 3.75H18.9343C19.0973 3.75 19.2558 3.80309 19.3859 3.90124C19.516 3.99939 19.6106 4.13725 19.6554 4.29396L21 9H3L4.34458 4.29396C4.38936 4.13725 4.48396 3.99939 4.61408 3.90124C4.7442 3.80309 4.90274 3.75 5.06573 3.75ZM9 9V10.5C9 11.2956 8.68393 12.0587 8.12132 12.6213C7.55871 13.1839 6.79565 13.5 6 13.5C5.20435 13.5 4.44129 13.1839 3.87868 12.6213C3.31607 12.0587 3 11.2956 3 10.5V9M15 9V10.5C15 11.2956 14.6839 12.0587 14.1213 12.6213C13.5587 13.1839 12.7956 13.5 12 13.5C11.2044 13.5 10.4413 13.1839 9.87868 12.6213C9.31607 12.0587 9 11.2956 9 10.5V9M21 9V10.5C21 11.2956 20.6839 12.0587 20.1213 12.6213C19.5587 13.1839 18.7956 13.5 18 13.5C17.2044 13.5 16.4413 13.1839 15.8787 12.6213C15.3161 12.0587 15 11.2956 15 10.5V9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="ic-nav-hanger" viewBox="0 0 24 24"><path d="M9 6.5V7.1C9 8.75685 10.3431 10.1 12 10.1C13.6569 10.1 15 8.75685 15 7.1V6.5M9 6.5H8.51537C8.44034 6.5 8.36718 6.52344 8.30613 6.56706L4.27987 9.44295C4.22758 9.4803 4.18624 9.53097 4.16014 9.58969L1.94818 14.5666C1.86666 14.75 1.95087 14.9647 2.13534 15.0437L6 16.7M9 6.5H15M15 6.5H15.4846C15.5597 6.5 15.6328 6.52344 15.6939 6.56706L19.7201 9.44295C19.7724 9.4803 19.8138 9.53097 19.8399 9.58969L22.0518 14.5666C22.1333 14.75 22.0491 14.9647 21.8647 15.0437L18 16.7M18 12.8V16.7M18 16.7V21.74C18 21.9388 17.8388 22.1 17.64 22.1H6.36C6.16118 22.1 6 21.9388 6 21.74V16.7M6 16.7V12.8M10.4 3.18C10.4 2.25216 11.1522 1.5 12.08 1.5C13.0079 1.5 13.76 2.25216 13.76 3.18C13.76 4.10784 13.0079 4.86 12.08 4.86V6.5" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
+  <symbol id="ic-nav-stock" viewBox="0 0 24 24"><path d="M20.4 7.4769L17.2661 3.71622C17.2047 3.64256 17.1138 3.59998 17.0179 3.59998H12M20.4 7.4769V20.0769C20.4 20.2553 20.2553 20.4 20.0769 20.4H3.92305C3.74462 20.4 3.59998 20.2553 3.59998 20.0769V7.4769M20.4 7.4769H12M3.59998 7.4769L6.73387 3.71622C6.79525 3.64256 6.88618 3.59998 6.98207 3.59998H12M3.59998 7.4769H12M12 3.59998V7.4769" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="ic-funnel" viewBox="0 0 20 20"><path d="M6.14286 10H13.8571M4 6L16 6M8.28571 14L11.7143 14" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
+  <symbol id="ic-filter" viewBox="0 0 20 20"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="round"><path d="M10.625 13.4375L3.125 13.4375"/><path d="M16.875 13.4375L13.125 13.4375"/><path d="M5.625 6.56257L3.125 6.5625"/><path d="M16.875 6.5625L8.125 6.56257"/><path d="M8.125 4.6875V8.4375"/><path d="M13.125 15.3125V11.5625"/></g></symbol>
+  <symbol id="ic-checkCircle-filled" viewBox="0 0 20 20"><path d="M10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2ZM13.7071 8.20711L9.41421 12.5L6.29289 9.37868L7.70711 7.96447L9.41421 9.67157L12.2929 6.79289L13.7071 8.20711Z" fill="currentColor"/></symbol>
+  <symbol id="ic-chevronDown16" viewBox="0 0 16 16"><path d="M3 6L8 11L13 6" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="ic-refresh" viewBox="0 0 20 20"><path d="M16.5 4V8H12.5M3.5 16V12H7.5M5.07 8C5.5 6.46 6.4 5.1 7.65 4.16C8.91 3.21 10.45 2.7 12.04 2.7C13.62 2.7 15.16 3.21 16.42 4.16C17.67 5.1 18.58 6.46 19 8M3 12C3.42 13.54 4.33 14.9 5.58 15.84C6.84 16.79 8.38 17.3 9.96 17.3C11.55 17.3 13.09 16.79 14.35 15.84C15.6 14.9 16.5 13.54 16.93 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="ic-download" viewBox="0 0 20 20"><path d="M3 16.5H17M10 13.5V3.5M10 13.5L14 9.5M10 13.5L6 9.5" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="ic-chevronLeft" viewBox="0 0 20 20"><path d="M12.5 16L6.71213 10.212C6.59497 10.0948 6.59498 9.90486 6.71213 9.7877L12.5 4" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="ic-chevronRight" viewBox="0 0 20 20"><path d="M7.5 16L13.2879 10.2121C13.405 10.095 13.405 9.90503 13.2879 9.78787L7.5 4" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="ic-arrowUpDown" viewBox="0 0 16 16"><path d="M5.23 2.76l0-.65l-1.3 0l0 .65l.65 0l.65 0ZM3.93 13.24c0 .36.29.65.65.65c.36 0 .65-.29.65-.65l-.65 0l-.65 0ZM4.58 2.76l-.65 0l0 10.49l.65 0l.65 0l0-10.49l-.65 0Z" fill="currentColor"/><path d="M10.77 13.24l0 .65l1.3 0l0-.65l-.65 0l-.65 0ZM12.07 2.76c0-.36-.29-.65-.65-.65c-.36 0-.65.29-.65.65l.65 0l.65 0ZM11.42 13.24l.65 0l0-10.49l-.65 0l-.65 0l0 10.49l.65 0Z" fill="currentColor"/><path d="M2.14 10.81L4.57 13.24L7.01 10.81" stroke="currentColor" stroke-width="1.3" stroke-linecap="square" stroke-linejoin="round" fill="none"/><path d="M13.86 5.19L11.43 2.76L9 5.19" stroke="currentColor" stroke-width="1.3" stroke-linecap="square" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="ic-sort-asc" viewBox="0 0 16 16"><path d="M7.25 13.43V14.18H8.75V13.43H8H7.25ZM8.75 2.94c0-.41-.34-.75-.75-.75c-.41 0-.75.34-.75.75H8H8.75ZM8 13.43H8.75L8.75 2.94H8H7.25L7.25 13.43H8Z" fill="currentColor"/><path d="M11.15 6.09L8 2.94L4.85 6.09" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="ic-sort-desc" viewBox="0 0 16 16"><path d="M8.75 2.57L8.75 1.82L7.25 1.82L7.25 2.57L8 2.57L8.75 2.57ZM7.25 13.06c0 .41.34.75.75.75c.41 0 .75-.34.75-.75L8 13.06L7.25 13.06ZM8 2.57L7.25 2.57L7.25 13.06L8 13.06L8.75 13.06L8.75 2.57L8 2.57Z" fill="currentColor"/><path d="M4.85 9.91L8 13.06L11.15 9.91" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="ic-more-vertical" viewBox="0 0 16 16"><circle cx="8" cy="3" r="1.4" fill="currentColor"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/><circle cx="8" cy="13" r="1.4" fill="currentColor"/></symbol>
+  <symbol id="ic-eye" viewBox="0 0 20 20"><path d="M10 4.5C6.06 4.5 3.09 7.41 2.05 9.89c-.03.07-.03.15 0 .22C3.09 12.59 6.06 15.5 10 15.5c3.94 0 6.91-2.91 7.95-5.39c.03-.07.03-.15 0-.22C16.91 7.41 13.94 4.5 10 4.5Z" stroke="currentColor" stroke-width="1.4" fill="none"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
+  <symbol id="ic-eye-off" viewBox="0 0 20 20"><path d="M3 3l14 14M17 7c-.88 2.22-3.5 5-7 5s-6.13-2.78-7-5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></symbol>
+  <symbol id="ic-pin-left" viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="14" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><line x1="7" y1="3" x2="7" y2="17" stroke="currentColor" stroke-width="1.4"/></symbol>
+  <symbol id="ic-pin-right" viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="14" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><line x1="13" y1="3" x2="13" y2="17" stroke="currentColor" stroke-width="1.4"/></symbol>
+  <symbol id="ic-close" viewBox="0 0 20 20"><path d="M5 5L15 15M15 5L5 15" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="ic-alertTriangle" viewBox="0 0 20 20"><path d="M10 14.7499V12.8832M10 11.9499V7.28322M2.30694 16.4999H17.6931C17.9272 16.4999 18.0711 16.2437 17.9493 16.0438L10.2562 3.42025C10.1393 3.22841 9.86077 3.22841 9.74386 3.42025L2.05076 16.0438C1.92893 16.2437 2.07283 16.4999 2.30694 16.4999Z" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="ic-alertCircle" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7" stroke="currentColor" fill="none"/><path d="M10 6V11M10 14V14.5" stroke="currentColor" stroke-linecap="round"/></symbol>
+</defs>
+</svg>
+
+<!-- ============== Topbar (scm-topbar 모듈) ============== -->
+<header class="scm-topbar" role="banner">
+  <div class="scm-topbar__left">
+    <button class="scm-topbar__menu-btn" type="button" data-scm-lnb-toggle aria-label="메뉴 열기/닫기">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 12H20.0714M4 6H20.0714M4 18H20.0714" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" stroke-linejoin="round" fill="none"/>
+      </svg>
+    </button>
+    <a class="scm-topbar__logo" href="dashboard.html" aria-label="SCM-Hub 홈">
+      <svg viewBox="0 0 96 18" aria-hidden="true">
+        <path d="M85.3496 1.61133V6.90625C85.7984 6.47277 86.9465 5.55859 88.8203 5.55859C91.9664 5.55882 94.2324 8.02321 94.2324 11.1191C94.2323 14.215 91.9663 16.6785 88.8203 16.6787C86.817 16.6787 85.6764 15.6848 85.2168 15.1523L84.6914 16.4482L84.666 16.5107H83.1973V1.61133H85.3496ZM88.6729 7.62793C86.6351 7.62794 85.3076 9.19315 85.3076 11.1191C85.3077 13.045 86.6351 14.6103 88.6729 14.6104C90.7106 14.6104 92.038 13.045 92.0381 11.1191C92.0381 9.19314 90.7107 7.62793 88.6729 7.62793Z" fill="currentColor"/>
+        <path d="M74.9072 5.81055V12.5674C74.9073 13.4123 75.113 13.9079 75.4238 14.2188C75.7602 14.5551 76.2172 14.7353 76.7393 14.7354C77.2613 14.7354 77.7183 14.5551 78.0547 14.2188C78.3658 13.9077 78.5713 13.4329 78.5713 12.5674V5.81055H80.7451V16.5098H79.2812L78.9209 15.7891C78.5897 16.1418 77.7942 16.7411 76.3408 16.7412C74.3798 16.7412 72.7129 15.3361 72.7129 13.1338V5.81055H74.9072Z" fill="currentColor"/>
+        <path d="M59.9746 1.61133V7.78516H67.6074V1.61133H69.9287V16.5107H67.6074V10.0635H59.9746V16.5107H57.6543V1.61133H59.9746Z" fill="currentColor"/>
+        <path d="M55.085 9.69727V11.9971H48.9004V9.69727H55.085Z" fill="currentColor"/>
+        <path d="M33.2148 1.61133L33.2441 1.6582L38.4297 10.0664L43.6367 1.6582L43.666 1.61133H46.3213V16.5107H44.0215V5.16895L39.4814 12.4941L39.4521 12.542H37.4082L37.3789 12.4941L32.8604 5.1709V16.5107H30.5605V1.61133H33.2148Z" fill="currentColor"/>
+        <path d="M20.8125 1.40039C24.402 1.40039 27.1131 3.42106 27.9238 6.51465L27.9561 6.63965H25.4473L25.4238 6.5752C24.7679 4.833 23.1271 3.6582 20.8125 3.6582C17.6172 3.65842 15.4953 6.02401 15.4951 9.05957C15.4951 12.0935 17.6362 14.4617 20.9385 14.4619C23.2565 14.4619 25.0415 13.2841 25.6963 11.5449L25.7207 11.4805H28.2295L28.1963 11.6055C27.3849 14.7011 24.5254 16.7197 20.9385 16.7197C16.3491 16.7195 13.1113 13.5053 13.1113 9.05957C13.1115 4.61571 16.2847 1.4006 20.8125 1.40039Z" fill="currentColor"/>
+        <path d="M6.58008 1.40039C8.00725 1.40041 9.16335 1.8319 9.96289 2.61523C10.7625 3.39871 11.1952 4.52346 11.1953 5.88867V5.98926H8.76855V5.61621C8.76855 4.9693 8.54277 4.47783 8.16309 4.14746C7.78158 3.81556 7.23461 3.63673 6.58008 3.63672C5.91491 3.63672 5.3783 3.81593 5.00977 4.12988C4.64309 4.44242 4.43268 4.89677 4.43262 5.46875C4.43262 5.97 4.57135 6.33564 4.92578 6.66309C5.28822 6.99784 5.88072 7.29742 6.80371 7.64355L7.64453 7.95801C8.9502 8.44273 9.74471 8.86969 10.3906 9.55859C11.0368 10.2478 11.4258 11.0278 11.4258 12.252C11.4258 14.6421 9.42384 16.7197 6.60059 16.7197C5.21506 16.7196 3.97684 16.2828 3.08398 15.46C2.18996 14.6359 1.65039 13.4321 1.65039 11.916V11.8164H4.07617V12.126C4.07617 12.8674 4.33961 13.4538 4.78125 13.8555C5.2239 14.258 5.85415 14.4833 6.60059 14.4834C7.34821 14.4834 7.94765 14.2683 8.3584 13.8975C8.76809 13.5275 9 12.9936 9 12.3359C8.99999 11.9579 8.93955 11.6633 8.82812 11.4238C8.71705 11.1853 8.55272 10.9951 8.33398 10.8301C7.88946 10.4948 7.23524 10.27 6.37695 9.95215L5.36914 9.57324C4.25265 9.15193 3.47465 8.74531 2.91113 8.05176C2.35254 7.36415 2.00684 6.58617 2.00684 5.51074C2.0069 4.54201 2.3672 3.51388 3.12109 2.72754C3.87671 1.93954 5.02247 1.40039 6.58008 1.40039Z" fill="currentColor"/>
+      </svg>
+    </a>
+    <span class="scm-topbar__demo-tag" aria-label="데모 환경">DEMO</span>
+  </div>
+  <div class="scm-topbar__right" role="button" tabindex="0">
+    <span class="scm-topbar__avatar">홍</span>
+    <div class="scm-topbar__name-group">
+      <span class="scm-topbar__name">
+        <span class="scm-topbar__name-first">홍길동</span>
+        <span class="scm-topbar__name-suffix">님</span>
+      </span>
+      <span class="scm-topbar__chev">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 6L8 11L13 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+    </div>
+  </div>
+</header>
+
+<div class="app">
+  <!-- ============== LNB (scm-lnb 모듈) ============== -->
+<nav class="scm-lnb" aria-label="주메뉴">
+
+  <!-- 대시보드 (L1만, sub 없음) -->
+  <div class="scm-lnb-item" data-key="dashboard">
+    <a class="scm-lnb-row" href="dashboard.html">
+      <span class="scm-lnb-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3.6" y="3.6" width="7.2" height="7.2" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <rect x="13.2" y="3.6" width="7.2" height="4.8" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <rect x="3.6" y="13.2" width="7.2" height="7.2" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <rect x="13.2" y="10.8" width="7.2" height="9.6" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
+        </svg>
+      </span>
+      <span class="scm-lnb-label">대시보드</span>
+    </a>
+  </div>
+
+  <!-- 스토어 -->
+  <div class="scm-lnb-item is-open" data-key="store">
+    <button class="scm-lnb-row" type="button" data-nav-toggle>
+      <span class="scm-lnb-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4.5 13.0864V19.5C4.5 19.6989 4.57902 19.8897 4.71967 20.0303C4.86032 20.171 5.05109 20.25 5.25 20.25H18.75C18.9489 20.25 19.1397 20.171 19.2803 20.0303C19.421 19.8897 19.5 19.6989 19.5 19.5V13.0865M5.06573 3.75H18.9343C19.0973 3.75 19.2558 3.80309 19.3859 3.90124C19.516 3.99939 19.6106 4.13725 19.6554 4.29396L21 9H3L4.34458 4.29396C4.38936 4.13725 4.48396 3.99939 4.61408 3.90124C4.7442 3.80309 4.90274 3.75 5.06573 3.75ZM9 9V10.5C9 11.2956 8.68393 12.0587 8.12132 12.6213C7.55871 13.1839 6.79565 13.5 6 13.5C5.20435 13.5 4.44129 13.1839 3.87868 12.6213C3.31607 12.0587 3 11.2956 3 10.5V9M15 9V10.5C15 11.2956 14.6839 12.0587 14.1213 12.6213C13.5587 13.1839 12.7956 13.5 12 13.5C11.2044 13.5 10.4413 13.1839 9.87868 12.6213C9.31607 12.0587 9 11.2956 9 10.5V9M21 9V10.5C21 11.2956 20.6839 12.0587 20.1213 12.6213C19.5587 13.1839 18.7956 13.5 18 13.5C17.2044 13.5 16.4413 13.1839 15.8787 12.6213C15.3161 12.0587 15 11.2956 15 10.5V9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+      <span class="scm-lnb-label">스토어</span>
+      <span class="scm-lnb-chev">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+    </button>
+    <div class="scm-lnb-l2-list">
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">무탠 재고 보충 현황</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">무탠 재고 보충 요청</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+      <a class="scm-lnb-l2" href="index.html" data-key="index"><span class="scm-lnb-l2-text">무탠 전개상품 관리</span><span class="scm-lnb-tag scm-lnb-tag--new">NEW</span></a>
+      <a class="scm-lnb-l2" href="editshop-restock-status.html" data-key="editshop-status"><span class="scm-lnb-l2-text">편집샵 재고 보충 현황</span><span class="scm-lnb-tag scm-lnb-tag--new">NEW</span></a>
+      <a class="scm-lnb-l2" href="editshop-restock-request.html" data-key="editshop-request"><span class="scm-lnb-l2-text">편집샵 재고 보충 요청</span><span class="scm-lnb-tag scm-lnb-tag--new">NEW</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">편집샵 전개상품 관리</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+    </div>
+  </div>
+
+  <!-- 상품 관리 -->
+  <div class="scm-lnb-item is-open" data-key="hanger">
+    <button class="scm-lnb-row" type="button" data-nav-toggle>
+      <span class="scm-lnb-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 6.5V7.1C9 8.75685 10.3431 10.1 12 10.1C13.6569 10.1 15 8.75685 15 7.1V6.5M9 6.5H8.51537C8.44034 6.5 8.36718 6.52344 8.30613 6.56706L4.27987 9.44295C4.22758 9.4803 4.18624 9.53097 4.16014 9.58969L1.94818 14.5666C1.86666 14.75 1.95087 14.9647 2.13534 15.0437L6 16.7M9 6.5H15M15 6.5H15.4846C15.5597 6.5 15.6328 6.52344 15.6939 6.56706L19.7201 9.44295C19.7724 9.4803 19.8138 9.53097 19.8399 9.58969L22.0518 14.5666C22.1333 14.75 22.0491 14.9647 21.8647 15.0437L18 16.7M18 12.8V16.7M18 16.7V21.74C18 21.9388 17.8388 22.1 17.64 22.1H6.36C6.16118 22.1 6 21.9388 6 21.74V16.7M6 16.7V12.8M10.4 3.18C10.4 2.25216 11.1522 1.5 12.08 1.5C13.0079 1.5 13.76 2.25216 13.76 3.18C13.76 4.10784 13.0079 4.86 12.08 4.86V6.5" stroke="currentColor" stroke-width="1.4" fill="none"/>
+        </svg>
+      </span>
+      <span class="scm-lnb-label">상품 관리</span>
+      <span class="scm-lnb-chev">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+    </button>
+    <div class="scm-lnb-l2-list">
+      <a class="scm-lnb-l2" href="sku-management.html" data-key="sku-management"><span class="scm-lnb-l2-text">SKU 관리</span><span class="scm-lnb-tag scm-lnb-tag--new">NEW</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">위탁 상품 미매핑 관리</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+    </div>
+  </div>
+
+  <!-- 발주/입고 관리 -->
+  <div class="scm-lnb-item is-open" data-key="order">
+    <button class="scm-lnb-row" type="button" data-nav-toggle>
+      <span class="scm-lnb-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="5" y="5" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <rect x="9" y="3" width="6" height="3" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <path d="M9 13l2.2 2.2L15 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+      <span class="scm-lnb-label">발주/입고 관리</span>
+      <span class="scm-lnb-chev">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+    </button>
+    <div class="scm-lnb-l2-list">
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">위탁 상품 입고 승인</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">위탁 상품 입고 현황</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">PB 상품 입고 검토</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">PB 상품 ASN 등록/확정</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+    </div>
+  </div>
+
+  <!-- 재고 관리 -->
+  <div class="scm-lnb-item is-open" data-key="stock">
+    <button class="scm-lnb-row" type="button" data-nav-toggle>
+      <span class="scm-lnb-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20.4 7.4769L17.2661 3.71622C17.2047 3.64256 17.1138 3.59998 17.0179 3.59998H12M20.4 7.4769V20.0769C20.4 20.2553 20.2553 20.4 20.0769 20.4H3.92305C3.74462 20.4 3.59998 20.2553 3.59998 20.0769V7.4769M20.4 7.4769H12M3.59998 7.4769L6.73387 3.71622C6.79525 3.64256 6.88618 3.59998 6.98207 3.59998H12M3.59998 7.4769H12M12 3.59998V7.4769" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+      <span class="scm-lnb-label">재고 관리</span>
+      <span class="scm-lnb-chev">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+    </button>
+    <div class="scm-lnb-l2-list">
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">재고내역 조회</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">재고이동</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">불량/정상 전환</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+    </div>
+  </div>
+
+  <!-- 운영 설정 -->
+  <div class="scm-lnb-item is-open" data-key="control">
+    <button class="scm-lnb-row" type="button" data-nav-toggle>
+      <span class="scm-lnb-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M8.39998 5.99998V12M8.39998 12C7.40586 12 6.59998 12.8059 6.59998 13.8C6.59998 14.7941 7.40586 15.6 8.39998 15.6M8.39998 12C9.39409 12 10.2 12.8059 10.2 13.8C10.2 14.7941 9.39409 15.6 8.39998 15.6M8.39998 15.6V18M15.6 12V18M15.6 12C16.5941 12 17.4 11.1941 17.4 10.2C17.4 9.20586 16.5941 8.39998 15.6 8.39998M15.6 12C14.6059 12 13.8 11.1941 13.8 10.2C13.8 9.20586 14.6059 8.39998 15.6 8.39998M15.6 5.99998V8.39998M3.89998 20.4H20.1C20.2657 20.4 20.4 20.2657 20.4 20.1V3.89998C20.4 3.73429 20.2657 3.59998 20.1 3.59998H3.89998C3.73429 3.59998 3.59998 3.73429 3.59998 3.89998V20.1C3.59998 20.2657 3.73429 20.4 3.89998 20.4Z" stroke="currentColor" stroke-width="1.4" fill="none"/>
+        </svg>
+      </span>
+      <span class="scm-lnb-label">운영 설정</span>
+      <span class="scm-lnb-chev">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+    </button>
+    <div class="scm-lnb-l2-list">
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">수기 재고 조정</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">운영 정책 설정</span></a>
+    </div>
+  </div>
+
+  <!-- 관리자 -->
+  <div class="scm-lnb-item is-open" data-key="setting">
+    <button class="scm-lnb-row" type="button" data-nav-toggle>
+      <span class="scm-lnb-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M10.7206 3.59998H13.2795C13.3327 3.59998 13.3796 3.63508 13.3946 3.68619L14.0781 6.01563C14.0888 6.05203 14.1161 6.08117 14.1516 6.09468C14.8012 6.34221 15.3991 6.6986 15.9238 7.14216C15.9533 7.16713 15.993 7.17678 16.0306 7.1677L18.3426 6.60887C18.3947 6.59627 18.4489 6.6198 18.4753 6.66651L19.7571 8.93636C19.7827 8.98171 19.7761 9.0384 19.7408 9.07669L18.1072 10.8491C18.0819 10.8765 18.0709 10.9141 18.0769 10.951C18.1328 11.2921 18.1619 11.6426 18.1619 12C18.1619 12.3574 18.1328 12.7078 18.0769 13.049C18.0709 13.0858 18.0819 13.1234 18.1072 13.1509L19.7408 14.9233C19.7761 14.9615 19.7827 15.0182 19.7571 15.0636L18.4753 17.3334C18.4489 17.3802 18.3947 17.4037 18.3426 17.3911L16.0306 16.8323C15.993 16.8232 15.9533 16.8328 15.9238 16.8578C15.3991 17.3013 14.8013 17.6577 14.1516 17.9053C14.1161 17.9188 14.0888 17.9479 14.0781 17.9843L13.3946 20.3138C13.3796 20.3649 13.3327 20.4 13.2795 20.4H10.7206C10.6673 20.4 10.6204 20.3649 10.6054 20.3138L9.9219 17.9843C9.91122 17.9479 9.88392 17.9188 9.84846 17.9053C9.1988 17.6577 8.60099 17.3013 8.07625 16.8578C8.04671 16.8328 8.00709 16.8232 7.96949 16.8323L5.65745 17.3911C5.60531 17.4037 5.55114 17.3802 5.52476 17.3334L4.24299 15.0636C4.21738 15.0182 4.22395 14.9616 4.25924 14.9233L5.89289 13.1509C5.91817 13.1234 5.92919 13.0858 5.92315 13.049C5.86723 12.7078 5.83812 12.3574 5.83812 12C5.83812 11.6426 5.86723 11.2921 5.92315 10.951C5.92919 10.9141 5.91817 10.8765 5.89289 10.8491L4.25924 9.07669C4.22395 9.0384 4.21738 8.98171 4.24299 8.93636L5.52476 6.66651C5.55114 6.6198 5.60531 6.59627 5.65745 6.60887L7.96949 7.1677C8.00709 7.17678 8.04671 7.16713 8.07625 7.14216C8.60099 6.6986 9.1988 6.34221 9.84846 6.09468C9.88392 6.08117 9.91122 6.05203 9.9219 6.01563L10.6054 3.68619C10.6204 3.63508 10.6673 3.59998 10.7206 3.59998Z" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <path d="M14.4 12C14.4 13.3255 13.3255 14.4 12 14.4C10.6745 14.4 9.60002 13.3255 9.60002 12C9.60002 10.6745 10.6745 9.59998 12 9.59998C13.3255 9.59998 14.4 10.6745 14.4 12Z" stroke="currentColor" stroke-width="1.4" fill="none"/>
+        </svg>
+      </span>
+      <span class="scm-lnb-label">관리자</span>
+      <span class="scm-lnb-chev">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+    </button>
+    <div class="scm-lnb-l2-list">
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">계정 관리</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">권한 관리</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">로그 조회</span></a>
+    </div>
+  </div>
+
+</nav>
+
+  <main>
+    <!-- Page head (--list) -->
+    <div class="scm-page-head scm-page-head--list">
+      <h1 class="scm-page-head__title">SKU 관리</h1>
+      <div class="scm-page-head__actions">
+        <button class="scm-button" id="open-bulk-upload" type="button">일괄 업로드</button>
+        <button class="scm-button scm-button--primary" type="button" onclick="location.href='sku-register.html'">SKU 단건 등록</button>
+      </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="scm-filter-bar" id="filter-bar">
+      <button class="scm-filter-chip" type="button" id="filter-drawer-open">
+        <svg viewBox="0 0 20 20"><use href="#ic-filter"/></svg>
+        <span>전체 필터</span>
+        <span class="scm-filter-chip__count">0</span>
+      </button>
+      <div class="scm-filter-overflow">
+        <div class="scm-filter-overflow__track">
+          <div class="scm-filter-group">
+            <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="purchaseType"><span class="scm-filter-select__label">매입형태</span><span class="scm-filter-select__value">매입형태</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+            <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="manufacture"><span class="scm-filter-select__label">제조구분</span><span class="scm-filter-select__value">제조구분</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          </div>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="platform"><span class="scm-filter-select__label">플랫폼</span><span class="scm-filter-select__value">플랫폼</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="brand"><span class="scm-filter-select__label">브랜드</span><span class="scm-filter-select__value">브랜드</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="category"><span class="scm-filter-select__value">표준 카테고리</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          <div class="scm-filter-group">
+            <button class="scm-filter-select" type="button" data-state="filled" data-mp-filter="skuLookup"><span class="scm-filter-select__label">SKU 조회</span><span class="scm-filter-select__value">SKU번호</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+            <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="skuLookupValue"><span class="scm-filter-select__value">입력</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          </div>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="barcode"><span class="scm-filter-select__value">바코드</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="uid"><span class="scm-filter-select__value">UID</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="styleNumber"><span class="scm-filter-select__value">스타일넘버</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="opStatus"><span class="scm-filter-select__label">운영상태</span><span class="scm-filter-select__value">운영상태</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="mapStatus"><span class="scm-filter-select__label">매핑상태</span><span class="scm-filter-select__value">매핑상태</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="hanger"><span class="scm-filter-select__label">행거 사용 여부</span><span class="scm-filter-select__value">행거 사용 여부</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="md"><span class="scm-filter-select__value">담당 MD</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+        </div>
+        <div class="scm-filter-overflow__fade scm-filter-overflow__fade--left" style="opacity:0;"></div>
+        <div class="scm-filter-overflow__fade scm-filter-overflow__fade--right" style="opacity:0;"></div>
+      </div>
+      <div class="scm-filter-actions">
+        <button class="scm-search-btn" type="button">검색</button>
+        <button class="scm-filter-reset-btn" type="button">
+          <svg viewBox="0 0 20 20"><use href="#ic-refresh"/></svg>
+          <span>초기화</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Info banner — SKU 생성 및 매핑 주의사항 -->
+    <div class="scm-info-banner scm-info-banner--full" id="sku-info-banner">
+      <svg class="scm-info-banner__icon" viewBox="0 0 20 20" aria-hidden="true"><use href="#ic-alertCircle"/></svg>
+      <div class="scm-info-banner__body">
+        <div class="scm-info-banner__title">SKU 생성 및 매핑 주의사항</div>
+        <div class="scm-info-banner__text">
+          SKU 단건 등록 : 신규 SKU 를 '미매핑' 상태로 등록하실 수 있습니다. 먼저 SKU만 등록해 놓고 이후 상품을 매핑하실 경우 사용합니다.<br/>
+          상품 매핑 : 플랫폼에 이미 등록된 상품을 사용중인 SKU에 매핑 하실 수 있으며 대상 SKU를 목록에서 조회/선택 후 '상품 매핑'을 통해 매핑하실 수 있습니다. (등록된 UID 및 옵션번호 필수)<br/>
+          상품 등록 후 매핑 : 상품 등록에 필수 정보만 입력 후 플랫폼별 상품을 등록하고 SKU 등록 및 매핑을 한번에 진행하실 수 있습니다.<br/>
+          SKU 속성 일괄 변경 : 행거 사용 여부 및 공급사 추가, 입수정보를 대상 SKU 조회/선택 후 일괄로 적용하실 수 있습니다.
+        </div>
+      </div>
+      <button class="scm-info-banner__toggle" type="button" id="sku-info-toggle" aria-label="안내 접기/펼치기">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chevronDown16"/></svg>
+      </button>
+    </div>
+
+    <!-- Stats bar -->
+    <div class="scm-stats-bar scm-stats-bar--sticky">
+      <div class="scm-stats-bar__left">
+        <div class="scm-stats-bar__counts-wrap">
+          <div class="scm-stats-bar__counts">
+            <span class="scm-stat scm-stat--all"><span class="scm-stat__label" id="sku-stat-label">전체</span> <span class="scm-stat__num" id="sku-total">17</span></span>
+          </div>
+        </div>
+        <div class="scm-stats-bar__mini-actions">
+          <button class="scm-mini-action" type="button" id="mp-sku-copy-btn">SKU번호 복사</button>
+          <button class="scm-mini-action scm-mini-action--primary" type="button" id="mp-sku-map-btn" disabled>상품 매핑</button>
+          <button class="scm-mini-action scm-mini-action--primary" type="button" id="mp-sku-reg-map-btn" disabled>상품 등록 후 매핑</button>
+          <span class="scm-mini-wrap" id="bulk-wrap">
+            <button class="scm-mini-action" type="button" aria-haspopup="listbox" aria-expanded="false" disabled>
+              일괄 설정/변경
+              <svg viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+            </button>
+            <ul class="scm-mini-popup" role="listbox">
+              <li data-key="hanger">행거 사용 여부 변경</li>
+              <li data-key="supplier">공급사 추가</li>
+              <li data-key="inbound">입수정보 변경</li>
+            </ul>
+          </span>
+          <button class="scm-mini-action" type="button" id="mp-sku-deselect-btn" disabled>선택 해제</button>
+        </div>
+      </div>
+      <div class="scm-stats-bar__right">
+        <button class="scm-download-btn" type="button">
+          <svg viewBox="0 0 20 20"><use href="#ic-download"/></svg>
+          <span>전체 엑셀 다운로드</span>
+        </button>
+        <span class="scm-stats-bar__v-divider"></span>
+        <span class="scm-pager">
+          <strong class="scm-pager__current">1</strong>
+          <span class="scm-pager__total">/ <span>1</span> 페이지</span>
+          <button class="scm-pager-btn" type="button" aria-label="이전 페이지" disabled><svg viewBox="0 0 20 20"><use href="#ic-chevronLeft"/></svg></button>
+          <button class="scm-pager-btn" type="button" aria-label="다음 페이지" disabled><svg viewBox="0 0 20 20"><use href="#ic-chevronRight"/></svg></button>
+        </span>
+        <span class="scm-pgsize-wrap" id="pgsize">
+          <button class="scm-pgsize" type="button" aria-haspopup="listbox" aria-expanded="false">
+            <span class="scm-pgsize__label">100개씩</span>
+            <svg class="scm-pgsize__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+          <ul class="scm-pgsize-popup" role="listbox"></ul>
+        </span>
+      </div>
+    </div>
+
+    <!-- Data table — legacy 29 컬럼 + spacer · 2단 thead (group + leaf) -->
+    <div class="mp-table-host">
+      <div class="mp-thead-sticky"><div class="mp-thead-scroll"></div></div>
+      <div class="mp-table-scroll">
+        <table class="mp-table is-cell-selectable" id="mp-table">
+          <thead>
+            <tr class="group-row">
+              <th class="cb-col col-frozen-1" rowspan="2"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" id="sku-cb-all" aria-label="전체 선택"></span></th>
+              <th class="col-auto col-no col-frozen-2" rowspan="2">No</th>
+              <th colspan="4" class="col-frozen-3 col-frozen-group">기본 정보</th>
+              <th colspan="4"></th>
+              <th colspan="6">상품 정보</th>
+              <th colspan="4">소유 및 공급주체</th>
+              <th colspan="3">물류 속성</th>
+              <th colspan="2">발주 속성</th>
+              <th colspan="4">기타 속성</th>
+              <th class="col-spacer" data-empty="true" rowspan="2" aria-hidden="true"></th>
+            </tr>
+            <tr>
+              <th class="col-auto col-frozen-3">SKU번호</th>
+              <th class="col-auto col-frozen-4">바코드</th>
+              <th class="col-auto col-frozen-5">운영상태</th>
+              <th class="col-auto col-frozen-6">매핑상태</th>
+              <th class="col-large">SKU명 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="col-medium">옵션</th>
+              <th class="col-medium"><div class="cell-clamp">표준 카테고리 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></div></th>
+              <th class="col-auto">스타일넘버(SKU) <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="col-auto">브랜드</th>
+              <th class="col-auto">플랫폼</th>
+              <th class="col-auto">UID <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="col-auto">옵션번호</th>
+              <th class="col-medium"><div class="cell-clamp">상품 옵션</div></th>
+              <th class="col-medium"><div class="cell-clamp">기준 카테고리</div></th>
+              <th class="col-auto">매입형태</th>
+              <th class="col-auto">제조구분</th>
+              <th class="col-auto">소유사명</th>
+              <th class="col-medium"><div class="cell-clamp-2">공급사명(ID)</div></th>
+              <th class="col-auto">행거 사용 여부</th>
+              <th class="col-auto">소비기한 관리 여부</th>
+              <th class="col-auto">소비기한일수</th>
+              <th class="col-auto cell-numeric">박스 입수(PCS)</th>
+              <th class="col-auto cell-numeric">팔레트 입수(PCS)</th>
+              <th class="col-auto">시즌정보</th>
+              <th class="col-auto cell-numeric">출시연도</th>
+              <th class="col-auto">SKU 생성일시 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="col-auto">담당 MD</th>
+              <!-- col-spacer 는 row1 의 rs=2 셀 (line 282) 이 양 row 모두 cover 하므로 row2 에 별도 셀 불필요 -->
+            </tr>
+          </thead>
+          <tbody id="data-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 코드 확인 popover (SKU번호·바코드·UID·스타일넘버) -->
+    <div class="scm-code-popover-backdrop"></div>
+    <div class="scm-code-popover" role="dialog" aria-labelledby="cp-title" id="code-popover">
+      <h4 id="cp-title">코드 확인</h4>
+      <ul></ul>
+      <div class="scm-code-popover__actions">
+        <button type="button" class="copy">복사</button>
+        <button type="button" class="primary close">닫기</button>
+      </div>
+    </div>
+
+    <!-- Confirm modal — SCM.confirmModal 모듈이 동적으로 mount (markup 불필요) -->
+
+    <!-- 일괄 업로드 모달 (legacy: 유의사항 + 업로드 유형 + 요청 이력 + footer) -->
+    <div class="scm-bu-backdrop" id="bu-backdrop"></div>
+    <div class="scm-bu-modal" id="bu-modal" role="dialog" aria-labelledby="bu-title">
+      <header class="scm-bu-header">
+        <h2 id="bu-title">일괄 업로드</h2>
+        <button class="scm-bu-close" type="button" aria-label="닫기">
+          <svg viewBox="0 0 20 20"><use href="#ic-close"/></svg>
+        </button>
+      </header>
+      <div class="scm-bu-body">
+        <div class="scm-bu-warning">
+          <div class="scm-bu-warning__head">
+            <svg class="scm-bu-warning__icon" viewBox="0 0 20 20" aria-hidden="true"><use href="#ic-alertTriangle"/></svg>
+            <div class="scm-bu-warning__head-body">
+              <div class="scm-bu-warning__title">엑셀 업로드 유의사항</div>
+              <ul class="scm-bu-warning__list">
+                <li>엑셀 업로드는 비동기로 처리되며, 완료 시 아래 '요청 이력' 및 슬랙 알림으로 결과를 확인할 수 있으며 실패 건은 요청 이력에서 사유 확인 후 수정해 재업로드해 주세요.</li>
+                <li>진행하고자 하는 작업에 따라 아래 엑셀 양식을 다운로드 받아서 필수 정보를 입력 후 업로드해 주세요.</li>
+                <li>한번에 최대 5,000건까지 업로드 가능하며 최대 1분 정도 소요될 수 있습니다. (요청 이력은 7일간 저장됨)</li>
+                <li class="is-critical">여러건을 동시에 업로드 요청 하시는 경우, 동일 상품(SKU)이 중복으로 포함되어 있으면 시스템에 중복 반영될 위험이 있습니다.</li>
+              </ul>
+            </div>
+            <button class="scm-bu-warning__toggle" type="button" aria-label="접기">
+              <svg viewBox="0 0 16 16"><use href="#ic-chevronDown16"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- 업로드 유형 선택 -->
+        <div class="scm-bu-type-section">
+          <div class="scm-bu-type-row">
+            <span class="scm-bu-type-label">업로드 유형 <span class="req"></span></span>
+            <div class="scm-bu-type-controls">
+              <span class="scm-radio-group scm-radio-group--sm">
+                <label class="scm-radio scm-radio--sm">
+                  <input type="radio" name="bu-type-mode" value="register" checked />
+                  <span class="scm-radio-dot"></span>
+                  <span>등록 및 매핑</span>
+                </label>
+                <label class="scm-radio scm-radio--sm" aria-disabled="true">
+                  <input type="radio" name="bu-type-mode" value="bulk-change" disabled />
+                  <span class="scm-radio-dot"></span>
+                  <span>일괄변경</span>
+                </label>
+              </span>
+            </div>
+          </div>
+          <div class="scm-bu-type-row">
+            <span class="scm-bu-type-label">템플릿 <span class="req"></span></span>
+            <div class="scm-bu-type-controls">
+              <button class="scm-select scm-select--bu" type="button" id="bu-template-select" aria-haspopup="listbox" data-state="filled">
+                <span class="scm-select__value" id="bu-template-label">SKU 등록</span>
+                <svg class="scm-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+              </button>
+              <button class="scm-bu-template-btn" type="button" id="bu-template-dl">
+                <svg viewBox="0 0 16 16"><path d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                템플릿 다운로드
+              </button>
+            </div>
+          </div>
+          <div class="scm-bu-type-hint">※ 선택한 업로드 유형에 맞는 양식으로 업로드해 주세요.</div>
+        </div>
+
+        <!-- 요청 이력 -->
+        <section class="scm-bu-history-section">
+          <h3 class="scm-bu-history-title">요청 이력</h3>
+          <table class="scm-bu-history-table">
+            <colgroup>
+              <col style="width:52px"/>
+              <col style="width:97px"/>
+              <col style="width:167px"/>
+              <col style="width:240px"/>
+              <col style="width:362px"/>
+              <col style="width:152px"/>
+              <col style="width:154px"/>
+            </colgroup>
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>상태</th>
+                <th>요청 유형</th>
+                <th>파일명</th>
+                <th>처리결과/실패건 다운로드</th>
+                <th>요청일시</th>
+                <th>요청자</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td><span class="scm-bu-status-pill" data-state="processing">처리중</span></td>
+                <td>SKU 등록</td>
+                <td>20260221_SKU 등록.xlsx</td>
+                <td class="scm-bu-result-cell">-</td>
+                <td>2026.02.21. 11:00</td>
+                <td>guji@musinsa.com</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td><span class="scm-bu-status-pill" data-state="done">처리완료</span></td>
+                <td>상품 매핑</td>
+                <td>20260220_상품 매핑_001.xlsx</td>
+                <td class="scm-bu-result-cell">
+                  <span class="scm-bu-result">
+                    <span class="scm-bu-result-group scm-bu-result-group--success">성공 <em>599,900</em></span>
+                    <span class="scm-bu-result-divider" aria-hidden="true"></span>
+                    <span class="scm-bu-result-group scm-bu-result-group--fail">실패 <em>0</em></span>
+                  </span>
+                </td>
+                <td>2026.02.20. 10:11</td>
+                <td>jun@musinsa.com</td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td><span class="scm-bu-status-pill" data-state="partial">부분완료</span></td>
+                <td>플랫폼 상품 등록 후 매핑</td>
+                <td>20260219_플랫폼 상품 등록 후…</td>
+                <td class="scm-bu-result-cell">
+                  <span class="scm-bu-result">
+                    <span class="scm-bu-result-group scm-bu-result-group--success">성공 <em>599,900</em></span>
+                    <button class="scm-bu-result-dl" type="button">다운로드</button>
+                    <span class="scm-bu-result-divider" aria-hidden="true"></span>
+                    <span class="scm-bu-result-group scm-bu-result-group--fail">실패 <em>99,100</em></span>
+                    <button class="scm-bu-result-dl" type="button">다운로드</button>
+                  </span>
+                </td>
+                <td>2026.02.19. 10:11</td>
+                <td>jun@musinsa.com</td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td><span class="scm-bu-status-pill" data-state="partial">부분완료</span></td>
+                <td>SKU 등록</td>
+                <td>20260221_SKU 등록.xlsx</td>
+                <td class="scm-bu-result-cell">
+                  <span class="scm-bu-result">
+                    <span class="scm-bu-result-group scm-bu-result-group--success">성공 <em>1,000</em></span>
+                    <button class="scm-bu-result-dl" type="button">다운로드</button>
+                    <span class="scm-bu-result-divider" aria-hidden="true"></span>
+                    <span class="scm-bu-result-group scm-bu-result-group--fail">실패 <em>99,100</em></span>
+                    <button class="scm-bu-result-dl" type="button">다운로드</button>
+                  </span>
+                </td>
+                <td>2026.02.21. 11:00</td>
+                <td>guji@musinsa.com</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      </div>
+      <footer class="scm-bu-footer">
+        <button class="scm-button" type="button" id="bu-cancel">닫기</button>
+        <button class="scm-button scm-button--primary" type="button" id="bu-submit">
+          <svg viewBox="0 0 16 16" fill="none" style="width:16px;height:16px;margin-right:6px;vertical-align:-3px;"><path d="M8 14V3M8 3L4 7M8 3L12 7M2 2H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          엑셀 업로드(요청시작)
+        </button>
+      </footer>
+    </div>
+
+  </main>
+</div>
+
+<!-- Filter popover root (single/multi/codeinput 공용) -->
+<div class="scm-filter-popover-root" id="filter-popover-root" role="dialog" aria-hidden="true"></div>
+
+<!-- Filter drawer -->
+<div class="scm-filter-drawer-backdrop" id="fd-backdrop" hidden></div>
+<aside class="scm-filter-drawer" id="filter-drawer" hidden role="dialog" aria-label="전체 필터">
+  <header class="scm-filter-drawer__header">
+    <h2>전체 필터</h2>
+    <button class="scm-filter-drawer__close" type="button" aria-label="닫기">
+      <svg viewBox="0 0 20 20"><use href="#ic-close"/></svg>
+    </button>
+  </header>
+  <!-- 본문은 SCM.filterPopoverModes.init 시 REGISTRY 기반으로 자동 생성 -->
+  <div class="scm-filter-drawer__body"></div>
+  <footer class="scm-filter-drawer__footer">
+    <button class="scm-filter-drawer__reset" type="button">
+      <svg viewBox="0 0 20 20"><use href="#ic-refresh"/></svg>
+      <span>전체 초기화</span>
+    </button>
+    <button class="scm-filter-drawer__apply" type="button">검색 적용</button>
+  </footer>
+</aside>
+
+<!-- Module JS -->
+<script src="../design%20system/components/lnb/lnb.js"></script>
+<script src="../design%20system/components/topbar/topbar.js"></script>
+<script src="../design%20system/components/scroll-lock/scroll-lock.js"></script>
+<script src="../design%20system/components/backdrop/backdrop.js"></script>
+<script src="../design%20system/components/checkbox/checkbox.js"></script>
+<script src="../design%20system/components/toast/toast.js"></script>
+<script src="../design%20system/components/pgsize-select/pgsize-select.js"></script>
+<script src="../design%20system/components/mini-action/mini-action.js"></script>
+<script src="../design%20system/components/info-banner/info-banner.js"></script>
+<script src="../design%20system/components/code-popover/code-popover.js"></script>
+<script src="../design%20system/components/confirm-modal/confirm-modal.js"></script>
+<script src="../design%20system/components/bulk-upload-modal/bulk-upload-modal.js"></script>
+<script src="../design%20system/components/filter-popover/filter-popover.js"></script>
+<script src="../design%20system/components/filter-popover/filter-popover-modes.js"></script>
+<script src="../design%20system/components/filter-bar/filter-bar.js"></script>
+<script src="../design%20system/components/filter-drawer/filter-drawer.js"></script>
+<script src="../design%20system/components/scm-table/scm-table.js"></script>
+<script src="../design%20system/components/scm-table/table-sort.js"></script>
+<script src="../design%20system/components/scm-table/column-more-menu.js"></script>
+<script src="../design%20system/components/scm-table/column-filter-popover.js"></script>
+<script src="../design%20system/components/scm-table/table-selection.js"></script>
+
+<script>
+(function () {
+  // ----- Demo data (legacy 17 row 그대로) -----
+  // uidItems: 1 SKU → N UIDs, 각 UID마다 platform/optNo/prodOpt/baseCat 1:1 종속
+  const SKU_ROWS = [
+    { no:1,  skuNo:'10669591', barcode:'180K/13029/EFGH', op:'active', map:'mapped', name:'삼바 OG - 블랙:크림화이트 / JQ5141 [블랙:크림화이트][280]', opt:['블랙:크림화이트','280'], cat:'신발 > 스포츠화 > 러닝화', styleNo:'12345678', brand:'라이즈앤빌로우', uidItems:[
+      { uid:'383838', platform:{name:'MUSINSA',color:'blue'},   optNo:'111111', prodOpt:'블랙^280', baseCat:'신발 > 스포츠화 > 러닝화' },
+      { uid:'456789', platform:{name:'MUSINSA',color:'blue'},   optNo:'222222', prodOpt:'BLK^XL',   baseCat:'신발 > 스포츠화 > 러닝화' },
+      { uid:'557799', platform:{name:'29CM',   color:'yellow'}, optNo:'333333', prodOpt:'블랙^280', baseCat:'신발 > 스포츠화 > 러닝화' },
+    ], purchase:'매입', mfg:'완제품 매입', owner:'무신사', supplier:'Adidas_koreaadsfsdfsdfsdfsd(M00000001)', hanger:'사용', expiryMgmt:'사용', expiryDays:'120일', boxIn:1, pallet:'-', season:'26FW', year:2026, dt:'25.01.20 12:00', user:'홍길동(yisak.jeong)' },
+    { no:2,  skuNo:'10669592', barcode:'181K/13029/EFGH', op:'active', map:'mapped', name:'삼바 OG - 블랙:크림화이트 / JQ5141 [블랙:크림화이트][275]', opt:['블랙:크림화이트','275'], cat:'신발 > 스포츠화 > 러닝화', styleNo:'12345679', brand:'라이즈앤빌로우', uidItems:[
+      { uid:'444444', platform:{name:'MUSINSA',color:'blue'}, optNo:'901158', prodOpt:'801', baseCat:'신발 > 스포츠화 > 러닝화' },
+    ], purchase:'매입', mfg:'완제품 매입', owner:'무신사', supplier:'Adidas_korea/adidas/Adidas/(MX) 0382023', hanger:'미사용', expiryMgmt:'미사용', expiryDays:'-', boxIn:1, pallet:'-', season:'26FW', year:2026, dt:'25.01.20 12:00', user:'홍길동(yisak.jeong)' },
+    { no:3,  skuNo:'10669593', barcode:'182K/13029/EFGH', op:'active', map:'mapped', name:'삼바 OG - 블랙:크림화이트 / JQ5141 [블랙:크림화이트][270]', opt:['블랙:크림화이트','270'], cat:'신발 > 스포츠화 > 러닝화', styleNo:'12345680', brand:'라이즈앤빌로우', uidItems:[
+      { uid:'383872', platform:{name:'MUSINSA',color:'blue'},   optNo:'901158', prodOpt:'371', baseCat:'신발 > 스포츠화 > 러닝화' },
+      { uid:'383873', platform:{name:'29CM',   color:'yellow'}, optNo:'901159', prodOpt:'372', baseCat:'신발 > 스포츠화 > 러닝화' },
+    ], purchase:'매입', mfg:'완제품 매입', owner:'무신사', supplier:'Adidas_korea/adidas/Adidas/(MX) 0382023', hanger:'미사용', expiryMgmt:'미사용', expiryDays:'-', boxIn:1, pallet:'-', season:'26FW', year:2026, dt:'25.01.20 12:00', user:'홍길동(yisak.jeong)' },
+    { no:4,  skuNo:'10669594', barcode:'183K/13029/EFGH', op:'active', map:'mapped', name:'NIKE PEGASUS 41 (러닝화) [화이트][280]', opt:['화이트','280'], cat:'신발 > 스포츠화 > 러닝화', styleNo:'NIKE-Z19', brand:'NIKE', uidItems:[
+      { uid:'17172', platform:{name:'MUSINSA',color:'blue'}, optNo:'90', prodOpt:'7', baseCat:'신발 > 스포츠화 > 러닝화' },
+    ], purchase:'매입', mfg:'완제품 매입', owner:'무신사', supplier:'Yves_korea/adidas/Adidas/(MX) 0382023', hanger:'미사용', expiryMgmt:'미사용', expiryDays:'-', boxIn:1, pallet:'-', season:'26FW', year:2026, dt:'25.01.20 12:00', user:'홍길동(yisak.jeong)' },
+    { no:5,  skuNo:'10669595', barcode:'184K/13029/EFGH', op:'active', map:'mapped', name:'NIKE PEGASUS 41 (러닝화) [화이트][275]', opt:['화이트','275'], cat:'신발 > 스포츠화 > 러닝화', styleNo:'NIKE-Z19', brand:'NIKE', uidItems:[
+      { uid:'383944', platform:{name:'MUSINSA',color:'blue'},   optNo:'200', prodOpt:'372', baseCat:'신발 > 스포츠화 > 러닝화' },
+      { uid:'383945', platform:{name:'29CM',   color:'yellow'}, optNo:'201', prodOpt:'373', baseCat:'신발 > 스포츠화 > 러닝화' },
+    ], purchase:'매입', mfg:'완제품 매입', owner:'무신사', supplier:'Yves_korea/adidas/Adidas/(MX) 0382023', hanger:'미사용', expiryMgmt:'미사용', expiryDays:'-', boxIn:1, pallet:'-', season:'26FW', year:2026, dt:'25.01.20 12:00', user:'홍길동(yisak.jeong)' },
+    { no:6,  skuNo:'10669596', barcode:'185K/13029/EFGH', op:'inactive', map:'unmapped', name:'(8H/CO) 데일리쿨 그리스 / 크루넥 [블랙][L]', opt:['블랙','L'], cat:'상의 > 니트/스웨터 > 크루넥 니트', styleNo:'MMJTS6Z20', brand:'MUSINSA', uidItems:[], purchase:'매입', mfg:'완제품 매입', owner:'무신사', supplier:'-', hanger:'미사용', expiryMgmt:'미사용', expiryDays:'-', boxIn:1, pallet:'-', season:'26FW', year:2026, dt:'25.01.20 12:00', user:'홍길동(yisak.jeong)' },
+    { no:7,  skuNo:'10669597', barcode:'186K/13029/EFGH', op:'inactive', map:'unmapped', name:'(8H/CO) 데일리쿨 그리스 / 크루넥 [블랙][M]', opt:['블랙','M'], cat:'상의 > 니트/스웨터 > 크루넥 니트', styleNo:'MMJTS6Z20', brand:'MUSINSA', uidItems:[], purchase:'매입', mfg:'완제품 매입', owner:'무신사', supplier:'-', hanger:'미사용', expiryMgmt:'미사용', expiryDays:'-', boxIn:1, pallet:'-', season:'26FW', year:2026, dt:'25.01.20 12:00', user:'홍길동(yisak.jeong)' },
+    { no:8,  skuNo:'10669598', barcode:'187K/13029/EFGH', op:'inactive', map:'unmapped', name:'(8H/CO) 데일리쿨 그리스 / 크루넥 [블랙][S]', opt:['블랙','S'], cat:'상의 > 니트/스웨터 > 크루넥 니트', styleNo:'MMJTS6Z20', brand:'MUSINSA', uidItems:[], purchase:'매입', mfg:'완제품 매입', owner:'무신사', supplier:'-', hanger:'미사용', expiryMgmt:'미사용', expiryDays:'-', boxIn:1, pallet:'-', season:'26FW', year:2026, dt:'25.01.20 12:00', user:'홍길동(yisak.jeong)' },
+    { no:9,  skuNo:'10669599', barcode:'188K/13029/EFGH', op:'active', map:'mapped', name:'데드 PACK TIE_그레이', opt:['그레이','FREE'], cat:'잡화', styleNo:'12345868', brand:'MUSINSA', uidItems:[
+      { uid:'2521', platform:{name:'MUSINSA',color:'blue'}, optNo:'1965', prodOpt:'-', baseCat:'잡화' },
+    ], purchase:'매입', mfg:'완제품 매입', owner:'무신사', supplier:'Yves_korea/adidas/Adidas/(MX) 0382023', hanger:'미사용', expiryMgmt:'미사용', expiryDays:'-', boxIn:1, pallet:'-', season:'26FW', year:2026, dt:'25.01.20 12:00', user:'홍길동(yisak.jeong)' },
+    { no:10, skuNo:'10669600', barcode:'189K/13029/EFGH', op:'active', map:'mapped', name:'스파오 SOL 동방 (PINK)', opt:['핑크','FREE'], cat:'그릇 / 식기류', styleNo:'8847774', brand:'MUSINSA', uidItems:[
+      { uid:'333887', platform:{name:'MUSINSA',color:'blue'}, optNo:'9981', prodOpt:'-', baseCat:'그릇 / 식기류' },
+    ], purchase:'매입', mfg:'완제품 매입', owner:'무신사', supplier:'Yves_korea/adidas/Adidas/(MX) 0382023', hanger:'미사용', expiryMgmt:'미사용', expiryDays:'-', boxIn:1, pallet:'-', season:'26FW', year:2026, dt:'25.01.20 12:00', user:'홍길동(yisak.jeong)' },
+    { no:11, skuNo:'10669601', barcode:'190K/13029/EFGH', op:'active', map:'mapped', name:'(8H/CO) 데일리쿨 그리스 / 크루넥 [네이비][L]', opt:['네이비','L'], cat:'상의 > 니트/스웨터 > 크루넥 니트', styleNo:'MMJTS6Z21', brand:'NK / 모형', uidItems:[], purchase:'매입', mfg:'완제품 매입', owner:'무신사', supplier:'-', hanger:'미사용', expiryMgmt:'미사용', expiryDays:'-', boxIn:1, pallet:'-', season:'26FW', year:2026, dt:'25.01.20 12:00', user:'홍길동(yisak.jeong)' },
+    { no:12, skuNo:'10669602', barcode:'191K/13029/EFGH', op:'active', map:'mapped', name:'(8H/CO) 데일리쿨 그리스 / 크루넥 [네이비][M]', opt:['네이비','M'], cat:'상의 > 니트/스웨터 > 크루넥 니트', styleNo:'MMJTS6Z21', brand:'NK / 모형', uidItems:[], purchase:'매입', mfg:'완제품 매입', owner:'무신사', supplier:'-', hanger:'미사용', expiryMgmt:'미사용', expiryDays:'-', boxIn:1, pallet:'-', season:'26FW', year:2026, dt:'25.01.20 12:00', user:'홍길동(yisak.jeong)' },
+    { no:13, skuNo:'10669603', barcode:'192K/13029/EFGH', op:'active', map:'unmapped', name:'베이직 옥스포드 셔츠 [화이트][M]', opt:['화이트','M'], cat:'상의 > 셔츠 > 옥스포드', styleNo:'MMJTS6Z22', brand:'MUSINSA STANDARD', uidItems:[], purchase:'매입', mfg:'완제품 매입', owner:'무신사', supplier:'Daon_korea(M00000007)', hanger:'사용', expiryMgmt:'사용', expiryDays:'120일', boxIn:1, pallet:'-', season:'26FW', year:2026, dt:'25.01.21 09:30', user:'홍길동(yisak.jeong)' },
+    { no:14, skuNo:'10669604', barcode:'193K/13029/EFGH', op:'active', map:'unmapped', name:'베이직 옥스포드 셔츠 [블루][L]', opt:['블루','L'], cat:'상의 > 셔츠 > 옥스포드', styleNo:'MMJTS6Z22', brand:'MUSINSA STANDARD', uidItems:[], purchase:'매입', mfg:'완제품 매입', owner:'무신사', supplier:'Daon_korea(M00000007)', hanger:'사용', expiryMgmt:'사용', expiryDays:'120일', boxIn:1, pallet:'-', season:'26FW', year:2026, dt:'25.01.21 09:32', user:'홍길동(yisak.jeong)' },
+    { no:15, skuNo:'10669605', barcode:'194K/13029/EFGH', op:'active', map:'mapped', name:'와이드 데님 팬츠 [인디고][30]', opt:['인디고','30'], cat:'하의 > 데님 > 와이드핏', styleNo:'MMJBT6Z01', brand:'MUSINSA STANDARD', uidItems:[
+      { uid:'778899', platform:{name:'MUSINSA',color:'blue'}, optNo:'556677', prodOpt:'인디고^30', baseCat:'하의 > 데님 > 와이드핏' },
+    ], purchase:'위탁', mfg:'OEM', owner:'외부 브랜드', supplier:'Vendor_korea(M00000088)', hanger:'미사용', expiryMgmt:'미사용', expiryDays:'-', boxIn:1, pallet:'-', season:'26FW', year:2026, dt:'25.01.21 14:10', user:'박지수(jisoo.park)' },
+    { no:16, skuNo:'10669606', barcode:'195K/13029/EFGH', op:'active', map:'mapped', name:'와이드 데님 팬츠 [인디고][32]', opt:['인디고','32'], cat:'하의 > 데님 > 와이드핏', styleNo:'MMJBT6Z01', brand:'MUSINSA STANDARD', uidItems:[
+      { uid:'778900', platform:{name:'MUSINSA',color:'blue'},   optNo:'556678', prodOpt:'인디고^32', baseCat:'하의 > 데님 > 와이드핏' },
+      { uid:'778901', platform:{name:'29CM',   color:'yellow'}, optNo:'556679', prodOpt:'INDIGO^32', baseCat:'하의 > 데님 > 와이드핏' },
+    ], purchase:'위탁', mfg:'OEM', owner:'외부 브랜드', supplier:'Vendor_korea(M00000088)', hanger:'미사용', expiryMgmt:'미사용', expiryDays:'-', boxIn:1, pallet:'-', season:'26FW', year:2026, dt:'25.01.21 14:12', user:'박지수(jisoo.park)' },
+    { no:17, skuNo:'10669607', barcode:'196K/13029/EFGH', op:'inactive', map:'unmapped', name:'에코백 캔버스 [네추럴][FREE]', opt:['네추럴','FREE'], cat:'잡화 > 가방 > 에코백', styleNo:'MMJBG6Z03', brand:'MUSINSA', uidItems:[], purchase:'위탁', mfg:'완제품 매입', owner:'외부 브랜드', supplier:'-', hanger:'미사용', expiryMgmt:'미사용', expiryDays:'-', boxIn:1, pallet:'-', season:'26FW', year:2026, dt:'25.01.22 10:00', user:'박지수(jisoo.park)' },
+  ];
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  // null/undefined/'' → '-'; 그 외는 escape
+  function escDash(v) {
+    return (v === null || v === undefined || v === '') ? '-' : escapeHtml(v);
+  }
+
+  // sub-row stack — 1 SKU → N UID 행 정렬 (5개 컬럼 1:1)
+  function stackFromItems(items, getter) {
+    if (!items || !items.length) return '<div class="sku-stack"><div class="sub-row">-</div></div>';
+    return `<div class="sku-stack">${items.map(it => `<div class="sub-row">${getter(it)}</div>`).join('')}</div>`;
+  }
+
+  function rowHtml(r, idx) {
+    const opLabel  = { active:'운영중', inactive:'중지' };
+    const mapLabel = { mapped:'매핑완료', unmapped:'미매핑' };
+    const items = r.uidItems || [];
+    const platHtml    = stackFromItems(items, it => it.platform ? `<span class="scm-platform-tag" data-color="${it.platform.color}">${escapeHtml(it.platform.name)}</span>` : '-');
+    const uidHtml     = stackFromItems(items, it => it.uid ? `<a class="scm-code-link" data-code-type="uid">${escapeHtml(it.uid)}</a>` : '-');
+    const optNoHtml   = stackFromItems(items, it => escDash(it.optNo));
+    const prodOptHtml = stackFromItems(items, it => escDash(it.prodOpt));
+    const baseCatHtml = stackFromItems(items, it => escDash(it.baseCat));
+
+    const skuLink     = `<a class="scm-code-link" data-code-type="sku" style="font-weight:600;" href="sku-detail.html?sku=${escapeHtml(r.skuNo)}">${escapeHtml(r.skuNo)}</a>`;
+    const barcodeLink = escapeHtml(r.barcode);
+    const opChip      = `<span class="sku-status-pill" data-state="${r.op}"><span class="dot"></span>${opLabel[r.op]}</span>`;
+    const mapChip     = `<span class="sku-status-pill" data-state="${r.map}"><span class="dot"></span>${mapLabel[r.map]}</span>`;
+    const nameCell    = `<div class="cell-clamp"><span class="scm-product-name"><span class="scm-product-name__thumb"></span><span class="scm-product-name__text">${escapeHtml(r.name)}</span></span></div>`;
+    const optChips    = (r.opt && r.opt.length)
+      ? `<span class="sku-opt-chips">${r.opt.map(o => `<span class="scm-tag">${escapeHtml(o)}</span>`).join('')}</span>`
+      : '-';
+    const styleNoLink   = `<a class="scm-code-link" data-code-type="styleNo">${escapeHtml(r.styleNo)}</a>`;
+    const expiryDaysCell = (r.expiryDays && r.expiryDays !== '-')
+      ? `<span class="scm-tag">${escapeHtml(r.expiryDays)}</span>`
+      : '-';
+
+    const isGroup = idx === 0 || SKU_ROWS[idx-1]?.skuNo !== r.skuNo;
+
+    return `
+      <tr data-group="${isGroup ? 'true' : 'false'}">
+        <td class="cb-col col-frozen-1"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="선택"></span></td>
+        <td class="col-auto col-no col-frozen-2 sku-num">${r.no}</td>
+        <td class="col-auto col-frozen-3">${skuLink}</td>
+        <td class="col-auto col-frozen-4">${barcodeLink}</td>
+        <td class="col-auto col-frozen-5">${opChip}</td>
+        <td class="col-auto col-frozen-6">${mapChip}</td>
+        <td class="col-large">${nameCell}</td>
+        <td class="col-medium">${optChips}</td>
+        <td class="col-medium"><div class="cell-clamp">${escDash(r.cat)}</div></td>
+        <td class="col-auto">${styleNoLink}</td>
+        <td class="col-auto">${escDash(r.brand)}</td>
+        <td class="col-auto sku-stack-td">${platHtml}</td>
+        <td class="col-auto sku-stack-td sku-num">${uidHtml}</td>
+        <td class="col-auto sku-stack-td sku-num">${optNoHtml}</td>
+        <td class="col-medium sku-stack-td sku-num">${prodOptHtml}</td>
+        <td class="col-medium sku-stack-td">${baseCatHtml}</td>
+        <td class="col-auto">${escDash(r.purchase)}</td>
+        <td class="col-auto">${escDash(r.mfg)}</td>
+        <td class="col-auto">${escDash(r.owner)}</td>
+        <td class="col-medium"><div class="cell-clamp-2">${escDash(r.supplier)}</div></td>
+        <td class="col-auto">${escDash(r.hanger)}</td>
+        <td class="col-auto">${escDash(r.expiryMgmt)}</td>
+        <td class="col-auto">${expiryDaysCell}</td>
+        <td class="col-auto cell-numeric sku-num">${escDash(r.boxIn)}</td>
+        <td class="col-auto cell-numeric sku-num">${escDash(r.pallet)}</td>
+        <td class="col-auto">${escDash(r.season)}</td>
+        <td class="col-auto cell-numeric sku-num">${escDash(r.year)}</td>
+        <td class="col-auto">${escDash(r.dt)}</td>
+        <td class="col-auto">${escDash(r.user)}</td>
+        <td class="col-spacer" aria-hidden="true"></td>
+      </tr>
+    `;
+  }
+
+  document.getElementById('data-tbody').innerHTML = SKU_ROWS.map(rowHtml).join('');
+
+  // ----- SCM Table 인터랙션 init -----
+  // frozenCount=6: cb-col(1) + No(2) + SKU번호(3) + 바코드(4) + 운영상태(5) + 매핑상태(6)
+  // 2단 thead 라 reorder 는 자동 비활성화됨 (scm-table.js 의 isTwoRow guard)
+  if (window.SCMTable) {
+    try { window.SCMTable.init({ root: document, frozenCount: 6 }); } catch (e) { console.warn('SCMTable init failed:', e); }
+  }
+  // 정렬 (sort-ic 클릭 → asc/desc/default 토글 + tbody 재정렬)
+  if (window.SCM && SCM.tableSort) SCM.tableSort.mount({ tableSelector: '.mp-table-scroll .mp-table' });
+  // 더보기 메뉴 (more-ic ⋮ 클릭 → 정렬/고정/숨김 액션 popover)
+  if (window.SCM && SCM.columnMoreMenu) SCM.columnMoreMenu.mount({ tableSelector: '.mp-table-scroll .mp-table' });
+  // 컬럼 필터 (filter-ic ⏷ 클릭 → 코드 입력 popover)
+  if (window.SCM && SCM.columnFilterPopover) SCM.columnFilterPopover.mount({ tableSelector: '.mp-table-scroll .mp-table' });
+
+  // sticky 변수 측정
+  function syncStickyVars() {
+    const root = document.documentElement;
+    const fb = document.getElementById('filter-bar');
+    const sb = document.querySelector('.scm-stats-bar');
+    if (fb) root.style.setProperty('--scm-sticky-filter', fb.offsetHeight + 'px');
+    if (sb) root.style.setProperty('--scm-sticky-stats',  sb.offsetHeight + 'px');
+  }
+  syncStickyVars();
+  if (typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(syncStickyVars);
+    document.querySelectorAll('#filter-bar, .scm-stats-bar').forEach(el => ro.observe(el));
+  }
+  window.addEventListener('resize', syncStickyVars);
+
+  // ----- Module mounts -----
+  if (window.SCM && SCM.lnb)    SCM.lnb.mount(document.querySelector('.scm-lnb'), { active: 'sku-management' });
+  if (window.SCM && SCM.topbar) SCM.topbar.mount(document.querySelector('.scm-topbar'));
+
+  if (!window.SCM) return;
+
+  // Filter bar
+  if (SCM.filterBar) SCM.filterBar.mount(document.getElementById('filter-bar'));
+
+  // Filter drawer
+  if (SCM.filterDrawer) {
+    const fd = SCM.filterDrawer.mount(document.getElementById('filter-drawer'), {
+      backdrop: document.getElementById('fd-backdrop'),
+    });
+    document.getElementById('filter-drawer-open').addEventListener('click', fd.open);
+  }
+
+  // Pgsize
+  if (SCM.pgsizeSelect) SCM.pgsizeSelect.mount(document.getElementById('pgsize'), { value: 100 });
+
+  // Mini-action bulk dropdown
+  if (SCM.miniAction) {
+    SCM.miniAction.mount(document.getElementById('bulk-wrap'), {
+      onSelect: (key) => {
+        const labels = { hanger: '행거 사용 여부 변경', supplier: '공급사 추가', inbound: '입수정보 변경' };
+        SCM.toast.show({ variant: 'info', title: labels[key] || '일괄 변경', desc: '선택 SKU 에 적용됩니다.' });
+      },
+    });
+  }
+
+  // Info banner toggle
+  (function () {
+    const banner = document.getElementById('sku-info-banner');
+    const toggle = document.getElementById('sku-info-toggle');
+    if (banner && toggle) {
+      toggle.addEventListener('click', () => banner.classList.toggle('is-collapsed'));
+    }
+  })();
+
+  // 코드 link → SKU번호는 상세 페이지 이동, 그 외 type 은 code-popover (UID / 바코드 / 스타일넘버)
+  document.getElementById('data-tbody').addEventListener('click', (e) => {
+    const link = e.target.closest('.scm-code-link');
+    if (!link) return;
+    const type = link.getAttribute('data-code-type') || 'sku';
+    // SKU번호 → sku-detail.html 로 이동
+    if (type === 'sku') {
+      const sku = link.textContent.trim();
+      if (sku) {
+        e.preventDefault();
+        window.location.href = 'sku-detail.html?sku=' + encodeURIComponent(sku);
+      }
+      return;
+    }
+    if (SCM.codePopover) {
+      e.preventDefault();
+      const TITLE = { sku:'SKU번호 확인', uid:'UID 확인', barcode:'바코드 확인', styleNo:'스타일넘버 확인' };
+      const COPY  = { sku:'SKU번호 복사', uid:'UID 복사', barcode:'바코드 복사', styleNo:'스타일넘버 복사' };
+      SCM.codePopover.open({
+        title: TITLE[type] || '코드 확인',
+        items: [link.textContent.trim()],
+        copyLabel: COPY[type] || '복사',
+        anchorEl: link,
+        onCopy: () => SCM.toast.show({ variant: 'success', title: `${(COPY[type]||'코드').replace(' 복사','')} 복사 완료`, desc: '1개 복사되었습니다.' }),
+      });
+    }
+  });
+
+  // 일괄 업로드 모달 — scm-bulk-upload-modal 모듈로 위임 (open/close + warning toggle 자동)
+  if (window.SCM && SCM.bulkUploadModal) {
+    const bm = SCM.bulkUploadModal.mount({
+      modal: document.getElementById('bu-modal'),
+      backdrop: document.getElementById('bu-backdrop'),
+    });
+    const openBtn = document.getElementById('open-bulk-upload');
+    const cancelBtn = document.getElementById('bu-cancel');
+    if (openBtn) openBtn.addEventListener('click', bm.open);
+    if (cancelBtn) cancelBtn.addEventListener('click', bm.close);
+  }
+
+  // 필터 popover (글로벌 REGISTRY 기반)
+  // 검색 클릭 시 SKU_ROWS 를 chip 값에 맞춰 필터링 → tbody 행 display:none 으로 숨김.
+  let filterModeInstance = null;
+
+  function matchesFiltersSku(r, active) {
+    // 매입형태 (single)
+    if (active.purchaseType && !active.purchaseType.includes(r.purchase)) return false;
+    // 제조구분 (single)
+    if (active.manufacture && !active.manufacture.includes(r.mfg)) return false;
+    // 플랫폼 (single, uidItems[] 안의 platform.name 매칭)
+    if (active.platform) {
+      const has = (r.uidItems || []).some(it => active.platform.includes(it.platform && it.platform.name));
+      if (!has) return false;
+    }
+    // 브랜드 (multi)
+    if (active.brand && !active.brand.includes(r.brand)) return false;
+    // 카테고리 (multi)
+    if (active.category && !active.category.includes(r.cat)) return false;
+    // 운영상태 (single)
+    if (active.opStatus) {
+      const opMap = { '운영중': 'active', '중지': 'inactive' };
+      const targets = active.opStatus.map(l => opMap[l] || l);
+      if (!targets.includes(r.op)) return false;
+    }
+    // 매핑상태 (single)
+    if (active.mapStatus) {
+      const msMap = { '매핑완료': 'mapped', '미매핑': 'unmapped' };
+      const targets = active.mapStatus.map(l => msMap[l] || l);
+      if (!targets.includes(r.map)) return false;
+    }
+    // 행거 사용 여부 (single)
+    if (active.hanger && !active.hanger.includes(r.hanger)) return false;
+    // SKU 조회 (single — type 'SKU번호'/'SKU명') + skuLookupValue (codeinput — lines)
+    if (active.skuLookupValue) {
+      const lines = active.skuLookupValue;
+      const type = (active.skuLookup && active.skuLookup[0]) || 'SKU번호';
+      if (type === 'SKU번호') {
+        if (!lines.some(v => r.skuNo && r.skuNo.toLowerCase().includes(v.toLowerCase()))) return false;
+      } else if (type === 'SKU명') {
+        if (!lines.some(v => r.name && r.name.toLowerCase().includes(v.toLowerCase()))) return false;
+      }
+    }
+    // 바코드 / UID / 스타일넘버 (codeinput)
+    if (active.barcode && !active.barcode.some(v => r.barcode && r.barcode.toLowerCase().includes(v.toLowerCase()))) return false;
+    if (active.uid) {
+      const has = (r.uidItems || []).some(it => active.uid.some(v => it.uid && it.uid.toLowerCase().includes(v.toLowerCase())));
+      if (!has) return false;
+    }
+    if (active.styleNumber && !active.styleNumber.some(v => r.styleNo && r.styleNo.toLowerCase().includes(v.toLowerCase()))) return false;
+    return true;
+  }
+
+  function applyDataFilterSku() {
+    if (!filterModeInstance) return;
+    const active = filterModeInstance.getActiveFilters();
+    const tbody = document.querySelector('.mp-table tbody');
+    if (!tbody) return;
+    let visibleCount = 0;
+    Array.from(tbody.children).forEach((tr, i) => {
+      const r = SKU_ROWS[i];
+      if (!r) return;
+      const visible = matchesFiltersSku(r, active);
+      tr.style.display = visible ? '' : 'none';
+      if (visible) visibleCount++;
+    });
+    return visibleCount;
+  }
+
+  // 매입형태 → 제조구분 의존성:
+  //   1) 필터바 제조구분 chip: 위탁이면 chip 전체 비활성 (열기 자체 차단)
+  //   2) 전체필터 drawer: 위탁이면 자체제작(m2) 옵션만 비활성
+  function syncManufactureChipState() {
+    const ptChip = document.querySelector('.scm-filter-select[data-mp-filter="purchaseType"]');
+    const mfgChip = document.querySelector('.scm-filter-select[data-mp-filter="manufacture"]');
+    if (!ptChip || !mfgChip || !filterModeInstance) return;
+    const valueEl = ptChip.querySelector('.scm-filter-select__value');
+    const value = valueEl ? valueEl.textContent.trim() : '';
+    const isWitak = value === '위탁';
+
+    // 1) 필터바 chip 활성/비활성
+    if (isWitak) {
+      mfgChip.setAttribute('disabled', '');
+      mfgChip.setAttribute('data-chev', 'disabled');
+      mfgChip.classList.add('is-disabled');
+    } else {
+      mfgChip.removeAttribute('disabled');
+      mfgChip.removeAttribute('data-chev');
+      mfgChip.classList.remove('is-disabled');
+    }
+
+    // 2) drawer 자체제작 옵션 disabled — 모듈이 listValues 직접 mutate + drawer 재빌드까지 처리
+    if (filterModeInstance.setOptionDisabled) {
+      filterModeInstance.setOptionDisabled('manufacture', 'm2', isWitak);
+    }
+  }
+
+  if (window.SCM && SCM.filterPopoverModes) {
+    filterModeInstance = SCM.filterPopoverModes.init({
+      rootEl: document.getElementById('filter-popover-root'),
+      filterBarEl: document.getElementById('filter-bar'),
+      // 디폴트 필터 — 'applied filter' 카운트에서 제외돼서 초기화 버튼 visibility 에 영향 안 줌.
+      // 매입형태=매입 은 글로벌 REGISTRY 에서 자동 인식되므로 페이지에선 SKU 관리 전용 default (skuLookup) 만 명시.
+      defaultFilters: { skuLookup: 'SKU번호' },
+      onSearch: () => {
+        const n = applyDataFilterSku();
+        if (SCM.toast) SCM.toast.show({ variant: 'info', title: '필터 적용 완료', desc: n + '건' });
+      },
+      onReset: () => {
+        // 디폴트 (매입형태=매입, SKU 조회=SKU번호) 는 라이브러리가 자동 재적용함
+        applyDataFilterSku();
+        syncManufactureChipState();
+        if (SCM.toast) SCM.toast.show({ variant: 'info', title: '필터 초기화 완료' });
+      },
+      onApply: (key) => {
+        if (key === 'purchaseType') syncManufactureChipState();
+      },
+    });
+    // 디폴트 필터 (purchaseType=매입, skuLookup=SKU번호) 는 라이브러리가 init 시 자동 적용 + data-default 마킹.
+    // 초기 상태 동기 — 매입형태 디폴트가 '매입' 이므로 자체제작 활성 유지
+    syncManufactureChipState();
+  }
+
+  // ----- 선택 상태 → stats 카운트 + 액션 버튼 활성/비활성 동기화 -----
+  // 규칙: 선택 0 = "전체 N" / 선택 ≥1 = "선택됨 N / total"
+  //   - 모든 액션 버튼: 선택 0 일 때 disabled
+  //   - 상품 매핑 버튼: 매핑완료 또는 미매핑 어느 쪽이든 1건 이상 선택되면 활성 (재매핑/신규매핑 모두 가능)
+  //   - 상품 등록 후 매핑: 미매핑 1건 이상 선택 시 활성
+  function getSelectedSkuRows() {
+    const out = [];
+    const trs = document.querySelectorAll('.mp-table tbody tr');
+    trs.forEach((tr, i) => {
+      const cb = tr.querySelector('td.cb-col .scm-checkbox');
+      if (cb && cb.getAttribute('aria-checked') === 'true') {
+        const r = SKU_ROWS[i];
+        if (r) out.push(r);
+      }
+    });
+    return out;
+  }
+  function syncSkuActions(cnt) {
+    const total = SKU_ROWS.length;
+    const noSel = !cnt;
+
+    // stats 카운트
+    const statEl = document.querySelector('.scm-stats-bar__counts .scm-stat');
+    if (statEl) {
+      if (noSel) {
+        statEl.classList.remove('scm-stat--selected');
+        statEl.classList.add('scm-stat--all');
+        statEl.innerHTML = `<span class="scm-stat__label" id="sku-stat-label">전체</span> <span class="scm-stat__num" id="sku-total">${total}</span>`;
+      } else {
+        statEl.classList.remove('scm-stat--all');
+        statEl.classList.add('scm-stat--selected');
+        statEl.innerHTML = `<span class="scm-stat__label">선택됨</span> <span class="scm-stat__num">${cnt}</span> <span class="scm-stat__label" style="color:#8A8A8A;font-weight:400;">/ ${total}</span>`;
+      }
+    }
+
+    // 액션 버튼 disabled — SKU번호 복사는 항상 활성 (선택 0 이면 전체 복사)
+    const ids = ['mp-sku-map-btn','mp-sku-reg-map-btn','mp-sku-deselect-btn'];
+    ids.forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) btn.disabled = noSel;
+    });
+    // 일괄 설정/변경 dropdown trigger
+    const bulkBtn = document.querySelector('#bulk-wrap > button');
+    if (bulkBtn) bulkBtn.disabled = noSel;
+
+    // 매핑 버튼:
+    //   - 상품 매핑: 1건 이상 선택 시 항상 활성 (매핑완료/미매핑 모두) — 매핑완료 행 재매핑 가능
+    //   - 상품 등록 후 매핑: 미매핑 1건 이상 선택 시에만 활성 (이미 매핑된 행은 신규 등록 의미 없음)
+    if (!noSel) {
+      const sel = getSelectedSkuRows();
+      const hasUnmapped = sel.some(r => r.map === 'unmapped');
+      const mapBtn = document.getElementById('mp-sku-map-btn');
+      const regMapBtn = document.getElementById('mp-sku-reg-map-btn');
+      if (mapBtn) mapBtn.disabled = false;        // 항상 활성 (선택 1+ 일 때)
+      if (regMapBtn) regMapBtn.disabled = !hasUnmapped;
+    }
+  }
+
+  // 체크박스 토글 + 헤더 동기화 — inline (무탠 검증 패턴)
+  // headerWasAll: 헤더로 '전체 선택' 했었는지 추적. 전체→부분 해제 시에만 'mixed' 표시.
+  let skuHeaderWasAll = false;
+  function getSkuRowCbs() {
+    return document.querySelectorAll('.mp-table tbody td.cb-col .scm-checkbox');
+  }
+  function syncSkuHeaderCb() {
+    const headerCb = document.getElementById('sku-cb-all');
+    if (!headerCb) return;
+    const rowCbs = getSkuRowCbs();
+    if (rowCbs.length === 0) { headerCb.setAttribute('aria-checked', 'false'); skuHeaderWasAll = false; return; }
+    const checkedN = Array.from(rowCbs).filter(c => c.getAttribute('aria-checked') === 'true').length;
+    if (checkedN === rowCbs.length) {
+      headerCb.setAttribute('aria-checked', 'true');
+      skuHeaderWasAll = true;
+    } else if (checkedN === 0) {
+      headerCb.setAttribute('aria-checked', 'false');
+      skuHeaderWasAll = false;
+    } else {
+      headerCb.setAttribute('aria-checked', skuHeaderWasAll ? 'mixed' : 'false');
+    }
+  }
+  // document delegation — 무탠과 동일 패턴
+  document.addEventListener('click', (e) => {
+    const cb = e.target.closest('.mp-table .scm-checkbox, #sku-cb-all');
+    if (!cb) return;
+    if (cb.classList.contains('is-disabled')) return;
+    e.preventDefault();
+    const cur = cb.getAttribute('aria-checked');
+    // 헤더는 mixed → false (전체 해제), 그 외엔 토글
+    let next;
+    if (cb.id === 'sku-cb-all') {
+      next = (cur === 'true' || cur === 'mixed') ? 'false' : 'true';
+    } else {
+      next = cur === 'true' ? 'false' : 'true';
+    }
+    if (cb.id === 'sku-cb-all') {
+      cb.setAttribute('aria-checked', next);
+      getSkuRowCbs().forEach(c => c.setAttribute('aria-checked', next));
+      skuHeaderWasAll = (next === 'true');
+    } else if (cb.closest('td.cb-col')) {
+      cb.setAttribute('aria-checked', next);
+      syncSkuHeaderCb();
+    } else {
+      return;
+    }
+    syncSkuActions(Array.from(getSkuRowCbs()).filter(c => c.getAttribute('aria-checked') === 'true').length);
+  });
+  let _skuTableSel = {
+    clear: () => {
+      getSkuRowCbs().forEach(c => c.setAttribute('aria-checked', 'false'));
+      const h = document.getElementById('sku-cb-all');
+      if (h) h.setAttribute('aria-checked', 'false');
+      skuHeaderWasAll = false;
+      syncSkuActions(0);
+    }
+  };
+  syncSkuActions(0);
+
+  // 선택 해제 — 모든 cb 해제 + 동기화
+  const skuDeselectBtn = document.getElementById('mp-sku-deselect-btn');
+  if (skuDeselectBtn) {
+    skuDeselectBtn.addEventListener('click', () => {
+      if (skuDeselectBtn.disabled) return;
+      if (_skuTableSel) _skuTableSel.clear();
+      else syncSkuActions(0);
+    });
+  }
+
+  // SKU번호 복사 — 선택된 행의 SKU 번호 줄바꿈으로 클립보드. 선택 0 일 때는 전체 SKU 복사.
+  const skuCopyBtn = document.getElementById('mp-sku-copy-btn');
+  if (skuCopyBtn) {
+    skuCopyBtn.addEventListener('click', async () => {
+      if (skuCopyBtn.disabled) return;
+      const sel = getSelectedSkuRows();
+      const source = sel.length ? sel : SKU_ROWS;     // 선택 0 → 전체
+      const skus = source.map(r => r.skuNo).filter(Boolean);
+      if (!skus.length) return;
+      const text = skus.join('\n');
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (_) {
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); } catch (_) {}
+        document.body.removeChild(ta);
+      }
+      const desc = sel.length
+        ? `${skus.length}건이 클립보드에 복사되었습니다.`
+        : `전체 ${skus.length}건이 클립보드에 복사되었습니다.`;
+      if (SCM.toast) SCM.toast.show({ variant:'success', title:'SKU번호 복사 완료', desc });
+    });
+  }
+
+  // 상품 매핑 / 상품 등록 후 매핑 — confirm-modal 모듈
+  const skuMapBtn = document.getElementById('mp-sku-map-btn');
+  if (skuMapBtn && SCM.confirmModal) {
+    skuMapBtn.addEventListener('click', () => {
+      if (skuMapBtn.disabled) return;
+      const sel = getSelectedSkuRows();
+      SCM.confirmModal.open({
+        title: '상품 매핑',
+        descHtml: `선택하신 <strong class="accent">${sel.length}건</strong>(매입)의 SKU를 플랫폼별 상품에 매핑합니다.<br/>계속 진행하시겠습니까?`,
+        confirmLabel: '매핑',
+        onConfirm: () => SCM.toast && SCM.toast.show({ variant:'success', title:'상품 매핑 완료', desc:`${sel.length}건의 매핑이 적용되었습니다.` }),
+      });
+    });
+  }
+  const skuRegMapBtn = document.getElementById('mp-sku-reg-map-btn');
+  if (skuRegMapBtn && SCM.confirmModal) {
+    skuRegMapBtn.addEventListener('click', () => {
+      if (skuRegMapBtn.disabled) return;
+      // 안내 모달 (Figma): 단일 확인 + 하이라이트 callout
+      SCM.confirmModal.open({
+        title: '상품 등록 후 매핑 안내',
+        descHtml: `
+          <div class="mp-modal-body-text">미매핑 상태 SKU에 플랫폼별 신규 UID를 등록 후 매핑 하는 기능입니다.</div>
+          <div class="mp-modal-callout">
+            <div class="callout-title">기존 등록 상품(UID)에 옵션을 추가하시나요?</div>
+            <div class="callout-text">플랫폼에서 먼저 새로운 상품 옵션을 등록 해 주세요.<br/>이후 '상품 매핑'을 통해 기존 UID와 새 옵션을 연결할 수 있습니다.</div>
+          </div>
+        `,
+        confirmLabel: '확인',
+      });
+      // legacy hideCancel=true 재현 — confirm-modal 모듈은 hideCancel 미지원이라 1회용 스타일 토글
+      // 다음 open 시 다시 보여야 하므로 close 시 복구
+      const cancelEl = document.querySelector('.scm-confirm-modal .scm-confirm-modal__cancel');
+      if (cancelEl) {
+        cancelEl.style.display = 'none';
+        const restore = () => { cancelEl.style.display = ''; };
+        // confirm/backdrop 클릭 또는 ESC 로 닫혔을 때 복구
+        const obs = new MutationObserver(() => {
+          const modalEl = cancelEl.closest('.scm-confirm-modal');
+          if (modalEl && !modalEl.classList.contains('is-open')) { restore(); obs.disconnect(); }
+        });
+        const modalEl = cancelEl.closest('.scm-confirm-modal');
+        if (modalEl) obs.observe(modalEl, { attributes: true, attributeFilter: ['class'] });
+      }
+    });
+  }
+})();
+</script>
+</body>
+</html>

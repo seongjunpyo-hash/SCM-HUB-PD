@@ -1,0 +1,79 @@
+/* ============================================================
+ * scm-stat — 카운트 + 라벨 (stats bar 안에서 사용)
+ * ------------------------------------------------------------
+ * "전체 500" / "전개중 320" / "미전개 180" 같은 카운트 라벨.
+ * variants 별로 num 색상 다름.
+ *
+ * Marker:
+ *   <span class="scm-stat scm-stat--all">
+ *     <span class="scm-stat__label">전체</span>
+ *     <span class="scm-stat__num">500</span>
+ *   </span>
+ *
+ * Variants:
+ *   --all              num 검정
+ *   --deployed         num 파랑 (#245EFF)
+ *   --undeployed       num 회색 (#666)
+ *   --selected         "선택 N" — num 파랑 (#245EFF)
+ *
+ * 보조:
+ *   .scm-stat-divider  3×3 점 (회색, 카운트 사이 구분)
+ * ============================================================ */
+
+.scm-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 36px;
+  padding: 8px;
+  font-size: 15px;
+  line-height: 20.4px;
+  color: #000;
+}
+
+/* 첫 stat (전체) — 좌측 padding 0 */
+.scm-stat--all {
+  padding: 8px 8px 8px 0;
+}
+
+.scm-stat__label {
+  font-weight: 500;
+}
+
+.scm-stat__num {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.scm-stat__icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Variants — num 색상 */
+.scm-stat--all .scm-stat__num         { color: #000; }
+.scm-stat--deployed .scm-stat__num    { color: #245EFF; }
+.scm-stat--undeployed .scm-stat__num  { color: #666; }
+.scm-stat--selected .scm-stat__num    { color: #245EFF; }
+.scm-stat--selected .scm-stat__label  { color: #000; font-weight: 500; }
+
+/* Selected variant — 좌측 padding 0 (전체 stat 처럼) */
+.scm-stat--selected {
+  padding: 8px 8px 8px 0;
+}
+
+/* 클릭 가능한 stat (전개중/미전개 등 — 토글 필터) */
+.scm-stat--deployed,
+.scm-stat--undeployed {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Divider — stats counts 사이 3×3 점 */
+.scm-stat-divider {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #CCCCCC;
+  flex-shrink: 0;
+}

@@ -1,0 +1,115 @@
+/* ============================================================
+ * scm-radio — 라디오 버튼
+ * ------------------------------------------------------------
+ * form-radio (input[type=radio] appearance:none, gradient bg)
+ * + bu-radio (input + label + .dot 분리) 두 패턴을 통합.
+ *
+ * Marker: input + .scm-radio-dot + label-text 구조
+ *
+ *   <label class="scm-radio">
+ *     <input type="radio" name="g" value="1" />
+ *     <span class="scm-radio-dot"></span>
+ *     <span>옵션 1</span>
+ *   </label>
+ *
+ * Sizes:
+ *   기본 (form 페이지 톤)     gap 8, font 15/400
+ *   .scm-radio--sm            gap 6, font 14/400 (modal 톤)
+ *
+ * States:
+ *   input:checked            dot 검정 + 흰 안쪽 점
+ *   [aria-disabled="true"] 또는 input:disabled  비활성
+ *
+ * Group:
+ *   .scm-radio-group         inline flex, gap 32 (기본)
+ *   .scm-radio-group--sm     gap 12 (modal 톤)
+ *   .scm-radio-group--2col   2열 wrap, gap 12 100, max-width 1200
+ * ============================================================ */
+
+.scm-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 20.4px;
+  color: #000;
+  user-select: none;
+  position: relative;
+}
+
+.scm-radio--sm {
+  gap: 6px;
+  font-size: 14px;
+  line-height: 19.6px;
+}
+
+.scm-radio input[type="radio"] {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.scm-radio-dot {
+  width: 16px;
+  height: 16px;
+  border: 1px solid #CCCCCC;
+  border-radius: 50%;
+  background: #fff;
+  display: inline-block;
+  flex-shrink: 0;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.scm-radio input[type="radio"]:checked + .scm-radio-dot {
+  border-color: #000;
+  background: #000;
+}
+
+.scm-radio input[type="radio"]:checked + .scm-radio-dot::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  border-radius: 50%;
+}
+
+/* Disabled */
+.scm-radio[aria-disabled="true"],
+.scm-radio:has(input:disabled) {
+  color: rgba(0, 0, 0, 0.20);
+  cursor: not-allowed;
+}
+
+.scm-radio[aria-disabled="true"] .scm-radio-dot,
+.scm-radio:has(input:disabled) .scm-radio-dot {
+  border-color: #EBEBEB;
+  background: #F5F5F5;
+}
+
+/* Group */
+.scm-radio-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.scm-radio-group--sm {
+  gap: 12px;
+}
+
+.scm-radio-group--2col {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 100px;
+  max-width: 1200px;
+}

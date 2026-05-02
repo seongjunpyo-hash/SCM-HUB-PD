@@ -1,0 +1,29 @@
+/* scm-product-name — 썸네일 + 텍스트 상품명 셀 인라인 (legacy er-name spec) */
+.scm-product-name {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 20.4px;
+  color: #000;
+}
+.scm-product-name__thumb {
+  width: 40px; height: 48px;
+  border-radius: 4px;
+  background: rgba(0,0,0,0.02) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 58' fill='none'%3E%3Crect width='48' height='58' fill='rgba(0,0,0,0.02)'/%3E%3Cpath d='M12 38L20 28L26 33L33 26L37 30' stroke='%23CCCCCC' stroke-width='1.5' fill='none'/%3E%3Ccircle cx='17' cy='20' r='3' fill='%23CCCCCC'/%3E%3C/svg%3E") center/cover;
+  outline: 0.58px solid rgba(0,0,0,0.02);
+  outline-offset: -0.58px;
+  flex-shrink: 0;
+  display: inline-block;
+}
+/* 컨텐츠가 col-large(320) 폭 넘으면 2줄 wrap 후 ellipsis. (legacy 1줄 ellipsis → 2줄로 변경) */
+.scm-product-name__text {
+  flex: 1; min-width: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+  line-height: 20.4px;
+}

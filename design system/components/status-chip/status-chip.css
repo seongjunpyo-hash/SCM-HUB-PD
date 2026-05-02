@@ -1,0 +1,18 @@
+/* scm-status-chip — 상태 칩 (입고대기 / 입고완료 등) */
+.scm-status-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  background: rgba(138, 138, 138, 0.10);
+  color: #000;
+}
+.scm-status-chip--processing { background: #E2F1FF; color: #245EFF; }
+.scm-status-chip--done       { background: #ECFFEC; color: #1EA514; }
+.scm-status-chip--cancel     { background: #FFECEC; color: #F31110; }
+.scm-status-chip--waiting    { background: rgba(138, 138, 138, 0.10); color: #666; }
+.scm-status-chip--moving     { background: rgba(140, 17, 255, 0.10); color: #981AFF; }

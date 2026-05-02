@@ -1,0 +1,29 @@
+/* scm-input-cell — 셀 안 inline input + max button */
+.scm-input-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 36px;
+}
+.scm-input-cell__input {
+  width: 88px; height: 36px;
+  padding: 8px 10px;
+  background: #fff;
+  border: 1px solid #E0E0E0;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 14px; font-weight: 500; line-height: 19.6px; color: #000;
+  outline: none;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  box-sizing: border-box;
+}
+.scm-input-cell__input:focus { border-color: #000; }
+.scm-input-cell__max {
+  height: 36px; padding: 8px 10px;
+  background: rgba(138, 138, 138, 0.10);
+  border: 0; border-radius: 4px;
+  font-family: inherit; font-size: 13px; font-weight: 500; line-height: 19.5px; color: #000;
+  cursor: pointer;
+}
+.scm-input-cell__max:hover { background: rgba(138, 138, 138, 0.16); }

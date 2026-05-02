@@ -1,0 +1,102 @@
+/* ============================================================
+ * scm-info-banner — 안내 배너 (collapsible)
+ * ------------------------------------------------------------
+ * 페이지 상단의 회색 안내 박스. 좌측 info icon + 제목 + 본문 +
+ * 우측 토글 버튼 (chevron up/down). is-collapsed 시 본문 숨김.
+ *
+ * Marker:
+ *   <div class="scm-info-banner">
+ *     <svg class="scm-info-banner__icon">...</svg>
+ *     <div class="scm-info-banner__body">
+ *       <div class="scm-info-banner__title">제목</div>
+ *       <div class="scm-info-banner__text">본문 텍스트</div>
+ *     </div>
+ *     <button class="scm-info-banner__toggle" aria-label="접기">
+ *       <svg>...chevron...</svg>
+ *     </button>
+ *   </div>
+ *
+ * Variants:
+ *   기본              max-width 1200 (form 페이지)
+ *   --full            max-width 없음 (다른 페이지)
+ *
+ * States:
+ *   .is-collapsed     본문 숨김
+ * ============================================================ */
+
+.scm-info-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: rgba(224, 224, 224, 0.20);
+  border: 1px solid #EBEBEB;
+  border-radius: 4px;
+  padding: 16px 12px;
+  color: #000;
+  position: relative;
+  overflow: hidden;
+  max-width: 1200px;
+  box-sizing: border-box;
+}
+
+.scm-info-banner--full { max-width: none; }
+
+.scm-info-banner__icon {
+  width: 20px;
+  height: 20px;
+  color: #8A8A8A;
+  flex-shrink: 0;
+  margin-top: 0;
+}
+
+.scm-info-banner__body {
+  flex: 1;
+  min-width: 0;
+  padding: 0 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scm-info-banner__title {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 20.4px;
+  color: #000;
+}
+
+.scm-info-banner__text {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 19.6px;
+  color: #000;
+}
+
+.scm-info-banner__toggle {
+  background: transparent;
+  border: 0;
+  color: #000;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scm-info-banner__toggle svg {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.15s ease;
+}
+
+/* Collapsed: text 숨김 + chevron 회전 */
+.scm-info-banner.is-collapsed .scm-info-banner__text {
+  display: none;
+}
+
+.scm-info-banner.is-collapsed .scm-info-banner__toggle svg {
+  transform: rotate(180deg);
+}

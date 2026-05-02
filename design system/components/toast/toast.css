@@ -1,0 +1,120 @@
+/* ============================================================
+ * scm-toast — 우상단 스낵바 토스트 (Figma snackBar)
+ * ------------------------------------------------------------
+ * 390w / padding 16/24 / radius 4 / bg rgba(0,0,0,0.80)
+ * 우상단(top: 80px, right: 24px) 슬라이드 인/아웃.
+ *
+ * Variants:
+ *   .scm-toast--success    초록 아이콘 (#1EA514)
+ *   .scm-toast--info       파랑 아이콘 (#245EFF)
+ *   .scm-toast--critical   빨강 아이콘 (#F31110)
+ *
+ * States:
+ *   .is-leaving            슬라이드 아웃 (220ms)
+ * ============================================================ */
+
+.scm-toast-stack {
+  position: fixed;
+  top: 80px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 100;
+  pointer-events: none;
+  align-items: flex-end;
+}
+
+.scm-toast {
+  pointer-events: auto;
+  width: 390px;
+  min-width: 150px;
+  background: rgba(0, 0, 0, 0.80);
+  color: #fff;
+  border-radius: 4px;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.32);
+  animation: scm-toast-slide-in 0.22s ease-out;
+}
+
+.scm-toast__main {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.scm-toast.is-leaving {
+  animation: scm-toast-slide-out 0.22s ease-in forwards;
+}
+
+@keyframes scm-toast-slide-in {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scm-toast-slide-out {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(40px); }
+}
+
+.scm-toast__icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.scm-toast--success .scm-toast__icon  { color: #1EA514; }
+.scm-toast--info .scm-toast__icon     { color: #245EFF; }
+.scm-toast--critical .scm-toast__icon { color: #F31110; }
+
+.scm-toast__body {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scm-toast__title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20.4px;
+  color: #fff;
+}
+
+.scm-toast__desc {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 19.6px;
+  color: #fff;
+}
+
+.scm-toast__close {
+  background: transparent;
+  border: 0;
+  color: #fff;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+.scm-toast__close svg {
+  width: 12px;
+  height: 12px;
+}
+
+.scm-toast__close:hover {
+  opacity: 0.8;
+}

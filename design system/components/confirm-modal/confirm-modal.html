@@ -1,0 +1,17 @@
+<!-- ============================================================
+     scm-confirm-modal — canonical marker
+     자체 마운트 시 backdrop + modal 자동 생성. 수동으로 마크업하려면 아래.
+     ============================================================ -->
+
+<div class="scm-confirm-modal-backdrop is-open"></div>
+<div class="scm-confirm-modal is-open" role="dialog" aria-labelledby="cm-title">
+  <h3 class="scm-confirm-modal__title" id="cm-title">5건 스토어 전개 여부 변경</h3>
+  <p class="scm-confirm-modal__desc">
+    선택하신 상품의 스토어 전개 여부를 <strong class="accent">'전개중'</strong>(으)로 일괄 변경합니다.<br/>
+    계속 진행하시겠습니까?
+  </p>
+  <div class="scm-confirm-modal__actions">
+    <button type="button" class="scm-confirm-modal__cancel">취소</button>
+    <button type="button" class="scm-confirm-modal__confirm primary">변경</button>
+  </div>
+</div>

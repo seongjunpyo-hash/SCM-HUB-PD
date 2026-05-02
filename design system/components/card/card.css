@@ -1,0 +1,95 @@
+/* ============================================================
+ * scm-card — 컨테이너 카드
+ * ------------------------------------------------------------
+ * 대시보드 / 폼 / 상세 페이지의 콘텐츠 블록.
+ *
+ * Marker:
+ *   <article class="scm-card">
+ *     <header class="scm-card-head">
+ *       <h3 class="scm-card-title">제목</h3>
+ *       <a class="scm-card-link">전체 보기 →</a>
+ *     </header>
+ *     <div class="scm-card-body">...</div>
+ *   </article>
+ *
+ * Variants:
+ *   기본 (white)            bg #fff, border 1px #E0E0E0, radius 8
+ *   .scm-card--gray         bg #F8F9FC, border #EBEBEB, radius 4 (폼 그룹 박스)
+ *
+ * Body modifier:
+ *   .scm-card-body--flush   padding 0 (e.g. 차트 / 테이블 풀폭)
+ *
+ * Sub:
+ *   .scm-card-divider       1px #EBEBEB (섹션 구분)
+ *   .scm-card-link          우측 14/500 회색 → hover #000
+ * ============================================================ */
+
+.scm-card {
+  background: #fff;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.scm-card--gray {
+  background: #F8F9FC;
+  border-color: #EBEBEB;
+  border-radius: 4px;
+}
+
+.scm-card-head {
+  padding: 20px 24px;
+  border-bottom: 1px solid #EBEBEB;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.scm-card-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #000;
+  line-height: 21.76px;
+}
+
+/* 폼 카드의 큰 제목 (24px padding-top, 18px font) */
+.scm-card-title--lg {
+  font-size: 18px;
+  line-height: 24.48px;
+  padding: 24px 24px 16px;
+  margin: 0;
+}
+
+.scm-card-link {
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.scm-card-link:hover { color: #000; }
+
+.scm-card-body {
+  padding: 20px 24px;
+  flex: 1;
+  min-height: 0;
+}
+.scm-card-body--flush { padding: 0; }
+
+/* 폼 카드 섹션 (head 없이 padding 만 있는 케이스) */
+.scm-card-section {
+  padding: 0 24px 24px;
+}
+.scm-card-section--padded { padding: 24px; }
+
+.scm-card-divider {
+  height: 1px;
+  background: #EBEBEB;
+  flex-shrink: 0;
+}

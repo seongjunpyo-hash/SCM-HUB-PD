@@ -1,0 +1,36 @@
+<!-- ============================================================
+     scm-stat — canonical markers
+     ============================================================ -->
+
+<!-- 전체 -->
+<span class="scm-stat scm-stat--all">
+  <span class="scm-stat__label">전체</span>
+  <span class="scm-stat__num">500</span>
+</span>
+
+<!-- 전개중 (클릭 가능, num 파랑) -->
+<span class="scm-stat scm-stat--deployed">
+  <span class="scm-stat__label">전개중</span>
+  <span class="scm-stat__num">320</span>
+</span>
+
+<!-- 미전개 (클릭 가능, num 회색) -->
+<span class="scm-stat scm-stat--undeployed">
+  <span class="scm-stat__label">미전개</span>
+  <span class="scm-stat__num">180</span>
+</span>
+
+<!-- 선택 N (선택 모드) -->
+<span class="scm-stat scm-stat--selected">
+  <span class="scm-stat__label">선택</span>
+  <span class="scm-stat__num">15</span>
+</span>
+
+<!-- 카운트들을 divider 와 함께 묶음 -->
+<span style="display:inline-flex;align-items:center;gap:0;">
+  <span class="scm-stat scm-stat--all"><span class="scm-stat__label">전체</span> <span class="scm-stat__num">500</span></span>
+  <span class="scm-stat-divider"></span>
+  <span class="scm-stat scm-stat--deployed"><span class="scm-stat__label">전개중</span> <span class="scm-stat__num">320</span></span>
+  <span class="scm-stat-divider"></span>
+  <span class="scm-stat scm-stat--undeployed"><span class="scm-stat__label">미전개</span> <span class="scm-stat__num">180</span></span>
+</span>

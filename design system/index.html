@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SCM Hub Design System</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+
+  <style>
+    /* ============================================================
+     * SCM Hub Simulation System — Main Hub
+     *  · Dark, full-width, simple (no gradient text / no glow / no grid pattern)
+     *  · Pipeline (PRD 검증 → 시뮬레이터) + Tools (데모 / VOC) 두 그룹
+     * ============================================================ */
+    :root {
+      --bg:        #0E0E14;
+      --surface:   #15151D;
+      --surface-h: #1B1B25;
+      --line:      #25252F;
+      --line-2:    #34344A;
+      --fg:        #FFFFFF;
+      --fg-mute:   rgba(255,255,255,0.62);
+      --fg-dim:    rgba(255,255,255,0.40);
+      --accent:    #6E6BFF;
+      --accent-bg: rgba(110,107,255,0.14);
+      --ok:        #34D399;
+      --warn:      #F59E0B;
+      --lock:      rgba(255,255,255,0.34);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+      letter-spacing: -0.01em;
+      min-width: 1280px;
+    }
+
+    .shell {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 24px 56px 80px;
+    }
+
+    /* ───────── Top bar ───────── */
+    .top {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 0 32px;
+    }
+    .top__brand {
+      display: inline-flex; align-items: center; gap: 10px;
+      font-size: 13px; font-weight: 700; letter-spacing: 0.6px;
+    }
+    .top__brand .dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+    }
+    .top__brand .tag {
+      display: inline-flex; align-items: center;
+      height: 18px; padding: 0 6px; margin-left: 2px;
+      border-radius: 3px;
+      background: var(--accent); color: #fff;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
+    }
+    .top__right {
+      display: inline-flex; align-items: center; gap: 14px;
+      font-size: 12px; color: var(--fg-mute);
+    }
+    .top__user {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 4px 10px 4px 4px;
+      border: 1px solid var(--line); border-radius: 999px;
+    }
+    .top__avatar {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--accent-bg); color: var(--accent);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700;
+    }
+
+    /* ───────── Hero ───────── */
+    .hero { padding: 32px 0 24px; max-width: 880px; }
+    .hero__eyebrow {
+      font-size: 12px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;
+      color: var(--accent);
+    }
+    .hero__title {
+      margin: 14px 0 0; font-size: 40px; font-weight: 700; line-height: 1.22;
+      letter-spacing: -0.6px; color: var(--fg);
+    }
+    .hero__sub {
+      margin: 16px 0 0; font-size: 15px; line-height: 1.6; color: var(--fg-mute);
+      max-width: 720px;
+    }
+
+    /* ───────── PRD validation status ───────── */
+    .status {
+      margin-top: 24px;
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 10px 14px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font-size: 13px; color: var(--fg-mute);
+    }
+    .status__dot { width: 6px; height: 6px; border-radius: 50%; background: #DD3D3D; }
+    .status.is-valid .status__dot { background: var(--ok); }
+    .status__label { color: var(--fg); font-weight: 600; }
+    .status__toggle {
+      margin-left: 4px; height: 24px; padding: 0 10px;
+      background: rgba(255,255,255,0.06); color: var(--fg);
+      border: 1px solid var(--line); border-radius: 4px;
+      font-size: 11px; font-weight: 500; cursor: pointer;
+      font-family: inherit;
+    }
+    .status__toggle:hover { background: rgba(255,255,255,0.10); }
+
+    /* ───────── Section header ───────── */
+    .section-head {
+      display: flex; align-items: baseline; gap: 12px;
+      margin: 56px 0 16px;
+    }
+    .section-head__label {
+      font-size: 11px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;
+      color: var(--accent);
+    }
+    .section-head__title {
+      margin: 0; font-size: 18px; font-weight: 600; color: var(--fg);
+    }
+    .section-head__sub {
+      font-size: 13px; color: var(--fg-mute); font-weight: 400;
+    }
+
+    /* ───────── Card grid ───────── */
+    .grid {
+      display: grid; gap: 24px;
+      position: relative;
+    }
+    .grid--pipeline { grid-template-columns: repeat(2, 1fr); max-width: 920px; }
+    .grid--tools    { grid-template-columns: repeat(2, 1fr); }
+    .grid--3        { grid-template-columns: repeat(3, 1fr); }
+    .grid--4        { grid-template-columns: repeat(4, 1fr); }
+
+    .card {
+      position: relative;
+      display: flex; flex-direction: column;
+      min-height: 220px;
+      padding: 24px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      text-decoration: none; color: inherit;
+      cursor: pointer;
+      transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+    }
+    .card:hover {
+      background: var(--surface-h);
+      border-color: var(--line-2);
+      transform: translateY(-1px);
+    }
+    .card__head {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card__num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 22px; height: 22px;
+      background: var(--accent-bg); color: var(--accent);
+      border-radius: 6px;
+      font-size: 11px; font-weight: 700;
+    }
+    .card__icon {
+      width: 40px; height: 40px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--accent-bg); color: var(--accent);
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+    .card__icon svg { width: 20px; height: 20px; }
+    .card__title { margin: 16px 0 6px; font-size: 18px; font-weight: 700; line-height: 1.35; color: var(--fg); }
+    .card__desc { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--fg-mute); flex: 1; }
+    .card__footer {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 18px; padding-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+    .card__cta {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 13px; font-weight: 600; color: var(--fg);
+    }
+    .card__cta svg { width: 14px; height: 14px; transition: transform 0.18s ease; }
+    .card:hover .card__cta svg { transform: translateX(3px); }
+    .card__meta { font-size: 11px; color: var(--fg-dim); }
+
+    /* Variants */
+    .card--prd  .card__icon { background: rgba(245,158,11,0.16); color: var(--warn); }
+    .card--demo .card__icon { background: rgba(52,211,153,0.16); color: var(--ok); }
+    .card--sim  .card__icon { background: var(--accent-bg);     color: var(--accent); }
+    .card--voc  .card__icon { background: rgba(183,104,255,0.18); color: #C084FC; }
+
+    /* Locked state */
+    .card--locked { cursor: not-allowed; }
+    .card--locked:hover { background: var(--surface); border-color: var(--line); transform: none; }
+    .card--locked .card__icon { background: rgba(255,255,255,0.06); color: var(--lock); }
+    .card--locked .card__title,
+    .card--locked .card__cta { color: var(--lock); }
+    .card--locked .card__desc { color: var(--fg-dim); }
+    .card__lock {
+      position: absolute; top: 18px; right: 18px;
+      display: inline-flex; align-items: center; gap: 4px;
+      height: 22px; padding: 0 8px;
+      background: rgba(255,255,255,0.06); color: var(--lock);
+      border: 1px solid var(--line); border-radius: 999px;
+      font-size: 10px; font-weight: 700;
+    }
+    .card__lock svg { width: 11px; height: 11px; }
+
+    /* Pipeline 화살표 (1→2 사이) — JS 가 위치 계산 */
+    .pipe-arrow {
+      position: absolute;
+      width: 18px; height: 18px;
+      transform: translate(-50%, -50%);
+      color: var(--lock);
+      pointer-events: none;
+      transition: color 0.15s ease;
+    }
+    body.is-valid .pipe-arrow { color: var(--accent); }
+    .pipe-arrow svg { width: 100%; height: 100%; }
+
+    /* Footer */
+    .foot {
+      margin-top: 64px; padding-top: 20px;
+      border-top: 1px solid var(--line);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 12px; color: var(--fg-dim);
+    }
+    .foot a { color: var(--fg-mute); text-decoration: none; }
+    .foot a:hover { color: var(--fg); }
+  </style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ───────── Top ───────── -->
+  <header class="top">
+    <span class="top__brand">
+      <span class="dot"></span>
+      SCM HUB · SIMULATION SYSTEM
+      <span class="tag">BETA</span>
+    </span>
+    <span class="top__right">
+      <span>v0.2 · 2026.05</span>
+      <span class="top__user">
+        <span class="top__avatar">홍</span>
+        <span>홍길동</span>
+      </span>
+    </span>
+  </header>
+
+  <!-- ───────── Hero ───────── -->
+  <section class="hero">
+    <span class="hero__eyebrow">Design System</span>
+    <h1 class="hero__title">SCM Hub 디자인 시스템</h1>
+    <p class="hero__sub">디자인 토큰 · 60+ 컴포넌트 · 159 아이콘 · AI 시뮬레이션 도구 · 문서를 한 곳에서.</p>
+
+    <div class="status" id="prd-status">
+      <span class="status__dot"></span>
+      <span><span class="status__label" id="status-label">PRD 검증 미완료</span> &nbsp;·&nbsp; <span id="status-text">시뮬레이터를 사용하려면 먼저 PRD 검증을 통과해주세요.</span></span>
+      <button class="status__toggle" id="prd-toggle" type="button">검증 완료로 가정</button>
+    </div>
+  </section>
+
+  <!-- ───────── Foundations ───────── -->
+  <header class="section-head">
+    <span class="section-head__label">Foundations</span>
+    <h2 class="section-head__title">디자인 토큰 · 컴포넌트 · 아이콘</h2>
+    <span class="section-head__sub">디자인 시스템의 기초 자산</span>
+  </header>
+
+  <div class="grid grid--3" style="margin-bottom: 56px;">
+    <!-- Tokens -->
+    <a class="card" href="./layer-desktop.css" target="_blank" rel="noopener">
+      <div class="card__head">
+        <span class="card__icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" fill="none"/>
+            <path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M5.6 18.4l12.8-12.8" stroke="currentColor" stroke-width="1.6" fill="none"/>
+          </svg>
+        </span>
+      </div>
+      <h3 class="card__title">Design Tokens</h3>
+      <p class="card__desc">color · typography · spacing · radius — `layer-desktop.css` 단일 토큰 파일.</p>
+      <div class="card__footer">
+        <span class="card__cta">layer-desktop.css 보기
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </span>
+        <span class="card__meta">토큰 단일 source</span>
+      </div>
+    </a>
+
+    <!-- Components Catalog (스토리북 역할 — index.html 형태로 정리) -->
+    <a class="card" href="./catalog/index.html">
+      <div class="card__head">
+        <span class="card__icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="3" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/>
+            <rect x="13" y="3" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/>
+            <rect x="3" y="13" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/>
+            <rect x="13" y="13" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/>
+          </svg>
+        </span>
+      </div>
+      <h3 class="card__title">컴포넌트 카탈로그</h3>
+      <p class="card__desc">Foundation / Atoms / Buttons / Filter System / Table / Layout / Display / Overlay 등 카테고리별 정리. 각 컴포넌트의 라이브 프리뷰 + 마크업 코드.</p>
+      <div class="card__footer">
+        <span class="card__cta">카탈로그 열기 →
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </span>
+        <span class="card__meta">catalog/index.html</span>
+      </div>
+    </a>
+
+    <!-- Icons -->
+    <a class="card" href="./icons/" target="_blank" rel="noopener">
+      <div class="card__head">
+        <span class="card__icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 2l3 6 6 1-4.5 4 1 6-5.5-3-5.5 3 1-6L3 9l6-1z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/>
+          </svg>
+        </span>
+      </div>
+      <h3 class="card__title">Icons</h3>
+      <p class="card__desc">SVG 아이콘 자산 159개. ic-* prefix · 24/20/16 size 시스템.</p>
+      <div class="card__footer">
+        <span class="card__cta">아이콘 디렉토리 →
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </span>
+        <span class="card__meta">159 SVG</span>
+      </div>
+    </a>
+  </div>
+
+  <!-- ───────── Tools (시뮬레이션 도구) ───────── -->
+  <header class="section-head">
+    <span class="section-head__label">Tools</span>
+    <h2 class="section-head__title">PRD 검증 → 시뮬레이터</h2>
+    <span class="section-head__sub">단계 의존성 · 합격해야 다음 단계 사용 가능</span>
+  </header>
+
+  <div class="grid grid--pipeline" id="pipeline">
+    <!-- ① PRD 검증 -->
+    <a class="card card--prd" href="./prd-validate/" data-feature="prd">
+      <div class="card__head">
+        <span class="card__icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 3h10l4 4v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.6" fill="none"/>
+            <path d="M14 3v5h5" stroke="currentColor" stroke-width="1.6" fill="none"/>
+            <path d="M8 13l2.5 2.5L16 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+        </span>
+        <span class="card__num">01</span>
+      </div>
+      <h3 class="card__title">PRD 검증</h3>
+      <p class="card__desc">PRD 문서의 누락 / 모호 / 충돌 항목을 자동 검출. 합격 시 시뮬레이터의 잠금이 해제됩니다.</p>
+      <div class="card__footer">
+        <span class="card__cta">검증 시작
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </span>
+        <span class="card__meta">자동 검증</span>
+      </div>
+    </a>
+
+    <!-- arrow 1 → 2 -->
+    <div class="pipe-arrow" id="arrow-1" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M4 12h14m0 0l-5-5m5 5l-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+    </div>
+
+    <!-- ② 시뮬레이터 -->
+    <a class="card card--sim card--locked" href="./simulator/" data-feature="sim" id="sim-card">
+      <span class="card__lock" id="sim-lock-pill">
+        <svg viewBox="0 0 12 12" aria-hidden="true">
+          <rect x="3" y="5.5" width="6" height="5" rx="1" stroke="currentColor" stroke-width="1.2" fill="none"/>
+          <path d="M4 5.5V4a2 2 0 0 1 4 0v1.5" stroke="currentColor" stroke-width="1.2" fill="none"/>
+        </svg>
+        잠김
+      </span>
+      <div class="card__head">
+        <span class="card__icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.6" fill="none"/>
+            <path d="M3 9h18" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M7 13h4M7 16h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="card__num">02</span>
+      </div>
+      <h3 class="card__title">시뮬레이터</h3>
+      <p class="card__desc">검증된 PRD 를 기반으로 AI 가 와이어프레임/HTML 을 자동 생성. 페이지 흐름과 컴포넌트 매핑까지 시뮬레이션합니다.</p>
+      <div class="card__footer">
+        <span class="card__cta" id="sim-cta">PRD 검증 후 사용 가능</span>
+        <span class="card__meta">AI · 와이어프레임</span>
+      </div>
+    </a>
+  </div>
+
+  <!-- ───────── Documentation ───────── -->
+  <header class="section-head" style="margin-top: 56px;">
+    <span class="section-head__label">Documentation</span>
+    <h2 class="section-head__title">디자인 시스템 문서</h2>
+    <span class="section-head__sub">README · 사용 규칙 · 폴더 구조 · 변경 이력</span>
+  </header>
+
+  <div class="grid grid--4">
+    <!-- README -->
+    <a class="card" href="./README.md" target="_blank" rel="noopener">
+      <div class="card__head">
+        <span class="card__icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 3h10l4 4v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.6" fill="none"/>
+            <path d="M14 3v5h5" stroke="currentColor" stroke-width="1.6" fill="none"/>
+            <path d="M8 12h8M8 16h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </span>
+      </div>
+      <h3 class="card__title">README</h3>
+      <p class="card__desc">디자인 시스템 개요 + 빠른 시작 가이드.</p>
+      <div class="card__footer">
+        <span class="card__cta">읽기 →
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </span>
+        <span class="card__meta">.md</span>
+      </div>
+    </a>
+
+    <!-- CONVENTIONS -->
+    <a class="card" href="./CONVENTIONS.md" target="_blank" rel="noopener">
+      <div class="card__head">
+        <span class="card__icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 4h16v3H4zM4 11h16v3H4zM4 18h16v3H4z" stroke="currentColor" stroke-width="1.6" fill="none"/>
+            <path d="M7 5.5h.01M7 12.5h.01M7 19.5h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </span>
+      </div>
+      <h3 class="card__title">Conventions</h3>
+      <p class="card__desc">네이밍 / 마크업 / CSS 변수 사용 규칙.</p>
+      <div class="card__footer">
+        <span class="card__cta">규칙 →
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </span>
+        <span class="card__meta">.md</span>
+      </div>
+    </a>
+
+    <!-- STRUCTURE -->
+    <a class="card" href="./STRUCTURE.md" target="_blank" rel="noopener">
+      <div class="card__head">
+        <span class="card__icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 5h7M3 12h12M3 19h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            <circle cx="14" cy="5" r="2" stroke="currentColor" stroke-width="1.6" fill="none"/>
+            <circle cx="20" cy="12" r="2" stroke="currentColor" stroke-width="1.6" fill="none"/>
+            <circle cx="14" cy="19" r="2" stroke="currentColor" stroke-width="1.6" fill="none"/>
+          </svg>
+        </span>
+      </div>
+      <h3 class="card__title">Structure</h3>
+      <p class="card__desc">폴더 / 파일 구조 + 의존 관계.</p>
+      <div class="card__footer">
+        <span class="card__cta">구조 →
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </span>
+        <span class="card__meta">.md</span>
+      </div>
+    </a>
+
+    <!-- CHANGELOG -->
+    <a class="card" href="./CHANGELOG.md" target="_blank" rel="noopener">
+      <div class="card__head">
+        <span class="card__icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 8v4l3 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" fill="none"/>
+          </svg>
+        </span>
+      </div>
+      <h3 class="card__title">Changelog</h3>
+      <p class="card__desc">버전 별 변경 이력 + 마이그레이션 노트.</p>
+      <div class="card__footer">
+        <span class="card__cta">이력 →
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </span>
+        <span class="card__meta">.md</span>
+      </div>
+    </a>
+  </div>
+
+  <!-- ───────── Foot ───────── -->
+  <footer class="foot">
+    <span>SCM Hub Design System · scm-* v0.2 · <a href="../" style="color: inherit;">← 워크스페이스</a></span>
+    <a href="./catalog/">컴포넌트 카탈로그 →</a>
+  </footer>
+
+</div>
+
+<script>
+  (function () {
+    var KEY = 'scm-prd-validated';
+    var statusEl    = document.getElementById('prd-status');
+    var labelEl     = document.getElementById('status-label');
+    var textEl      = document.getElementById('status-text');
+    var toggleBtn   = document.getElementById('prd-toggle');
+    var simCard     = document.getElementById('sim-card');
+    var simCta      = document.getElementById('sim-cta');
+    var simLockPill = document.getElementById('sim-lock-pill');
+
+    function isValid() {
+      try { return localStorage.getItem(KEY) === '1'; } catch (_) { return false; }
+    }
+    function setValid(v) {
+      try { localStorage.setItem(KEY, v ? '1' : '0'); } catch (_) {}
+      render();
+    }
+    function render() {
+      var ok = isValid();
+      if (ok) {
+        document.body.classList.add('is-valid');
+        statusEl.classList.add('is-valid');
+        labelEl.textContent = 'PRD 검증 완료';
+        textEl.textContent  = '시뮬레이터를 사용할 수 있습니다.';
+        toggleBtn.textContent = '미검증으로 되돌리기';
+        simCard.classList.remove('card--locked');
+        simLockPill.style.display = 'none';
+        simCta.innerHTML = '시뮬레이터 시작 <svg viewBox="0 0 16 16" aria-hidden="true" style="width:14px;height:14px;"><path d="M5 3l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>';
+      } else {
+        document.body.classList.remove('is-valid');
+        statusEl.classList.remove('is-valid');
+        labelEl.textContent = 'PRD 검증 미완료';
+        textEl.textContent  = '시뮬레이터를 사용하려면 먼저 PRD 검증을 통과해주세요.';
+        toggleBtn.textContent = '검증 완료로 가정';
+        simCard.classList.add('card--locked');
+        simLockPill.style.display = '';
+        simCta.textContent = 'PRD 검증 후 사용 가능';
+      }
+    }
+
+    toggleBtn.addEventListener('click', function () { setValid(!isValid()); });
+
+    simCard.addEventListener('click', function (e) {
+      if (simCard.classList.contains('card--locked')) {
+        e.preventDefault();
+        simCard.animate(
+          [{ transform: 'translateX(0)' }, { transform: 'translateX(-3px)' }, { transform: 'translateX(3px)' }, { transform: 'translateX(0)' }],
+          { duration: 200 }
+        );
+        textEl.textContent = '먼저 ① PRD 검증을 통과해주세요.';
+      }
+    });
+
+    var comingSoon = ['./prd-validate.html', './simulator.html', './voc.html'];
+    document.querySelectorAll('.card').forEach(function (card) {
+      var href = card.getAttribute('href');
+      if (comingSoon.indexOf(href) === -1) return;
+      card.addEventListener('click', function (e) {
+        if (card.classList.contains('card--locked')) return;
+        e.preventDefault();
+        var title = card.querySelector('.card__title').textContent;
+        alert(title + ' — 곧 공개 (Coming soon).');
+      });
+    });
+
+    function repositionArrow() {
+      var pipe = document.getElementById('pipeline');
+      var arrow = document.getElementById('arrow-1');
+      if (!pipe || !arrow) return;
+      var cards = pipe.querySelectorAll('.card');
+      if (cards.length < 2) return;
+      var pipeRect = pipe.getBoundingClientRect();
+      var a = cards[0].getBoundingClientRect();
+      var b = cards[1].getBoundingClientRect();
+      arrow.style.left = ((a.right + b.left) / 2 - pipeRect.left) + 'px';
+      arrow.style.top  = ((a.top + a.bottom) / 2 - pipeRect.top) + 'px';
+    }
+    window.addEventListener('load', repositionArrow);
+    window.addEventListener('resize', repositionArrow);
+    setTimeout(repositionArrow, 60);
+
+    render();
+  })();
+</script>
+
+</body>
+</html>

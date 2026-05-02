@@ -1,0 +1,79 @@
+<!-- ============================================================
+     scm-filter-popover — canonical markers (4 modes)
+     ============================================================ -->
+
+<!-- Mode: codeinput (textarea + counter) -->
+<div class="scm-filter-popover-root is-open" data-pop-mode="code" style="position:static;">
+  <div class="scm-filter-popover scm-filter-popover--codeinput">
+    <div class="scm-filter-popover__body">
+      <div class="scm-filter-popover__textarea">
+        <textarea placeholder="UID 코드를 한 줄에 하나씩 입력하세요"></textarea>
+      </div>
+      <div class="scm-filter-popover__counter">
+        <strong>0</strong>&nbsp;<span class="total">/ 100</span>
+      </div>
+    </div>
+    <div class="scm-filter-popover__footer">
+      <button class="scm-filter-popover__reset" type="button">초기화</button>
+      <button class="scm-filter-popover__apply" type="button">적용</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mode: list (다중 선택 + 검색) -->
+<div class="scm-filter-popover-root is-open" data-pop-mode="list" style="position:static;">
+  <div class="scm-filter-popover scm-filter-popover--list">
+    <div class="scm-filter-popover__search">
+      <div class="scm-filter-popover__search-row">
+        <svg class="ic-search" viewBox="0 0 20 20" aria-hidden="true">
+          <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.6" fill="none"/>
+          <path d="M14 14l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        <input type="text" placeholder="검색"/>
+      </div>
+    </div>
+    <div class="scm-filter-popover__list-body">
+      <div class="scm-filter-popover__item-row">
+        <div class="scm-filter-popover__item" data-selected="true">
+          <span class="pop-cb"></span>
+          <span class="label">미디엄 인디고</span>
+        </div>
+      </div>
+      <div class="scm-filter-popover__item-row">
+        <div class="scm-filter-popover__item">
+          <span class="pop-cb"></span>
+          <span class="label">워시드 블랙</span>
+        </div>
+      </div>
+      <div class="scm-filter-popover__item-row">
+        <div class="scm-filter-popover__item">
+          <span class="pop-cb"></span>
+          <span class="label">크림</span>
+        </div>
+      </div>
+    </div>
+    <div class="scm-filter-popover__footer">
+      <button class="scm-filter-popover__reset" type="button">초기화</button>
+      <button class="scm-filter-popover__apply" type="button">적용</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mode: list-single (단일 선택, 체크 표시) -->
+<div class="scm-filter-popover-root is-open" data-pop-mode="single" style="position:static;">
+  <div class="scm-filter-popover scm-filter-popover--list-single">
+    <div class="scm-filter-popover__list-body">
+      <div class="scm-filter-popover__item-row">
+        <div class="scm-filter-popover__item scm-filter-popover__item--single" data-selected="true">
+          <span class="label">전개중</span>
+          <svg class="check" viewBox="0 0 16 16"><path d="M3.45 7.3l3.28 3.28L12.55 4.85" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div class="scm-filter-popover__item-row">
+        <div class="scm-filter-popover__item scm-filter-popover__item--single">
+          <span class="label">미전개</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

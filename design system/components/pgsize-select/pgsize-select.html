@@ -1,0 +1,19 @@
+<!-- ============================================================
+     scm-pgsize-select — canonical marker
+     ============================================================ -->
+
+<span class="scm-pgsize-wrap">
+  <button class="scm-pgsize" type="button" aria-haspopup="listbox" aria-expanded="false">
+    <span class="scm-pgsize__label">100개씩</span>
+    <svg class="scm-pgsize__chev" viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+  <ul class="scm-pgsize-popup" role="listbox" aria-label="페이지당 행 수">
+    <li role="option" data-value="20">20개씩</li>
+    <li role="option" data-value="100" aria-selected="true">100개씩</li>
+    <li role="option" data-value="300">300개씩</li>
+    <li role="option" data-value="500">500개씩</li>
+    <li role="option" data-value="1000">1000개씩</li>
+  </ul>
+</span>

@@ -1,0 +1,75 @@
+/* ============================================================
+ * scm-column-more-menu — 컬럼 더보기 (⋮) 클릭 시 띄우는 액션 메뉴
+ * ------------------------------------------------------------
+ * 섹션 3개:
+ *   1) 정렬: 오름차순 정렬 / 내림차순 정렬 / 정렬 해제
+ *   2) 컬럼 고정: 좌측 고정 / 우측 고정 / 고정 해제
+ *   3) 컬럼 숨김: 숨기기 / 숨기기 해제
+ *
+ * 마크업:
+ *   <div class="scm-column-more-menu" hidden>
+ *     <ul class="scm-column-more-menu__group" data-group="sort">
+ *       <li data-action="sort-asc">...
+ *     </ul>
+ *     ...
+ *   </div>
+ * ============================================================ */
+
+.scm-column-more-menu {
+  position: fixed;
+  z-index: 200;
+  min-width: 180px;
+  background: #fff;
+  border: 1px solid #EBEBEB;
+  border-radius: 4px;
+  box-shadow: 0 10px 15px 8px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  font-family: inherit;
+  user-select: none;
+}
+.scm-column-more-menu[hidden] { display: none; }
+
+.scm-column-more-menu__group {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-bottom: 1px solid #F0F0F0;
+}
+.scm-column-more-menu__group:last-child { border-bottom: 0; }
+
+.scm-column-more-menu__item {
+  padding: 10px 6px;
+  border-radius: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 20.4px;
+  color: #000;
+  transition: background 0.12s ease;
+}
+.scm-column-more-menu__item:hover { background: #FAFBFC; }
+.scm-column-more-menu__item.is-disabled,
+.scm-column-more-menu__item[aria-disabled="true"] {
+  color: rgba(0, 0, 0, 0.30);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.scm-column-more-menu__item.is-disabled .scm-column-more-menu__icon {
+  color: rgba(0, 0, 0, 0.30);
+}
+
+.scm-column-more-menu__icon {
+  width: 20px; height: 20px;
+  flex-shrink: 0;
+  color: #8A8A8A;
+}
+.scm-column-more-menu__icon svg { width: 20px; height: 20px; }
+/* 정렬 해제 / 고정 해제 같은 보조 항목은 prefix icon 없이 텍스트만 — opacity 0 으로 spacing 만 유지 */
+.scm-column-more-menu__icon--placeholder { opacity: 0; }

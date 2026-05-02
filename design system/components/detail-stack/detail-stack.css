@@ -1,0 +1,19 @@
+/* scm-detail-stack — 셀 안 multi-line 정보 묶음 (제목 + 부속 정보) */
+.scm-detail-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.scm-detail-stack__primary {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 19.6px;
+  color: #000;
+}
+.scm-detail-stack__secondary {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 18.2px;
+  color: #666;
+}

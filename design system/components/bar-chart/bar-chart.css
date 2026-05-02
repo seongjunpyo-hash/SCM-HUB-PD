@@ -1,0 +1,42 @@
+/* scm-bar-chart — 단순 막대 차트 (mock, 시뮬레이션 페이지용)
+ * - 막대 폭은 좁게 (flex 비율 + 가운데 정렬), 부모 gap 으로만 간격 조절
+ * - 막대 하단에 #EBEBEB 1px baseline (chart 영역 바닥선)
+ */
+.scm-bar-chart {
+  height: 300px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: 24px;
+  position: relative;
+  padding: 0 12px 32px;
+  background: linear-gradient(180deg, rgba(36, 94, 255, 0.06) 0%, rgba(36, 94, 255, 0) 100%);
+  border-radius: 4px;
+}
+/* 막대 베이스라인 — 라벨 영역(32px) 위쪽 */
+.scm-bar-chart::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  bottom: 32px;
+  height: 1px;
+  background: #EBEBEB;
+}
+.scm-bar-chart__bar {
+  flex: 1;
+  max-width: 28px;
+  background: #245EFF;
+  border-radius: 3px 3px 0 0;
+  position: relative;
+}
+.scm-bar-chart__bar--light { background: #B8D4FF; }
+.scm-bar-chart__bar-label {
+  position: absolute;
+  bottom: -24px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+  line-height: 18px;
+}

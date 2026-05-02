@@ -1,0 +1,62 @@
+/* ============================================================
+ * scm-empty-state — 큰 빈 상태 (아이콘 + 제목 + 설명)
+ * ------------------------------------------------------------
+ * 페이지 / 테이블 / 리스트의 빈 상태를 강조해서 표시.
+ * 48×48 컬러 아이콘 + 16/600 제목 + 15/400 설명.
+ *
+ * Layout:
+ *   centered flex column, padding 80px 24px, gap 16px.
+ *
+ * Variants (icon color):
+ *   기본              #FFA12A (오렌지 — 알림/주의)
+ *   .scm-empty-state__icon--blue / --green / --red 등 자유 확장
+ * ============================================================ */
+
+.scm-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+  gap: 16px;
+  text-align: center;
+  border-bottom: 1px solid #EBEBEB;
+}
+
+.scm-empty-state--no-border {
+  border-bottom: 0;
+}
+
+.scm-empty-state__icon {
+  width: 48px;
+  height: 48px;
+  color: #FFA12A;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.scm-empty-state__icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.scm-empty-state__title {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 21.76px;
+  color: #000;
+}
+
+.scm-empty-state__desc {
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 20.4px;
+  color: #666;
+}
+
+/* 아이콘 색상 variants — 자유 확장 */
+.scm-empty-state__icon--blue   { color: #245EFF; }
+.scm-empty-state__icon--green  { color: #1EA514; }
+.scm-empty-state__icon--gray   { color: #8A8A8A; }
+.scm-empty-state__icon--red    { color: #F31110; }

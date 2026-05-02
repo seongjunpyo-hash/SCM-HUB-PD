@@ -1,0 +1,283 @@
+{
+  "color": {
+    "gray": {
+      "0": {
+        "$value": "#ffffff",
+        "$type": "color"
+      },
+      "100": {
+        "$value": "#f5f5f5",
+        "$type": "color"
+      },
+      "200": {
+        "$value": "#ebebeb",
+        "$type": "color"
+      },
+      "300": {
+        "$value": "#e0e0e0",
+        "$type": "color"
+      },
+      "400": {
+        "$value": "#cccccc",
+        "$type": "color"
+      },
+      "500": {
+        "$value": "#8a8a8a",
+        "$type": "color"
+      },
+      "600": {
+        "$value": "#666666",
+        "$type": "color"
+      },
+      "700": {
+        "$value": "#616161",
+        "$type": "color"
+      },
+      "800": {
+        "$value": "#1a1a1a",
+        "$type": "color"
+      },
+      "900": {
+        "$value": "#000000",
+        "$type": "color"
+      }
+    },
+    "gray-alpha": {
+      "900-20": {
+        "$value": "rgba(0, 0, 0, 0.2)",
+        "$type": "color"
+      },
+      "900-40": {
+        "$value": "rgba(0, 0, 0, 0.4)",
+        "$type": "color"
+      },
+      "900-60": {
+        "$value": "rgba(0, 0, 0, 0.6)",
+        "$type": "color"
+      },
+      "900-80": {
+        "$value": "rgba(0, 0, 0, 0.8)",
+        "$type": "color"
+      },
+      "500-5": {
+        "$value": "rgba(138, 138, 138, 0.05)",
+        "$type": "color"
+      },
+      "500-10": {
+        "$value": "rgba(138, 138, 138, 0.1)",
+        "$type": "color"
+      },
+      "500-15": {
+        "$value": "rgba(138, 138, 138, 0.15)",
+        "$type": "color"
+      },
+      "500-20": {
+        "$value": "rgba(138, 138, 138, 0.2)",
+        "$type": "color"
+      },
+      "500-30": {
+        "$value": "rgba(138, 138, 138, 0.3)",
+        "$type": "color"
+      },
+      "0-10": {
+        "$value": "rgba(255, 255, 255, 0.1)",
+        "$type": "color"
+      },
+      "0-15": {
+        "$value": "rgba(255, 255, 255, 0.15)",
+        "$type": "color"
+      },
+      "0-20": {
+        "$value": "rgba(255, 255, 255, 0.2)",
+        "$type": "color"
+      }
+    },
+    "blue": {
+      "100": {
+        "$value": "#b8d4ff",
+        "$type": "color"
+      },
+      "200": {
+        "$value": "#8eb8ff",
+        "$type": "color"
+      },
+      "300": {
+        "$value": "#649cff",
+        "$type": "color"
+      },
+      "400": {
+        "$value": "#417eff",
+        "$type": "color",
+        "$description": "phaseDesktop/border-accent-low — drawer/banner accent border"
+      },
+      "500": {
+        "$value": "#245eff",
+        "$type": "color"
+      },
+      "bg-light": {
+        "$value": "#e2f1ff",
+        "$type": "color"
+      },
+      "alpha-500-10": {
+        "$value": "rgba(36, 94, 255, 0.1)",
+        "$type": "color"
+      },
+      "alpha-500-20": {
+        "$value": "rgba(36, 94, 255, 0.2)",
+        "$type": "color"
+      },
+      "alpha-500-80": {
+        "$value": "rgba(36, 94, 255, 0.8)",
+        "$type": "color"
+      },
+      "alpha-500-90": {
+        "$value": "rgba(36, 94, 255, 0.9)",
+        "$type": "color"
+      }
+    },
+    "red": {
+      "400": {
+        "$value": "#ff5e56",
+        "$type": "color"
+      },
+      "500": {
+        "$value": "#f31110",
+        "$type": "color"
+      },
+      "600": {
+        "$value": "#d50f0e",
+        "$type": "color"
+      },
+      "bright": {
+        "$value": "#f94a4a",
+        "$type": "color"
+      },
+      "bg-light": {
+        "$value": "#ffecec",
+        "$type": "color"
+      },
+      "bg-bright": {
+        "$value": "#fee4e4",
+        "$type": "color"
+      },
+      "border-light": {
+        "$value": "rgba(255, 171, 165, 0.3)",
+        "$type": "color"
+      },
+      "alpha-500-10": {
+        "$value": "rgba(243, 17, 16, 0.1)",
+        "$type": "color"
+      },
+      "alpha-500-90": {
+        "$value": "rgba(243, 17, 16, 0.9)",
+        "$type": "color"
+      }
+    },
+    "yellow": {
+      "400": {
+        "$value": "#ffa12a",
+        "$type": "color"
+      },
+      "500": {
+        "$value": "#fa9200",
+        "$type": "color"
+      },
+      "600": {
+        "$value": "#db7f00",
+        "$type": "color"
+      },
+      "orange": {
+        "$value": "#fa6c00",
+        "$type": "color"
+      },
+      "bg-light": {
+        "$value": "#fff4e5",
+        "$type": "color"
+      },
+      "bg-orange": {
+        "$value": "#feefd9",
+        "$type": "color"
+      },
+      "border-light": {
+        "$value": "rgba(255, 203, 133, 0.5)",
+        "$type": "color"
+      },
+      "alpha-500-10": {
+        "$value": "rgba(250, 146, 0, 0.1)",
+        "$type": "color"
+      }
+    },
+    "green": {
+      "400": {
+        "$value": "#27ba1d",
+        "$type": "color"
+      },
+      "500": {
+        "$value": "#1ea514",
+        "$type": "color"
+      },
+      "bg-light": {
+        "$value": "#ecffec",
+        "$type": "color"
+      },
+      "bg-bright": {
+        "$value": "#ddf2dc",
+        "$type": "color"
+      },
+      "alpha-500-10": {
+        "$value": "rgba(30, 165, 20, 0.1)",
+        "$type": "color"
+      },
+      "alpha-500-15": {
+        "$value": "rgba(30, 165, 20, 0.15)",
+        "$type": "color"
+      }
+    },
+    "cyan": {
+      "500": {
+        "$value": "#08979c",
+        "$type": "color"
+      },
+      "skyblue": {
+        "$value": "#00a8d1",
+        "$type": "color"
+      },
+      "bg-light": {
+        "$value": "#e6fffb",
+        "$type": "color"
+      },
+      "bg-sky": {
+        "$value": "#e0f4fa",
+        "$type": "color"
+      }
+    },
+    "purple": {
+      "500": {
+        "$value": "#722ed1",
+        "$type": "color"
+      },
+      "600": {
+        "$value": "#531dab",
+        "$type": "color"
+      },
+      "bright": {
+        "$value": "#981aff",
+        "$type": "color"
+      },
+      "bg-light": {
+        "$value": "#f9f0ff",
+        "$type": "color"
+      },
+      "bg-bright": {
+        "$value": "#eee0fa",
+        "$type": "color"
+      }
+    },
+    "neutral": {
+      "table-header-bg": {
+        "$value": "#f8f9fc",
+        "$type": "color"
+      }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+/* scm-form-action-row — 폼 하단 액션 row (좌측 spacer + 우측 버튼들) */
+.scm-form-action-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.scm-form-action-row__spacer { width: 140px; flex-shrink: 0; }

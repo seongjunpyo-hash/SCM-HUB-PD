@@ -1,0 +1,28 @@
+/* ============================================================
+ * scm-platform-tag — 플랫폼 배지
+ * ------------------------------------------------------------
+ * MUSINSA / 29CM 등 플랫폼 식별. 24px height, 13/500.
+ *
+ * Color (data-attr):
+ *   data-color="blue"     #E2F1FF
+ *   data-color="yellow"   #FFF4E5
+ *   data-color="gray"     #F5F5F5
+ * ============================================================ */
+
+.scm-platform-tag {
+  height: 24px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 19.5px;
+  color: #000;
+  white-space: nowrap;
+}
+
+.scm-platform-tag[data-color="blue"]   { background: #E2F1FF; }
+.scm-platform-tag[data-color="yellow"] { background: #FFF4E5; }
+.scm-platform-tag[data-color="gray"]   { background: #F5F5F5; }

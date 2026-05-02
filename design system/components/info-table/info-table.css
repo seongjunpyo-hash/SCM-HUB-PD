@@ -1,0 +1,99 @@
+/* ============================================================
+ * scm-info-table — 정보 표 (label + value rows)
+ * ------------------------------------------------------------
+ * 상세 페이지에서 키/값 정보를 표시. 좌측 회색 라벨 (134w 고정),
+ * 우측 값. 1행에 1쌍 또는 2쌍 (--quad) 레이아웃.
+ *
+ * Marker (2-col, 1쌍):
+ *   <div class="scm-info-table">
+ *     <div class="scm-info-row">
+ *       <div class="scm-info-cell-label">라벨</div>
+ *       <div class="scm-info-cell-value">값</div>
+ *     </div>
+ *   </div>
+ *
+ * Marker (4-col, 2쌍):
+ *   <div class="scm-info-table">
+ *     <div class="scm-info-row scm-info-row--quad">
+ *       <div class="scm-info-cell-label">라벨1</div>
+ *       <div class="scm-info-cell-value">값1</div>
+ *       <div class="scm-info-cell-label">라벨2</div>
+ *       <div class="scm-info-cell-value">값2</div>
+ *     </div>
+ *   </div>
+ *
+ * Variants:
+ *   .scm-info-table--no-bottom    하단 보더 제거
+ *
+ * Cell modifiers:
+ *   .scm-info-cell-label--top         label vertical-align top (multi-line value)
+ *   .scm-info-cell-value--padded      padding 16 14 (vs 12 14 기본)
+ *   .scm-info-cell-value--flex-between  space-between alignment
+ * ============================================================ */
+
+.scm-info-table {
+  width: 100%;
+  max-width: 926px;          /* 134 + 329 + 134 + 329 = 926 */
+  border-top: 1px solid #E0E0E0;
+  border-bottom: 1px solid #E0E0E0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.scm-info-table--no-bottom { border-bottom: 0; }
+
+.scm-info-row {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid rgba(138, 138, 138, 0.10);
+  /* row 자체는 min-height 강제 X — cell content 의 자연 height 기준 (label/value 중 큰 쪽) */
+}
+
+.scm-info-row:last-child { border-bottom: 0; }
+
+.scm-info-cell-label {
+  width: 134px;
+  flex-shrink: 0;
+  padding: 8px 16px;
+  background: #F5F5F5;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 20.4px;
+  color: #000;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-sizing: border-box;
+}
+
+.scm-info-cell-label--top { align-items: flex-start; padding-top: 12px; }
+
+.scm-info-cell-value {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 20.4px;
+  color: #000;
+  box-sizing: border-box;
+}
+
+.scm-info-cell-value--flex-between {
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.scm-info-cell-value--padded { padding: 16px 14px; }
+
+.scm-info-cell-value .scm-info-secondary { color: #8A8A8A; }
+
+/* 4-col row — value 둘 다 동일 폭 */
+.scm-info-row--quad .scm-info-cell-value {
+  flex: 1 1 0;
+  min-width: 0;
+}
