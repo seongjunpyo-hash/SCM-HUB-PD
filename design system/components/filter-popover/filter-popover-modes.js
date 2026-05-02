@@ -1085,6 +1085,13 @@
     var drawerEl = document.getElementById('filter-drawer');
     if (drawerEl) {
       buildDrawer(drawerEl);
+      // drawer 가 열릴 때마다 chip 으로 변경된 최신 listValues / codeValues 반영해서 재빌드
+      var drawerOpenBtn = document.getElementById('filter-drawer-open');
+      if (drawerOpenBtn) {
+        drawerOpenBtn.addEventListener('click', function () {
+          buildDrawer(drawerEl);
+        }, true);  // capture phase — 페이지의 fd.open 보다 먼저 실행
+      }
       // drawer footer wiring
       var resetBtnDrawer = drawerEl.querySelector('.scm-filter-drawer__reset');
       var applyBtnDrawer = drawerEl.querySelector('.scm-filter-drawer__apply');
