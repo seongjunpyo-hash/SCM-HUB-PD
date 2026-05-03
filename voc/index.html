@@ -680,6 +680,13 @@
         return Array.isArray(arr) ? arr : [];
       } catch { return []; }
     }
+    // 권한 키 → 화면 표기. DB/API 키는 그대로 super/admin/biz/internal.
+    const ROLE_LABEL_KO = {
+      super:    '최고 어드민',
+      admin:    '어드민',
+      biz:      '현업',
+      internal: '내부',
+    };
     // Pin/badge color per role — mirrors comment-overlay.js. Keep in sync.
     const ROLE_COLORS = {
       super:    '#F59E0B',
@@ -886,7 +893,7 @@
         state.user.name  = u.name || u.email;
         $('#userName').textContent = u.name || u.email;
         const roleEl = $('#userRole');
-        roleEl.textContent = u.role;
+        roleEl.textContent = ROLE_LABEL_KO[u.role] || u.role;
         roleEl.dataset.role = u.role;
         roleEl.style.display = '';
       });

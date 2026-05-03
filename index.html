@@ -203,11 +203,12 @@
 
   <script src="/auth-gate.js"></script>
   <script>
+    const ROLE_LABEL = { super: '최고 어드민', admin: '어드민', biz: '현업', internal: '내부' };
     document.addEventListener('scm:auth-ready', (e) => {
       const u = e.detail.user;
       document.getElementById('topUser').textContent = u.email;
       const roleEl = document.getElementById('topRole');
-      roleEl.textContent = u.role;
+      roleEl.textContent = ROLE_LABEL[u.role] || u.role;
       roleEl.dataset.role = u.role;
       roleEl.style.display = '';
       if (u.role === 'super' || u.role === 'admin') {

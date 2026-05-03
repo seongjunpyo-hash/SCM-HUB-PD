@@ -279,8 +279,16 @@
       return { ok: r.ok, status: r.status, data };
     }
 
+    // 권한 키 → 화면 표기. DB/API 의 키는 그대로 'super'/'admin'/'biz'/'internal' 유지.
+    const ROLE_LABEL = {
+      super:    '최고 어드민',
+      admin:    '어드민',
+      biz:      '현업',
+      internal: '내부',
+    };
+    function roleLabel(role) { return ROLE_LABEL[role] || role; }
     function roleBadge(role) {
-      return `<span class="role-badge role-${role}">${role}</span>`;
+      return `<span class="role-badge role-${role}">${roleLabel(role)}</span>`;
     }
 
     function fmtTime(ts) {
@@ -294,7 +302,7 @@
       const u = ev.detail.user;
       me = u;
       $('meEmail').textContent = u.email;
-      $('meRole').textContent = u.role;
+      $('meRole').textContent = roleLabel(u.role);
       $('meRole').className = 'role-badge role-' + u.role;
 
       if (!['super','admin'].includes(u.role)) {
@@ -310,7 +318,7 @@
       // populate role dropdown based on actor role
       const sel = $('invRole');
       const allowed = u.role === 'super' ? ['super','admin','biz','internal'] : ['biz','internal'];
-      sel.innerHTML = allowed.map(r => `<option value="${r}">${r}</option>`).join('');
+      sel.innerHTML = allowed.map(r => `<option value="${r}">${roleLabel(r)}</option>`).join('');
 
       await loadUsers();
     }
