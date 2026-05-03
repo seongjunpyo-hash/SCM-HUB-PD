@@ -26,6 +26,7 @@
   const state = {
     comments: load(),
     mode: 'browse',          // 'browse' | 'comment'
+    workerMode: false,       // true while embedded in the VOC iframe — locks LNB and blocks GNB/LNB navigation
     user: { email: 'guest@local', name: '게스트' },
     activeId: null,
     pendingPin: null,        // { x, y, selector, elementText, elementTag, viewportX, viewportY }
@@ -293,19 +294,26 @@
       }
       .scm-voc-lnb-count.is-resolved-only { background: #34D399; }
 
-      /* Lock LNB collapsed while in comment mode (prevents layout shift
-         which would otherwise drift saved pin coordinates).               */
+      /* Lock LNB collapsed (a) while in comment mode and (b) always in
+         worker mode — prevents the LNB width toggle from shifting <main>
+         and drifting saved pin coordinates. */
       html.scm-voc-lock-lnb { --scm-lnb-width: 56px !important; }
       html.scm-voc-lock-lnb .scm-lnb { width: 56px !important; box-shadow: none !important; z-index: 15 !important; }
       html.scm-voc-lock-lnb .scm-lnb:hover { width: 56px !important; box-shadow: none !important; z-index: 15 !important; }
       html.scm-voc-lock-lnb .scm-lnb-label,
       html.scm-voc-lock-lnb .scm-lnb-chev { opacity: 0 !important; }
       html.scm-voc-lock-lnb .scm-lnb-item.is-open .scm-lnb-l2-list { display: none !important; }
-      /* Visual hint that GNB/LNB are out of bounds in comment mode */
-      body.scm-voc-mode-active .scm-topbar,
-      body.scm-voc-mode-active .scm-lnb {
+      /* Worker mode (VOC iframe) — GNB/LNB are unreachable. Visual cue
+         + JS handlers below also block clicks. */
+      html.scm-voc-worker .scm-topbar,
+      html.scm-voc-worker .scm-lnb,
+      html.scm-voc-worker .scm-topbar *,
+      html.scm-voc-worker .scm-lnb * {
         cursor: not-allowed !important;
       }
+      /* Comment mode: same cue while the user is dropping pins */
+      body.scm-voc-mode-active .scm-topbar,
+      body.scm-voc-mode-active .scm-lnb,
       body.scm-voc-mode-active .scm-topbar *,
       body.scm-voc-mode-active .scm-lnb * {
         cursor: not-allowed !important;
@@ -409,16 +417,22 @@
     document.body.classList.toggle('scm-voc-mode-active', m === 'comment');
     const labelEl = elFab.querySelector('.scm-voc-fab__label');
     if (labelEl) labelEl.textContent = m === 'comment' ? '코멘트 모드 ON' : '코멘트';
-    // Lock LNB collapsed while commenting so layout doesn't shift under pins.
-    if (m === 'comment') {
-      document.documentElement.classList.remove('is-lnb-open');
-      document.documentElement.classList.add('scm-voc-lock-lnb');
-    } else {
-      document.documentElement.classList.remove('scm-voc-lock-lnb');
-    }
+    applyLnbLock();
     updatePinVisibility();
-    // Layout might have just changed (LNB closed) — reposition pins.
+    // Layout might have just changed — reposition pins.
     schedulePinRender();
+  }
+
+  // LNB lock applies whenever we're commenting OR embedded in the VOC iframe.
+  function applyLnbLock() {
+    const html = document.documentElement;
+    const lock = state.workerMode || state.mode === 'comment';
+    if (lock) {
+      html.classList.remove('is-lnb-open');
+      html.classList.add('scm-voc-lock-lnb');
+    } else {
+      html.classList.remove('scm-voc-lock-lnb');
+    }
   }
 
   // ============ Listeners ============
@@ -443,10 +457,17 @@
   function attachListeners() {
     // Click capture — intercept before page handlers
     document.addEventListener('click', (e) => {
-      if (state.mode !== 'comment') return;
       if (isOurUI(e.target)) return;
-      // GNB/LNB clicks are allowed to flow normally (menu navigation),
-      // but we don't drop a pin on them.
+      // In worker mode (VOC iframe), GNB/LNB are entirely off-limits —
+      // no navigation, no toggle, no comment.
+      if (state.workerMode && isNonCommentable(e.target)) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation && e.stopImmediatePropagation();
+        return;
+      }
+      if (state.mode !== 'comment') return;
+      // In comment mode, GNB/LNB clicks are suppressed too (no pin there).
       if (isNonCommentable(e.target)) {
         e.preventDefault();
         e.stopPropagation();
@@ -457,10 +478,15 @@
       e.stopImmediatePropagation && e.stopImmediatePropagation();
       onPlacePin(e);
     }, true);
-    // Block drag/select start in comment mode
+    // Block drag/select start in comment mode + worker mode (GNB/LNB)
     document.addEventListener('mousedown', (e) => {
-      if (state.mode !== 'comment') return;
       if (isOurUI(e.target)) return;
+      if (state.workerMode && isNonCommentable(e.target)) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      if (state.mode !== 'comment') return;
       if (isNonCommentable(e.target)) {
         e.preventDefault();
         e.stopPropagation();
@@ -906,6 +932,11 @@
       closePopover();
     } else if (d.type === 'voc-set-mode') {
       setMode(d.mode === 'comment' ? 'comment' : 'browse');
+    } else if (d.type === 'voc-worker-mode') {
+      state.workerMode = !!d.on;
+      document.documentElement.classList.toggle('scm-voc-worker', state.workerMode);
+      applyLnbLock();
+      schedulePinRender();
     } else if (d.type === 'voc-flash') {
       // Locate + flash the element by selector. Falls back to (x, y) coords.
       flashLocate(d.selector || null, d.x, d.y);

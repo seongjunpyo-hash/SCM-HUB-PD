@@ -779,6 +779,8 @@
         if (!d || typeof d !== 'object') return;
         if (d.type === 'voc-ready') {
           state.iframeReady = true;
+          // VOC iframe → permanently lock GNB/LNB (no nav, no hover-expand).
+          postIframe({ type: 'voc-worker-mode', on: true });
           // re-apply any sims we know about (in case of nav-back to same page)
           state.simActive.forEach((id) => {
             const c = findById(id);
