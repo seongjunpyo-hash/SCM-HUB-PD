@@ -115,9 +115,19 @@
     .sd-stat--deployed strong { color:#245EFF; }
     .sd-stat-divider { width:4px; height:4px; border-radius:50%; background:#CCC; flex-shrink:0; }
     .sd-stats-gap { width:12px; flex-shrink:0; }
-    /* drawer 안의 테이블 — 외곽 라인만 추가 (mp-table 본체 스타일 사용) */
-    .sd-table-wrap { border-top: 1.5px solid #000; }
+    /* drawer 안의 테이블 — mp-table-scroll 과 동일한 thead::before 1.5px
+       검정 라인 패턴으로 통일 (border-top 1.5px 는 sub-pixel 으로 두껍게
+       렌더되는 사례가 있어 절대 위치 1.5px 박스로 대체). */
     .sd-table-wrap .mp-table { width: 100%; }
+    .sd-table-wrap > .mp-table > thead { position: relative; isolation: isolate; }
+    .sd-table-wrap > .mp-table > thead::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1.5px;
+      background: #000;
+      z-index: 10;
+    }
     /* 사이즈 태그 (drawer 고유) */
     .sd-size-tag {
       display: inline-flex;
