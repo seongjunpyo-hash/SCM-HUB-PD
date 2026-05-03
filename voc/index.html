@@ -151,20 +151,21 @@
       display: flex; flex-direction: column;
       min-width: 0;
     }
-    /* Browser frame — bright neutral gray, clearly raised over body */
+    /* Browser frame — lighter than the body bg so the window reads as
+       a raised card sitting on a slightly darker graphite desktop. */
     .browser {
       flex: 1; min-height: 0;
       display: flex; flex-direction: column;
-      background: #5C5F65; border: 1px solid #6E7177;
+      background: #828589; border: 1px solid #9498A0;
       border-radius: 12px; overflow: hidden;
-      box-shadow: 0 24px 48px -16px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05);
+      box-shadow: 0 24px 48px -16px rgba(0,0,0,0.32), 0 0 0 1px rgba(255,255,255,0.06);
       position: relative;
     }
     .browser__chrome {
       display: flex; align-items: center; gap: 12px;
       padding: 10px 14px;
-      background: #4A4D52;
-      border-bottom: 1px solid #6E7177;
+      background: #74777C;
+      border-bottom: 1px solid #9498A0;
       flex-shrink: 0;
     }
     .traffic { display: inline-flex; gap: 6px; }
@@ -174,19 +175,19 @@
     .traffic span:nth-child(3) { background: #28C840; }
     .urlbar {
       flex: 1; height: 28px; padding: 0 14px;
-      background: #4A4D52; border: 1px solid #6E7177;
+      background: #6E7177; border: 1px solid #9498A0;
       border-radius: 999px;
       display: inline-flex; align-items: center; gap: 8px;
       font-family: ui-monospace, "SF Mono", Menlo, monospace;
-      font-size: 11.5px; color: #E5E7EB;
+      font-size: 11.5px; color: #F3F4F6;
       overflow: hidden;
     }
     .urlbar .lock { color: #34D399; flex-shrink: 0; }
     .urlbar .url { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .urlbar__open {
-      flex-shrink: 0; font-size: 11px; color: #9CA3AF; padding: 2px 8px; border-radius: 4px;
+      flex-shrink: 0; font-size: 11px; color: #D1D5DB; padding: 2px 8px; border-radius: 4px;
     }
-    .urlbar__open:hover { color: #fff; background: rgba(255,255,255,0.1); }
+    .urlbar__open:hover { color: #fff; background: rgba(255,255,255,0.12); }
 
     .browser__body { flex: 1; min-height: 0; position: relative; background: #fff; }
     .browser__body iframe { width: 100%; height: 100%; border: 0; display: block; }
