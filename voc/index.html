@@ -705,6 +705,43 @@
       cursor: default; color: #D1D5DB;
       font-size: 9px; line-height: 1;
     }
+    /* lock badge on leaves currently inside the frozen area */
+    .edit-row__frozen-badge {
+      font-size: 10px; line-height: 1;
+      flex-shrink: 0; opacity: 0.7;
+    }
+    /* "마지막 고정 컬럼" selector row */
+    .edit-frozen-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 0 0 8px;
+    }
+    .edit-frozen-row__label {
+      font-size: 12px; font-weight: 600; color: #4B5563;
+      flex-shrink: 0;
+    }
+    .edit-frozen-row__select {
+      flex: 1;
+      padding: 7px 10px;
+      background: #fff; border: 1px solid #D1D5DB; border-radius: 6px;
+      font-family: inherit; font-size: 12.5px; color: #1A1A1A;
+      cursor: pointer;
+    }
+    .edit-frozen-row__select:hover { border-color: #1A1A1A; }
+    .edit-frozen-row__select:focus { outline: none; border-color: #4F46E5; }
+    /* chevron on group rows for collapse/expand */
+    .edit-row__chevron {
+      margin-left: auto;
+      width: 22px; height: 22px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: transparent; border: 0;
+      color: #6B7280; cursor: pointer;
+      border-radius: 4px;
+      flex-shrink: 0;
+      transition: transform 0.12s ease, background 0.12s ease;
+    }
+    .edit-row__chevron:hover { background: #E5E7EB; color: #1A1A1A; }
+    .edit-row__chevron.is-collapsed { transform: rotate(-90deg); }
+    .edit-row__chevron svg { width: 12px; height: 12px; display: block; }
 
     .edit-add {
       padding: 8px 10px 10px;
@@ -993,6 +1030,10 @@
             </header>
             <div class="edit-list" id="editColumnList"></div>
             <div class="edit-add">
+              <div class="edit-frozen-row" id="editFrozenRow">
+                <label class="edit-frozen-row__label" for="editFrozenSelect">마지막 고정 컬럼</label>
+                <select class="edit-frozen-row__select" id="editFrozenSelect" title="좌측 고정 영역의 마지막 컬럼을 선택"></select>
+              </div>
               <div class="edit-add-row">
                 <button type="button" class="edit-add-btn" data-add="column">+ 컬럼 추가</button>
                 <button type="button" class="edit-apply-btn" data-apply="column" title="현재 편집 사항을 좌측 데모 화면에 반영">적용</button>
@@ -1031,6 +1072,9 @@
     const STORAGE_KEY  = 'scm:voc:comments:v1';
     const EDIT_KEY     = 'scm:voc:edits:v1';
     const DRAFT_KEY    = 'scm:voc:edits:draft:v1';
+    // UI-only state (group collapse/expand etc.) — separate from edit state
+    // because it shouldn't trigger dirty / save flow.
+    const UI_KEY       = 'scm:voc:ui:v1';
     // Two-depth menu mirroring the demo's LNB structure.
     const MENU = [
       { l1: 'dashboard', label: '대시보드', children: [
@@ -1196,6 +1240,11 @@
       state.draft   = JSON.parse(JSON.stringify(state.applied || {}));
       // wipe any persisted draft from a prior session so it doesn't reappear.
       try { localStorage.removeItem(DRAFT_KEY); } catch {}
+      // UI prefs (collapse/expand etc.) — persist across reloads but separate
+      // from the edit-state dirty flow.
+      const uiRaw = loadJsonKey(UI_KEY);
+      state.ui = (uiRaw && typeof uiRaw === 'object' && !Array.isArray(uiRaw)) ? uiRaw : {};
+      state.ui.collapsedGroups = (state.ui.collapsedGroups && typeof state.ui.collapsedGroups === 'object') ? state.ui.collapsedGroups : {};
       // L1 chips
       menuL1.innerHTML = MENU.map((m) => `<button type="button" class="menu-l1__chip" data-l1="${m.l1}">${escapeHtml(m.label)}</button>`).join('');
       menuL1.addEventListener('click', (e) => {
@@ -1409,6 +1458,23 @@
     }
     function persistApplied() { try { localStorage.setItem(EDIT_KEY,  JSON.stringify(state.applied)); } catch {} }
     function persistDraft()   { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(state.draft));   } catch {} }
+    function persistUi()      { try { localStorage.setItem(UI_KEY,    JSON.stringify(state.ui));      } catch {} }
+    // Group collapse/expand — UI-only, not part of edit dirty flow.
+    function isGroupCollapsed(groupSel) {
+      const map = state.ui && state.ui.collapsedGroups;
+      const arr = map && map[state.currentPage];
+      return Array.isArray(arr) && arr.includes(groupSel);
+    }
+    function toggleGroupCollapsed(groupSel) {
+      const page = state.currentPage;
+      const map = state.ui.collapsedGroups;
+      const arr = Array.isArray(map[page]) ? map[page].slice() : [];
+      const idx = arr.indexOf(groupSel);
+      if (idx >= 0) arr.splice(idx, 1); else arr.push(groupSel);
+      map[page] = arr;
+      persistUi();
+      renderEditPane();
+    }
     function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
 
     // Returns the page slot for either 'applied' or 'draft'. For the draft
@@ -2573,17 +2639,21 @@
           const leafOrder = validSavedLeaves.length
             ? [...validSavedLeaves, ...naturalLeaves.filter((s) => !validSet.has(s))]
             : naturalLeaves;
+          const collapsed = isGroupCollapsed(sel);
           columnRows.push({
             kind: 'column', isGroup: true, depth: 0,
             label: grp.label, selector: sel,
             childCount: naturalLeaves.length,
             parent: null, draggable: true,
+            collapsed,
           });
-          leafOrder.forEach((lsel) => {
-            const leaf = colBySel[lsel];
-            if (!leaf) return;
-            columnRows.push({ ...leaf, kind: 'column', depth: 1 });
-          });
+          if (!collapsed) {
+            leafOrder.forEach((lsel) => {
+              const leaf = colBySel[lsel];
+              if (!leaf) return;
+              columnRows.push({ ...leaf, kind: 'column', depth: 1 });
+            });
+          }
           return;
         }
         // top-level leaf (ungrouped native, e.g. "No") or user-added col
@@ -2617,19 +2687,18 @@
           const sel = escapeHtml(it.selector);
           let middle = '';
           if (it.kind === 'column' && !it.added && !it.isGroup) {
-            // leaf column gets sort/filter/frozen icon toggles (group + added skip)
+            // leaf column gets sort/filter icon toggles (group + added skip).
+            // 고정 boundary is configured via the single dropdown above
+            // "+컬럼 추가" — per-column toggles caused inconsistent frozen
+            // ranges, so we surface a global "마지막 고정 컬럼" picker instead.
             const sortOn   = showSort.has(it.selector);
             const filterOn = showFilter.has(it.selector);
-            // 고정 toggle — ON if this leaf falls within the current frozen
-            // boundary. Click toggles the boundary to / from this leaf.
-            // Skip when leafIdx is unknown (scan ran without scm-table API).
-            let frozenBtn = '';
-            if (it.leafIdx != null && it.leafIdx >= 0) {
-              const frozenOn = it.leafIdx < effectiveFrozenCount;
-              frozenBtn = `<button type="button" class="edit-row__icon-toggle ${frozenOn ? 'is-on' : ''}" data-toggle-frozen="${it.leafIdx}" title="이 컬럼까지 좌측 고정 영역에 포함">고정</button>`;
-            }
+            // Visual hint: leaves inside the current frozen area get a small
+            // lock badge so the user can spot the boundary at a glance.
+            const frozenBadge = (it.leafIdx != null && it.leafIdx >= 0 && it.leafIdx < effectiveFrozenCount)
+              ? '<span class="edit-row__frozen-badge" aria-hidden="true" title="고정 영역">🔒</span>' : '';
             middle = `
-              ${frozenBtn}
+              ${frozenBadge}
               <button type="button" class="edit-row__icon-toggle ${sortOn ? 'is-on' : ''}"   data-toggle-icon="sort"   data-selector="${sel}" title="컬럼 정렬 아이콘 표시/숨김">정렬</button>
               <button type="button" class="edit-row__icon-toggle ${filterOn ? 'is-on' : ''}" data-toggle-icon="filter" data-selector="${sel}" title="컬럼 필터 아이콘 표시/숨김">필터</button>`;
           } else if (it.isGroup) {
@@ -2665,13 +2734,18 @@
             ? '<span class="edit-row__grip" aria-hidden="true" title="드래그하여 순서 변경"><svg viewBox="0 0 6 12" fill="currentColor"><circle cx="1.25" cy="2" r="1"/><circle cx="4.75" cy="2" r="1"/><circle cx="1.25" cy="6" r="1"/><circle cx="4.75" cy="6" r="1"/><circle cx="1.25" cy="10" r="1"/><circle cx="4.75" cy="10" r="1"/></svg></span>'
             : (it.kind === 'column' ? '<span class="edit-row__grip edit-row__grip--locked" aria-hidden="true" title="고정 컬럼 — 이동 불가">🔒</span>' : '');
           if (it.isGroup) {
-            // group header — no checkbox (groups aren't hidable as a unit)
+            // group header — no checkbox (groups aren't hidable as a unit).
+            // Right-end chevron toggles the leaves' visibility (UI-only).
+            const collapsedCls = it.collapsed ? 'is-collapsed' : '';
+            const chevTitle = it.collapsed ? '펼치기' : '접기';
+            const chev = `<button type="button" class="edit-row__chevron ${collapsedCls}" data-toggle-collapse="${sel}" title="${chevTitle}"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l3 3 3-3"/></svg></button>`;
             return `
               <div class="${cls.join(' ')}"${dragAttrs}>
                 ${grip}
                 <span class="edit-row__check edit-row__check--placeholder" aria-hidden="true"></span>
                 <span class="edit-row__label">${escapeHtml(it.label)}</span>
                 ${middle}
+                ${chev}
               </div>`;
           }
           return `
@@ -2689,7 +2763,31 @@
       renderList('editFilterList',    'editFilterCount',    filterRows);
       renderList('editColumnList',    'editColumnCount',    columnRows);
       renderList('editComponentList', 'editComponentCount', componentRows);
+      renderFrozenSelect(targets, effectiveFrozenCount);
       refreshSaveBtn();
+    }
+    // Populate "마지막 고정 컬럼" select with the current leaves (in leaf-idx
+    // order). Selecting an option calls setFrozenCount(value). Hidden when
+    // there are no leaves with a known leafIdx (1-row tables w/o scm-table).
+    function renderFrozenSelect(targets, effectiveFrozenCount) {
+      const sel = document.getElementById('editFrozenSelect');
+      const row = document.getElementById('editFrozenRow');
+      if (!sel || !row) return;
+      const leaves = (targets.columns || [])
+        .filter((c) => typeof c.leafIdx === 'number' && c.leafIdx >= 0)
+        .slice()
+        .sort((a, b) => a.leafIdx - b.leafIdx);
+      if (!leaves.length) { row.style.display = 'none'; return; }
+      row.style.display = '';
+      // Build options: "고정 없음" (value=0) + each leaf (value = leafIdx + 1).
+      const opts = ['<option value="0">고정 영역 없음</option>'];
+      leaves.forEach((c) => {
+        const v = c.leafIdx + 1;
+        const label = `${c.label}까지`;
+        opts.push(`<option value="${v}">${label}</option>`);
+      });
+      sel.innerHTML = opts.join('');
+      sel.value = String(effectiveFrozenCount | 0);
     }
 
     // ----- delegated handlers for the edit pane -----
@@ -2757,6 +2855,12 @@
 
     document.addEventListener('change', (e) => {
       const t = e.target;
+      // 마지막 고정 컬럼 선택 → setFrozenCount(value)
+      if (t.id === 'editFrozenSelect') {
+        const v = parseInt(t.value, 10);
+        if (Number.isFinite(v)) setFrozenCount(v);
+        return;
+      }
       const cb = t.closest && t.closest('.edit-row__check');
       if (cb) {
         const sel = cb.dataset.selector;
@@ -2786,23 +2890,18 @@
         if (sel) postIframe({ type: 'voc-flash', selector: sel });
         return;
       }
+      // group collapse / expand chevron — UI-only, doesn't touch edit state
+      const tc = t.closest && t.closest('[data-toggle-collapse]');
+      if (tc) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleGroupCollapsed(tc.dataset.toggleCollapse);
+        return;
+      }
       // sort/filter icon toggle
       const tg = t.closest && t.closest('.edit-row__icon-toggle');
       if (tg) {
         e.preventDefault();
-        // 고정 toggle: click ON  → setFrozenCount(leafIdx + 1) [include this column]
-        //              click OFF → setFrozenCount(leafIdx)     [drop this column]
-        // Note: scm-table's frozen model is "first N contiguous leaves from
-        // the left", so toggling a column ALSO affects later columns sharing
-        // the same boundary direction. Tooltip on the button explains this.
-        if (tg.dataset.toggleFrozen != null) {
-          const leafIdx = parseInt(tg.dataset.toggleFrozen, 10);
-          if (Number.isFinite(leafIdx)) {
-            const wasOn = tg.classList.contains('is-on');
-            setFrozenCount(wasOn ? leafIdx : (leafIdx + 1));
-          }
-          return;
-        }
         const sel = tg.dataset.selector;
         const kind = tg.dataset.toggleIcon;
         const wasOn = tg.classList.contains('is-on');
