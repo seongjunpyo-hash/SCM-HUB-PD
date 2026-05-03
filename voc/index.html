@@ -694,9 +694,10 @@
       border: 0; border-radius: 8px;
       font-family: inherit; font-size: 12.5px; font-weight: 600;
       cursor: pointer;
-      transition: background 0.12s ease;
+      transition: background 0.12s ease, opacity 0.12s ease;
     }
-    .edit-apply-btn:hover { background: #4338CA; }
+    .edit-apply-btn:hover:not(:disabled) { background: #4338CA; }
+    .edit-apply-btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .edit-add-form {
       display: none; flex-direction: column; gap: 8px;
       padding: 12px; margin-top: 8px;
@@ -1815,6 +1816,9 @@
         status.classList.toggle('is-dirty', dirty);
         status.textContent = dirty ? '저장하지 않은 변경 사항' : '저장됨 · 데모와 동기화';
       }
+      // Section [적용] buttons share the dirty state — nothing to push if
+      // draft already matches applied.
+      document.querySelectorAll('.edit-apply-btn').forEach((b) => { b.disabled = !dirty; });
     }
 
     // Stable CSS path for an iframe element (no temp ids).
