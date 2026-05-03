@@ -577,6 +577,9 @@ ${jsxBody}
   // ---------- inject buttons ----------
   let elDownload, elAction;
   function injectButtons() {
+    // Skip when this demo is embedded in an iframe (e.g. inside the VOC
+    // viewer). Handoff is a standalone-demo affordance only.
+    try { if (window.parent && window.parent !== window) return; } catch (_) { return; }
     const right = document.querySelector('.scm-topbar__right');
     if (!right) return;
     if (document.querySelector('.scm-dev-export-group')) return;
