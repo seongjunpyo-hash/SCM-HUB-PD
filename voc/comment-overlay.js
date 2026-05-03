@@ -322,6 +322,8 @@
       body.scm-voc-mode-active .scm-lnb * {
         cursor: not-allowed !important;
       }
+      /* Worker mode is always-commenting — the toggle FAB is redundant. */
+      html.scm-voc-worker .scm-voc-fab { display: none !important; }
     `;
     document.head.appendChild(s);
   }
@@ -520,7 +522,8 @@
     document.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;
       if (elPopover.classList.contains('is-open')) closePopover();
-      else if (state.mode === 'comment') setMode('browse');
+      // Worker mode: stay in comment mode permanently — ESC just closes popover.
+      else if (state.mode === 'comment' && !state.workerMode) setMode('browse');
     });
     // Outside click closes popover
     document.addEventListener('mousedown', (e) => {
@@ -939,6 +942,9 @@
     } else if (d.type === 'voc-worker-mode') {
       state.workerMode = !!d.on;
       document.documentElement.classList.toggle('scm-voc-worker', state.workerMode);
+      // In worker mode the iframe is permanently a comment surface —
+      // skip the FAB toggle and stay in comment mode.
+      if (state.workerMode) setMode('comment');
       applyLnbLock();
       schedulePinRender();
     } else if (d.type === 'voc-flash') {
