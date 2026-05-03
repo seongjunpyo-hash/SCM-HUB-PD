@@ -56,15 +56,14 @@
   function now() { return Date.now(); }
 
   // Pin color per role — matches the role-tag colors used in topbar / index.
-  // pm/dev/pd are internal-tier roles and share the same gray.
+  // pm/dev/pd share gray (internal-tier members).
   const ROLE_COLORS = {
-    super:    '#F59E0B',  // amber  (warn)
-    admin:    '#6E6BFF',  // purple (accent)
-    biz:      '#10B981',  // green  (success)
-    internal: '#9CA3AF',  // gray
-    pm:       '#9CA3AF',
-    dev:      '#9CA3AF',
-    pd:       '#9CA3AF',
+    super: '#F59E0B',  // amber  (warn)
+    admin: '#6E6BFF',  // purple (accent)
+    biz:   '#10B981',  // green  (success)
+    pm:    '#9CA3AF',  // gray
+    dev:   '#9CA3AF',
+    pd:    '#9CA3AF',
   };
   // Legacy fallback — when a comment has no `authorRole`, hash the email
   // so distinct users still get distinct colors.

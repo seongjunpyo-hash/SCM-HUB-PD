@@ -53,7 +53,6 @@
     .top__role[data-role="super"]    { background: rgba(245,158,11,0.16); color: var(--warn); }
     .top__role[data-role="admin"]    { background: var(--accent-bg); color: var(--accent); }
     .top__role[data-role="biz"]      { background: rgba(16,185,129,0.16); color: var(--success); }
-    .top__role[data-role="internal"],
     .top__role[data-role="pm"],
     .top__role[data-role="dev"],
     .top__role[data-role="pd"]       { background: rgba(255,255,255,0.08); color: var(--fg-mute); }
@@ -206,7 +205,7 @@
 
   <script src="/auth-gate.js"></script>
   <script>
-    const ROLE_LABEL = { super: '최고 어드민', admin: '어드민', biz: '현업', internal: '내부', pm: 'PM', dev: '개발팀', pd: 'PD' };
+    const ROLE_LABEL = { super: '최고 어드민', admin: '어드민', biz: '현업', pm: 'PM', dev: '개발팀', pd: 'PD' };
     document.addEventListener('scm:auth-ready', (e) => {
       const u = e.detail.user;
       document.getElementById('topUser').textContent = u.email;

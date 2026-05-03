@@ -1,11 +1,13 @@
 -- ============================================================
 -- SCM HUB · 권한 시스템 스키마
 -- ============================================================
--- 역할(role): super, admin, biz, internal
+-- 역할(role): super, admin, biz, pm, dev, pd
 --   super    : 모든 계정 생성/삭제 가능
---   admin    : biz/internal 계정만 생성 가능, admin 삭제 불가
+--   admin    : 멤버 계정 (biz/pm/dev/pd) 만 생성 가능, admin 삭제 불가
 --   biz      : 현업, 권한 없음
---   internal : 내부, 권한 없음
+--   pm       : 내부 — PM, 권한 없음
+--   dev      : 내부 — 개발팀, 권한 없음
+--   pd       : 내부 — PD, 권한 없음
 -- ============================================================
 
 -- 1. users — 계정 정보
@@ -13,7 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
   id                 INTEGER PRIMARY KEY AUTOINCREMENT,
   email              TEXT    NOT NULL UNIQUE,
   name               TEXT,
-  role               TEXT    NOT NULL CHECK (role IN ('super', 'admin', 'biz', 'internal', 'pm', 'dev', 'pd')),
+  role               TEXT    NOT NULL CHECK (role IN ('super', 'admin', 'biz', 'pm', 'dev', 'pd')),
   password_hash      TEXT,                          -- bcrypt hash. NULL until invite accepted.
   invite_token       TEXT    UNIQUE,                -- random 64-char hex. NULL after accepted.
   invite_expires_at  INTEGER,                       -- unix epoch (sec). NULL after accepted.
