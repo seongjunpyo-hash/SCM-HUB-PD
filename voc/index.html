@@ -1261,6 +1261,10 @@
       // (User hit "강력 새로고침" expecting iframe to revert; we honor that.)
       state.applied = loadJsonKey(EDIT_KEY);
       state.draft   = JSON.parse(JSON.stringify(state.applied || {}));
+      // Per-section [적용] dirty tracking — session-only snapshots of the
+      // last filter / column slice pushed to the iframe. Empty on first
+      // load so dirty falls back to comparing against `applied`.
+      state.previewed = {};
       // wipe any persisted draft from a prior session so it doesn't reappear.
       try { localStorage.removeItem(DRAFT_KEY); } catch {}
       // UI prefs (collapse/expand etc.) — persist across reloads but separate
@@ -1588,11 +1592,16 @@
       applyFilterOrderToIframe();
       applyFilterTypesToIframe();
       applyEditCss();
+      // Snapshot the filter slice we just pushed; per-section [적용] dirty
+      // compares against this so the button disables until the user makes
+      // another filter edit.
+      _setPreviewedFilter();
     }
     function applyColumnSectionToIframe() {
       rebuildAddedColumnsOnly();
       applyColumnOrderToIframe();
       applyEditCss();
+      _setPreviewedColumn();
     }
 
     function setHidden(selector, hide) {
@@ -1823,7 +1832,7 @@
     // thead-bearing table and apply marks to ALL tbodies + colgroups across
     // ALL .mp-tables in the doc.
     function applyHiddenCellsToIframe(doc, page) {
-      // Restore any tables we previously shrunk so we can recompute fresh.
+      // 1) Restore tables we previously shrunk so we can recompute fresh.
       doc.querySelectorAll('[data-voc-orig-width]').forEach((tbl) => {
         const w = tbl.dataset.vocOrigWidth;
         if (w) {
@@ -1831,6 +1840,14 @@
           tbl.style.minWidth = w + 'px';
         }
       });
+      // 2) Restore any colgroup col widths we zeroed out for hidden cols.
+      //    We have to do this BEFORE clearing voc-hidden marks because the
+      //    width was stamped per-col with data-voc-orig-col-width.
+      doc.querySelectorAll('col[data-voc-orig-col-width]').forEach((col) => {
+        col.style.width = col.dataset.vocOrigColWidth;
+        delete col.dataset.vocOrigColWidth;
+      });
+      // 3) Clear all marks; we'll re-stamp from scratch below.
       doc.querySelectorAll('[data-voc-hidden]').forEach((el) => delete el.dataset.vocHidden);
       const hidden = (page && page.hidden) || [];
       const tables = [...doc.querySelectorAll('.mp-table')];
@@ -1851,6 +1868,15 @@
       // hidden columns' space actually disappears (display:none on <col>
       // alone doesn't shrink the table when style.width is set explicitly).
       groups.forEach((tblList) => _shrinkTableToVisibleCols(tblList));
+      // Frozen sticky cells (col-frozen-N) use --frozen-lN CSS variables
+      // computed from inline col widths. Hiding a frozen col leaves a gap
+      // in those offsets — re-run scm-table's frozen recompute so cells
+      // shift left correctly. (zeroing the inline width above is what
+      // makes that recompute land on the right number.)
+      const reorderApi = tables.map((t) => t._scmReorder).find(Boolean);
+      if (reorderApi && reorderApi.refreshFrozenClassesAndOffsets) {
+        try { reorderApi.refreshFrozenClassesAndOffsets(); } catch {}
+      }
     }
     function _shrinkTableToVisibleCols(tblList) {
       tblList.forEach((tbl) => {
@@ -1864,11 +1890,18 @@
         let visibleSum = 0;
         let hasHidden = false;
         [...colgroup.children].forEach((col) => {
-          const w = parseInt(col.style.width, 10) || 0;
           if (col.dataset.vocHidden === 'true') {
             hasHidden = true;
+            // Stamp the original inline width on the col, then zero it out
+            // so refreshFrozenClassesAndOffsets sees a 0-width column and
+            // computes --frozen-lN offsets correctly. Restoration walks
+            // [data-voc-orig-col-width] at the start of the next call.
+            if (!col.dataset.vocOrigColWidth) {
+              col.dataset.vocOrigColWidth = col.style.width || '';
+            }
+            col.style.width = '0px';
           } else {
-            visibleSum += w;
+            visibleSum += parseInt(col.style.width, 10) || 0;
           }
         });
         if (!hasHidden) return;            // nothing to shrink
@@ -2087,14 +2120,45 @@
         frozenCount:       (p.frozenCount == null ? null : p.frozenCount),
       });
     }
-    function isFilterDirty() { return _filterSlice(pageDraft()) !== _filterSlice(pageApplied()); }
-    function isColumnDirty() { return _columnSlice(pageDraft()) !== _columnSlice(pageApplied()); }
+    // Per-section [적용] dirty uses a "previewed" snapshot — the slice of
+    // draft taken at the moment the user clicked [적용]. If draft hasn't
+    // changed since, the [적용] button stays disabled.
+    // No previewed snapshot yet → fall back to the saved baseline (applied)
+    // so a freshly-loaded page with draft == applied reports clean.
+    function _previewedFilterSlice() {
+      const e = state.previewed && state.previewed[state.currentPage];
+      if (e && e.filterSlice != null) return e.filterSlice;
+      return _filterSlice(pageApplied());
+    }
+    function _previewedColumnSlice() {
+      const e = state.previewed && state.previewed[state.currentPage];
+      if (e && e.columnSlice != null) return e.columnSlice;
+      return _columnSlice(pageApplied());
+    }
+    function _setPreviewedFilter() {
+      state.previewed = state.previewed || {};
+      const e = state.previewed[state.currentPage] = state.previewed[state.currentPage] || {};
+      e.filterSlice = _filterSlice(pageDraft());
+    }
+    function _setPreviewedColumn() {
+      state.previewed = state.previewed || {};
+      const e = state.previewed[state.currentPage] = state.previewed[state.currentPage] || {};
+      e.columnSlice = _columnSlice(pageDraft());
+    }
+    function _clearPreviewed() {
+      if (state.previewed) delete state.previewed[state.currentPage];
+    }
+    function isFilterDirty() { return _filterSlice(pageDraft()) !== _previewedFilterSlice(); }
+    function isColumnDirty() { return _columnSlice(pageDraft()) !== _previewedColumnSlice(); }
     function commitDraft() {
       // Save also pushes to iframe (in case user hadn't clicked the
       // section apply buttons yet) so the new baseline is visible.
       applyAllToIframe();
       state.applied[state.currentPage] = deepClone(pageDraft());
       persistApplied();
+      // After save: applied == draft, so previewed snapshots fall back to
+      // the (now-current) applied state and both apply buttons turn off.
+      _clearPreviewed();
       refreshSaveBtn();
       showToast('저장 완료 — 화면 적용 + baseline');
     }
@@ -2352,6 +2416,9 @@
         ? deepClone(state.applied[state.currentPage]) : {};
       persistDraft();
       applyAllToIframe();
+      // After revert, draft == applied. previewed snapshots fall back to
+      // applied so both apply buttons + save read clean.
+      _clearPreviewed();
       renderEditPane();
       refreshSaveBtn();
       showToast('변경 사항 되돌림');
