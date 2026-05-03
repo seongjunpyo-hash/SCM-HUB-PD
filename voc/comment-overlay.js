@@ -54,7 +54,28 @@
   }
   function uid(p) { return p + '_' + Math.random().toString(36).slice(2, 10); }
   function now() { return Date.now(); }
-  function pageComments() { return state.comments.filter((c) => c.page === PAGE); }
+
+  // Per-author color mapping — same hash → same color across overlay + VOC sidebar.
+  const PIN_COLORS = [
+    '#6E6BFF', '#34D399', '#F59E0B', '#EC4899',
+    '#3B82F6', '#A855F7', '#F43F5E', '#14B8A6',
+    '#FB923C', '#22D3EE', '#84CC16', '#F97316',
+  ];
+  function authorColor(email) {
+    const s = String(email || 'guest');
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = ((h * 31) + s.charCodeAt(i)) >>> 0;
+    return PIN_COLORS[h % PIN_COLORS.length];
+  }
+
+  // Comments visible to the current user — everything in worker mode
+  // (VOC iframe), only the user's own comments otherwise (standalone demo).
+  function visibleComments() {
+    if (state.workerMode) return state.comments;
+    const me = state.user.email;
+    return state.comments.filter((c) => c.author === me);
+  }
+  function pageComments() { return visibleComments().filter((c) => c.page === PAGE); }
   function indexOfInPage(c) {
     const sorted = pageComments().sort((a, b) => a.createdAt - b.createdAt);
     return sorted.findIndex((x) => x.id === c.id) + 1;
@@ -135,13 +156,14 @@
            transform-origin there so scaling pivots on the tip. */
         margin-left: 0; margin-top: -28px;
         transform-origin: 0 100%;
-        background: #6E6BFF; color: #fff;
+        --pin-c: #6E6BFF;
+        background: var(--pin-c); color: #fff;
         border-radius: 999px 999px 999px 0;
         display: flex; align-items: center; justify-content: center;
         font-family: -apple-system, BlinkMacSystemFont, 'Pretendard Variable', Pretendard, sans-serif;
         font-size: 12px; font-weight: 700;
         cursor: pointer; pointer-events: auto;
-        box-shadow: 0 4px 12px rgba(110, 107, 255, 0.55), 0 0 0 3px #fff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28), 0 0 0 3px #fff;
         transition: transform 0.12s ease, box-shadow 0.12s ease;
         user-select: none;
       }
@@ -152,7 +174,7 @@
       }
       .scm-voc-pin.is-active {
         transform: scale(1.18);
-        box-shadow: 0 0 0 3px #fff, 0 0 0 6px #6E6BFF, 0 8px 20px rgba(110,107,255,0.6);
+        box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--pin-c), 0 8px 20px rgba(0,0,0,0.4);
       }
 
       .scm-voc-popover {
@@ -816,7 +838,9 @@
       if (c.status === 'resolved') cls.push('is-resolved');
       if (c.id === state.activeId) cls.push('is-active');
       const { x, y } = resolvePinCoords(c);
-      return `<div class="${cls.join(' ')}" data-cmt-id="${c.id}" style="left:${x}px;top:${y}px;" title="${escapeHtml(c.thread[0] ? c.thread[0].text.slice(0, 40) : '')}">${idxMap.get(c.id)}</div>`;
+      const color = authorColor(c.author);
+      const tip = (c.thread[0] ? c.thread[0].text.slice(0, 40) : '') + (c.author ? ' — ' + c.author : '');
+      return `<div class="${cls.join(' ')}" data-cmt-id="${c.id}" style="left:${x}px;top:${y}px;--pin-c:${color};" title="${escapeHtml(tip)}">${idxMap.get(c.id)}</div>`;
     }).join('');
   }
   // Debounced render — used on resize / class mutation / mode change.
@@ -845,7 +869,7 @@
   function injectLnbCounts() {
     const counts = new Map();
     const resolved = new Map();
-    state.comments.forEach((c) => {
+    visibleComments().forEach((c) => {
       counts.set(c.page, (counts.get(c.page) || 0) + 1);
       if (c.status === 'resolved') {
         resolved.set(c.page, (resolved.get(c.page) || 0) + 1);

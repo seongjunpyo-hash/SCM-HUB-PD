@@ -641,6 +641,18 @@
         return Array.isArray(arr) ? arr : [];
       } catch { return []; }
     }
+    // Same hash + palette as comment-overlay.js — keep in sync.
+    const PIN_COLORS = [
+      '#6E6BFF', '#34D399', '#F59E0B', '#EC4899',
+      '#3B82F6', '#A855F7', '#F43F5E', '#14B8A6',
+      '#FB923C', '#22D3EE', '#84CC16', '#F97316',
+    ];
+    function authorColor(email) {
+      const s = String(email || 'guest');
+      let h = 0;
+      for (let i = 0; i < s.length; i++) h = ((h * 31) + s.charCodeAt(i)) >>> 0;
+      return PIN_COLORS[h % PIN_COLORS.length];
+    }
     function persist() {
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.comments)); }
       catch (e) { console.warn('voc: save failed', e); }
@@ -901,7 +913,7 @@
         return `
           <div class="${cls.join(' ')}" data-cmt-id="${c.id}">
             <div class="cmt__head">
-              <span class="cmt__num">${idxOf(c)}</span>
+              <span class="cmt__num" style="background:${authorColor(c.author)};">${idxOf(c)}</span>
               <span class="cmt__target">${escapeHtml(shortTarget(c))}</span>
               ${state.simActive.has(c.id) ? '<span class="cmt__sim">SIM</span>' : ''}
               <span class="cmt__status">${c.status === 'resolved' ? '해결됨' : '미해결'}</span>
@@ -977,6 +989,8 @@
       const idx = indexOfInPage(c);
       dNum.textContent = String(idx);
       dNum.classList.toggle('is-resolved', c.status === 'resolved');
+      // resolved keeps the green badge; otherwise tint by author color
+      dNum.style.background = c.status === 'resolved' ? '' : authorColor(c.author);
       dPage.textContent = c.page;
       dStatus.textContent = c.status === 'resolved' ? '해결됨' : '미해결';
       dStatus.classList.toggle('is-resolved', c.status === 'resolved');
