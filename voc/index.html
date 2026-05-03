@@ -1527,8 +1527,11 @@
       // Default: ALL sort + filter icons hidden. Reveal selectively.
       lines.push(`.mp-table thead th .sort-ic, .mp-table thead th .scm-th-sort { display: none !important; }`);
       lines.push(`.mp-table thead th .filter-ic { display: none !important; }`);
-      a.showSort.forEach((s)   => lines.push(`${s} .sort-ic, ${s} .scm-th-sort { display: revert !important; }`));
-      a.showFilter.forEach((s) => lines.push(`${s} .filter-ic { display: revert !important; }`));
+      // Use the demo's intended `inline-block` for sort-ic and `inline` for
+      // filter-ic so the show-override matches the original layout. `revert`
+      // would reset to the UA default and lose the design-system sizing.
+      a.showSort.forEach((s)   => lines.push(`${s} .sort-ic, ${s} .scm-th-sort { display: inline-block !important; }`));
+      a.showFilter.forEach((s) => lines.push(`${s} .filter-ic { display: inline-block !important; }`));
       // marker styles for added items
       lines.push(`
         .scm-voc-added-filter,
@@ -1790,9 +1793,22 @@
     }
 
     // Stable CSS path for an iframe element (no temp ids).
+    // Stamp a stable, deterministic key on a scanned element so the
+    // selector for it stays valid through reorders. The key is
+    // position-based (`flt-3`, `col-7`) so a page reload re-keys
+    // identically as long as the source DOM order hasn't changed.
+    function ensureVocKey(el, prefix, idx) {
+      if (!el || !el.dataset) return null;
+      if (!el.dataset.vocKey) el.dataset.vocKey = `${prefix}-${idx}`;
+      return el.dataset.vocKey;
+    }
     function ifrCssPath(el) {
       if (!el || el.nodeType !== 1) return '';
       const doc = el.ownerDocument;
+      // Prefer the stamped voc-key — survives reorder, identical across reloads.
+      if (el.dataset && el.dataset.vocKey) {
+        return `[data-voc-key="${el.dataset.vocKey}"]`;
+      }
       if (el.id && doc.querySelectorAll('#' + CSS.escape(el.id)).length === 1) {
         return '#' + CSS.escape(el.id);
       }
@@ -1849,7 +1865,8 @@
         '.scm-filter-bar .scm-filter-select[data-mp-filter]:not(.scm-voc-added-filter)'
       );
       const filterSeen = new Set();
-      filterEls.forEach((el) => {
+      filterEls.forEach((el, i) => {
+        ensureVocKey(el, 'flt', i);
         const sel = ifrCssPath(el);
         if (filterSeen.has(sel)) return;
         filterSeen.add(sel);
@@ -1867,11 +1884,13 @@
       // checkbox column. SCM table headers are 2-row (group + actual),
       // so we deduplicate via selector instead of column index.
       const colSeen = new Set();
+      let colCounter = 0;
       main.querySelectorAll('.mp-table thead th').forEach((th) => {
         if (th.classList.contains('col-spacer') || th.classList.contains('cb-col')) return;
         if (th.classList.contains('scm-voc-added-col')) return;  // user-added: shown via draft list, not scan
         const colspan = parseInt(th.getAttribute('colspan') || '1', 10);
         if (colspan > 1) return;
+        ensureVocKey(th, 'col', colCounter++);
         const sel = ifrCssPath(th);
         if (colSeen.has(sel)) return;
         colSeen.add(sel);
