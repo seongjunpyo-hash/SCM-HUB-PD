@@ -32,7 +32,7 @@
 
 .scm-form-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;     /* 라벨 ↔ 컨트롤 세로 가운데 정렬 (공통) */
   padding: 12px 0;
   gap: 16px;
 }
@@ -44,7 +44,6 @@
   font-weight: 500;
   line-height: 19.6px;
   color: #000;
-  padding-top: 10px;
   display: inline-flex;
   align-items: center;
   gap: 4px;

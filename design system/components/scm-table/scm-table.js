@@ -298,14 +298,32 @@ function setupStickyThead(root = document, opts = {}) {
   if (!origThead) return null;
   if (stickyScroll.querySelector('thead')) return null; // 이미 init
 
+  // 가시성 체크 — 모달처럼 hidden 상태에선 측정값이 0 이라 sticky 구성이 깨짐.
+  // 일단 null 리턴, DOM 변경 X. 모달 열릴 때 rebuild 호출하면 정상 측정 후 sticky 구성 가능.
+  const containerCheck = bodyScroll.getBoundingClientRect();
+  if (containerCheck.width === 0 || containerCheck.height === 0) return null;
+
   const firstBodyRow = origTable.querySelector('tbody tr');
-  if (!firstBodyRow || firstBodyRow.children.length < 2) return null;
+  // 데이터 행 (cells >= 2 개) 이 있으면 셀 폭을 측정해서 사용.
+  // empty state (colspan 단일 cell) 인 경우 colgroup 의 명시 width 를 fallback 사용.
+  const hasDataRow = firstBodyRow && firstBodyRow.children.length >= 2;
+  const origColgroupExisting = origTable.querySelector('colgroup');
+  if (!hasDataRow && !origColgroupExisting) return null;
 
   // 1) 측정 — 자연 폭. col-spacer 는 자체 width:100% 로 잠긴 상태라 측정값이 부정확하므로 0 으로 처리.
-  const bodyCells = Array.from(firstBodyRow.children);
-  const colWidths = bodyCells.map(td =>
-    td.classList && td.classList.contains('col-spacer') ? 0 : Math.round(td.getBoundingClientRect().width)
-  );
+  let colWidths;
+  if (hasDataRow) {
+    const bodyCells = Array.from(firstBodyRow.children);
+    colWidths = bodyCells.map(td =>
+      td.classList && td.classList.contains('col-spacer') ? 0 : Math.round(td.getBoundingClientRect().width)
+    );
+  } else {
+    // 빈 테이블 — colgroup 의 width 사용
+    colWidths = Array.from(origColgroupExisting.children).map((col) => {
+      const w = parseInt(col.style.width, 10) || parseInt(col.getAttribute('width'), 10) || 0;
+      return w;
+    });
+  }
 
   // 2) 클래스 기반 보정
   const leafs = buildLeafHeaders(origThead);
@@ -315,7 +333,7 @@ function setupStickyThead(root = document, opts = {}) {
     if (th.classList.contains('col-large')) {
       colWidths[i] = COL_LARGE_MIN; // 강제 320 — 컨텐츠 더 길어도 cell-clamp 으로 잘림
     } else if (th.classList.contains('col-medium')) {
-      const td = firstBodyRow.children[i];
+      const td = hasDataRow ? firstBodyRow.children[i] : null;
       if (td && td.querySelector(':scope > .cell-clamp-2')) {
         colWidths[i] = COL_MEDIUM_MAX; // 2줄 wrap 셀은 강제 max
       } else {
@@ -393,14 +411,21 @@ function setupStickyThead(root = document, opts = {}) {
 function setupTableInteractions(root = document, opts = {}) {
   const { frozenCount = 0, scrollSelector = '.mp-table-scroll', stickySelector = '.mp-thead-sticky .mp-thead-scroll' } = opts;
   const origTable = root.querySelector(`${scrollSelector} > .mp-table`);
+  if (!origTable) return;
   const stickyScroll = root.querySelector(stickySelector);
-  if (!origTable || !stickyScroll) return;
-  const cloneTable = stickyScroll.querySelector('table');
-  if (!cloneTable) return;
-  const origColgroup = origTable.querySelector('colgroup');
+  const _cloneTable = stickyScroll && stickyScroll.querySelector('table');
+  const _cloneThead = _cloneTable && _cloneTable.querySelector('thead');
+  // Sticky mode: clone 이 thead 를 가지고 있음 → clone 을 인터랙션 대상으로
+  // No-sticky mode: clone 없음 / 빈 → original thead 를 인터랙션 대상으로
+  const usingClone = !!_cloneThead;
+  const cloneTable = usingClone ? _cloneTable : origTable;
+  const cloneThead = usingClone ? _cloneThead : origTable.querySelector('thead');
   const cloneColgroup = cloneTable.querySelector('colgroup');
-  const cloneThead = cloneTable.querySelector('thead');
-  if (!cloneColgroup || !origColgroup || !cloneThead) return;
+  // origColgroup / shadowOrigTable — sticky mode 에서만 따로 sync 대상으로 존재. no-sticky 면 null.
+  const origColgroup = usingClone ? origTable.querySelector('colgroup') : null;
+  const shadowOrigTable = usingClone ? origTable : null;   // sticky mode 에서 clone 옆 원본 (sync 대상)
+  if (!cloneColgroup || !cloneThead) return;
+  if (usingClone && !origColgroup) return;   // sticky mode 인데 orig colgroup 없음 — 비정상
 
   const model = new LeafModel(cloneThead);
   const headers = model.leaves.slice();   // 초기 leaf 배열 (이벤트 등록용 — 순서 변경 후에도 이 ref 들은 유효)
@@ -433,8 +458,8 @@ function setupTableInteractions(root = document, opts = {}) {
       const colIdx = model.thLeafIdx(th, true);
       if (colIdx < 0) return;
       const cloneCol = cloneColgroup.children[colIdx];
-      const origCol = origColgroup.children[colIdx];
-      if (!cloneCol || !origCol) return;
+      const origCol = origColgroup ? origColgroup.children[colIdx] : null;
+      if (!cloneCol) return;
       const startW = parseInt(cloneCol.style.width) || cloneCol.offsetWidth || 100;
       const startTotal = parseInt(cloneTable.style.width) || cloneTable.offsetWidth;
       document.body.style.cursor = 'col-resize';
@@ -443,11 +468,13 @@ function setupTableInteractions(root = document, opts = {}) {
         const newW = Math.max(RESIZE_MIN, startW + dx);
         const newTotal = startTotal + (newW - startW);
         cloneCol.style.width = newW + 'px';
-        origCol.style.width = newW + 'px';
+        if (origCol) origCol.style.width = newW + 'px';
         cloneTable.style.width = newTotal + 'px';
         cloneTable.style.minWidth = newTotal + 'px';
-        origTable.style.width = newTotal + 'px';
-        origTable.style.minWidth = newTotal + 'px';
+        if (shadowOrigTable) {
+          shadowOrigTable.style.width = newTotal + 'px';
+          shadowOrigTable.style.minWidth = newTotal + 'px';
+        }
       };
       const onUp = () => {
         document.body.style.cursor = '';
@@ -492,8 +519,8 @@ function setupTableInteractions(root = document, opts = {}) {
       if (from < to) parent.insertBefore(node, target.nextSibling);
       else parent.insertBefore(node, target);
     };
-    moveByLeafIdx(origColgroup);
     moveByLeafIdx(cloneColgroup);
+    if (origColgroup && origColgroup !== cloneColgroup) moveByLeafIdx(origColgroup);
     // leafTr — leaf idx → leafTr child idx
     const leafFrom = model.leafIdxToLeafChildIdx(from);
     const leafTo = model.leafIdxToLeafChildIdx(to);
@@ -538,8 +565,10 @@ function setupTableInteractions(root = document, opts = {}) {
       srcCloneCols.push(cloneColgroup.children[srcRange.start + i]);
     }
     const srcOrigCols = [];
-    for (let i = 0; i < srcRange.count; i++) {
-      srcOrigCols.push(origColgroup.children[srcRange.start + i]);
+    if (origColgroup && origColgroup !== cloneColgroup) {
+      for (let i = 0; i < srcRange.count; i++) {
+        srcOrigCols.push(origColgroup.children[srcRange.start + i]);
+      }
     }
     const tbodyTrs = Array.from(origTable.querySelectorAll('tbody > tr'));
     const srcBodyTds = tbodyTrs.map(tr => {
@@ -557,7 +586,7 @@ function setupTableInteractions(root = document, opts = {}) {
       : row2Tr.children[tgtRow2Start];
     const colRefIdx = movingForward ? tgtRange.start + tgtRange.count : tgtRange.start;
     const cloneColRef = cloneColgroup.children[colRefIdx] || null;
-    const origColRef = origColgroup.children[colRefIdx] || null;
+    const origColRef = (origColgroup && origColgroup !== cloneColgroup) ? (origColgroup.children[colRefIdx] || null) : null;
     const bodyTdRefs = tbodyTrs.map(tr => tr.children[colRefIdx] || null);
 
     // 1) row1 cell 이동
@@ -566,7 +595,9 @@ function setupTableInteractions(root = document, opts = {}) {
     srcRow2Cells.forEach(c => { if (c) row2Tr.insertBefore(c, row2Ref); });
     // 3) colgroup cols (clone + orig) 이동
     srcCloneCols.forEach(c => { if (c) cloneColgroup.insertBefore(c, cloneColRef); });
-    srcOrigCols.forEach(c => { if (c) origColgroup.insertBefore(c, origColRef); });
+    if (origColgroup && origColgroup !== cloneColgroup) {
+      srcOrigCols.forEach(c => { if (c) origColgroup.insertBefore(c, origColRef); });
+    }
     // 4) body td 들 이동 (각 tr 별로)
     tbodyTrs.forEach((tr, idx) => {
       const ref = bodyTdRefs[idx];
@@ -679,9 +710,11 @@ function setupTableInteractions(root = document, opts = {}) {
     // 1) colgroup col 들 — leaf idx 와 1:1
     for (let i = 0; i < cloneColgroup.children.length; i++) {
       const cc = cloneColgroup.children[i];
-      const oc = origColgroup.children[i];
       if (cc) { stripFrozen(cc); if (i < frozenCount) cc.classList.add(`col-frozen-${i + 1}`); }
-      if (oc) { stripFrozen(oc); if (i < frozenCount) oc.classList.add(`col-frozen-${i + 1}`); }
+      if (origColgroup && origColgroup !== cloneColgroup) {
+        const oc = origColgroup.children[i];
+        if (oc) { stripFrozen(oc); if (i < frozenCount) oc.classList.add(`col-frozen-${i + 1}`); }
+      }
     }
 
     // 2) leafTr (1단 thead 또는 2단 row2) — leaf idx 기반으로 frozen 클래스 부여
@@ -728,7 +761,9 @@ function setupTableInteractions(root = document, opts = {}) {
       const lastIdx = frozenCount - 1;
       // colgroup cols / tbody tds — leaf idx 와 1:1
       if (cloneColgroup.children[lastIdx]) cloneColgroup.children[lastIdx].classList.add('col-frozen-last');
-      if (origColgroup.children[lastIdx]) origColgroup.children[lastIdx].classList.add('col-frozen-last');
+      if (origColgroup && origColgroup !== cloneColgroup && origColgroup.children[lastIdx]) {
+        origColgroup.children[lastIdx].classList.add('col-frozen-last');
+      }
       origTable.querySelectorAll('tbody > tr').forEach(tr => {
         if (tr.children[lastIdx]) tr.children[lastIdx].classList.add('col-frozen-last');
       });
@@ -891,15 +926,135 @@ function setupCellSelection(root = document, opts = {}) {
 
 
 /* ============================================================
- * 4. SCMTable.init — 일괄 초기화
+ * 4. ensureHost — `.mp-table` 가 wrapper 없이 단독으로 있으면
+ *    .mp-table-host > .mp-thead-sticky + .mp-table-scroll 구조로 자동 wrapping.
+ *    이미 wrapper 안에 있으면 기존 host 반환.
+ * ============================================================ */
+function ensureHost(table) {
+  if (!table || !table.classList || !table.classList.contains('mp-table')) return null;
+  // data-scm-no-sticky 면 mp-thead-sticky div 를 아예 생성 안 함 (::before 검정 라인 잔재 방지)
+  const noSticky = table.dataset.scmNoSticky != null && table.dataset.scmNoSticky !== 'false';
+
+  // 이미 wrapper 안인 경우
+  const existingScroll = table.closest('.mp-table-scroll');
+  if (existingScroll) {
+    const existingHost = existingScroll.closest('.mp-table-host');
+    if (existingHost) return existingHost;
+    // mp-table-scroll 만 있고 host 없음 → host 로 감싸기
+    const h = document.createElement('div');
+    h.className = 'mp-table-host';
+    existingScroll.parentNode.insertBefore(h, existingScroll);
+    h.appendChild(existingScroll);
+    // sticky thead 컨테이너 추가 — no-sticky 가 아닐 때만
+    if (!noSticky && !h.querySelector('.mp-thead-sticky')) {
+      const sticky = document.createElement('div');
+      sticky.className = 'mp-thead-sticky';
+      const inner = document.createElement('div');
+      inner.className = 'mp-thead-scroll';
+      sticky.appendChild(inner);
+      h.insertBefore(sticky, existingScroll);
+    }
+    return h;
+  }
+
+  // wrapper 전혀 없음 → host > [sticky] + scroll > table 자동 생성
+  const host = document.createElement('div');
+  host.className = 'mp-table-host';
+
+  if (!noSticky) {
+    const stickyOuter = document.createElement('div');
+    stickyOuter.className = 'mp-thead-sticky';
+    const stickyInner = document.createElement('div');
+    stickyInner.className = 'mp-thead-scroll';
+    stickyOuter.appendChild(stickyInner);
+    host.appendChild(stickyOuter);
+  }
+
+  const scroll = document.createElement('div');
+  scroll.className = 'mp-table-scroll';
+
+  const parent = table.parentNode;
+  if (!parent) return null;
+  const next = table.nextSibling;
+  parent.removeChild(table);
+
+  scroll.appendChild(table);
+  host.appendChild(scroll);
+
+  if (next) parent.insertBefore(host, next);
+  else parent.appendChild(host);
+
+  return host;
+}
+
+function getTableOpts(table, baseOpts) {
+  // 테이블별 옵션 — data-scm-frozen 으로 frozenCount 오버라이드 가능
+  const dsFrozen = table.dataset && table.dataset.scmFrozen;
+  const frozenCount = dsFrozen != null ? parseInt(dsFrozen, 10) || 0 : (baseOpts.frozenCount || 0);
+  return { ...baseOpts, frozenCount };
+}
+
+function initOneTable(table, baseOpts) {
+  if (!table || table.dataset.scmInited === '1') return;
+  if (table.dataset.scmSkipInit != null && table.dataset.scmSkipInit !== 'false') return;
+  const host = ensureHost(table);
+  if (!host) return;
+  const opts = getTableOpts(table, baseOpts);
+
+  // Sticky thead — 데이터 리스트 페이지처럼 가시 + 충분한 scroll 컨텍스트에서 동작.
+  //  • data-scm-no-sticky 명시 시 → 항상 skip (interactions 는 원본 thead 에 부착)
+  //  • 그 외에는 setupStickyThead 가 visibility 체크로 hidden 시 null 리턴
+  //    (모달 hidden 시 init 호출 → null 리턴 → inited 미마킹 → 모달 열림 시 재호출)
+  const noSticky = table.dataset.scmNoSticky != null && table.dataset.scmNoSticky !== 'false';
+  let stickyOk = false;
+  if (!noSticky) {
+    const stickyResult = setupStickyThead(host, opts);
+    stickyOk = !!stickyResult;
+    // sticky 시도했으나 실패 (hidden) — inited 마킹 안 하고 다음 재호출 대기
+    if (!stickyOk && !noSticky) return;
+  }
+
+  table.dataset.scmInited = '1';
+  setupTableInteractions(host, opts);
+  setupCellSelection(host, opts);
+}
+
+function rebuildOneTable(table, baseOpts) {
+  // 이미 init 된 테이블을 다시 측정/재구성 (예: 모달 열릴 때)
+  if (!table) return;
+  table.dataset.scmInited = '';  // 플래그 초기화
+  // sticky thead 의 thead 복제본 제거 — 다시 생성되도록
+  const host = table.closest('.mp-table-host');
+  if (host) {
+    const stickyInner = host.querySelector('.mp-thead-sticky .mp-thead-scroll');
+    if (stickyInner) stickyInner.innerHTML = '';
+  }
+  initOneTable(table, baseOpts);
+}
+
+/* ============================================================
+ * 5. SCMTable.init — 모든 .mp-table 자동 감지 + 일괄 초기화
+ *    각 테이블은 wrapper 없으면 자동 생성되고 sticky/resize/reorder/cell-select 적용.
+ *    페이지에서 SCMTable.init() 한 번만 호출하면 끝.
+ *    동적으로 추가된 테이블은 SCMTable.init() 재호출 또는 rebuild 사용.
  * ============================================================ */
 const SCMTable = {
   init(opts = {}) {
     const root = opts.root || document;
-    setupStickyThead(root, opts);
-    setupTableInteractions(root, opts);
-    setupCellSelection(root, opts);
+    const tables = Array.from(root.querySelectorAll('.mp-table'));
+    tables.forEach((table) => initOneTable(table, opts));
   },
+  initOne: initOneTable,
+  rebuild(tableOrSelector, opts = {}) {
+    let table = tableOrSelector;
+    if (typeof tableOrSelector === 'string') table = document.querySelector(tableOrSelector);
+    rebuildOneTable(table, opts);
+  },
+  rebuildAll(opts = {}) {
+    const root = opts.root || document;
+    Array.from(root.querySelectorAll('.mp-table')).forEach((t) => rebuildOneTable(t, opts));
+  },
+  ensureHost,
   setupStickyThead,
   setupTableInteractions,
   setupCellSelection,

@@ -1,0 +1,12 @@
+# 1) 현재 로컬 상태 확인
+git status                 # 수정/스테이징된 파일 확인
+git log --oneline -10      # 본인이 만든 커밋 있나 확인
+
+# 2-A) 이미 커밋이 있다면 — 그냥 푸시 (브랜치명 자동 생성)
+git push -u origin HEAD:cowork-snapshot
+
+# 2-B) 아직 커밋 전이라면
+git checkout -b cowork-snapshot
+git add -A                 # 또는 변경한 파일들만 명시
+git commit -m "cowork 작업 스냅샷"
+git push -u origin cowork-snapshot

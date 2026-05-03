@@ -63,7 +63,7 @@
     .reg-subsection-title { font-size: 18px; font-weight: 600; line-height: 24.48px; color: #000; margin: 0 0 16px; padding-top: 8px; }
 
     /* info-banner 아래 24px 마진 — legacy spec 매칭 (banner ↔ 첫 card 사이 spacing) */
-    #reg-info-banner { margin-bottom: 24px; }
+    #reg-info-banner { max-width: 1250px; margin-bottom: 24px; }
 
     /* 2-col layout — 좌 580 고정 / 우 flex:1 (카드 우측 끝까지 확장) → 아래 풀폭 카드들과 우측 정렬 */
     .reg-form-2col { display: flex; gap: 40px; align-items: flex-start; }
@@ -91,7 +91,14 @@
     .reg-pending-table-wrap { position: relative; overflow-x: auto; }
     .reg-pending-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; color: #000; min-width: 1400px; }
     .reg-pending-table thead th { background: #fff; font-size: 15px; font-weight: 500; line-height: 20.4px; color: #000; height: 42px; padding: 8px 16px; text-align: left; border-top: 2px solid #000; border-bottom: 1px solid #E0E0E0; border-left: 1px solid #EBEBEB; white-space: nowrap; vertical-align: middle; box-sizing: border-box; }
-    .reg-pending-table thead th.cb-col { padding: 8px 12px; border-left: 0; width: 48px; }
+    .reg-pending-table thead th.cb-col,
+    .reg-pending-table tbody td.cb-col {
+      padding: 12px 12px;       /* 좌우 정확히 12px */
+      border-left: 0;
+      width: 40px;              /* 12 + 16(checkbox) + 12 = 40 — 좌우 각 12px */
+      box-sizing: border-box;
+      text-align: center;
+    }
     .reg-pending-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 24px; border-bottom: 1px solid #EBEBEB; gap: 16px; text-align: center; }
     .reg-pending-empty .icon { width: 48px; height: 48px; color: #FFA12A; }
     .reg-pending-empty .title { font-size: 16px; font-weight: 600; line-height: 21.76px; color: #000; }
@@ -352,7 +359,7 @@
       <h2 class="reg-card-title">기본 정보 설정</h2>
       <div class="reg-form-2col">
         <!-- Left col: 580w -->
-        <div class="reg-form-2col__left">
+        <div class="reg-form-2col__left" style="width:100%;">
           <!-- 매입형태 (disabled, value="매입") -->
           <div class="scm-form-row">
             <label class="scm-form-label scm-form-label--w140">
@@ -363,6 +370,26 @@
                 <span class="scm-select__value">매입</span>
                 <svg class="scm-select__chev" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
               </button>
+            </div>
+          </div>
+          <!-- 제조구분 (radios) — 매입형태와 같은 컬럼 정렬 -->
+          <div class="scm-form-row">
+            <label class="scm-form-label scm-form-label--w140">
+              제조구분 <span class="scm-form-row-req"></span>
+            </label>
+            <div class="scm-form-control">
+              <div class="scm-radio-group">
+                <label class="scm-radio">
+                  <input type="radio" name="reg-mfg" checked />
+                  <span class="scm-radio-dot"></span>
+                  <span>완제품 매입</span>
+                </label>
+                <label class="scm-radio">
+                  <input type="radio" name="reg-mfg" />
+                  <span class="scm-radio-dot"></span>
+                  <span>자체제작(PB)</span>
+                </label>
+              </div>
             </div>
           </div>
           <!-- 소유사 (disabled, value="무신사") -->
@@ -387,29 +414,6 @@
                 <span class="scm-select__value">Adidas_korea/adidas/Adidas/(MX) 0382023...</span>
                 <svg class="scm-select__chev" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
               </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Right col: 400w -->
-        <div class="reg-form-2col__right">
-          <div class="scm-form-row">
-            <label class="scm-form-label scm-form-label--w120">
-              제조구분 <span class="scm-form-row-req"></span>
-            </label>
-            <div class="scm-form-control">
-              <div class="scm-radio-group">
-                <label class="scm-radio">
-                  <input type="radio" name="reg-mfg" checked />
-                  <span class="scm-radio-dot"></span>
-                  <span>완제품 매입</span>
-                </label>
-                <label class="scm-radio">
-                  <input type="radio" name="reg-mfg" />
-                  <span class="scm-radio-dot"></span>
-                  <span>자체제작(PB)</span>
-                </label>
-              </div>
             </div>
           </div>
         </div>
@@ -667,10 +671,10 @@
         <button class="scm-mini-action" type="button" disabled>선택 제거</button>
       </div>
 
-      <div class="reg-pending-table-wrap">
-        <table class="reg-pending-table">
+      <div class="reg-pending-table-wrap mp-table-scroll">
+        <table class="mp-table reg-pending-table">
           <colgroup>
-            <col style="width:48px"/>
+            <col style="width:40px"/>
             <col style="width:60px"/>
             <col style="width:200px"/>
             <col style="width:160px"/>
@@ -735,6 +739,7 @@
 <script src="../design%20system/components/button/button.js"></script>
 <script src="../design%20system/components/back-btn/back-btn.js"></script>
 <script src="../design%20system/components/info-banner/info-banner.js"></script>
+<script src="../design%20system/components/scm-table/scm-table.js"></script>
 
 <!-- Page logic -->
 <script>
@@ -742,6 +747,11 @@
   // GNB + LNB
   if (window.SCM && SCM.lnb)    SCM.lnb.mount(document.querySelector('.scm-lnb'), { active: 'sku-management' });
   if (window.SCM && SCM.topbar) SCM.topbar.mount(document.querySelector('.scm-topbar'));
+
+  // 모든 .mp-table 자동 init — sticky thead / resize / reorder / 더블클릭 컬럼선택 / 셀 드래그 선택
+  if (window.SCMTable) {
+    try { window.SCMTable.init({ root: document }); } catch (e) { console.warn('SCMTable init failed:', e); }
+  }
 
   // Back button
   const backBtn = document.getElementById('back-btn');
