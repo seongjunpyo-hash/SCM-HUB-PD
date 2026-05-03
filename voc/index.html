@@ -1475,6 +1475,21 @@
       persistUi();
       renderEditPane();
     }
+    // Default UI state for a page with multiple groups: only the FIRST
+    // group is expanded; the rest are collapsed. Initialised once per
+    // page (when no entry exists in state.ui.collapsedGroups). Once the
+    // user toggles anything, their explicit state takes over.
+    function ensureDefaultCollapsed(groups) {
+      const page = state.currentPage;
+      if (!page) return;
+      if (state.ui.collapsedGroups[page] != null) return;   // already touched
+      if (!Array.isArray(groups) || groups.length <= 1) {
+        state.ui.collapsedGroups[page] = [];                 // nothing to collapse
+      } else {
+        state.ui.collapsedGroups[page] = groups.slice(1).map((g) => g.selector);
+      }
+      persistUi();
+    }
     function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
 
     // Returns the page slot for either 'applied' or 'draft'. For the draft
@@ -2584,6 +2599,10 @@
       const hidden     = new Set(d.hidden);
       const showSort   = new Set(d.showSort);
       const showFilter = new Set(d.showFilter);
+      // First-visit default: collapse all groups except the first so the
+      // edit pane stays compact. Once the user toggles any group, their
+      // explicit state takes over.
+      ensureDefaultCollapsed(targets.groups || []);
       // Effective frozen-column boundary. User override (d.frozenCount) wins;
       // null/undefined falls back to whatever scm-table inited the table with.
       const effectiveFrozenCount = (d.frozenCount != null)
