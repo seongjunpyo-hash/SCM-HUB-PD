@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SCM HUB · 협업 VOC</title>
+  <title>SCM HUB · VOC 코멘트 대시보드</title>
   <script src="/auth-gate.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
   <style>
@@ -18,249 +18,101 @@
       --fg-dim:    rgba(255,255,255,0.40);
       --accent:    #6E6BFF;
       --accent-bg: rgba(110,107,255,0.14);
-      --accent-2:  #5754ff;
       --ok:        #34D399;
       --ok-bg:     rgba(52,211,153,0.14);
       --warn:      #F59E0B;
-      --danger:    #F87171;
     }
     * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; height: 100%; }
+    html, body { margin: 0; padding: 0; }
     body {
       background: var(--bg); color: var(--fg);
       font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
-      letter-spacing: -0.01em;
-      overflow: hidden;
-      min-width: 1280px;
+      letter-spacing: -0.01em; min-height: 100vh; min-width: 1280px;
     }
-    button { font-family: inherit; cursor: pointer; }
     a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; }
 
-    /* ============ Top header ============ */
-    .topbar {
-      position: relative; z-index: 50;
-      display: flex; align-items: center; gap: 16px;
-      height: 56px; padding: 0 20px;
-      background: var(--surface); border-bottom: 1px solid var(--line);
-    }
-    .brand { font-weight: 700; font-size: 14px; color: var(--fg); letter-spacing: 0.4px; white-space: nowrap; }
-    .brand .dot { display: inline-block; width: 6px; height: 6px; border-radius: 999px; background: var(--accent); margin: 0 8px 1px; vertical-align: middle; }
-    .topbar__sep { width: 1px; height: 20px; background: var(--line); }
+    .shell { max-width: 1280px; margin: 0 auto; padding: 56px 64px 96px; }
 
-    .page-select {
-      background: var(--bg); color: var(--fg);
-      border: 1px solid var(--line); border-radius: 8px;
-      font-family: inherit; font-size: 13px;
-      padding: 7px 30px 7px 12px; outline: none;
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999' stroke-width='1.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 10px center;
-      cursor: pointer; min-width: 220px;
-    }
-    .page-select:hover { border-color: var(--line-2); }
-    .page-select:focus { border-color: var(--accent); }
-
-    .icon-btn {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 32px; height: 32px;
-      background: transparent; color: var(--fg-mute);
-      border: 1px solid var(--line); border-radius: 8px;
-      transition: all 0.12s ease;
-    }
-    .icon-btn:hover { color: var(--fg); border-color: var(--line-2); background: var(--surface-h); }
-    .icon-btn svg { width: 14px; height: 14px; }
-
-    .mode-btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      height: 32px; padding: 0 14px;
-      background: transparent; color: var(--fg-mute);
-      border: 1px solid var(--line); border-radius: 999px;
-      font-size: 13px; font-weight: 500;
-      transition: all 0.12s ease;
-    }
-    .mode-btn:hover { color: var(--fg); border-color: var(--line-2); }
-    .mode-btn.is-active {
-      background: var(--accent); color: #fff; border-color: var(--accent);
-    }
-    .mode-btn .pulse {
-      width: 6px; height: 6px; border-radius: 999px; background: currentColor;
-      box-shadow: 0 0 0 0 currentColor;
-    }
-    .mode-btn.is-active .pulse {
-      animation: pulse 1.4s infinite;
-    }
-    @keyframes pulse {
-      0%   { box-shadow: 0 0 0 0 rgba(255,255,255,0.6); }
-      70%  { box-shadow: 0 0 0 6px rgba(255,255,255,0); }
-      100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
-    }
-
-    .topbar__spacer { flex: 1; }
-    .topbar__user { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--fg-mute); }
-    .topbar__role {
-      display: inline-block; padding: 2px 8px; border-radius: 999px;
-      font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
-      background: var(--accent-bg); color: var(--accent);
-    }
-    .topbar__role[data-role="super"] { background: rgba(245,158,11,0.16); color: var(--warn); }
-    .topbar__role[data-role="biz"]   { background: rgba(52,211,153,0.16); color: var(--ok); }
-    .topbar__back {
-      font-size: 12px; padding: 6px 12px;
-      border: 1px solid var(--line); border-radius: 999px;
+    .top { display: flex; align-items: center; justify-content: space-between; padding: 0 0 28px; }
+    .top__brand { font-weight: 700; font-size: 14px; color: var(--fg); letter-spacing: 0.4px; }
+    .top__brand .dot { display: inline-block; width: 6px; height: 6px; border-radius: 999px; background: var(--accent); margin: 0 8px 1px; vertical-align: middle; }
+    .top__back {
+      font-size: 12px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px;
       color: var(--fg-mute); transition: all 0.12s ease;
     }
-    .topbar__back:hover { color: var(--fg); border-color: var(--line-2); }
+    .top__back:hover { color: var(--fg); border-color: var(--line-2); }
 
-    /* ============ Layout ============ */
-    .layout {
-      display: grid;
-      grid-template-columns: 1fr 380px;
-      height: calc(100vh - 56px);
-    }
-    @media (min-width: 1680px) {
-      .layout { grid-template-columns: 1fr 420px; }
-    }
+    .hero { padding: 24px 0 36px; max-width: 800px; }
+    .hero__eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: var(--accent); }
+    .hero__title { margin: 12px 0 0; font-size: 36px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.2; }
+    .hero__sub { margin: 14px 0 0; font-size: 14px; color: var(--fg-mute); line-height: 1.7; }
 
-    /* ============ Browser window ============ */
-    .stage {
-      padding: 20px;
-      overflow: hidden;
-      display: flex; flex-direction: column;
-      min-width: 0;
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 8px 0 32px; }
+    .stat {
+      background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+      padding: 16px 18px;
     }
-    .browser {
-      flex: 1; min-height: 0;
-      display: flex; flex-direction: column;
-      background: var(--surface); border: 1px solid var(--line);
-      border-radius: 12px; overflow: hidden;
-      box-shadow: 0 24px 48px -16px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.02);
-    }
-    .browser__chrome {
-      display: flex; align-items: center; gap: 12px;
-      padding: 10px 14px;
-      background: #0B0B12;
+    .stat__label { font-size: 11px; font-weight: 600; color: var(--fg-dim); letter-spacing: 0.6px; text-transform: uppercase; }
+    .stat__value { margin-top: 6px; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+    .stat__value.accent { color: var(--accent); }
+    .stat__value.ok { color: var(--ok); }
+    .stat__value.warn { color: var(--warn); }
+
+    .toolbar {
+      display: flex; align-items: center; gap: 8px; padding: 10px 0 16px;
       border-bottom: 1px solid var(--line);
-      flex-shrink: 0;
     }
-    .traffic { display: inline-flex; gap: 6px; }
-    .traffic span { width: 11px; height: 11px; border-radius: 999px; }
-    .traffic span:nth-child(1) { background: #FF5F57; }
-    .traffic span:nth-child(2) { background: #FEBC2E; }
-    .traffic span:nth-child(3) { background: #28C840; }
-    .urlbar {
-      flex: 1; height: 28px; padding: 0 14px;
-      background: var(--bg); border: 1px solid var(--line);
-      border-radius: 999px;
-      display: inline-flex; align-items: center; gap: 8px;
-      font-family: ui-monospace, "SF Mono", Menlo, monospace;
-      font-size: 11.5px; color: var(--fg-mute);
-      overflow: hidden;
-    }
-    .urlbar .lock { color: var(--ok); flex-shrink: 0; }
-    .urlbar .url { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    .browser__body {
-      flex: 1; min-height: 0;
-      position: relative;
-      background: #fff;
-    }
-    .browser__body iframe {
-      width: 100%; height: 100%; border: 0; display: block;
-    }
-    .browser__body.is-comment-mode iframe {
-      cursor: crosshair;
-    }
-    .browser__overlay-hint {
-      position: absolute; left: 50%; top: 14px;
-      transform: translateX(-50%);
-      pointer-events: none;
-      background: rgba(110,107,255,0.95);
-      color: #fff;
-      padding: 6px 14px; border-radius: 999px;
-      font-size: 12px; font-weight: 600;
-      box-shadow: 0 8px 24px rgba(110,107,255,0.4);
-      opacity: 0; transition: opacity 0.2s ease;
-      z-index: 10;
-    }
-    .browser__body.is-comment-mode .browser__overlay-hint { opacity: 1; }
-
-    .browser__loading {
-      position: absolute; inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      background: rgba(14, 14, 20, 0.6);
-      color: var(--fg-mute); font-size: 13px;
-      pointer-events: none; opacity: 0; transition: opacity 0.15s ease;
-    }
-    .browser__loading.is-on { opacity: 1; }
-
-    /* ============ Sidebar ============ */
-    .sidebar {
-      display: flex; flex-direction: column;
-      background: var(--surface); border-left: 1px solid var(--line);
-      min-height: 0;
-    }
-    .side__head {
-      padding: 18px 20px 14px;
-      border-bottom: 1px solid var(--line);
-      flex-shrink: 0;
-    }
-    .side__title {
-      display: flex; align-items: baseline; gap: 8px;
-      font-size: 14px; font-weight: 700; color: var(--fg);
-      margin: 0 0 12px;
-    }
-    .side__title .count {
-      font-size: 12px; font-weight: 600; color: var(--fg-mute);
-      padding: 2px 8px; border-radius: 999px;
-      background: var(--bg); border: 1px solid var(--line);
-    }
-    .side__filters { display: flex; flex-wrap: wrap; gap: 6px; }
     .chip {
       display: inline-flex; align-items: center; gap: 6px;
-      padding: 5px 10px;
+      padding: 6px 12px;
       background: transparent; border: 1px solid var(--line);
       border-radius: 999px;
-      font-size: 12px; color: var(--fg-mute);
+      font-size: 12.5px; color: var(--fg-mute);
       transition: all 0.12s ease;
     }
     .chip:hover { color: var(--fg); border-color: var(--line-2); }
-    .chip.is-active {
-      background: var(--accent-bg); color: var(--accent); border-color: var(--accent);
-    }
-    .chip .num { font-size: 11px; font-weight: 600; opacity: 0.7; }
+    .chip.is-active { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
+    .chip .num { font-size: 11px; font-weight: 700; opacity: 0.7; }
+    .toolbar__spacer { flex: 1; }
+    .toolbar__hint { font-size: 11.5px; color: var(--fg-dim); }
 
-    .side__list {
-      flex: 1; min-height: 0;
-      overflow-y: auto;
-      padding: 12px;
+    .group { margin-top: 28px; }
+    .group__head {
+      display: flex; align-items: baseline; gap: 10px;
+      padding: 0 4px 12px;
+      border-bottom: 1px solid var(--line);
     }
-    .side__list::-webkit-scrollbar { width: 6px; }
-    .side__list::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 999px; }
-
-    .side__empty {
-      padding: 60px 20px; text-align: center;
-      color: var(--fg-dim); font-size: 13px; line-height: 1.7;
+    .group__title { font-size: 14px; font-weight: 700; color: var(--fg); }
+    .group__path {
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 11px; color: var(--fg-dim);
     }
-    .side__empty .em {
-      font-size: 32px; margin-bottom: 12px; opacity: 0.6;
-    }
-
-    /* ============ Comment card ============ */
-    .cmt {
+    .group__count {
+      margin-left: auto;
+      padding: 2px 8px; border-radius: 999px;
       background: var(--bg); border: 1px solid var(--line);
-      border-radius: 10px; padding: 14px;
-      margin-bottom: 8px;
-      transition: border-color 0.12s ease, transform 0.12s ease;
+      font-size: 11px; font-weight: 600; color: var(--fg-mute);
+    }
+    .group__open {
+      font-size: 11.5px; color: var(--fg-mute);
+      padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px;
+      transition: all 0.12s ease;
+    }
+    .group__open:hover { color: var(--fg); border-color: var(--line-2); }
+
+    .cmt-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px 0; }
+
+    .cmt {
+      display: block;
+      padding: 14px 16px;
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: 10px;
+      transition: border-color 0.12s ease, background 0.12s ease;
       cursor: pointer;
     }
-    .cmt:hover { border-color: var(--line-2); }
-    .cmt.is-active {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 1px var(--accent);
-    }
-    .cmt.is-resolved { opacity: 0.55; }
-    .cmt.is-other-page { opacity: 0.55; }
-
+    .cmt:hover { background: var(--surface-h); border-color: var(--line-2); }
+    .cmt.is-resolved { opacity: 0.6; }
     .cmt__head {
       display: flex; align-items: center; gap: 8px;
       margin-bottom: 6px;
@@ -276,26 +128,22 @@
     .cmt.is-resolved .cmt__num { background: var(--ok); }
     .cmt__target {
       flex: 1; min-width: 0;
-      font-size: 11px; color: var(--fg-dim);
       font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 11px; color: var(--fg-dim);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .cmt__status {
+      flex-shrink: 0;
       font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
       padding: 2px 6px; border-radius: 4px;
       background: var(--accent-bg); color: var(--accent);
-      flex-shrink: 0;
     }
     .cmt.is-resolved .cmt__status { background: var(--ok-bg); color: var(--ok); }
-
-    .cmt__page {
-      font-size: 10.5px; color: var(--fg-dim);
-      margin-bottom: 6px;
-      font-family: ui-monospace, "SF Mono", Menlo, monospace;
-    }
     .cmt__body {
       font-size: 13px; color: var(--fg); line-height: 1.55;
       white-space: pre-wrap; word-break: break-word;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden;
     }
     .cmt__meta {
       margin-top: 8px;
@@ -304,963 +152,91 @@
     }
     .cmt__meta .author { color: var(--fg-mute); }
     .cmt__replies {
-      margin-top: 4px; font-size: 11px; color: var(--accent);
+      margin-left: 4px; color: var(--accent);
       display: inline-flex; align-items: center; gap: 4px;
     }
 
-    /* ============ Popover (compose / thread) ============ */
-    .popover {
-      position: fixed; z-index: 100;
-      background: var(--surface);
-      border: 1px solid var(--line-2);
-      border-radius: 12px;
-      box-shadow: 0 20px 48px rgba(0,0,0,0.5);
-      width: 360px;
-      display: none;
-      flex-direction: column;
-      overflow: hidden;
+    .empty {
+      padding: 96px 24px; text-align: center;
+      color: var(--fg-dim); font-size: 14px; line-height: 1.7;
+      border: 1px dashed var(--line); border-radius: 12px;
+      margin-top: 16px;
     }
-    .popover.is-open { display: flex; }
-    .popover__head {
-      padding: 12px 14px;
-      border-bottom: 1px solid var(--line);
-      display: flex; align-items: center; gap: 10px;
-    }
-    .popover__num {
-      width: 22px; height: 22px;
-      display: inline-flex; align-items: center; justify-content: center;
-      background: var(--accent); color: #fff;
-      border-radius: 999px;
-      font-size: 11px; font-weight: 700;
-    }
-    .popover__target {
-      flex: 1; min-width: 0;
-      font-size: 11px; color: var(--fg-mute);
-      font-family: ui-monospace, "SF Mono", Menlo, monospace;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .popover__close {
-      background: transparent; color: var(--fg-mute); border: 0;
-      width: 24px; height: 24px; border-radius: 6px;
-      display: inline-flex; align-items: center; justify-content: center;
-    }
-    .popover__close:hover { color: var(--fg); background: var(--surface-h); }
+    .empty .em { font-size: 36px; margin-bottom: 12px; opacity: 0.6; }
+    .empty a { color: var(--accent); }
 
-    .popover__thread {
-      max-height: 280px; overflow-y: auto;
-      padding: 8px 14px;
-    }
-    .popover__thread::-webkit-scrollbar { width: 6px; }
-    .popover__thread::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 999px; }
-    .reply {
-      padding: 10px 0;
-      border-bottom: 1px solid var(--line);
-    }
-    .reply:last-child { border-bottom: 0; }
-    .reply__meta {
-      display: flex; align-items: center; gap: 8px;
-      font-size: 11px; color: var(--fg-dim);
-      margin-bottom: 4px;
-    }
-    .reply__author { color: var(--fg-mute); font-weight: 600; }
-    .reply__body {
-      font-size: 13px; color: var(--fg); line-height: 1.55;
-      white-space: pre-wrap; word-break: break-word;
-    }
-    .reply__del {
-      margin-left: auto; font-size: 10.5px; color: var(--fg-dim);
-      background: transparent; border: 0; padding: 2px 4px;
-    }
-    .reply__del:hover { color: var(--danger); }
-
-    .popover__compose {
-      padding: 10px 14px 14px;
+    .footer {
+      margin-top: 56px; padding: 18px 4px 0;
       border-top: 1px solid var(--line);
-      background: var(--surface-h);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 11.5px; color: var(--fg-dim);
     }
-    .popover__compose textarea {
-      width: 100%;
-      background: var(--bg); border: 1px solid var(--line);
-      border-radius: 8px; color: var(--fg);
-      font-family: inherit; font-size: 13px; line-height: 1.55;
-      padding: 10px 12px;
-      resize: none;
-      outline: none;
-      min-height: 76px;
-      transition: border-color 0.12s ease;
-    }
-    .popover__compose textarea:focus { border-color: var(--accent); }
-    .popover__compose textarea::placeholder { color: var(--fg-dim); }
-    .popover__actions {
-      display: flex; align-items: center; gap: 8px;
-      margin-top: 8px;
-    }
-    .popover__hint {
-      flex: 1; font-size: 11px; color: var(--fg-dim);
-    }
-    .btn {
-      height: 30px; padding: 0 14px;
-      border: 0; border-radius: 6px;
-      font-family: inherit; font-size: 12.5px; font-weight: 600;
-      transition: all 0.12s ease;
-    }
-    .btn--ghost { background: transparent; color: var(--fg-mute); border: 1px solid var(--line); }
-    .btn--ghost:hover { color: var(--fg); border-color: var(--line-2); }
-    .btn--primary { background: var(--accent); color: #fff; }
-    .btn--primary:hover { background: var(--accent-2); }
-    .btn--primary:disabled { opacity: 0.4; cursor: not-allowed; background: var(--accent); }
-    .btn--ok { background: var(--ok); color: #062b21; }
-    .btn--ok:hover { background: #2bc78c; }
-
-    .popover__foot {
-      padding: 8px 14px;
-      border-top: 1px solid var(--line);
-      display: flex; align-items: center; gap: 8px;
-      font-size: 11px;
-    }
-    .popover__foot .meta { color: var(--fg-dim); flex: 1; }
-    .popover__foot button { background: transparent; border: 0; color: var(--fg-mute); padding: 4px 6px; font-size: 11px; }
-    .popover__foot button:hover { color: var(--fg); }
-    .popover__foot button.danger:hover { color: var(--danger); }
-
-    /* ============ Toast ============ */
-    .toast {
-      position: fixed; left: 50%; bottom: 32px;
-      transform: translateX(-50%) translateY(20px);
-      z-index: 200;
-      background: var(--surface); color: var(--fg);
-      border: 1px solid var(--line-2); border-radius: 8px;
-      padding: 10px 16px;
-      font-size: 13px;
-      box-shadow: 0 12px 32px rgba(0,0,0,0.5);
-      opacity: 0; pointer-events: none;
-      transition: all 0.2s ease;
-    }
-    .toast.is-on {
-      opacity: 1; transform: translateX(-50%) translateY(0);
-    }
+    .footer a { color: var(--fg-dim); }
+    .footer a:hover { color: var(--fg-mute); }
   </style>
 </head>
 <body>
+  <div class="shell">
+    <header class="top">
+      <span class="top__brand">SCM HUB<span class="dot"></span>VOC 코멘트 대시보드</span>
+      <a class="top__back" href="/index.html">← Workspace</a>
+    </header>
 
-  <header class="topbar">
-    <span class="brand">SCM HUB<span class="dot"></span>협업 VOC</span>
-    <span class="topbar__sep"></span>
-    <select class="page-select" id="pageSelect"></select>
-    <button class="icon-btn" id="reloadBtn" title="새로고침">
-      <svg viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 0 1 15.3-6.4L21 8M21 4v4h-4M21 12a9 9 0 0 1-15.3 6.4L3 16M3 20v-4h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
-    <span class="topbar__sep"></span>
-    <button class="mode-btn" id="modeBtn">
-      <span class="pulse"></span>
-      <span id="modeLabel">코멘트 모드</span>
-    </button>
-
-    <span class="topbar__spacer"></span>
-
-    <span class="topbar__user">
-      <span id="userName">—</span>
-      <span class="topbar__role" id="userRole" style="display:none;">—</span>
-    </span>
-    <a class="topbar__back" href="/index.html">← Workspace</a>
-  </header>
-
-  <div class="layout">
-    <section class="stage">
-      <div class="browser" id="browser">
-        <div class="browser__chrome">
-          <span class="traffic"><span></span><span></span><span></span></span>
-          <span class="urlbar">
-            <svg class="lock" width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M6 11V8a6 6 0 0 1 12 0v3M5 11h14v10H5V11z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <span class="url" id="urlText">/demo/dashboard.html</span>
-          </span>
-        </div>
-        <div class="browser__body" id="browserBody">
-          <div class="browser__overlay-hint">💬 코멘트 모드 — 의견을 남길 컴포넌트를 클릭하세요</div>
-          <div class="browser__loading" id="browserLoading">불러오는 중…</div>
-          <iframe id="demoFrame" src="about:blank"></iframe>
-        </div>
-      </div>
+    <section class="hero">
+      <span class="hero__eyebrow">Voice of Customer</span>
+      <h1 class="hero__title">데모 위에 남긴 코멘트, 한곳에서</h1>
+      <p class="hero__sub">각 데모 페이지의 우하단 <b>💬 코멘트</b> 버튼을 눌러 화면 위에 직접 의견을 남겨주세요. 여기서는 모든 페이지의 코멘트를 모아보고, 항목을 클릭하면 해당 페이지로 이동해 핀이 자동으로 열립니다.</p>
     </section>
 
-    <aside class="sidebar">
-      <div class="side__head">
-        <h3 class="side__title">코멘트 <span class="count" id="cmtCount">0</span></h3>
-        <div class="side__filters" id="filters">
-          <button class="chip is-active" data-filter="page">이 페이지 <span class="num" id="cntPage">0</span></button>
-          <button class="chip" data-filter="open">미해결 <span class="num" id="cntOpen">0</span></button>
-          <button class="chip" data-filter="resolved">해결됨 <span class="num" id="cntResolved">0</span></button>
-          <button class="chip" data-filter="all">전체 <span class="num" id="cntAll">0</span></button>
-        </div>
-      </div>
-      <div class="side__list" id="cmtList"></div>
-    </aside>
-  </div>
+    <div class="stats">
+      <div class="stat"><div class="stat__label">전체</div><div class="stat__value" id="stAll">0</div></div>
+      <div class="stat"><div class="stat__label">미해결</div><div class="stat__value accent" id="stOpen">0</div></div>
+      <div class="stat"><div class="stat__label">해결됨</div><div class="stat__value ok" id="stResolved">0</div></div>
+      <div class="stat"><div class="stat__label">참여 페이지</div><div class="stat__value warn" id="stPages">0</div></div>
+    </div>
 
-  <!-- Compose / Thread popover -->
-  <div class="popover" id="popover">
-    <div class="popover__head">
-      <span class="popover__num" id="popNum">+</span>
-      <span class="popover__target" id="popTarget">새 코멘트</span>
-      <button class="popover__close" id="popClose" title="닫기">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </button>
+    <div class="toolbar">
+      <button class="chip is-active" data-filter="open">미해결 <span class="num" id="cntOpen">0</span></button>
+      <button class="chip" data-filter="resolved">해결됨 <span class="num" id="cntResolved">0</span></button>
+      <button class="chip" data-filter="all">전체 <span class="num" id="cntAll">0</span></button>
+      <span class="toolbar__spacer"></span>
+      <span class="toolbar__hint">항목 클릭 → 데모 페이지에서 핀이 자동으로 열림</span>
     </div>
-    <div class="popover__thread" id="popThread"></div>
-    <div class="popover__compose">
-      <textarea id="popInput" placeholder="이 컴포넌트에 대한 의견을 남겨주세요…"></textarea>
-      <div class="popover__actions">
-        <span class="popover__hint">⌘/Ctrl + Enter 전송</span>
-        <button class="btn btn--ghost" id="popCancel">취소</button>
-        <button class="btn btn--primary" id="popSubmit">등록</button>
-      </div>
-    </div>
-    <div class="popover__foot" id="popFoot" style="display:none;">
-      <span class="meta" id="popMeta"></span>
-      <button id="popResolve">✓ 해결됨으로 표시</button>
-      <button class="danger" id="popDelete">삭제</button>
-    </div>
-  </div>
 
-  <div class="toast" id="toast"></div>
+    <div id="groups"></div>
+
+    <footer class="footer">
+      <span>SCM HUB · VOC</span>
+      <span><a href="./feedback.html">기존 폼 보기</a></span>
+    </footer>
+  </div>
 
   <script>
   (function () {
     'use strict';
-
-    // ====================================================
-    // Demo pages — 페이지 셀렉터 옵션
-    // ====================================================
-    const PAGES = [
-      { path: '/demo/dashboard.html',                label: '대시보드' },
-      { path: '/demo/sku-management.html',           label: 'SKU 관리' },
-      { path: '/demo/sku-detail.html',               label: 'SKU 상세' },
-      { path: '/demo/sku-register.html',             label: 'SKU 등록' },
-      { path: '/demo/editshop-restock-request.html', label: '편집샵 보충 요청' },
-      { path: '/demo/editshop-restock-status.html',  label: '편집샵 보충 현황' },
-      { path: '/demo/index.html',                    label: '무탠 전개상품 관리' },
-    ];
     const STORAGE_KEY = 'scm:voc:comments:v1';
-
-    // ====================================================
-    // State
-    // ====================================================
-    const state = {
-      comments: load(),
-      mode: 'browse',           // 'browse' | 'comment'
-      filter: 'page',           // 'page' | 'open' | 'resolved' | 'all'
-      currentPage: PAGES[0].path,
-      pendingPin: null,         // { page, x, y, selector, elementText, viewportX, viewportY }
-      activeCommentId: null,
-      user: { email: 'guest@local', name: '게스트', role: null },
+    const PAGE_LABELS = {
+      '/demo/dashboard.html':                '대시보드',
+      '/demo/sku-management.html':           'SKU 관리',
+      '/demo/sku-detail.html':               'SKU 상세',
+      '/demo/sku-register.html':             'SKU 등록',
+      '/demo/editshop-restock-request.html': '편집샵 보충 요청',
+      '/demo/editshop-restock-status.html':  '편집샵 보충 현황',
+      '/demo/index.html':                    '무탠 전개상품 관리',
     };
 
-    function load() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return [];
-        const arr = JSON.parse(raw);
-        return Array.isArray(arr) ? arr : [];
-      } catch { return []; }
-    }
-    function save() {
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.comments)); }
-      catch (e) { console.warn('voc: save failed', e); }
-    }
-    function uid(p) { return p + '_' + Math.random().toString(36).slice(2, 10); }
-    function now() { return Date.now(); }
-
-    // ====================================================
-    // DOM refs
-    // ====================================================
     const $ = (s) => document.querySelector(s);
-    const pageSelect = $('#pageSelect');
-    const reloadBtn = $('#reloadBtn');
-    const modeBtn = $('#modeBtn');
-    const modeLabel = $('#modeLabel');
-    const browserBody = $('#browserBody');
-    const browserLoading = $('#browserLoading');
-    const iframe = $('#demoFrame');
-    const urlText = $('#urlText');
-    const cmtList = $('#cmtList');
-    const cmtCount = $('#cmtCount');
-    const filters = $('#filters');
-    const popover = $('#popover');
-    const popNum = $('#popNum');
-    const popTarget = $('#popTarget');
-    const popThread = $('#popThread');
-    const popInput = $('#popInput');
-    const popSubmit = $('#popSubmit');
-    const popCancel = $('#popCancel');
-    const popClose = $('#popClose');
-    const popFoot = $('#popFoot');
-    const popMeta = $('#popMeta');
-    const popResolve = $('#popResolve');
-    const popDelete = $('#popDelete');
-    const toast = $('#toast');
+    let comments = load();
+    let filter = 'open';
 
-    // ====================================================
-    // Init
-    // ====================================================
-    function init() {
-      // page selector
-      pageSelect.innerHTML = PAGES
-        .map((p) => `<option value="${p.path}">${p.label}</option>`)
-        .join('');
-      pageSelect.value = state.currentPage;
-      urlText.textContent = state.currentPage;
-      iframe.src = state.currentPage;
-
-      // events
-      pageSelect.addEventListener('change', () => {
-        state.currentPage = pageSelect.value;
-        urlText.textContent = state.currentPage;
-        showLoading(true);
-        iframe.src = state.currentPage;
-        closePopover();
-      });
-      reloadBtn.addEventListener('click', () => {
-        showLoading(true);
-        iframe.contentWindow && iframe.contentWindow.location.reload();
-      });
-      modeBtn.addEventListener('click', toggleMode);
-      iframe.addEventListener('load', onIframeLoad);
-      filters.addEventListener('click', onFilterClick);
-
-      // popover
-      popClose.addEventListener('click', closePopover);
-      popCancel.addEventListener('click', closePopover);
-      popSubmit.addEventListener('click', onPopoverSubmit);
-      popInput.addEventListener('keydown', (e) => {
-        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-          e.preventDefault();
-          onPopoverSubmit();
-        }
-      });
-      popResolve.addEventListener('click', onResolveToggle);
-      popDelete.addEventListener('click', onDelete);
-
-      // close popover on outside click
-      document.addEventListener('mousedown', (e) => {
-        if (!popover.classList.contains('is-open')) return;
-        if (popover.contains(e.target)) return;
-        // clicks inside iframe handled by iframe listeners; ignore here
-        closePopover();
-      });
-
-      // ESC to exit modes / close popover
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-          if (popover.classList.contains('is-open')) closePopover();
-          else if (state.mode === 'comment') setMode('browse');
-        }
-      });
-
-      // auth
-      document.addEventListener('scm:auth-ready', (e) => {
-        const u = e.detail && e.detail.user;
-        if (!u) return;
-        state.user = { email: u.email, name: u.name || u.email, role: u.role };
-        $('#userName').textContent = u.name || u.email;
-        const roleEl = $('#userRole');
-        roleEl.textContent = u.role;
-        roleEl.dataset.role = u.role;
-        roleEl.style.display = '';
-      });
-
-      renderList();
-      showLoading(true);
+    function load() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+      catch { return []; }
     }
-
-    // ====================================================
-    // Mode (browse / comment)
-    // ====================================================
-    function toggleMode() {
-      setMode(state.mode === 'comment' ? 'browse' : 'comment');
-    }
-    function setMode(m) {
-      state.mode = m;
-      modeBtn.classList.toggle('is-active', m === 'comment');
-      modeLabel.textContent = m === 'comment' ? '코멘트 모드 ON' : '코멘트 모드';
-      browserBody.classList.toggle('is-comment-mode', m === 'comment');
-      const doc = getIframeDoc();
-      if (doc && doc.body) {
-        doc.body.classList.toggle('scm-voc-mode-active', m === 'comment');
-      }
-    }
-
-    // ====================================================
-    // Iframe lifecycle
-    // ====================================================
-    function getIframeDoc() {
-      try { return iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document); }
-      catch { return null; }
-    }
-
-    function onIframeLoad() {
-      showLoading(false);
-      const doc = getIframeDoc();
-      if (!doc) return;
-      try {
-        // sync state.currentPage with iframe URL (handles internal navigation)
-        const path = iframe.contentWindow.location.pathname;
-        if (path && path !== 'about:blank') {
-          state.currentPage = path;
-          urlText.textContent = path;
-          // if matches a known page, sync select
-          if (PAGES.some((p) => p.path === path)) pageSelect.value = path;
-        }
-      } catch {}
-      injectIntoIframe(doc);
-      renderPins();
-      renderList();
-      // re-apply mode class
-      if (state.mode === 'comment') doc.body && doc.body.classList.add('scm-voc-mode-active');
-    }
-
-    function injectIntoIframe(doc) {
-      if (doc.querySelector('#scm-voc-style')) return; // already injected
-      const style = doc.createElement('style');
-      style.id = 'scm-voc-style';
-      style.textContent = `
-        body.scm-voc-mode-active, body.scm-voc-mode-active * {
-          cursor: crosshair !important;
-        }
-        .scm-voc-hover {
-          outline: 2px dashed #6E6BFF !important;
-          outline-offset: 2px;
-          background-color: rgba(110, 107, 255, 0.06) !important;
-        }
-        .scm-voc-pin-layer {
-          position: absolute; top: 0; left: 0;
-          width: 0; height: 0;
-          pointer-events: none;
-          z-index: 2147483646;
-        }
-        .scm-voc-pin {
-          position: absolute;
-          width: 28px; height: 28px;
-          margin-left: -14px; margin-top: -28px;
-          background: #6E6BFF; color: #fff;
-          border-radius: 999px 999px 999px 0;
-          display: flex; align-items: center; justify-content: center;
-          font-size: 12px; font-weight: 700;
-          font-family: -apple-system, BlinkMacSystemFont, 'Pretendard Variable', Pretendard, sans-serif;
-          cursor: pointer;
-          pointer-events: auto;
-          box-shadow: 0 4px 12px rgba(110, 107, 255, 0.55), 0 0 0 3px #fff;
-          transition: transform 0.12s ease, box-shadow 0.12s ease;
-          user-select: none;
-        }
-        .scm-voc-pin:hover { transform: scale(1.12) rotate(-4deg); }
-        .scm-voc-pin.is-resolved {
-          background: #34D399;
-          box-shadow: 0 4px 12px rgba(52, 211, 153, 0.4), 0 0 0 3px #fff;
-        }
-        .scm-voc-pin.is-active {
-          transform: scale(1.18);
-          box-shadow: 0 0 0 3px #fff, 0 0 0 6px #6E6BFF, 0 8px 20px rgba(110,107,255,0.6);
-        }
-      `;
-      doc.head.appendChild(style);
-
-      // Pin layer
-      const layer = doc.createElement('div');
-      layer.className = 'scm-voc-pin-layer';
-      layer.id = 'scm-voc-pin-layer';
-      doc.body.appendChild(layer);
-
-      // Click capture (capture phase, runs before page handlers)
-      doc.addEventListener('click', onIframeClickCapture, true);
-      // Block other interactions in comment mode (mousedown can trigger drag etc)
-      doc.addEventListener('mousedown', (e) => {
-        if (state.mode !== 'comment') return;
-        if (e.target.closest && e.target.closest('.scm-voc-pin')) return;
-        e.preventDefault();
-        e.stopPropagation();
-      }, true);
-      // Hover highlight — single deepest element only
-      let hoverEl = null;
-      const clearHover = () => {
-        if (hoverEl) { hoverEl.classList.remove('scm-voc-hover'); hoverEl = null; }
-      };
-      doc.addEventListener('mouseover', (e) => {
-        if (state.mode !== 'comment') { clearHover(); return; }
-        if (e.target.closest && e.target.closest('.scm-voc-pin')) { clearHover(); return; }
-        if (hoverEl === e.target) return;
-        clearHover();
-        if (e.target && e.target.classList) {
-          e.target.classList.add('scm-voc-hover');
-          hoverEl = e.target;
-        }
-      }, true);
-      doc.addEventListener('mouseout', (e) => {
-        if (e.target === hoverEl) clearHover();
-      }, true);
-      doc.addEventListener('submit', (e) => {
-        if (state.mode === 'comment') { e.preventDefault(); e.stopPropagation(); }
-      }, true);
-
-      // Pin click delegated
-      doc.addEventListener('click', (e) => {
-        const pinEl = e.target.closest && e.target.closest('.scm-voc-pin');
-        if (!pinEl) return;
-        e.preventDefault();
-        e.stopPropagation();
-        const id = pinEl.dataset.cmtId;
-        const c = state.comments.find((x) => x.id === id);
-        if (c) openThreadPopover(c, pinEl);
-      });
-
-      // scroll → reposition popover if open
-      iframe.contentWindow.addEventListener('scroll', () => {
-        if (popover.classList.contains('is-open') && state.activeCommentId) {
-          const c = state.comments.find((x) => x.id === state.activeCommentId);
-          if (c) {
-            const pin = doc.querySelector(`.scm-voc-pin[data-cmt-id="${c.id}"]`);
-            if (pin) positionPopover(pin);
-          }
-        } else if (popover.classList.contains('is-open') && state.pendingPin) {
-          positionPopoverAtPending();
-        }
-      }, true);
-
-      iframe.contentWindow.addEventListener('resize', () => renderPins());
-    }
-
-    function showLoading(on) {
-      browserLoading.classList.toggle('is-on', !!on);
-    }
-
-    // ====================================================
-    // Iframe click → start comment
-    // ====================================================
-    function onIframeClickCapture(e) {
-      if (state.mode !== 'comment') return;
-      // skip clicks on pins (handled elsewhere)
-      if (e.target.closest && e.target.closest('.scm-voc-pin')) return;
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation && e.stopImmediatePropagation();
-
-      const doc = getIframeDoc();
-      if (!doc) return;
-      const target = e.target;
-      // strip our hover class before computing selector
-      target.classList && target.classList.remove('scm-voc-hover');
-      const docX = e.clientX + (doc.documentElement.scrollLeft || doc.body.scrollLeft || 0);
-      const docY = e.clientY + (doc.documentElement.scrollTop  || doc.body.scrollTop  || 0);
-
-      state.pendingPin = {
-        page: state.currentPage,
-        x: Math.round(docX),
-        y: Math.round(docY),
-        viewportX: e.clientX,
-        viewportY: e.clientY,
-        selector: cssPath(target),
-        elementText: ((target.innerText || target.textContent || '') + '').trim().slice(0, 80),
-        elementTag: target.tagName,
-      };
-
-      openComposePopover();
-    }
-
-    function cssPath(el) {
-      if (!el || el.nodeType !== 1) return '';
-      if (el === document.body) return 'body';
-      const path = [];
-      let cur = el, depth = 0;
-      while (cur && cur.nodeType === 1 && depth < 5) {
-        let part = cur.nodeName.toLowerCase();
-        if (cur.id) {
-          part = '#' + cssEscape(cur.id);
-          path.unshift(part);
-          break;
-        }
-        const cls = (cur.className && typeof cur.className === 'string')
-          ? cur.className.trim().split(/\s+/).filter(Boolean).filter((x) => !x.startsWith('scm-voc-')).slice(0, 2)
-          : [];
-        if (cls.length) part += '.' + cls.map(cssEscape).join('.');
-        let nth = 1, sib = cur;
-        while ((sib = sib.previousElementSibling)) {
-          if (sib.nodeName === cur.nodeName) nth++;
-        }
-        if (nth > 1) part += `:nth-of-type(${nth})`;
-        path.unshift(part);
-        cur = cur.parentElement;
-        depth++;
-      }
-      return path.join(' > ');
-    }
-    function cssEscape(s) {
-      if (window.CSS && CSS.escape) return CSS.escape(s);
-      return String(s).replace(/[^a-zA-Z0-9_-]/g, '\\$&');
-    }
-
-    // ====================================================
-    // Popover — compose new comment
-    // ====================================================
-    function openComposePopover() {
-      state.activeCommentId = null;
-      popNum.textContent = '+';
-      popTarget.textContent = formatTarget(state.pendingPin);
-      popThread.innerHTML = '';
-      popInput.value = '';
-      popInput.placeholder = '이 컴포넌트에 대한 의견을 남겨주세요…';
-      popSubmit.textContent = '등록';
-      popFoot.style.display = 'none';
-      popover.classList.add('is-open');
-      positionPopoverAtPending();
-      requestAnimationFrame(() => popInput.focus());
-    }
-
-    function openThreadPopover(comment, pinEl) {
-      state.activeCommentId = comment.id;
-      state.pendingPin = null;
-      const idx = indexOfInPage(comment);
-      popNum.textContent = String(idx);
-      popTarget.textContent = formatTarget(comment);
-      popThread.innerHTML = comment.thread.map((r) => renderReplyHTML(r, comment)).join('');
-      popInput.value = '';
-      popInput.placeholder = '답글…';
-      popSubmit.textContent = '답글';
-      popFoot.style.display = '';
-      popMeta.textContent = comment.status === 'resolved'
-        ? '✓ 해결됨'
-        : `${comment.thread.length}개 코멘트 · ${comment.page}`;
-      popResolve.textContent = comment.status === 'resolved' ? '↩ 미해결로 되돌리기' : '✓ 해결됨으로 표시';
-
-      // bind reply delete
-      popThread.querySelectorAll('[data-del-reply]').forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const rid = btn.dataset.delReply;
-          const c = state.comments.find((x) => x.id === comment.id);
-          if (!c) return;
-          if (c.thread.length === 1) {
-            // delete entire comment
-            if (!confirm('마지막 코멘트입니다. 핀 전체를 삭제할까요?')) return;
-            state.comments = state.comments.filter((x) => x.id !== c.id);
-            save();
-            renderPins(); renderList();
-            closePopover();
-            showToast('핀 삭제됨');
-            return;
-          }
-          c.thread = c.thread.filter((r) => r.id !== rid);
-          save();
-          openThreadPopover(c); // refresh
-          renderList();
-        });
-      });
-
-      popover.classList.add('is-open');
-      const doc = getIframeDoc();
-      const pin = pinEl || (doc && doc.querySelector(`.scm-voc-pin[data-cmt-id="${comment.id}"]`));
-      if (pin) positionPopover(pin);
-      requestAnimationFrame(() => popInput.focus());
-      highlightActivePin();
-    }
-
-    function renderReplyHTML(r, comment) {
-      const time = relTime(r.createdAt);
-      const canDel = r.author === state.user.email;
-      return `
-        <div class="reply">
-          <div class="reply__meta">
-            <span class="reply__author">${escapeHtml(r.author || '익명')}</span>
-            <span>·</span>
-            <span>${time}</span>
-            ${canDel ? `<button class="reply__del" data-del-reply="${r.id}" title="삭제">삭제</button>` : ''}
-          </div>
-          <div class="reply__body">${escapeHtml(r.text)}</div>
-        </div>
-      `;
-    }
-
-    function closePopover() {
-      popover.classList.remove('is-open');
-      state.pendingPin = null;
-      state.activeCommentId = null;
-      highlightActivePin();
-    }
-
-    function positionPopoverAtPending() {
-      if (!state.pendingPin) return;
-      const iframeRect = iframe.getBoundingClientRect();
-      const px = iframeRect.left + state.pendingPin.viewportX;
-      const py = iframeRect.top + state.pendingPin.viewportY;
-      placePopover(px, py);
-    }
-    function positionPopover(pinEl) {
-      const iframeRect = iframe.getBoundingClientRect();
-      const pinRect = pinEl.getBoundingClientRect(); // viewport coords inside iframe
-      const px = iframeRect.left + pinRect.left + pinRect.width / 2;
-      const py = iframeRect.top + pinRect.top + pinRect.height / 2;
-      placePopover(px, py);
-    }
-    function placePopover(px, py) {
-      const w = popover.offsetWidth || 360;
-      const h = popover.offsetHeight || 240;
-      const margin = 12;
-      let left = px + 18;
-      let top = py + 12;
-      if (left + w + margin > window.innerWidth)  left = px - w - 18;
-      if (left < margin) left = margin;
-      if (top + h + margin > window.innerHeight)  top = window.innerHeight - h - margin;
-      if (top < margin) top = margin;
-      popover.style.left = left + 'px';
-      popover.style.top  = top  + 'px';
-    }
-
-    // ====================================================
-    // Submit (new or reply)
-    // ====================================================
-    function onPopoverSubmit() {
-      const text = popInput.value.trim();
-      if (!text) { popInput.focus(); return; }
-
-      if (state.activeCommentId) {
-        // reply
-        const c = state.comments.find((x) => x.id === state.activeCommentId);
-        if (!c) return;
-        c.thread.push({
-          id: uid('r'),
-          author: state.user.email,
-          text,
-          createdAt: now(),
-        });
-        save();
-        openThreadPopover(c);
-        renderList();
-        showToast('답글 등록');
-      } else if (state.pendingPin) {
-        const p = state.pendingPin;
-        const c = {
-          id: uid('c'),
-          page: p.page,
-          x: p.x, y: p.y,
-          selector: p.selector,
-          elementText: p.elementText,
-          elementTag: p.elementTag,
-          status: 'open',
-          createdAt: now(),
-          author: state.user.email,
-          thread: [{
-            id: uid('r'),
-            author: state.user.email,
-            text,
-            createdAt: now(),
-          }],
-        };
-        state.comments.push(c);
-        save();
-        renderPins();
-        renderList();
-        showToast('코멘트 등록 — 핀이 추가되었습니다');
-        // exit comment mode after first comment for convenience? keep on for now
-        closePopover();
-      }
-    }
-
-    function onResolveToggle() {
-      const c = state.comments.find((x) => x.id === state.activeCommentId);
-      if (!c) return;
-      c.status = c.status === 'resolved' ? 'open' : 'resolved';
-      save();
-      renderPins();
-      renderList();
-      openThreadPopover(c);
-      showToast(c.status === 'resolved' ? '해결됨으로 표시' : '미해결로 되돌림');
-    }
-    function onDelete() {
-      const c = state.comments.find((x) => x.id === state.activeCommentId);
-      if (!c) return;
-      if (!confirm('이 핀과 모든 코멘트를 삭제할까요?')) return;
-      state.comments = state.comments.filter((x) => x.id !== c.id);
-      save();
-      renderPins();
-      renderList();
-      closePopover();
-      showToast('핀 삭제됨');
-    }
-
-    // ====================================================
-    // Render — pins inside iframe
-    // ====================================================
-    function renderPins() {
-      const doc = getIframeDoc();
-      if (!doc) return;
-      const layer = doc.querySelector('#scm-voc-pin-layer');
-      if (!layer) return;
-      const pagePath = state.currentPage;
-      const pins = state.comments.filter((c) => c.page === pagePath);
-
-      // index pins per page (1-based) by createdAt
-      const sorted = [...pins].sort((a, b) => a.createdAt - b.createdAt);
-      const idxMap = new Map();
-      sorted.forEach((c, i) => idxMap.set(c.id, i + 1));
-
-      layer.innerHTML = pins.map((c) => {
-        const n = idxMap.get(c.id);
-        const cls = ['scm-voc-pin'];
-        if (c.status === 'resolved') cls.push('is-resolved');
-        if (c.id === state.activeCommentId) cls.push('is-active');
-        return `<div class="${cls.join(' ')}" data-cmt-id="${c.id}" style="left:${c.x}px; top:${c.y}px;">${n}</div>`;
-      }).join('');
-    }
-
-    function highlightActivePin() {
-      const doc = getIframeDoc();
-      if (!doc) return;
-      doc.querySelectorAll('.scm-voc-pin').forEach((el) => {
-        el.classList.toggle('is-active', el.dataset.cmtId === state.activeCommentId);
-      });
-    }
-
-    // ====================================================
-    // Render — comment list (sidebar)
-    // ====================================================
-    function renderList() {
-      const all = state.comments;
-      const onPage  = all.filter((c) => c.page === state.currentPage);
-      const open    = all.filter((c) => c.status !== 'resolved');
-      const done    = all.filter((c) => c.status === 'resolved');
-
-      $('#cntAll').textContent = all.length;
-      $('#cntPage').textContent = onPage.length;
-      $('#cntOpen').textContent = open.length;
-      $('#cntResolved').textContent = done.length;
-
-      let list;
-      if (state.filter === 'page') list = onPage;
-      else if (state.filter === 'open') list = open;
-      else if (state.filter === 'resolved') list = done;
-      else list = all;
-
-      // sort: current page first, then by createdAt desc
-      list = [...list].sort((a, b) => {
-        const ap = a.page === state.currentPage ? 0 : 1;
-        const bp = b.page === state.currentPage ? 0 : 1;
-        if (ap !== bp) return ap - bp;
-        return b.createdAt - a.createdAt;
-      });
-
-      cmtCount.textContent = list.length;
-
-      if (list.length === 0) {
-        cmtList.innerHTML = `
-          <div class="side__empty">
-            <div class="em">💭</div>
-            <div>${state.filter === 'page'
-              ? '이 페이지에 아직 코멘트가 없습니다.<br/>상단의 <b>코멘트 모드</b>를 켜고<br/>의견을 남길 부분을 클릭해보세요.'
-              : '조건에 맞는 코멘트가 없습니다.'}</div>
-          </div>
-        `;
-        return;
-      }
-
-      // index per page
-      const perPageIdx = new Map();
-      [...state.comments]
-        .sort((a, b) => a.createdAt - b.createdAt)
-        .forEach((c) => {
-          const k = c.page;
-          const arr = perPageIdx.get(k) || [];
-          arr.push(c.id);
-          perPageIdx.set(k, arr);
-        });
-      const idxOf = (c) => (perPageIdx.get(c.page) || []).indexOf(c.id) + 1;
-
-      cmtList.innerHTML = list.map((c) => {
-        const last = c.thread[c.thread.length - 1];
-        const cls = ['cmt'];
-        if (c.status === 'resolved') cls.push('is-resolved');
-        if (c.page !== state.currentPage) cls.push('is-other-page');
-        if (c.id === state.activeCommentId) cls.push('is-active');
-        const pageLabel = (PAGES.find((p) => p.path === c.page) || {}).label || c.page;
-        return `
-          <div class="${cls.join(' ')}" data-cmt-id="${c.id}">
-            <div class="cmt__head">
-              <span class="cmt__num">${idxOf(c)}</span>
-              <span class="cmt__target">${escapeHtml(formatTarget(c))}</span>
-              <span class="cmt__status">${c.status === 'resolved' ? '해결됨' : '미해결'}</span>
-            </div>
-            <div class="cmt__page">📄 ${escapeHtml(pageLabel)}</div>
-            <div class="cmt__body">${escapeHtml(last ? last.text : '')}</div>
-            <div class="cmt__meta">
-              <span class="author">${escapeHtml(c.author || '익명')}</span>
-              <span>·</span>
-              <span>${relTime(c.createdAt)}</span>
-              ${c.thread.length > 1 ? `<span class="cmt__replies">💬 ${c.thread.length}</span>` : ''}
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      cmtList.querySelectorAll('.cmt').forEach((el) => {
-        el.addEventListener('click', () => {
-          const id = el.dataset.cmtId;
-          const c = state.comments.find((x) => x.id === id);
-          if (!c) return;
-          if (c.page !== state.currentPage) {
-            // navigate to that page first, then open after load
-            state.activeCommentId = c.id;
-            state.currentPage = c.page;
-            pageSelect.value = c.page;
-            urlText.textContent = c.page;
-            showLoading(true);
-            iframe.src = c.page;
-            // openThread after load
-            const onload = () => {
-              iframe.removeEventListener('load', onload);
-              setTimeout(() => {
-                scrollIframeToComment(c);
-                openThreadPopover(c);
-              }, 60);
-            };
-            iframe.addEventListener('load', onload);
-            return;
-          }
-          scrollIframeToComment(c);
-          openThreadPopover(c);
-        });
-      });
-    }
-
-    function onFilterClick(e) {
-      const btn = e.target.closest('.chip');
-      if (!btn) return;
-      filters.querySelectorAll('.chip').forEach((b) => b.classList.toggle('is-active', b === btn));
-      state.filter = btn.dataset.filter;
-      renderList();
-    }
-
-    function scrollIframeToComment(c) {
-      const win = iframe.contentWindow;
-      const doc = getIframeDoc();
-      if (!win || !doc) return;
-      const ifH = iframe.clientHeight;
-      const targetY = Math.max(0, c.y - ifH * 0.35);
-      try { win.scrollTo({ top: targetY, behavior: 'smooth' }); } catch { win.scrollTo(0, targetY); }
-    }
-
-    // ====================================================
-    // Helpers — formatting
-    // ====================================================
-    function indexOfInPage(c) {
-      const sorted = state.comments
-        .filter((x) => x.page === c.page)
-        .sort((a, b) => a.createdAt - b.createdAt);
-      return sorted.findIndex((x) => x.id === c.id) + 1;
-    }
-    function formatTarget(c) {
-      if (!c) return '';
-      const tag = (c.elementTag || '').toLowerCase();
-      const txt = (c.elementText || '').replace(/\s+/g, ' ').trim();
-      const sel = c.selector || '';
-      if (txt) return `<${tag || 'el'}> "${txt.length > 36 ? txt.slice(0, 36) + '…' : txt}"`;
-      return sel || `<${tag}>`;
+    function escapeHtml(s) {
+      return String(s == null ? '' : s)
+        .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;').replaceAll("'", '&#39;');
     }
     function relTime(t) {
       const d = (Date.now() - t) / 1000;
@@ -1271,34 +247,123 @@
       const dt = new Date(t);
       return `${dt.getMonth() + 1}/${dt.getDate()}`;
     }
-    function escapeHtml(s) {
-      return String(s == null ? '' : s)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#39;');
+    function pageLabel(p) { return PAGE_LABELS[p] || p; }
+    function formatTarget(c) {
+      const tag = (c.elementTag || '').toLowerCase();
+      const txt = (c.elementText || '').replace(/\s+/g, ' ').trim();
+      if (txt) return `<${tag || 'el'}> "${txt.length > 40 ? txt.slice(0, 40) + '…' : txt}"`;
+      return c.selector || `<${tag}>`;
     }
 
-    // ====================================================
-    // Toast
-    // ====================================================
-    let toastTimer = null;
-    function showToast(msg) {
-      toast.textContent = msg;
-      toast.classList.add('is-on');
-      if (toastTimer) clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => toast.classList.remove('is-on'), 1800);
+    function render() {
+      const all = comments;
+      const open = all.filter((c) => c.status !== 'resolved');
+      const done = all.filter((c) => c.status === 'resolved');
+
+      $('#stAll').textContent = all.length;
+      $('#stOpen').textContent = open.length;
+      $('#stResolved').textContent = done.length;
+      const pages = new Set(all.map((c) => c.page));
+      $('#stPages').textContent = pages.size;
+      $('#cntAll').textContent = all.length;
+      $('#cntOpen').textContent = open.length;
+      $('#cntResolved').textContent = done.length;
+
+      let list;
+      if (filter === 'open') list = open;
+      else if (filter === 'resolved') list = done;
+      else list = all;
+
+      const groups = $('#groups');
+      groups.innerHTML = '';
+
+      if (list.length === 0) {
+        groups.innerHTML = `
+          <div class="empty">
+            <div class="em">💭</div>
+            <div>${filter === 'open'
+              ? '미해결 코멘트가 없습니다.<br/>데모 페이지에서 우하단 💬 버튼을 눌러 의견을 남겨보세요.'
+              : '조건에 맞는 코멘트가 없습니다.'}</div>
+          </div>
+        `;
+        return;
+      }
+
+      // group by page
+      const byPage = new Map();
+      list.forEach((c) => {
+        if (!byPage.has(c.page)) byPage.set(c.page, []);
+        byPage.get(c.page).push(c);
+      });
+      // page order: known pages first (in PAGE_LABELS order), then unknown
+      const orderedPaths = [
+        ...Object.keys(PAGE_LABELS).filter((p) => byPage.has(p)),
+        ...[...byPage.keys()].filter((p) => !PAGE_LABELS[p]),
+      ];
+
+      // global per-page index by createdAt asc (matches overlay numbering)
+      const idxByPage = new Map();
+      [...comments].sort((a, b) => a.createdAt - b.createdAt).forEach((c) => {
+        const arr = idxByPage.get(c.page) || [];
+        arr.push(c.id);
+        idxByPage.set(c.page, arr);
+      });
+      const idxOf = (c) => (idxByPage.get(c.page) || []).indexOf(c.id) + 1;
+
+      orderedPaths.forEach((path) => {
+        const items = byPage.get(path).sort((a, b) => b.createdAt - a.createdAt);
+        const group = document.createElement('section');
+        group.className = 'group';
+        group.innerHTML = `
+          <header class="group__head">
+            <span class="group__title">${escapeHtml(pageLabel(path))}</span>
+            <span class="group__path">${escapeHtml(path)}</span>
+            <span class="group__count">${items.length}</span>
+            <a class="group__open" href="${path}" target="_blank" rel="noopener">페이지 열기 ↗</a>
+          </header>
+          <div class="cmt-list">
+            ${items.map((c) => {
+              const last = c.thread[c.thread.length - 1];
+              const cls = ['cmt']; if (c.status === 'resolved') cls.push('is-resolved');
+              return `
+                <a class="${cls.join(' ')}" href="${path}#voc=${c.id}" target="_blank" rel="noopener" data-id="${c.id}">
+                  <div class="cmt__head">
+                    <span class="cmt__num">${idxOf(c)}</span>
+                    <span class="cmt__target">${escapeHtml(formatTarget(c))}</span>
+                    <span class="cmt__status">${c.status === 'resolved' ? '해결됨' : '미해결'}</span>
+                  </div>
+                  <div class="cmt__body">${escapeHtml(last ? last.text : '')}</div>
+                  <div class="cmt__meta">
+                    <span class="author">${escapeHtml(c.author || '익명')}</span>
+                    <span>·</span>
+                    <span>${relTime(c.createdAt)}</span>
+                    ${c.thread.length > 1 ? `<span class="cmt__replies">💬 ${c.thread.length}</span>` : ''}
+                  </div>
+                </a>
+              `;
+            }).join('')}
+          </div>
+        `;
+        groups.appendChild(group);
+      });
     }
 
-    // ====================================================
-    // Boot
-    // ====================================================
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', init);
-    } else {
-      init();
-    }
+    document.querySelector('.toolbar').addEventListener('click', (e) => {
+      const btn = e.target.closest('.chip');
+      if (!btn) return;
+      document.querySelectorAll('.toolbar .chip').forEach((b) => b.classList.toggle('is-active', b === btn));
+      filter = btn.dataset.filter;
+      render();
+    });
+
+    // Refresh when storage changes (other tab posts comment)
+    window.addEventListener('storage', (e) => {
+      if (e.key === STORAGE_KEY) { comments = load(); render(); }
+    });
+    // Refresh on focus (came back from a demo tab)
+    window.addEventListener('focus', () => { comments = load(); render(); });
+
+    render();
   })();
   </script>
 </body>
