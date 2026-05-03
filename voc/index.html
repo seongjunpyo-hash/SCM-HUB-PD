@@ -1180,8 +1180,11 @@
         state.simActive.clear();
         updateSimStatus();
         renderList();
-        // edit pane: replay user-added items, then apply hide/icon CSS, then re-scan
+        // edit pane: replay user-added items, reorder, types, then CSS, then re-scan
         applyAddedDom();
+        applyFilterOrderToIframe();
+        applyColumnOrderToIframe();
+        applyFilterTypesToIframe();
         applyEditCss();
         renderEditPane();
       });
@@ -1365,9 +1368,12 @@
       // legacy cleanup — old schema used noSort/noFilter (default ON), new
       // schema uses showSort/showFilter (default OFF).
       delete e.noSort; delete e.noFilter;
-      e.hidden     = Array.isArray(e.hidden)     ? e.hidden     : [];
-      e.showSort   = Array.isArray(e.showSort)   ? e.showSort   : [];
-      e.showFilter = Array.isArray(e.showFilter) ? e.showFilter : [];
+      e.hidden      = Array.isArray(e.hidden)      ? e.hidden      : [];
+      e.showSort    = Array.isArray(e.showSort)    ? e.showSort    : [];
+      e.showFilter  = Array.isArray(e.showFilter)  ? e.showFilter  : [];
+      e.filterOrder = Array.isArray(e.filterOrder) ? e.filterOrder : [];
+      e.columnOrder = Array.isArray(e.columnOrder) ? e.columnOrder : [];
+      e.filterTypes = (e.filterTypes && typeof e.filterTypes === 'object' && !Array.isArray(e.filterTypes)) ? e.filterTypes : {};
       if (!e.added) e.added = {};
       e.added.filters = Array.isArray(e.added.filters) ? e.added.filters : [];
       e.added.columns = Array.isArray(e.added.columns) ? e.added.columns : [];
@@ -1441,16 +1447,41 @@
       const f = d.added.filters.find((x) => x.id === id);
       if (f) { f.type = type; persistDraft(); refreshSaveBtn(); }
     }
-    function moveAddedItem(kind, fromId, toId, above) {
+    // Set filter type (singular/multi/code) for a NATIVE filter chip via
+    // a per-page filterTypes map. Added filters use updateAddedFilterType.
+    function setFilterType(selector, type) {
       const d = pageDraft();
-      const arr = kind === 'filter' ? d.added.filters : d.added.columns;
-      const fromIdx = arr.findIndex((x) => x.id === fromId);
-      if (fromIdx < 0) return;
-      const [item] = arr.splice(fromIdx, 1);
-      let toIdx = arr.findIndex((x) => x.id === toId);
-      if (toIdx < 0) toIdx = arr.length;        // edge case
-      else if (!above) toIdx += 1;
-      arr.splice(toIdx, 0, item);
+      if (!type || type === 'single') delete d.filterTypes[selector];
+      else d.filterTypes[selector] = type;
+      persistDraft();
+      refreshSaveBtn();
+    }
+    // Unified reorder for filter / column rows. Operates on the kind's
+    // order array (d.filterOrder / d.columnOrder), which is bootstrapped
+    // lazily from current scan order on first move so the user doesn't
+    // need to enable anything first.
+    function moveItem(kind, fromKey, toKey, above) {
+      const d = pageDraft();
+      const arr = kind === 'filter' ? d.filterOrder : d.columnOrder;
+      // Bootstrap natural order on first move
+      if (arr.length === 0) {
+        const targets = scanEditTargets();
+        const natives = (kind === 'filter' ? targets.filters : targets.columns);
+        natives.forEach((it) => arr.push(it.selector));
+        const addedItems = kind === 'filter' ? d.added.filters : d.added.columns;
+        addedItems.forEach((it) => {
+          arr.push(kind === 'filter' ? `#voc-added-filter-${it.id}` : `#voc-added-col-${it.id}`);
+        });
+      }
+      const fromIdx = arr.indexOf(fromKey);
+      if (fromIdx >= 0) arr.splice(fromIdx, 1);
+      let toIdx = arr.indexOf(toKey);
+      if (toIdx < 0) {
+        arr.push(fromKey);
+      } else {
+        if (!above) toIdx += 1;
+        arr.splice(toIdx, 0, fromKey);
+      }
       persistDraft();
       renderEditPane();
       refreshSaveBtn();
@@ -1482,12 +1513,12 @@
           box-shadow: inset 0 0 0 1px #C4B5FD !important;
         }
         td.scm-voc-added-col { color: #6B7280; }
-        .scm-voc-added-filter[data-voc-filter-type="multi"]::after {
+        .scm-filter-select[data-voc-filter-type="multi"]::after {
           content: 'M'; margin-left: 4px;
           font-size: 9px; font-weight: 700; color: #4F46E5;
           background: #EEF2FF; padding: 1px 4px; border-radius: 3px;
         }
-        .scm-voc-added-filter[data-voc-filter-type="code"]::after {
+        .scm-filter-select[data-voc-filter-type="code"]::after {
           content: 'C'; margin-left: 4px;
           font-size: 9px; font-weight: 700; color: #4F46E5;
           background: #EEF2FF; padding: 1px 4px; border-radius: 3px;
@@ -1594,9 +1625,125 @@
       state.applied[state.currentPage] = deepClone(pageDraft());
       persistApplied();
       rebuildAddedDom();
+      applyFilterOrderToIframe();
+      applyColumnOrderToIframe();
+      applyFilterTypesToIframe();
       applyEditCss();
       refreshSaveBtn();
       showToast('편집 사항 저장 — 데모에 반영됨');
+    }
+
+    // Move filter chips inside the iframe to match a.filterOrder.
+    // Uses each chip's parent (kept stable per the original wrapper) and
+    // appends in the requested order, slotting before any reset button.
+    function applyFilterOrderToIframe() {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      const a = pageApplied();
+      if (!a.filterOrder || !a.filterOrder.length) return;
+      let parent = null, resetBtn = null;
+      a.filterOrder.forEach((sel) => {
+        try {
+          const el = doc.querySelector(sel);
+          if (!el) return;
+          if (!parent) {
+            parent = el.parentNode;
+            resetBtn = parent.querySelector(':scope > .scm-filter-reset-btn');
+          }
+          if (el.parentNode !== parent) return;
+          if (resetBtn && resetBtn.parentNode === parent) parent.insertBefore(el, resetBtn);
+          else parent.appendChild(el);
+        } catch {}
+      });
+    }
+
+    // Move <th> + corresponding <td>s in the iframe table to match a.columnOrder.
+    // Tagging a temporary data-voc-col-pos correlates header position with
+    // tbody column position even when group rowspan cells (cb / No) shift
+    // the tbody indices. Cleaned up after.
+    function applyColumnOrderToIframe() {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      const a = pageApplied();
+      if (!a.columnOrder || !a.columnOrder.length) return;
+      const table = doc.querySelector('.mp-table');
+      if (!table) return;
+      const thead = table.querySelector('thead');
+      const tbody = table.querySelector('tbody');
+      if (!thead || !tbody) return;
+      const trs = thead.querySelectorAll('tr');
+      const colTr = trs[trs.length - 1];
+      const groupTr = trs.length > 1 ? trs[0] : null;
+      // count rowspan>1 group cells — they occupy the data row but only sit
+      // in the group row, so tbody td indices are offset by this count.
+      let rowspanOffset = 0;
+      if (groupTr) {
+        [...groupTr.children].forEach((c) => {
+          if (parseInt(c.getAttribute('rowspan') || '1', 10) > 1) rowspanOffset++;
+        });
+      }
+      // snapshot data-row ths (excluding spacer)
+      const ths = [...colTr.children].filter((th) =>
+        th.tagName === 'TH' && !th.classList.contains('col-spacer')
+      );
+      if (!ths.length) return;
+      // tag each th + matching td with col-pos
+      ths.forEach((th, i) => { th.dataset.vocColPos = String(i); });
+      const tbodyRows = tbody.querySelectorAll('tr');
+      tbodyRows.forEach((tr) => {
+        const tds = [...tr.children].filter((c) => c.tagName === 'TD' && !c.classList.contains('col-spacer'));
+        const dataTds = tds.slice(rowspanOffset);
+        dataTds.forEach((td, i) => { td.dataset.vocColPos = String(i); });
+      });
+      // build the desired ordering of ths from a.columnOrder, preserving
+      // any unrecognized ths at the end
+      const sortedThs = [];
+      a.columnOrder.forEach((sel) => {
+        try {
+          const th = ths.find((t) => t.matches(sel) && !sortedThs.includes(t));
+          if (th) sortedThs.push(th);
+        } catch {}
+      });
+      ths.forEach((th) => { if (!sortedThs.includes(th)) sortedThs.push(th); });
+      // reorder ths
+      const spacer = colTr.querySelector('.col-spacer');
+      sortedThs.forEach((th) => colTr.insertBefore(th, spacer || null));
+      // reorder tbody tds to follow new th positions
+      tbodyRows.forEach((tr) => {
+        const tdSpacer = tr.querySelector('.col-spacer');
+        sortedThs.forEach((th) => {
+          const pos = th.dataset.vocColPos;
+          const td = tr.querySelector(`td[data-voc-col-pos="${pos}"]`);
+          if (td) tr.insertBefore(td, tdSpacer || null);
+        });
+      });
+      // cleanup temporary attrs
+      ths.forEach((th) => delete th.dataset.vocColPos);
+      tbodyRows.forEach((tr) => {
+        tr.querySelectorAll('[data-voc-col-pos]').forEach((td) => delete td.dataset.vocColPos);
+      });
+    }
+
+    // Stamp data-voc-filter-type on native filter chips (CSS attaches the
+    // M / C badge based on this attribute). Strips the attribute first so
+    // a removed override is reflected.
+    function applyFilterTypesToIframe() {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      const a = pageApplied();
+      doc.querySelectorAll('.scm-filter-select[data-mp-filter]').forEach((el) => {
+        if (!el.classList.contains('scm-voc-added-filter')) {
+          delete el.dataset.vocFilterType;
+        }
+      });
+      Object.entries(a.filterTypes || {}).forEach(([sel, type]) => {
+        try {
+          const el = doc.querySelector(sel);
+          if (el && !el.classList.contains('scm-voc-added-filter')) {
+            el.dataset.vocFilterType = type;
+          }
+        } catch {}
+      });
     }
     function revertDraft() {
       // throw away draft for this page; copy applied → draft
@@ -1726,6 +1873,19 @@
       return out;
     }
 
+    // Reorder a flat row list to match a saved order array.
+    // Items missing from order are appended at the end (e.g., newly added).
+    function orderRows(rows, orderArr) {
+      if (!orderArr || !orderArr.length) return rows;
+      const map = new Map(rows.map((r) => [r.selector, r]));
+      const ordered = [];
+      orderArr.forEach((sel) => {
+        if (map.has(sel)) { ordered.push(map.get(sel)); map.delete(sel); }
+      });
+      for (const r of map.values()) ordered.push(r);
+      return ordered;
+    }
+
     function renderEditPane() {
       const targets = scanEditTargets();
       const d = pageDraft();
@@ -1733,8 +1893,8 @@
       const showSort   = new Set(d.showSort);
       const showFilter = new Set(d.showFilter);
 
-      // merge native + user-added items
-      const filterRows = [
+      // merge native + user-added items, then sort by saved order
+      const filterRowsRaw = [
         ...targets.filters.map((it) => ({ ...it, kind: 'filter' })),
         ...d.added.filters.map((f) => ({
           label: f.label, kind: 'filter',
@@ -1742,7 +1902,7 @@
           added: f, type: f.type,
         })),
       ];
-      const columnRows = [
+      const columnRowsRaw = [
         ...targets.columns.map((it) => ({ ...it, kind: 'column' })),
         ...d.added.columns.map((c) => ({
           label: c.label, kind: 'column',
@@ -1750,6 +1910,8 @@
           added: c,
         })),
       ];
+      const filterRows    = orderRows(filterRowsRaw, d.filterOrder);
+      const columnRows    = orderRows(columnRowsRaw, d.columnOrder);
       const componentRows = targets.components.map((it) => ({ ...it, kind: 'component' }));
 
       const renderList = (containerId, countId, items) => {
@@ -1764,34 +1926,34 @@
           if (it.added)  cls.push('is-added');
           const sel = escapeHtml(it.selector);
           let middle = '';
-          if (it.kind === 'column') {
-            if (!it.added) {
-              const sortOn   = showSort.has(it.selector);
-              const filterOn = showFilter.has(it.selector);
-              middle = `
-                <button type="button" class="edit-row__icon-toggle ${sortOn ? 'is-on' : ''}"   data-toggle-icon="sort"   data-selector="${sel}" title="컬럼 정렬 아이콘 표시/숨김">정렬</button>
-                <button type="button" class="edit-row__icon-toggle ${filterOn ? 'is-on' : ''}" data-toggle-icon="filter" data-selector="${sel}" title="컬럼 필터 아이콘 표시/숨김">필터</button>`;
-            }
-            // added column → drag handle + delete (rendered below)
+          if (it.kind === 'column' && !it.added) {
+            // native column gets sort/filter icon toggles
+            const sortOn   = showSort.has(it.selector);
+            const filterOn = showFilter.has(it.selector);
+            middle = `
+              <button type="button" class="edit-row__icon-toggle ${sortOn ? 'is-on' : ''}"   data-toggle-icon="sort"   data-selector="${sel}" title="컬럼 정렬 아이콘 표시/숨김">정렬</button>
+              <button type="button" class="edit-row__icon-toggle ${filterOn ? 'is-on' : ''}" data-toggle-icon="filter" data-selector="${sel}" title="컬럼 필터 아이콘 표시/숨김">필터</button>`;
           } else if (it.kind === 'filter') {
-            if (it.added) {
-              const id = escapeHtml(it.added.id);
-              middle = `
-                <select class="edit-row__type-select" data-edit-filter-type="${id}" title="필터 타입 변경">
-                  <option value="single" ${it.type === 'single' ? 'selected' : ''}>싱글</option>
-                  <option value="multi"  ${it.type === 'multi'  ? 'selected' : ''}>멀티</option>
-                  <option value="code"   ${it.type === 'code'   ? 'selected' : ''}>코드</option>
-                </select>`;
-            }
+            // EVERY filter row (native + added) gets the type select
+            const currentType = it.added ? (it.type || 'single') : (d.filterTypes[it.selector] || 'single');
+            const source = it.added ? 'added' : 'native';
+            const key    = it.added ? escapeHtml(it.added.id) : sel;
+            middle = `
+              <select class="edit-row__type-select" data-filter-type-source="${source}" data-filter-type-key="${key}" title="필터 타입 변경">
+                <option value="single" ${currentType === 'single' ? 'selected' : ''}>싱글</option>
+                <option value="multi"  ${currentType === 'multi'  ? 'selected' : ''}>멀티</option>
+                <option value="code"   ${currentType === 'code'   ? 'selected' : ''}>코드</option>
+              </select>`;
           }
           const del = it.added
             ? `<button type="button" class="edit-row__del" data-del-${it.kind}="${escapeHtml(it.added.id)}" title="삭제">×</button>`
             : '';
-          // drag affordances for user-added items only — native ones aren't reorderable
-          const dragAttrs = it.added && (it.kind === 'filter' || it.kind === 'column')
-            ? ` draggable="true" data-drag-id="${escapeHtml(it.added.id)}" data-drag-kind="${it.kind}"`
+          // ALL filter and column rows are drag-reorderable now (not just added)
+          const reorderable = (it.kind === 'filter' || it.kind === 'column');
+          const dragAttrs = reorderable
+            ? ` draggable="true" data-drag-id="${sel}" data-drag-kind="${it.kind}"`
             : '';
-          const grip = it.added && (it.kind === 'filter' || it.kind === 'column')
+          const grip = reorderable
             ? '<span class="edit-row__grip" aria-hidden="true" title="드래그하여 순서 변경">⋮⋮</span>'
             : '';
           return `
@@ -1851,7 +2013,7 @@
       if (row.dataset.dragId === _dragState.id) return;
       e.preventDefault();
       const above = row.classList.contains('is-drop-above');
-      moveAddedItem(_dragState.kind, _dragState.id, row.dataset.dragId, above);
+      moveItem(_dragState.kind, _dragState.id, row.dataset.dragId, above);
       _dragState = null;
     });
     document.addEventListener('dragend', () => {
@@ -1871,9 +2033,13 @@
         }
         return;
       }
-      const ts = t.closest && t.closest('[data-edit-filter-type]');
+      const ts = t.closest && t.closest('[data-filter-type-key]');
       if (ts) {
-        updateAddedFilterType(ts.dataset.editFilterType, ts.value);
+        if (ts.dataset.filterTypeSource === 'added') {
+          updateAddedFilterType(ts.dataset.filterTypeKey, ts.value);
+        } else {
+          setFilterType(ts.dataset.filterTypeKey, ts.value);
+        }
         return;
       }
     });
