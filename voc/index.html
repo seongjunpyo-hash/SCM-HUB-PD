@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SCM HUB · 협업 VOC</title>
+  <title>SCM HUB · 협업 VOC (작업자)</title>
   <script src="/auth-gate.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
   <style>
@@ -22,6 +22,8 @@
       --ok:        #34D399;
       --ok-bg:     rgba(52,211,153,0.14);
       --warn:      #F59E0B;
+      --warn-bg:   rgba(245,158,11,0.14);
+      --danger:    #F87171;
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; height: 100%; }
@@ -34,16 +36,23 @@
     }
     button { font-family: inherit; cursor: pointer; }
     a { color: inherit; text-decoration: none; }
+    [hidden] { display: none !important; }
 
     /* ============ Top header ============ */
     .topbar {
       position: relative; z-index: 50;
-      display: flex; align-items: center; gap: 14px;
+      display: flex; align-items: center; gap: 12px;
       height: 56px; padding: 0 20px;
       background: var(--surface); border-bottom: 1px solid var(--line);
     }
     .brand { font-weight: 700; font-size: 14px; color: var(--fg); letter-spacing: 0.4px; white-space: nowrap; }
     .brand .dot { display: inline-block; width: 6px; height: 6px; border-radius: 999px; background: var(--accent); margin: 0 8px 1px; vertical-align: middle; }
+    .brand .role-tag {
+      display: inline-block; margin-left: 8px;
+      padding: 2px 7px; border-radius: 999px;
+      background: var(--warn-bg); color: var(--warn);
+      font-size: 10px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
+    }
     .topbar__sep { width: 1px; height: 20px; background: var(--line); }
 
     .page-select {
@@ -69,6 +78,24 @@
     .icon-btn:hover { color: var(--fg); border-color: var(--line-2); background: var(--surface-h); }
     .icon-btn svg { width: 14px; height: 14px; }
 
+    .sim-status {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 11px;
+      background: var(--warn-bg); color: var(--warn);
+      border: 1px solid rgba(245,158,11,0.4); border-radius: 999px;
+      font-size: 12px; font-weight: 600;
+    }
+    .sim-status .dot { width: 6px; height: 6px; border-radius: 999px; background: currentColor; animation: simPulse 1.4s infinite; }
+    @keyframes simPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .sim-status button {
+      background: transparent; border: 0; color: currentColor;
+      font-size: 11px; font-weight: 600; padding: 0 0 0 4px; cursor: pointer;
+    }
+    .sim-status button:hover { text-decoration: underline; }
+
     .topbar__spacer { flex: 1; }
     .topbar__user { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--fg-mute); }
     .topbar__role {
@@ -83,45 +110,14 @@
     }
     .topbar__back:hover { color: var(--fg); border-color: var(--line-2); }
 
-    /* ============ Hint banner ============ */
-    .hint {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 20px;
-      background: linear-gradient(90deg, rgba(110,107,255,0.18) 0%, rgba(110,107,255,0.04) 60%, transparent 100%);
-      border-bottom: 1px solid var(--line);
-      font-size: 13px; color: var(--fg);
-    }
-    .hint__em {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 22px; height: 22px;
-      background: var(--accent); color: #fff; border-radius: 999px;
-      font-size: 12px; font-weight: 700;
-      box-shadow: 0 0 0 0 rgba(110,107,255,0.6);
-      animation: hintPulse 1.6s infinite;
-    }
-    @keyframes hintPulse {
-      0%   { box-shadow: 0 0 0 0 rgba(110,107,255,0.55); }
-      70%  { box-shadow: 0 0 0 10px rgba(110,107,255,0); }
-      100% { box-shadow: 0 0 0 0 rgba(110,107,255,0); }
-    }
-    .hint .arrow { color: var(--accent); font-weight: 700; }
-    .hint__close {
-      margin-left: auto;
-      background: transparent; border: 0; color: var(--fg-mute);
-      font-size: 12px; padding: 4px 10px; border-radius: 6px;
-    }
-    .hint__close:hover { color: var(--fg); background: var(--surface-h); }
-    .hint.is-hidden { display: none; }
-
     /* ============ Layout ============ */
     .layout {
       display: grid;
-      grid-template-columns: 1fr 380px;
+      grid-template-columns: 1fr 440px;
       height: calc(100vh - 56px);
     }
-    .layout.has-hint { height: calc(100vh - 56px - 45px); }
     @media (min-width: 1680px) {
-      .layout { grid-template-columns: 1fr 420px; }
+      .layout { grid-template-columns: 1fr 480px; }
     }
 
     /* ============ Browser window ============ */
@@ -167,39 +163,8 @@
     }
     .urlbar__open:hover { color: var(--fg); background: var(--surface-h); }
 
-    .browser__body {
-      flex: 1; min-height: 0;
-      position: relative;
-      background: #fff;
-    }
-    .browser__body iframe {
-      width: 100%; height: 100%; border: 0; display: block;
-    }
-
-    /* Arrow pointer hinting at the FAB inside iframe */
-    .fab-pointer {
-      position: absolute; right: 22px; bottom: 22px;
-      pointer-events: none;
-      z-index: 5;
-      display: flex; align-items: center; gap: 8px;
-      color: var(--accent);
-      font-size: 12px; font-weight: 700;
-      background: rgba(14,14,20,0.92);
-      border: 1px solid var(--accent);
-      border-radius: 999px;
-      padding: 6px 12px;
-      box-shadow: 0 8px 24px rgba(110,107,255,0.4);
-      animation: fabBounce 1.6s ease-in-out infinite;
-      opacity: 0;
-      transition: opacity 0.2s ease;
-    }
-    .fab-pointer.is-on { opacity: 1; }
-    .fab-pointer .arrow { font-size: 14px; }
-    @keyframes fabBounce {
-      0%, 100% { transform: translateY(0); }
-      50%      { transform: translateY(-4px); }
-    }
-
+    .browser__body { flex: 1; min-height: 0; position: relative; background: #fff; }
+    .browser__body iframe { width: 100%; height: 100%; border: 0; display: block; }
     .browser__loading {
       position: absolute; inset: 0;
       display: flex; align-items: center; justify-content: center;
@@ -214,7 +179,14 @@
       display: flex; flex-direction: column;
       background: var(--surface); border-left: 1px solid var(--line);
       min-height: 0;
+      overflow: hidden;
     }
+    .sidebar__view {
+      flex: 1; min-height: 0;
+      display: flex; flex-direction: column;
+    }
+
+    /* ---- LIST VIEW ---- */
     .side__head {
       padding: 16px 20px 12px;
       border-bottom: 1px solid var(--line);
@@ -255,9 +227,7 @@
       padding: 60px 20px; text-align: center;
       color: var(--fg-dim); font-size: 13px; line-height: 1.7;
     }
-    .side__empty .em {
-      font-size: 32px; margin-bottom: 12px; opacity: 0.6;
-    }
+    .side__empty .em { font-size: 32px; margin-bottom: 12px; opacity: 0.6; }
     .side__empty .accent { color: var(--accent); }
 
     .cmt {
@@ -266,11 +236,19 @@
       margin-bottom: 8px;
       transition: border-color 0.12s ease, background 0.12s ease;
       cursor: pointer;
+      position: relative;
     }
     .cmt:hover { border-color: var(--line-2); background: var(--surface-h); }
-    .cmt.is-active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
     .cmt.is-resolved { opacity: 0.55; }
     .cmt.is-other-page { opacity: 0.55; }
+    .cmt.has-proposal {
+      border-left: 3px solid var(--accent);
+      padding-left: 12px;
+    }
+    .cmt.is-sim-active {
+      border-color: var(--warn);
+      box-shadow: 0 0 0 1px var(--warn-bg);
+    }
 
     .cmt__head {
       display: flex; align-items: center; gap: 8px;
@@ -315,21 +293,203 @@
       font-size: 11px; color: var(--fg-dim);
     }
     .cmt__meta .author { color: var(--fg-mute); }
-    .cmt__replies {
-      margin-left: 4px; color: var(--accent);
-      display: inline-flex; align-items: center; gap: 4px;
+    .cmt__replies { margin-left: 4px; color: var(--accent); display: inline-flex; align-items: center; gap: 4px; }
+    .cmt__sim {
+      margin-left: auto; font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
+      padding: 2px 6px; border-radius: 4px;
+      background: var(--warn-bg); color: var(--warn);
     }
+    .cmt__proposal-flag {
+      margin-left: 4px;
+      font-size: 10.5px; color: var(--accent); font-weight: 700;
+    }
+
+    /* ---- DETAIL VIEW ---- */
+    .detail__head {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+    .detail__back {
+      background: transparent; color: var(--fg-mute);
+      border: 1px solid var(--line); border-radius: 8px;
+      height: 30px; padding: 0 12px;
+      font-size: 12px; transition: all 0.12s ease;
+    }
+    .detail__back:hover { color: var(--fg); border-color: var(--line-2); }
+    .detail__num {
+      width: 26px; height: 26px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--accent); color: #fff; border-radius: 999px;
+      font-size: 12px; font-weight: 700;
+    }
+    .detail__num.is-resolved { background: var(--ok); }
+    .detail__head__page { flex: 1; min-width: 0; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px; color: var(--fg-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .detail__status {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
+      padding: 3px 8px; border-radius: 4px;
+      background: var(--accent-bg); color: var(--accent);
+    }
+    .detail__status.is-resolved { background: var(--ok-bg); color: var(--ok); }
+
+    .detail__body {
+      flex: 1; min-height: 0;
+      overflow-y: auto;
+      padding: 18px 20px 24px;
+    }
+    .detail__body::-webkit-scrollbar { width: 6px; }
+    .detail__body::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 999px; }
+
+    .sec { margin-bottom: 22px; }
+    .sec__lab {
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase;
+      color: var(--fg-mute);
+      margin-bottom: 8px;
+    }
+    .sec__lab__act {
+      background: transparent; border: 0; color: var(--accent);
+      font-size: 11px; font-weight: 600; cursor: pointer; letter-spacing: 0;
+      padding: 2px 6px; border-radius: 4px;
+    }
+    .sec__lab__act:hover { background: var(--accent-bg); }
+
+    .loc {
+      background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .loc__row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+    .loc__row:last-child { margin-bottom: 0; }
+    .loc__k { width: 56px; flex-shrink: 0; font-size: 11px; color: var(--fg-dim); }
+    .loc__v { color: var(--fg); font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11.5px; word-break: break-all; }
+    .loc__v.text { font-family: inherit; font-size: 13px; }
+
+    .replies { display: flex; flex-direction: column; gap: 8px; }
+    .reply {
+      background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .reply__meta {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11px; color: var(--fg-dim); margin-bottom: 4px;
+    }
+    .reply__author { color: var(--fg); font-weight: 600; font-size: 12px; }
+    .reply__del {
+      margin-left: auto; background: transparent; border: 0; color: var(--fg-dim);
+      font-size: 11px; padding: 2px 4px; cursor: pointer;
+    }
+    .reply__del:hover { color: var(--danger); }
+    .reply__body {
+      font-size: 13px; color: var(--fg); line-height: 1.6;
+      white-space: pre-wrap; word-break: break-word;
+    }
+
+    .compose { margin-top: 10px; }
+    .compose textarea {
+      width: 100%;
+      background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+      color: var(--fg);
+      font-family: inherit; font-size: 13px; line-height: 1.55;
+      padding: 10px 12px; resize: vertical; min-height: 64px;
+      outline: none;
+      transition: border-color 0.12s ease;
+    }
+    .compose textarea:focus { border-color: var(--accent); }
+    .compose textarea::placeholder { color: var(--fg-dim); }
+    .compose__row {
+      display: flex; align-items: center; gap: 8px; margin-top: 8px;
+    }
+    .compose__hint { flex: 1; font-size: 11px; color: var(--fg-dim); }
+
+    .proposal__row { display: flex; flex-direction: column; gap: 10px; }
+    .proposal__field { display: flex; flex-direction: column; gap: 6px; }
+    .proposal__field label {
+      font-size: 11px; color: var(--fg-mute); font-weight: 600;
+    }
+    .proposal__note, .proposal__css {
+      background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+      color: var(--fg);
+      padding: 10px 12px; resize: vertical;
+      outline: none;
+      transition: border-color 0.12s ease;
+    }
+    .proposal__note {
+      font-family: inherit; font-size: 13px; line-height: 1.55;
+      min-height: 56px;
+    }
+    .proposal__css {
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 12px; line-height: 1.5;
+      min-height: 110px;
+      tab-size: 2;
+    }
+    .proposal__note:focus, .proposal__css:focus { border-color: var(--accent); }
+    .proposal__hint {
+      font-size: 11px; color: var(--fg-dim); line-height: 1.6;
+      padding: 8px 10px; background: var(--bg); border: 1px dashed var(--line);
+      border-radius: 6px; margin-top: 4px;
+    }
+    .proposal__hint code {
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 11px; color: var(--accent);
+      padding: 1px 4px; border-radius: 3px; background: var(--accent-bg);
+    }
+
+    .row-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+    .btn {
+      height: 32px; padding: 0 14px;
+      border: 0; border-radius: 7px;
+      font-family: inherit; font-size: 12.5px; font-weight: 600;
+      transition: all 0.12s ease;
+    }
+    .btn--ghost { background: transparent; color: var(--fg-mute); border: 1px solid var(--line); }
+    .btn--ghost:hover { color: var(--fg); border-color: var(--line-2); }
+    .btn--primary { background: var(--accent); color: #fff; }
+    .btn--primary:hover { background: var(--accent-2); }
+    .btn--ok { background: var(--ok); color: #062b21; }
+    .btn--ok:hover { background: #2bc78c; }
+    .btn--warn { background: var(--warn); color: #3a2700; }
+    .btn--warn:hover { background: #e58a06; }
+    .btn--danger { background: transparent; color: var(--danger); border: 1px solid rgba(248,113,113,0.4); }
+    .btn--danger:hover { background: rgba(248,113,113,0.12); border-color: var(--danger); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .saved-note {
+      font-size: 11px; color: var(--ok);
+      opacity: 0; transition: opacity 0.2s ease;
+    }
+    .saved-note.is-on { opacity: 1; }
+
+    /* Toast */
+    .toast {
+      position: fixed; left: 50%; bottom: 32px;
+      transform: translateX(-50%) translateY(20px);
+      z-index: 200;
+      background: var(--surface); color: var(--fg);
+      border: 1px solid var(--line-2); border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 13px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+      opacity: 0; pointer-events: none;
+      transition: all 0.2s ease;
+    }
+    .toast.is-on { opacity: 1; transform: translateX(-50%) translateY(0); }
   </style>
 </head>
 <body>
 
   <header class="topbar">
-    <span class="brand">SCM HUB<span class="dot"></span>협업 VOC</span>
+    <span class="brand">SCM HUB<span class="dot"></span>협업 VOC<span class="role-tag">작업자</span></span>
     <span class="topbar__sep"></span>
     <select class="page-select" id="pageSelect"></select>
     <button class="icon-btn" id="reloadBtn" title="새로고침">
       <svg viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 0 1 15.3-6.4L21 8M21 4v4h-4M21 12a9 9 0 0 1-15.3 6.4L3 16M3 20v-4h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
+    <span id="simStatus" class="sim-status" hidden>
+      <span class="dot"></span><span>시뮬 적용 중 <span id="simStatusCount">0</span></span>
+      <button id="simResetAll">모두 해제</button>
+    </span>
     <span class="topbar__spacer"></span>
     <span class="topbar__user">
       <span id="userName">—</span>
@@ -338,13 +498,7 @@
     <a class="topbar__back" href="/index.html">← Workspace</a>
   </header>
 
-  <div class="hint" id="hint">
-    <span class="hint__em">💬</span>
-    <span>데모의 <b>우하단 보라색 버튼</b><span class="arrow"> →</span> 누르면 <b>코멘트 모드</b> 시작 → 화면 위 컴포넌트를 클릭해 의견을 남겨주세요.</span>
-    <button class="hint__close" id="hintClose">알겠어요</button>
-  </div>
-
-  <div class="layout" id="layout">
+  <div class="layout">
     <section class="stage">
       <div class="browser" id="browser">
         <div class="browser__chrome">
@@ -358,24 +512,101 @@
         <div class="browser__body" id="browserBody">
           <div class="browser__loading is-on" id="browserLoading">불러오는 중…</div>
           <iframe id="demoFrame" src="about:blank"></iframe>
-          <div class="fab-pointer" id="fabPointer"><span>여기 보세요</span><span class="arrow">↘</span></div>
         </div>
       </div>
     </section>
 
     <aside class="sidebar">
-      <div class="side__head">
-        <h3 class="side__title">코멘트 <span class="count" id="cmtCount">0</span></h3>
-        <div class="side__filters" id="filters">
-          <button class="chip is-active" data-filter="page">이 페이지 <span class="num" id="cntPage">0</span></button>
-          <button class="chip" data-filter="open">미해결 <span class="num" id="cntOpen">0</span></button>
-          <button class="chip" data-filter="resolved">해결됨 <span class="num" id="cntResolved">0</span></button>
-          <button class="chip" data-filter="all">전체 <span class="num" id="cntAll">0</span></button>
+      <!-- LIST VIEW -->
+      <div class="sidebar__view" id="listView">
+        <div class="side__head">
+          <h3 class="side__title">코멘트 <span class="count" id="cmtCount">0</span></h3>
+          <div class="side__filters" id="filters">
+            <button class="chip is-active" data-filter="page">이 페이지 <span class="num" id="cntPage">0</span></button>
+            <button class="chip" data-filter="open">미해결 <span class="num" id="cntOpen">0</span></button>
+            <button class="chip" data-filter="resolved">해결됨 <span class="num" id="cntResolved">0</span></button>
+            <button class="chip" data-filter="all">전체 <span class="num" id="cntAll">0</span></button>
+          </div>
+        </div>
+        <div class="side__list" id="cmtList"></div>
+      </div>
+
+      <!-- DETAIL VIEW -->
+      <div class="sidebar__view" id="detailView" hidden>
+        <div class="detail__head">
+          <button class="detail__back" id="detailBack">← 목록</button>
+          <span class="detail__num" id="dNum">1</span>
+          <span class="detail__head__page" id="dPage"></span>
+          <span class="detail__status" id="dStatus">미해결</span>
+        </div>
+        <div class="detail__body">
+          <!-- Location -->
+          <section class="sec">
+            <div class="sec__lab">
+              <span>📍 위치</span>
+              <button class="sec__lab__act" id="dLocate">위치로 이동 ↗</button>
+            </div>
+            <div class="loc">
+              <div class="loc__row"><span class="loc__k">엘리먼트</span><span class="loc__v" id="dTag">—</span></div>
+              <div class="loc__row"><span class="loc__k">텍스트</span><span class="loc__v text" id="dText">—</span></div>
+              <div class="loc__row"><span class="loc__k">셀렉터</span><span class="loc__v" id="dSel">—</span></div>
+              <div class="loc__row"><span class="loc__k">좌표</span><span class="loc__v" id="dCoord">—</span></div>
+            </div>
+          </section>
+
+          <!-- Thread -->
+          <section class="sec">
+            <div class="sec__lab"><span>💬 스레드</span></div>
+            <div class="replies" id="dReplies"></div>
+            <div class="compose">
+              <textarea id="dReply" placeholder="답글을 남기거나 추가 질문을 작성…"></textarea>
+              <div class="compose__row">
+                <span class="compose__hint">⌘/Ctrl + Enter 전송</span>
+                <button class="btn btn--primary" id="dReplySend">답글 등록</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Proposal + simulate -->
+          <section class="sec">
+            <div class="sec__lab">
+              <span>💡 개선안 / 시뮬레이션</span>
+              <span class="saved-note" id="dSaved">저장됨</span>
+            </div>
+            <div class="proposal__row">
+              <div class="proposal__field">
+                <label>개선안 메모</label>
+                <textarea class="proposal__note" id="dNote" placeholder="이 컴포넌트를 어떻게 고칠지 설명…"></textarea>
+              </div>
+              <div class="proposal__field">
+                <label>CSS 오버라이드 (시뮬레이션용)</label>
+                <textarea class="proposal__css" id="dCss" spellcheck="false" placeholder="예: .btn--primary { background: #DC2626; color: #fff; }"></textarea>
+                <div class="proposal__hint">
+                  💡 <code id="dSelHint">selector</code> 가 자동으로 채워졌습니다. 값을 바꾼 뒤 <b>시뮬레이션 적용</b> 을 누르면 실제 데모에 즉시 반영돼서 결과를 미리 볼 수 있습니다.
+                </div>
+              </div>
+              <div class="row-btns">
+                <button class="btn btn--warn" id="simApplyBtn">▶ 시뮬레이션 적용</button>
+                <button class="btn btn--ghost" id="simResetBtn">↺ 시뮬 해제</button>
+                <button class="btn btn--ghost" id="proposalSaveBtn">💾 저장</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Status / actions -->
+          <section class="sec">
+            <div class="sec__lab"><span>⚙️ 상태</span></div>
+            <div class="row-btns">
+              <button class="btn btn--ok" id="dResolveBtn">✓ 해결됨으로 표시</button>
+              <button class="btn btn--danger" id="dDeleteBtn">핀 삭제</button>
+            </div>
+          </section>
         </div>
       </div>
-      <div class="side__list" id="cmtList"></div>
     </aside>
   </div>
+
+  <div class="toast" id="toast"></div>
 
   <script>
   (function () {
@@ -396,7 +627,11 @@
       filter: 'page',
       currentPage: PAGES[0].path,
       iframeReady: false,
-      pendingOpenId: null,
+      view: 'list',          // 'list' | 'detail'
+      selectedId: null,
+      simActive: new Set(),  // ids whose CSS sim is currently injected in iframe
+      saveTimer: null,
+      user: { email: 'guest@local', name: '게스트' },
     };
 
     function load() {
@@ -406,6 +641,12 @@
         return Array.isArray(arr) ? arr : [];
       } catch { return []; }
     }
+    function persist() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.comments)); }
+      catch (e) { console.warn('voc: save failed', e); }
+    }
+    function uid(p) { return p + '_' + Math.random().toString(36).slice(2, 10); }
+    function now() { return Date.now(); }
     function escapeHtml(s) {
       return String(s == null ? '' : s)
         .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
@@ -420,16 +661,27 @@
       const dt = new Date(t);
       return `${dt.getMonth() + 1}/${dt.getDate()}`;
     }
-    function formatTarget(c) {
+    function pageLabel(p) {
+      const f = PAGES.find((x) => x.path === p);
+      return f ? f.label : p;
+    }
+    function shortTarget(c) {
       if (!c) return '';
       const tag = (c.elementTag || '').toLowerCase();
       const txt = (c.elementText || '').replace(/\s+/g, ' ').trim();
       if (txt) return `<${tag || 'el'}> "${txt.length > 36 ? txt.slice(0, 36) + '…' : txt}"`;
       return c.selector || `<${tag}>`;
     }
-    function pageLabel(p) {
-      const f = PAGES.find((x) => x.path === p);
-      return f ? f.label : p;
+    function indexOfInPage(c) {
+      const sorted = state.comments
+        .filter((x) => x.page === c.page)
+        .sort((a, b) => a.createdAt - b.createdAt);
+      return sorted.findIndex((x) => x.id === c.id) + 1;
+    }
+    function findById(id) { return state.comments.find((x) => x.id === id); }
+    function defaultCssTemplate(c) {
+      const sel = c.selector || 'body';
+      return `${sel} {\n  /* 여기에 변경할 CSS 작성 */\n}\n`;
     }
 
     const $ = (s) => document.querySelector(s);
@@ -439,46 +691,46 @@
     const urlText = $('#urlText');
     const urlOpen = $('#urlOpen');
     const browserLoading = $('#browserLoading');
-    const fabPointer = $('#fabPointer');
     const cmtList = $('#cmtList');
     const cmtCount = $('#cmtCount');
     const filters = $('#filters');
-    const hint = $('#hint');
-    const layout = $('#layout');
-    const HINT_KEY = 'scm:voc:hintDismissed';
+    const listView = $('#listView');
+    const detailView = $('#detailView');
+    const dNum = $('#dNum');
+    const dPage = $('#dPage');
+    const dStatus = $('#dStatus');
+    const dTag = $('#dTag');
+    const dText = $('#dText');
+    const dSel = $('#dSel');
+    const dCoord = $('#dCoord');
+    const dSelHint = $('#dSelHint');
+    const dReplies = $('#dReplies');
+    const dReply = $('#dReply');
+    const dNote = $('#dNote');
+    const dCss = $('#dCss');
+    const dSaved = $('#dSaved');
+    const simStatusEl = $('#simStatus');
+    const simStatusCount = $('#simStatusCount');
+    const toastEl = $('#toast');
 
     // ====================================================
     // Init
     // ====================================================
     function init() {
-      // hint visibility
-      if (localStorage.getItem(HINT_KEY) === '1') {
-        hint.classList.add('is-hidden');
-      } else {
-        layout.classList.add('has-hint');
-      }
-      $('#hintClose').addEventListener('click', () => {
-        hint.classList.add('is-hidden');
-        layout.classList.remove('has-hint');
-        try { localStorage.setItem(HINT_KEY, '1'); } catch {}
-      });
-
-      // page selector
       pageSelect.innerHTML = PAGES.map((p) => `<option value="${p.path}">${p.label}</option>`).join('');
       pageSelect.value = state.currentPage;
       urlText.textContent = state.currentPage;
       urlOpen.href = state.currentPage;
       navigateTo(state.currentPage);
 
-      pageSelect.addEventListener('change', () => {
-        navigateTo(pageSelect.value);
-      });
+      pageSelect.addEventListener('change', () => navigateTo(pageSelect.value));
       reloadBtn.addEventListener('click', () => {
         if (!iframe.contentWindow) return;
         showLoading(true);
         try { iframe.contentWindow.location.reload(); }
         catch { iframe.src = state.currentPage; }
       });
+
       iframe.addEventListener('load', () => {
         showLoading(false);
         try {
@@ -490,82 +742,107 @@
             if (PAGES.some((p) => p.path === path)) pageSelect.value = path;
           }
         } catch {}
-        // pointer hint shown briefly per page
-        showFabPointer();
+        // page change resets sim tracking (style tags died with previous doc)
+        state.simActive.clear();
+        updateSimStatus();
+        renderList();
       });
 
       filters.addEventListener('click', onFilterClick);
 
-      // listen to overlay messages
+      $('#detailBack').addEventListener('click', () => goList());
+      $('#dLocate').addEventListener('click', onLocate);
+      $('#dReplySend').addEventListener('click', onReply);
+      dReply.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); onReply(); }
+      });
+
+      $('#simApplyBtn').addEventListener('click', onSimApply);
+      $('#simResetBtn').addEventListener('click', onSimReset);
+      $('#proposalSaveBtn').addEventListener('click', () => saveProposal(true));
+      $('#simResetAll').addEventListener('click', onSimResetAll);
+
+      $('#dResolveBtn').addEventListener('click', onResolveToggle);
+      $('#dDeleteBtn').addEventListener('click', onDelete);
+
+      // Auto-save proposal as worker types (debounced)
+      [dNote, dCss].forEach((el) => {
+        el.addEventListener('input', () => {
+          if (state.saveTimer) clearTimeout(state.saveTimer);
+          state.saveTimer = setTimeout(() => saveProposal(false), 600);
+        });
+      });
+
+      // overlay messages
       window.addEventListener('message', (e) => {
         const d = e && e.data;
         if (!d || typeof d !== 'object') return;
         if (d.type === 'voc-ready') {
           state.iframeReady = true;
-          // if a pending comment was queued before iframe was ready, open now
-          if (state.pendingOpenId) {
-            sendOpen(state.pendingOpenId);
-            state.pendingOpenId = null;
-          }
+          // re-apply any sims we know about (in case of nav-back to same page)
+          state.simActive.forEach((id) => {
+            const c = findById(id);
+            if (c && c.page === state.currentPage && c.proposal && c.proposal.css) {
+              postIframe({ type: 'voc-sim-apply', id, css: c.proposal.css });
+            }
+          });
+          updateSimStatus();
         } else if (d.type === 'voc-changed') {
           state.comments = load();
+          // refresh detail if same id still present
+          if (state.view === 'detail' && state.selectedId) {
+            const c = findById(state.selectedId);
+            if (c) renderDetail(c);
+            else goList();
+          }
           renderList();
         }
       });
-
-      // localStorage cross-tab sync
       window.addEventListener('storage', (e) => {
         if (e.key !== STORAGE_KEY) return;
         state.comments = load();
+        if (state.view === 'detail' && state.selectedId) {
+          const c = findById(state.selectedId);
+          if (c) renderDetail(c);
+        }
         renderList();
       });
-
-      // auth
       document.addEventListener('scm:auth-ready', (e) => {
         const u = e.detail && e.detail.user;
         if (!u) return;
+        state.user.email = u.email;
+        state.user.name  = u.name || u.email;
         $('#userName').textContent = u.name || u.email;
         const roleEl = $('#userRole');
         roleEl.textContent = u.role;
         roleEl.dataset.role = u.role;
         roleEl.style.display = '';
       });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && state.view === 'detail') { goList(); }
+      });
 
       renderList();
     }
 
-    function navigateTo(path, openCmtId) {
+    function navigateTo(path) {
       state.currentPage = path;
       urlText.textContent = path;
       urlOpen.href = path;
       pageSelect.value = path;
       state.iframeReady = false;
-      state.pendingOpenId = openCmtId || null;
       showLoading(true);
-      // use hash for cross-page open as a fallback (overlay handles it on load)
-      iframe.src = openCmtId ? (path + '#voc=' + openCmtId) : path;
-      renderList();
+      iframe.src = path;
     }
-
     function showLoading(on) { browserLoading.classList.toggle('is-on', !!on); }
 
-    let pointerTimer = null;
-    function showFabPointer() {
-      // only show when there are no comments yet on this page (first-time UX)
-      const hasAny = state.comments.some((c) => c.page === state.currentPage);
-      if (hasAny) { fabPointer.classList.remove('is-on'); return; }
-      fabPointer.classList.add('is-on');
-      if (pointerTimer) clearTimeout(pointerTimer);
-      pointerTimer = setTimeout(() => fabPointer.classList.remove('is-on'), 4200);
-    }
-
-    function sendOpen(id) {
-      try { iframe.contentWindow && iframe.contentWindow.postMessage({ type: 'voc-open', id }, '*'); }
+    function postIframe(msg) {
+      try { iframe.contentWindow && iframe.contentWindow.postMessage(msg, '*'); }
       catch {}
     }
 
     // ====================================================
-    // Comments list
+    // List
     // ====================================================
     function renderList() {
       const all = state.comments;
@@ -598,10 +875,9 @@
           <div class="side__empty">
             <div class="em">💭</div>
             <div>${state.filter === 'page'
-              ? '이 페이지에 아직 코멘트가 없습니다.<br/>데모의 <span class="accent">우하단 💬 버튼</span>을 눌러<br/>의견을 남겨보세요.'
+              ? '이 페이지에 코멘트가 없습니다.<br/>데모의 <span class="accent">우하단 💬 버튼</span>으로<br/>현업이 의견을 남기면 여기에 표시됩니다.'
               : '조건에 맞는 코멘트가 없습니다.'}</div>
-          </div>
-        `;
+          </div>`;
         return;
       }
 
@@ -618,11 +894,14 @@
         const cls = ['cmt'];
         if (c.status === 'resolved') cls.push('is-resolved');
         if (c.page !== state.currentPage) cls.push('is-other-page');
+        if (c.proposal && (c.proposal.note || c.proposal.css)) cls.push('has-proposal');
+        if (state.simActive.has(c.id)) cls.push('is-sim-active');
         return `
           <div class="${cls.join(' ')}" data-cmt-id="${c.id}">
             <div class="cmt__head">
               <span class="cmt__num">${idxOf(c)}</span>
-              <span class="cmt__target">${escapeHtml(formatTarget(c))}</span>
+              <span class="cmt__target">${escapeHtml(shortTarget(c))}</span>
+              ${state.simActive.has(c.id) ? '<span class="cmt__sim">SIM</span>' : ''}
               <span class="cmt__status">${c.status === 'resolved' ? '해결됨' : '미해결'}</span>
             </div>
             <div class="cmt__page">📄 ${escapeHtml(pageLabel(c.page))}</div>
@@ -632,24 +911,13 @@
               <span>·</span>
               <span>${relTime(c.createdAt)}</span>
               ${c.thread.length > 1 ? `<span class="cmt__replies">💬 ${c.thread.length}</span>` : ''}
+              ${c.proposal && (c.proposal.note || c.proposal.css) ? '<span class="cmt__proposal-flag">· 개선안 있음</span>' : ''}
             </div>
-          </div>
-        `;
+          </div>`;
       }).join('');
 
       cmtList.querySelectorAll('.cmt').forEach((el) => {
-        el.addEventListener('click', () => {
-          const id = el.dataset.cmtId;
-          const c = state.comments.find((x) => x.id === id);
-          if (!c) return;
-          if (c.page !== state.currentPage) {
-            navigateTo(c.page, c.id);
-          } else if (state.iframeReady) {
-            sendOpen(c.id);
-          } else {
-            state.pendingOpenId = c.id;
-          }
-        });
+        el.addEventListener('click', () => openDetail(el.dataset.cmtId));
       });
     }
 
@@ -659,6 +927,268 @@
       filters.querySelectorAll('.chip').forEach((b) => b.classList.toggle('is-active', b === btn));
       state.filter = btn.dataset.filter;
       renderList();
+    }
+
+    // ====================================================
+    // Detail
+    // ====================================================
+    function openDetail(id) {
+      const c = findById(id);
+      if (!c) return;
+
+      // If comment is on a different page, switch iframe first then open detail.
+      if (c.page !== state.currentPage) {
+        state.selectedId = id;
+        navigateTo(c.page);
+        // wait until iframe ready, then locate + render
+        const onReady = (e) => {
+          if (!e.data || e.data.type !== 'voc-ready') return;
+          window.removeEventListener('message', onReady);
+          renderDetail(c);
+          showDetail();
+          flashLocate(c);
+        };
+        window.addEventListener('message', onReady);
+        return;
+      }
+
+      state.selectedId = id;
+      renderDetail(c);
+      showDetail();
+      flashLocate(c);
+    }
+
+    function showDetail() {
+      state.view = 'detail';
+      listView.hidden = true;
+      detailView.hidden = false;
+    }
+    function goList() {
+      state.view = 'list';
+      state.selectedId = null;
+      listView.hidden = false;
+      detailView.hidden = true;
+      renderList();
+    }
+
+    function renderDetail(c) {
+      const idx = indexOfInPage(c);
+      dNum.textContent = String(idx);
+      dNum.classList.toggle('is-resolved', c.status === 'resolved');
+      dPage.textContent = c.page;
+      dStatus.textContent = c.status === 'resolved' ? '해결됨' : '미해결';
+      dStatus.classList.toggle('is-resolved', c.status === 'resolved');
+
+      dTag.textContent = '<' + (c.elementTag || '').toLowerCase() + '>';
+      dText.textContent = c.elementText || '(텍스트 없음)';
+      dSel.textContent = c.selector || '—';
+      dCoord.textContent = `x: ${c.x}, y: ${c.y}`;
+      dSelHint.textContent = c.selector || '<selector>';
+
+      // Replies
+      dReplies.innerHTML = c.thread.map((r) => `
+        <div class="reply" data-reply-id="${r.id}">
+          <div class="reply__meta">
+            <span class="reply__author">${escapeHtml(r.author || '익명')}</span>
+            <span>·</span>
+            <span>${relTime(r.createdAt)}</span>
+            ${r.author === state.user.email ? `<button class="reply__del" data-del="${r.id}" title="삭제">삭제</button>` : ''}
+          </div>
+          <div class="reply__body">${escapeHtml(r.text)}</div>
+        </div>
+      `).join('');
+      dReplies.querySelectorAll('[data-del]').forEach((b) => {
+        b.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteReply(c.id, b.dataset.del);
+        });
+      });
+
+      dReply.value = '';
+
+      // Proposal
+      const p = c.proposal || {};
+      dNote.value = p.note || '';
+      dCss.value  = p.css  || defaultCssTemplate(c);
+
+      // Resolve button label
+      $('#dResolveBtn').textContent = c.status === 'resolved' ? '↩ 미해결로 되돌리기' : '✓ 해결됨으로 표시';
+      // Sim button label
+      const isSim = state.simActive.has(c.id);
+      const simBtn = $('#simApplyBtn');
+      simBtn.textContent = isSim ? '🔄 시뮬 다시 적용' : '▶ 시뮬레이션 적용';
+      $('#simResetBtn').disabled = !isSim;
+
+      flashSavedLabel(false);
+    }
+
+    function flashSavedLabel(on) {
+      dSaved.classList.toggle('is-on', !!on);
+      if (on) setTimeout(() => dSaved.classList.remove('is-on'), 1400);
+    }
+
+    // ====================================================
+    // Mutations
+    // ====================================================
+    function onReply() {
+      const c = findById(state.selectedId);
+      if (!c) return;
+      const text = dReply.value.trim();
+      if (!text) { dReply.focus(); return; }
+      c.thread.push({ id: uid('r'), author: state.user.email, text, createdAt: now() });
+      persist();
+      renderDetail(c);
+      renderList();
+      showToast('답글 등록');
+    }
+
+    function deleteReply(commentId, replyId) {
+      const c = findById(commentId);
+      if (!c) return;
+      if (c.thread.length === 1) {
+        if (!confirm('마지막 코멘트입니다. 핀 전체가 삭제됩니다. 계속할까요?')) return;
+        return doDelete(c.id);
+      }
+      c.thread = c.thread.filter((r) => r.id !== replyId);
+      persist();
+      renderDetail(c);
+      renderList();
+    }
+
+    function saveProposal(announce) {
+      const c = findById(state.selectedId);
+      if (!c) return;
+      const note = dNote.value;
+      const css  = dCss.value;
+      const had = c.proposal;
+      c.proposal = {
+        note,
+        css,
+        updatedAt: now(),
+        updatedBy: state.user.email,
+      };
+      // if note + css are both empty/default, clear proposal
+      if (!note.trim() && (!css.trim() || css.trim() === defaultCssTemplate(c).trim())) {
+        delete c.proposal;
+      }
+      persist();
+      renderList();
+      flashSavedLabel(true);
+      if (announce) showToast(c.proposal ? '개선안 저장' : '개선안 비움');
+      // if a sim is currently applied for this comment, refresh it with new CSS
+      if (state.simActive.has(c.id) && c.proposal) {
+        postIframe({ type: 'voc-sim-apply', id: c.id, css: c.proposal.css });
+      }
+    }
+
+    function onSimApply() {
+      const c = findById(state.selectedId);
+      if (!c) return;
+      // Make sure latest CSS is saved
+      saveProposal(false);
+      const css = (c.proposal && c.proposal.css) || dCss.value || '';
+      if (!css.trim()) { showToast('CSS 가 비어있습니다'); return; }
+
+      // Sim only works on current page.
+      if (c.page !== state.currentPage) {
+        navigateTo(c.page);
+        const onReady = (e) => {
+          if (!e.data || e.data.type !== 'voc-ready') return;
+          window.removeEventListener('message', onReady);
+          postIframe({ type: 'voc-sim-apply', id: c.id, css });
+          state.simActive.add(c.id);
+          updateSimStatus();
+          renderDetail(c);
+          renderList();
+          flashLocate(c);
+        };
+        window.addEventListener('message', onReady);
+        return;
+      }
+      postIframe({ type: 'voc-sim-apply', id: c.id, css });
+      state.simActive.add(c.id);
+      updateSimStatus();
+      renderDetail(c);
+      renderList();
+      flashLocate(c);
+      showToast('시뮬레이션 적용 — 데모에 즉시 반영됨');
+    }
+
+    function onSimReset() {
+      const c = findById(state.selectedId);
+      if (!c) return;
+      postIframe({ type: 'voc-sim-reset', id: c.id });
+      state.simActive.delete(c.id);
+      updateSimStatus();
+      renderDetail(c);
+      renderList();
+      showToast('시뮬 해제');
+    }
+    function onSimResetAll() {
+      postIframe({ type: 'voc-sim-reset-all' });
+      state.simActive.clear();
+      updateSimStatus();
+      if (state.view === 'detail') {
+        const c = findById(state.selectedId);
+        if (c) renderDetail(c);
+      }
+      renderList();
+      showToast('모든 시뮬 해제');
+    }
+    function updateSimStatus() {
+      const n = state.simActive.size;
+      simStatusEl.hidden = n === 0;
+      simStatusCount.textContent = String(n);
+    }
+
+    function onResolveToggle() {
+      const c = findById(state.selectedId);
+      if (!c) return;
+      c.status = c.status === 'resolved' ? 'open' : 'resolved';
+      persist();
+      renderDetail(c);
+      renderList();
+      showToast(c.status === 'resolved' ? '해결됨으로 표시' : '미해결로 되돌림');
+    }
+    function onDelete() {
+      const c = findById(state.selectedId);
+      if (!c) return;
+      if (!confirm('이 핀과 모든 코멘트를 삭제할까요?')) return;
+      doDelete(c.id);
+    }
+    function doDelete(id) {
+      // also reset sim if active
+      if (state.simActive.has(id)) {
+        postIframe({ type: 'voc-sim-reset', id });
+        state.simActive.delete(id);
+      }
+      state.comments = state.comments.filter((x) => x.id !== id);
+      persist();
+      goList();
+      renderList();
+      updateSimStatus();
+      showToast('핀 삭제됨');
+    }
+
+    function onLocate() {
+      const c = findById(state.selectedId);
+      if (!c) return;
+      flashLocate(c);
+    }
+    function flashLocate(c) {
+      if (c.page !== state.currentPage) return;
+      postIframe({ type: 'voc-flash', selector: c.selector, x: c.x, y: c.y });
+    }
+
+    // ====================================================
+    // Toast
+    // ====================================================
+    let toastTimer = null;
+    function showToast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add('is-on');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove('is-on'), 1800);
     }
 
     if (document.readyState === 'loading') {

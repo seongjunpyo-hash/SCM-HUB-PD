@@ -104,6 +104,18 @@
         background-color: rgba(110, 107, 255, 0.06) !important;
       }
 
+      .scm-voc-flash {
+        animation: scmVocFlash 1.8s ease-out !important;
+        position: relative;
+        z-index: ${Z - 1};
+      }
+      @keyframes scmVocFlash {
+        0%   { box-shadow: 0 0 0 0 rgba(110,107,255,0.0); outline: 0 solid transparent; }
+        15%  { box-shadow: 0 0 0 6px rgba(110,107,255,0.65), 0 0 0 12px rgba(110,107,255,0.25); outline: 2px solid #6E6BFF; outline-offset: 4px; }
+        70%  { box-shadow: 0 0 0 6px rgba(110,107,255,0.45), 0 0 0 12px rgba(110,107,255,0.15); outline: 2px solid #6E6BFF; outline-offset: 4px; }
+        100% { box-shadow: 0 0 0 0 rgba(110,107,255,0.0); outline: 0 solid transparent; }
+      }
+
       .scm-voc-pin-layer {
         position: absolute; top: 0; left: 0;
         width: 0; height: 0;
@@ -735,6 +747,16 @@
       closePopover();
     } else if (d.type === 'voc-set-mode') {
       setMode(d.mode === 'comment' ? 'comment' : 'browse');
+    } else if (d.type === 'voc-flash') {
+      // Locate + flash the element by selector. Falls back to (x, y) coords.
+      flashLocate(d.selector || null, d.x, d.y);
+    } else if (d.type === 'voc-sim-apply') {
+      // Inject a CSS override scoped by an arbitrary id (so multiple sims can coexist).
+      simApply(d.id, d.css || '');
+    } else if (d.type === 'voc-sim-reset') {
+      simReset(d.id);
+    } else if (d.type === 'voc-sim-reset-all') {
+      simResetAll();
     } else if (d.type === 'voc-ping') {
       // parent asks "are you ready?" — reply with current page
       try {
@@ -743,6 +765,42 @@
         }
       } catch {}
     }
+  }
+
+  function flashLocate(selector, fallbackX, fallbackY) {
+    let el = null;
+    if (selector) { try { el = document.querySelector(selector); } catch {} }
+    if (el) {
+      try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch {}
+      el.classList.remove('scm-voc-flash');
+      // force reflow so the animation restarts even when re-clicking the same target
+      void el.offsetWidth;
+      el.classList.add('scm-voc-flash');
+      setTimeout(() => { try { el.classList.remove('scm-voc-flash'); } catch {} }, 1900);
+    } else if (typeof fallbackY === 'number') {
+      try { window.scrollTo({ top: Math.max(0, fallbackY - window.innerHeight * 0.35), behavior: 'smooth' }); } catch {}
+    }
+  }
+
+  function simApply(id, css) {
+    if (!id) return;
+    const sid = 'scm-voc-sim-' + id;
+    let style = document.getElementById(sid);
+    if (!style) {
+      style = document.createElement('style');
+      style.id = sid;
+      style.dataset.vocSim = '1';
+      document.head.appendChild(style);
+    }
+    style.textContent = css || '';
+  }
+  function simReset(id) {
+    if (!id) return;
+    const style = document.getElementById('scm-voc-sim-' + id);
+    if (style) style.remove();
+  }
+  function simResetAll() {
+    document.querySelectorAll('style[data-voc-sim="1"]').forEach((s) => s.remove());
   }
   function announceReady() {
     try {
