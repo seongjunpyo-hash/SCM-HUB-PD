@@ -27,7 +27,7 @@
     comments: load(),
     mode: 'browse',          // 'browse' | 'comment'
     workerMode: false,       // true while embedded in the VOC iframe — locks LNB and blocks GNB/LNB navigation
-    user: { email: 'guest@local', name: '게스트' },
+    user: { email: 'guest@local', name: '게스트', role: null },
     activeId: null,
     pendingPin: null,        // { x, y, selector, elementText, elementTag, viewportX, viewportY }
     started: false,
@@ -55,17 +55,26 @@
   function uid(p) { return p + '_' + Math.random().toString(36).slice(2, 10); }
   function now() { return Date.now(); }
 
-  // Per-author color mapping — same hash → same color across overlay + VOC sidebar.
-  const PIN_COLORS = [
+  // Pin color per role — matches the role-tag colors used in topbar / index.
+  const ROLE_COLORS = {
+    super:    '#F59E0B',  // amber  (warn)
+    admin:    '#6E6BFF',  // purple (accent)
+    biz:      '#10B981',  // green  (success)
+    internal: '#9CA3AF',  // gray
+  };
+  // Legacy fallback — when a comment has no `authorRole`, hash the email
+  // so distinct users still get distinct colors.
+  const FALLBACK_COLORS = [
     '#6E6BFF', '#34D399', '#F59E0B', '#EC4899',
     '#3B82F6', '#A855F7', '#F43F5E', '#14B8A6',
     '#FB923C', '#22D3EE', '#84CC16', '#F97316',
   ];
-  function authorColor(email) {
-    const s = String(email || 'guest');
+  function roleColor(role, fallbackEmail) {
+    if (role && ROLE_COLORS[role]) return ROLE_COLORS[role];
+    const s = String(fallbackEmail || 'guest');
     let h = 0;
     for (let i = 0; i < s.length; i++) h = ((h * 31) + s.charCodeAt(i)) >>> 0;
-    return PIN_COLORS[h % PIN_COLORS.length];
+    return FALLBACK_COLORS[h % FALLBACK_COLORS.length];
   }
 
   // Comments visible to the current user — everything in worker mode
@@ -733,7 +742,7 @@
       const c = state.comments.find((x) => x.id === state.activeId);
       if (!c) return;
       c.thread.push({
-        id: uid('r'), author: state.user.email, text, createdAt: now(),
+        id: uid('r'), author: state.user.email, authorRole: state.user.role, text, createdAt: now(),
       });
       persist();
       openThread(c);
@@ -750,8 +759,9 @@
         status: 'open',
         createdAt: now(),
         author: state.user.email,
+        authorRole: state.user.role,
         thread: [{
-          id: uid('r'), author: state.user.email, text, createdAt: now(),
+          id: uid('r'), author: state.user.email, authorRole: state.user.role, text, createdAt: now(),
         }],
       };
       state.comments.push(c);
@@ -838,7 +848,7 @@
       if (c.status === 'resolved') cls.push('is-resolved');
       if (c.id === state.activeId) cls.push('is-active');
       const { x, y } = resolvePinCoords(c);
-      const color = authorColor(c.author);
+      const color = roleColor(c.authorRole, c.author);
       const tip = (c.thread[0] ? c.thread[0].text.slice(0, 40) : '') + (c.author ? ' — ' + c.author : '');
       return `<div class="${cls.join(' ')}" data-cmt-id="${c.id}" style="left:${x}px;top:${y}px;--pin-c:${color};" title="${escapeHtml(tip)}">${idxMap.get(c.id)}</div>`;
     }).join('');
@@ -1042,6 +1052,7 @@
     if (window.SCM_USER) {
       state.user.email = window.SCM_USER.email;
       state.user.name  = window.SCM_USER.name || window.SCM_USER.email;
+      state.user.role  = window.SCM_USER.role || null;
     }
     injectStyles();
     buildDOM();
