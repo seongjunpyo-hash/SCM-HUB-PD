@@ -1436,6 +1436,12 @@
       // "use natural scan order" — we never auto-populate it, so initial
       // dirty state stays clean.
       e.columnLeafOrder = (e.columnLeafOrder && typeof e.columnLeafOrder === 'object' && !Array.isArray(e.columnLeafOrder)) ? e.columnLeafOrder : {};
+      // frozenCount: user override for the frozen-column boundary. null /
+      // undefined means "use the table's natural frozenCount" (whatever
+      // scm-table inited the table with). Stored as a Number when set.
+      if (e.frozenCount != null && (typeof e.frozenCount !== 'number' || !isFinite(e.frozenCount) || e.frozenCount < 0)) {
+        e.frozenCount = null;
+      }
       e.filterTypes = (e.filterTypes && typeof e.filterTypes === 'object' && !Array.isArray(e.filterTypes)) ? e.filterTypes : {};
       if (!e.added) e.added = {};
       e.added.filters = Array.isArray(e.added.filters) ? e.added.filters : [];
@@ -1496,6 +1502,20 @@
       show ? s.add(selector) : s.delete(selector);
       d[arrName] = [...s];
       persistDraft();
+      refreshSaveBtn();
+    }
+    // setFrozenCount — user override for the table's frozen-column boundary.
+    // n = number of FIRST leaves (incl. cb at idx 0) that are sticky-frozen.
+    // null / undefined = "use natural" (revert to scm-table's init value).
+    function setFrozenCount(n) {
+      const d = pageDraft();
+      if (n == null) {
+        d.frozenCount = null;
+      } else {
+        d.frozenCount = Math.max(0, Math.floor(Number(n) || 0));
+      }
+      persistDraft();
+      renderEditPane();
       refreshSaveBtn();
     }
     function addFilter(label, type) {
@@ -1956,6 +1976,7 @@
         showFilter:        p.showFilter || [],
         added:             (p.added && p.added.columns) || [],
         hidden:            (p.hidden || []).filter(_isColumnSel),
+        frozenCount:       (p.frozenCount == null ? null : p.frozenCount),
       });
     }
     function isFilterDirty() { return _filterSlice(pageDraft()) !== _filterSlice(pageApplied()); }
@@ -2012,7 +2033,8 @@
       const a = pageDraft();
       const hasTopOrder  = Array.isArray(a.columnOrder)   && a.columnOrder.length;
       const hasLeafOrder = a.columnLeafOrder && Object.keys(a.columnLeafOrder).length;
-      if (!hasTopOrder && !hasLeafOrder) return;
+      const hasFrozenOverride = a.frozenCount != null;
+      if (!hasTopOrder && !hasLeafOrder && !hasFrozenOverride) return;
       // pick the first table that has scm-table API attached
       const tables = [...doc.querySelectorAll('.mp-table')];
       const reorderApi = tables.map((t) => t._scmReorder).find(Boolean);
@@ -2026,7 +2048,12 @@
     // ----- scm-table-driven apply (preferred) -----
     function applyOrderViaScmTable(reorderApi, a, doc) {
       const model = reorderApi.model;
-      // 1) top-level order: row1 group cells + ungrouped row1 leaves.
+      // 1) frozen-count override (must happen BEFORE refreshFrozen so the
+      //    later col-frozen-N stamping uses the new boundary).
+      if (a.frozenCount != null && reorderApi.setFrozenCount) {
+        reorderApi.setFrozenCount(a.frozenCount);
+      }
+      // 2) top-level order: row1 group cells + ungrouped row1 leaves.
       //    For 1-row tables this is the leaf order itself.
       if (Array.isArray(a.columnOrder) && a.columnOrder.length) {
         if (model.isTwoRow) {
@@ -2035,7 +2062,7 @@
           apply1RowOrder(reorderApi, a.columnOrder);
         }
       }
-      // 2) leaf-within-group order (2-row only)
+      // 3) leaf-within-group order (2-row only)
       if (model.isTwoRow && a.columnLeafOrder) {
         Object.keys(a.columnLeafOrder).forEach((groupSel) => {
           const leaves = a.columnLeafOrder[groupSel];
@@ -2043,8 +2070,10 @@
           apply2RowLeafOrder(reorderApi, groupSel, leaves);
         });
       }
-      // 3) recompute col-frozen-N classes + --frozen-lN offsets so sticky
-      //    positioning matches the new visual column layout.
+      // 4) recompute col-frozen-N classes + --frozen-lN offsets so sticky
+      //    positioning matches the new visual column layout. setFrozenCount
+      //    above already ran refreshFrozen once; doing it again after the
+      //    reorder is cheap and ensures the final state is consistent.
       reorderApi.refreshFrozenClassesAndOffsets();
     }
 
@@ -2301,7 +2330,10 @@
       // groups + topOrder are populated only for 2-row scm-tables. For
       // 1-row tables (most demos) groups stays [] and columns get parent=null,
       // and topOrder mirrors the flat column scan.
-      const out = { filters: [], columns: [], groups: [], topOrder: [], components: [] };
+      // naturalFrozenCount = the live frozenCount from scm-table's API
+      // (whatever scm-table inited the table with — used as the fallback
+      // when the user hasn't overridden it).
+      const out = { filters: [], columns: [], groups: [], topOrder: [], components: [], naturalFrozenCount: 0 };
       const doc = iframe.contentDocument;
       if (!doc) return out;
       const main = doc.querySelector('main') || doc.body;
@@ -2341,12 +2373,30 @@
       let grpCounter = 0;
       const theads = [...main.querySelectorAll('.mp-table thead')];
       const primaryThead = theads[0] || null;
+      // helper: find the table that owns this thead so we can read
+      // _scmReorder.model.thLeafIdx for accurate leaf-idx tagging.
+      const reorderApi = (() => {
+        const tbls = [...main.querySelectorAll('.mp-table')];
+        return tbls.map((t) => t._scmReorder).find(Boolean) || null;
+      })();
+      if (reorderApi) {
+        out.naturalFrozenCount = reorderApi.frozenCount | 0;
+      }
+      const leafIdxOf = (cell) => {
+        if (!reorderApi || !cell) return -1;
+        try { return reorderApi.model.thLeafIdx(cell); } catch { return -1; }
+      };
       if (primaryThead) {
         const trAll = [...primaryThead.querySelectorAll('tr')];
         const groupTr = trAll.length > 1 ? trAll[0] : null;
         const leafTr  = trAll[trAll.length - 1] || null;
         // leafChildIdx-aligned parent map (built when groupTr exists).
         const leafParentByPos = [];
+        // Track the most recent labeled group cell so that an empty-label
+        // group cell (the non-frozen continuation of a frozen-split group,
+        // e.g. SKU's 기본 정보 split into "기본 정보" + an empty cs=4 cell)
+        // can inherit its label.
+        let lastLabeledGroupText = null;
         if (groupTr) {
           let leafIdx = 0;
           [...groupTr.children].forEach((cell) => {
@@ -2367,7 +2417,7 @@
                 let label = (cell.textContent || '').trim().replace(/\s+/g, ' ');
                 if (!label) label = '(빈 컬럼)';
                 if (label.length > 28) label = label.slice(0, 28) + '…';
-                out.columns.push({ label, selector: sel, parent: null, draggable: false, anchor: true });
+                out.columns.push({ label, selector: sel, parent: null, draggable: false, anchor: true, leafIdx: leafIdxOf(cell) });
                 out.topOrder.push(sel);
               }
             } else if (colspan > 1) {
@@ -2376,7 +2426,12 @@
               ensureVocKey(cell, 'grp', grpCounter++);
               const gsel = ifrCssPath(cell);
               let glabel = (cell.textContent || '').trim().replace(/\s+/g, ' ');
+              // Empty label = continuation of a previous frozen-split group.
+              // Inherit the most recent labeled group's text so the user
+              // sees "기본 정보" instead of "(그룹)".
+              if (!glabel && lastLabeledGroupText) glabel = lastLabeledGroupText;
               if (!glabel) glabel = '(그룹)';
+              else lastLabeledGroupText = glabel;
               if (glabel.length > 28) glabel = glabel.slice(0, 28) + '…';
               out.groups.push({ label: glabel, selector: gsel });
               out.topOrder.push(gsel);
@@ -2391,7 +2446,7 @@
                 let label = (cell.textContent || '').trim().replace(/\s+/g, ' ');
                 if (!label) label = '(빈 컬럼)';
                 if (label.length > 28) label = label.slice(0, 28) + '…';
-                out.columns.push({ label, selector: sel, parent: null, draggable: true, anchor: false });
+                out.columns.push({ label, selector: sel, parent: null, draggable: true, anchor: false, leafIdx: leafIdxOf(cell) });
                 out.topOrder.push(sel);
               }
             }
@@ -2422,7 +2477,7 @@
             let label = (th.textContent || '').trim().replace(/\s+/g, ' ');
             if (!label) label = '(빈 컬럼)';
             if (label.length > 28) label = label.slice(0, 28) + '…';
-            out.columns.push({ label, selector: sel, parent, draggable: true, anchor: false });
+            out.columns.push({ label, selector: sel, parent, draggable: true, anchor: false, leafIdx: leafIdxOf(th) });
             // 1-row tables: every leaf is also a top-level entry.
             // 2-row tables: leaves under groups belong to columnLeafOrder, NOT topOrder.
             if (!groupTr) out.topOrder.push(sel);
@@ -2463,6 +2518,11 @@
       const hidden     = new Set(d.hidden);
       const showSort   = new Set(d.showSort);
       const showFilter = new Set(d.showFilter);
+      // Effective frozen-column boundary. User override (d.frozenCount) wins;
+      // null/undefined falls back to whatever scm-table inited the table with.
+      const effectiveFrozenCount = (d.frozenCount != null)
+        ? d.frozenCount
+        : (targets.naturalFrozenCount | 0);
 
       // merge native + user-added items, then sort by saved order
       const filterRowsRaw = [
@@ -2557,10 +2617,19 @@
           const sel = escapeHtml(it.selector);
           let middle = '';
           if (it.kind === 'column' && !it.added && !it.isGroup) {
-            // leaf column gets sort/filter icon toggles (group + added skip)
+            // leaf column gets sort/filter/frozen icon toggles (group + added skip)
             const sortOn   = showSort.has(it.selector);
             const filterOn = showFilter.has(it.selector);
+            // 고정 toggle — ON if this leaf falls within the current frozen
+            // boundary. Click toggles the boundary to / from this leaf.
+            // Skip when leafIdx is unknown (scan ran without scm-table API).
+            let frozenBtn = '';
+            if (it.leafIdx != null && it.leafIdx >= 0) {
+              const frozenOn = it.leafIdx < effectiveFrozenCount;
+              frozenBtn = `<button type="button" class="edit-row__icon-toggle ${frozenOn ? 'is-on' : ''}" data-toggle-frozen="${it.leafIdx}" title="이 컬럼까지 좌측 고정 영역에 포함">고정</button>`;
+            }
             middle = `
+              ${frozenBtn}
               <button type="button" class="edit-row__icon-toggle ${sortOn ? 'is-on' : ''}"   data-toggle-icon="sort"   data-selector="${sel}" title="컬럼 정렬 아이콘 표시/숨김">정렬</button>
               <button type="button" class="edit-row__icon-toggle ${filterOn ? 'is-on' : ''}" data-toggle-icon="filter" data-selector="${sel}" title="컬럼 필터 아이콘 표시/숨김">필터</button>`;
           } else if (it.isGroup) {
@@ -2721,6 +2790,19 @@
       const tg = t.closest && t.closest('.edit-row__icon-toggle');
       if (tg) {
         e.preventDefault();
+        // 고정 toggle: click ON  → setFrozenCount(leafIdx + 1) [include this column]
+        //              click OFF → setFrozenCount(leafIdx)     [drop this column]
+        // Note: scm-table's frozen model is "first N contiguous leaves from
+        // the left", so toggling a column ALSO affects later columns sharing
+        // the same boundary direction. Tooltip on the button explains this.
+        if (tg.dataset.toggleFrozen != null) {
+          const leafIdx = parseInt(tg.dataset.toggleFrozen, 10);
+          if (Number.isFinite(leafIdx)) {
+            const wasOn = tg.classList.contains('is-on');
+            setFrozenCount(wasOn ? leafIdx : (leafIdx + 1));
+          }
+          return;
+        }
         const sel = tg.dataset.selector;
         const kind = tg.dataset.toggleIcon;
         const wasOn = tg.classList.contains('is-on');

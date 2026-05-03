@@ -409,7 +409,10 @@ function setupStickyThead(root = document, opts = {}) {
  * 분기 — 단 2곳으로 축소.
  * ============================================================ */
 function setupTableInteractions(root = document, opts = {}) {
-  const { frozenCount = 0, scrollSelector = '.mp-table-scroll', stickySelector = '.mp-thead-sticky .mp-thead-scroll' } = opts;
+  // frozenCount is `let` so external code (e.g. VOC edit pane) can mutate
+  // the boundary at runtime via _scmReorder.setFrozenCount().
+  let { frozenCount = 0 } = opts;
+  const { scrollSelector = '.mp-table-scroll', stickySelector = '.mp-thead-sticky .mp-thead-scroll' } = opts;
   const origTable = root.querySelector(`${scrollSelector} > .mp-table`);
   if (!origTable) return;
   const stickyScroll = root.querySelector(stickySelector);
@@ -795,7 +798,19 @@ function setupTableInteractions(root = document, opts = {}) {
     moveColumn,
     moveRow1Group,
     refreshFrozenClassesAndOffsets,
-    frozenCount,
+    // expose frozenCount as a getter so external code reading
+    // `_scmReorder.frozenCount` always sees the live value (it can change
+    // via setFrozenCount below).
+    get frozenCount() { return frozenCount; },
+    // Set the frozen boundary to the first N leaves and refresh the
+    // col-frozen-* classes + --frozen-lN offsets so sticky positioning
+    // matches. Used by VOC's edit pane "고정" leaf toggle.
+    setFrozenCount(n) {
+      const next = Math.max(0, Math.floor(Number(n) || 0));
+      if (next === frozenCount) return;
+      frozenCount = next;
+      refreshFrozenClassesAndOffsets();
+    },
   };
   if (origTable && origTable !== cloneTable) {
     origTable._scmReorder = cloneTable._scmReorder;
