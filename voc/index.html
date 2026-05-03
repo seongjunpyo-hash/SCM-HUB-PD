@@ -1188,12 +1188,14 @@
     // Init
     // ====================================================
     function init() {
-      // load edit state — applied (persisted, injected) + draft (pending UI changes)
+      // load edit state — only the saved baseline (applied) survives reload.
+      // draft is session-only: a fresh reload always starts from the saved
+      // baseline so unsaved edits don't silently persist into the next visit.
+      // (User hit "강력 새로고침" expecting iframe to revert; we honor that.)
       state.applied = loadJsonKey(EDIT_KEY);
-      state.draft   = loadJsonKey(DRAFT_KEY);
-      if (!state.draft || !Object.keys(state.draft).length) {
-        state.draft = JSON.parse(JSON.stringify(state.applied || {}));
-      }
+      state.draft   = JSON.parse(JSON.stringify(state.applied || {}));
+      // wipe any persisted draft from a prior session so it doesn't reappear.
+      try { localStorage.removeItem(DRAFT_KEY); } catch {}
       // L1 chips
       menuL1.innerHTML = MENU.map((m) => `<button type="button" class="menu-l1__chip" data-l1="${m.l1}">${escapeHtml(m.label)}</button>`).join('');
       menuL1.addEventListener('click', (e) => {
@@ -1693,9 +1695,16 @@
     // thead-bearing table and apply marks to ALL tbodies + colgroups across
     // ALL .mp-tables in the doc.
     function applyHiddenCellsToIframe(doc, page) {
+      // Restore any tables we previously shrunk so we can recompute fresh.
+      doc.querySelectorAll('[data-voc-orig-width]').forEach((tbl) => {
+        const w = tbl.dataset.vocOrigWidth;
+        if (w) {
+          tbl.style.width = w + 'px';
+          tbl.style.minWidth = w + 'px';
+        }
+      });
       doc.querySelectorAll('[data-voc-hidden]').forEach((el) => delete el.dataset.vocHidden);
       const hidden = (page && page.hidden) || [];
-      if (!hidden.length) return;
       const tables = [...doc.querySelectorAll('.mp-table')];
       // Group tables by their host (.mp-table-host) so sticky-clone + body-table
       // pairs share a leaf-idx coordinate space. Standalone tables (modals,
@@ -1709,6 +1718,36 @@
       hidden.forEach((sel) => {
         if (!sel || !_isColumnSel(sel)) return;
         groups.forEach((tblList) => _markHiddenColumnInGroup(tblList, sel));
+      });
+      // Recompute table.style.width = sum of visible col widths so the
+      // hidden columns' space actually disappears (display:none on <col>
+      // alone doesn't shrink the table when style.width is set explicitly).
+      groups.forEach((tblList) => _shrinkTableToVisibleCols(tblList));
+    }
+    function _shrinkTableToVisibleCols(tblList) {
+      tblList.forEach((tbl) => {
+        const colgroup = tbl.querySelector(':scope > colgroup');
+        if (!colgroup) return;
+        // remember original width once so un-hide can restore
+        if (!tbl.dataset.vocOrigWidth) {
+          const cur = parseInt(tbl.style.width, 10);
+          if (cur > 0) tbl.dataset.vocOrigWidth = String(cur);
+        }
+        let visibleSum = 0;
+        let hasHidden = false;
+        [...colgroup.children].forEach((col) => {
+          const w = parseInt(col.style.width, 10) || 0;
+          if (col.dataset.vocHidden === 'true') {
+            hasHidden = true;
+          } else {
+            visibleSum += w;
+          }
+        });
+        if (!hasHidden) return;            // nothing to shrink
+        if (visibleSum > 0) {
+          tbl.style.width    = visibleSum + 'px';
+          tbl.style.minWidth = visibleSum + 'px';
+        }
       });
     }
     function _markHiddenColumnInGroup(tblList, sel) {
