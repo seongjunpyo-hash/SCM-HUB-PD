@@ -1527,11 +1527,13 @@
       // Default: ALL sort + filter icons hidden. Reveal selectively.
       lines.push(`.mp-table thead th .sort-ic, .mp-table thead th .scm-th-sort { display: none !important; }`);
       lines.push(`.mp-table thead th .filter-ic { display: none !important; }`);
-      // Use the demo's intended `inline-block` for sort-ic and `inline` for
-      // filter-ic so the show-override matches the original layout. `revert`
-      // would reset to the UA default and lose the design-system sizing.
-      a.showSort.forEach((s)   => lines.push(`${s} .sort-ic, ${s} .scm-th-sort { display: inline-block !important; }`));
-      a.showFilter.forEach((s) => lines.push(`${s} .filter-ic { display: inline-block !important; }`));
+      // Use the demo's intended `inline-block` for sort-ic / filter-ic so
+      // the show-override matches the original layout. The `.mp-table thead`
+      // prefix is essential — without it the show rule has lower specificity
+      // than the default hide rule (which has 2 elements + 2 classes), and
+      // !important alone doesn't decide ties.
+      a.showSort.forEach((s)   => lines.push(`.mp-table thead ${s} .sort-ic, .mp-table thead ${s} .scm-th-sort { display: inline-block !important; }`));
+      a.showFilter.forEach((s) => lines.push(`.mp-table thead ${s} .filter-ic { display: inline-block !important; }`));
       // marker styles for added items
       lines.push(`
         .scm-voc-added-filter,
@@ -1657,25 +1659,28 @@
     }
 
     // Move filter chips inside the iframe to match a.filterOrder.
-    // Uses each chip's parent (kept stable per the original wrapper) and
-    // appends in the requested order, slotting before any reset button.
+    // The demo's filter bar splits chips across multiple wrapper divs; to
+    // honor a global order we consolidate every reorderable chip into the
+    // wrapper that already hosts a real native chip, slotting before its
+    // reset button if present.
     function applyFilterOrderToIframe() {
       const doc = iframe.contentDocument;
       if (!doc) return;
       const a = pageDraft();   // live preview: read draft so iframe reflects pending changes
       if (!a.filterOrder || !a.filterOrder.length) return;
-      let parent = null, resetBtn = null;
+      const filterBar = doc.querySelector('.scm-filter-bar');
+      if (!filterBar) return;
+      const realChip = filterBar.querySelector(
+        '.scm-filter-select[data-mp-filter]:not(.scm-voc-added-filter)'
+      );
+      const wrapper = (realChip && realChip.parentElement) || filterBar.firstElementChild || filterBar;
+      const resetBtn = wrapper.querySelector(':scope > .scm-filter-reset-btn');
       a.filterOrder.forEach((sel) => {
         try {
           const el = doc.querySelector(sel);
           if (!el) return;
-          if (!parent) {
-            parent = el.parentNode;
-            resetBtn = parent.querySelector(':scope > .scm-filter-reset-btn');
-          }
-          if (el.parentNode !== parent) return;
-          if (resetBtn && resetBtn.parentNode === parent) parent.insertBefore(el, resetBtn);
-          else parent.appendChild(el);
+          if (resetBtn && resetBtn.parentNode === wrapper) wrapper.insertBefore(el, resetBtn);
+          else wrapper.appendChild(el);
         } catch {}
       });
     }
