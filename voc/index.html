@@ -1636,8 +1636,12 @@
       // Filters — every .scm-filter-select chip with a data-mp-filter
       // (data-mp-filter is the marker for "real" filter chips; search box,
       // reset button, "전체 필터" launcher don't carry it, so they're
-      // automatically excluded).
-      const filterEls = main.querySelectorAll('.scm-filter-bar .scm-filter-select[data-mp-filter]');
+      // automatically excluded). User-added chips carry .scm-voc-added-filter
+      // and are surfaced separately from the draft list, so we skip them
+      // here to avoid duplicates in the edit pane.
+      const filterEls = main.querySelectorAll(
+        '.scm-filter-bar .scm-filter-select[data-mp-filter]:not(.scm-voc-added-filter)'
+      );
       const filterSeen = new Set();
       filterEls.forEach((el) => {
         const sel = ifrCssPath(el);
@@ -1659,6 +1663,7 @@
       const colSeen = new Set();
       main.querySelectorAll('.mp-table thead th').forEach((th) => {
         if (th.classList.contains('col-spacer') || th.classList.contains('cb-col')) return;
+        if (th.classList.contains('scm-voc-added-col')) return;  // user-added: shown via draft list, not scan
         const colspan = parseInt(th.getAttribute('colspan') || '1', 10);
         if (colspan > 1) return;
         const sel = ifrCssPath(th);
