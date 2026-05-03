@@ -292,6 +292,24 @@
         box-shadow: 0 0 0 2px rgba(110,107,255,0.18);
       }
       .scm-voc-lnb-count.is-resolved-only { background: #34D399; }
+
+      /* Lock LNB collapsed while in comment mode (prevents layout shift
+         which would otherwise drift saved pin coordinates).               */
+      html.scm-voc-lock-lnb { --scm-lnb-width: 56px !important; }
+      html.scm-voc-lock-lnb .scm-lnb { width: 56px !important; box-shadow: none !important; z-index: 15 !important; }
+      html.scm-voc-lock-lnb .scm-lnb:hover { width: 56px !important; box-shadow: none !important; z-index: 15 !important; }
+      html.scm-voc-lock-lnb .scm-lnb-label,
+      html.scm-voc-lock-lnb .scm-lnb-chev { opacity: 0 !important; }
+      html.scm-voc-lock-lnb .scm-lnb-item.is-open .scm-lnb-l2-list { display: none !important; }
+      /* Visual hint that GNB/LNB are out of bounds in comment mode */
+      body.scm-voc-mode-active .scm-topbar,
+      body.scm-voc-mode-active .scm-lnb {
+        cursor: not-allowed !important;
+      }
+      body.scm-voc-mode-active .scm-topbar *,
+      body.scm-voc-mode-active .scm-lnb * {
+        cursor: not-allowed !important;
+      }
     `;
     document.head.appendChild(s);
   }
@@ -391,7 +409,16 @@
     document.body.classList.toggle('scm-voc-mode-active', m === 'comment');
     const labelEl = elFab.querySelector('.scm-voc-fab__label');
     if (labelEl) labelEl.textContent = m === 'comment' ? '코멘트 모드 ON' : '코멘트';
+    // Lock LNB collapsed while commenting so layout doesn't shift under pins.
+    if (m === 'comment') {
+      document.documentElement.classList.remove('is-lnb-open');
+      document.documentElement.classList.add('scm-voc-lock-lnb');
+    } else {
+      document.documentElement.classList.remove('scm-voc-lock-lnb');
+    }
     updatePinVisibility();
+    // Layout might have just changed (LNB closed) — reposition pins.
+    schedulePinRender();
   }
 
   // ============ Listeners ============
@@ -407,12 +434,24 @@
               el.closest('.scm-voc-toast') ||
               el.closest('.scm-voc-pin-layer'));
   }
+  // GNB / LNB — out of bounds for commenting (menus, not page content).
+  function isNonCommentable(el) {
+    if (!el || !el.closest) return false;
+    return !!(el.closest('.scm-topbar') || el.closest('.scm-lnb'));
+  }
 
   function attachListeners() {
     // Click capture — intercept before page handlers
     document.addEventListener('click', (e) => {
       if (state.mode !== 'comment') return;
       if (isOurUI(e.target)) return;
+      // GNB/LNB clicks are allowed to flow normally (menu navigation),
+      // but we don't drop a pin on them.
+      if (isNonCommentable(e.target)) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation && e.stopImmediatePropagation();
@@ -422,6 +461,11 @@
     document.addEventListener('mousedown', (e) => {
       if (state.mode !== 'comment') return;
       if (isOurUI(e.target)) return;
+      if (isNonCommentable(e.target)) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
       e.preventDefault();
       e.stopPropagation();
     }, true);
@@ -431,7 +475,7 @@
     // Hover highlight
     document.addEventListener('mouseover', (e) => {
       if (state.mode !== 'comment') { clearHover(); return; }
-      if (isOurUI(e.target)) { clearHover(); return; }
+      if (isOurUI(e.target) || isNonCommentable(e.target)) { clearHover(); return; }
       if (hoverEl === e.target) return;
       clearHover();
       if (e.target && e.target.classList) {
@@ -484,8 +528,18 @@
     if (target && target.classList) target.classList.remove('scm-voc-hover');
     const docX = e.clientX + (document.documentElement.scrollLeft || document.body.scrollLeft || 0);
     const docY = e.clientY + (document.documentElement.scrollTop  || document.body.scrollTop  || 0);
+    // Element-relative offset — survives layout shifts (LNB toggle, etc.)
+    let offsetX = null, offsetY = null;
+    try {
+      const rect = target.getBoundingClientRect();
+      if (rect && rect.width > 0 && rect.height > 0) {
+        offsetX = Math.round(e.clientX - rect.left);
+        offsetY = Math.round(e.clientY - rect.top);
+      }
+    } catch {}
     state.pendingPin = {
       x: Math.round(docX), y: Math.round(docY),
+      offsetX, offsetY,
       viewportX: e.clientX, viewportY: e.clientY,
       selector: cssPath(target),
       elementText: ((target.innerText || target.textContent || '') + '').trim().slice(0, 80),
@@ -691,7 +745,33 @@
   }
 
   // ============ Render ============
+  // Resolve a comment's current document coords by anchoring on its
+  // selector + element-relative offset. Falls back to stored absolute
+  // (x, y) if the element no longer exists.
+  function resolvePinCoords(c) {
+    if (c.selector) {
+      try {
+        const el = document.querySelector(c.selector);
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (rect.width > 0 || rect.height > 0) {
+            const ox = (typeof c.offsetX === 'number') ? c.offsetX : Math.round(rect.width / 2);
+            const oy = (typeof c.offsetY === 'number') ? c.offsetY : Math.round(rect.height / 2);
+            const sx = window.scrollX || window.pageXOffset || document.documentElement.scrollLeft || 0;
+            const sy = window.scrollY || window.pageYOffset || document.documentElement.scrollTop  || 0;
+            return {
+              x: Math.round(rect.left + ox + sx),
+              y: Math.round(rect.top  + oy + sy),
+            };
+          }
+        }
+      } catch {}
+    }
+    return { x: c.x, y: c.y };
+  }
+
   function renderPins() {
+    if (!elPinLayer) return;
     const pins = pageComments();
     const sorted = [...pins].sort((a, b) => a.createdAt - b.createdAt);
     const idxMap = new Map();
@@ -701,8 +781,15 @@
       const cls = ['scm-voc-pin'];
       if (c.status === 'resolved') cls.push('is-resolved');
       if (c.id === state.activeId) cls.push('is-active');
-      return `<div class="${cls.join(' ')}" data-cmt-id="${c.id}" style="left:${c.x}px;top:${c.y}px;" title="${escapeHtml(c.thread[0] ? c.thread[0].text.slice(0, 40) : '')}">${idxMap.get(c.id)}</div>`;
+      const { x, y } = resolvePinCoords(c);
+      return `<div class="${cls.join(' ')}" data-cmt-id="${c.id}" style="left:${x}px;top:${y}px;" title="${escapeHtml(c.thread[0] ? c.thread[0].text.slice(0, 40) : '')}">${idxMap.get(c.id)}</div>`;
     }).join('');
+  }
+  // Debounced render — used on resize / class mutation / mode change.
+  let _renderTimer = null;
+  function schedulePinRender(delay) {
+    if (_renderTimer) clearTimeout(_renderTimer);
+    _renderTimer = setTimeout(renderPins, delay == null ? 80 : delay);
   }
   function highlightActive() {
     document.querySelectorAll('.scm-voc-pin').forEach((el) => {
@@ -908,6 +995,12 @@
       updateCount();
       injectLnbCounts();
     });
+    // Layout-affecting changes — re-anchor pins to their elements
+    window.addEventListener('resize', () => schedulePinRender(120));
+    try {
+      new MutationObserver(() => schedulePinRender(180))
+        .observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    } catch {}
     announceReady();
   }
 
