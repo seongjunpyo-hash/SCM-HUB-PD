@@ -42,6 +42,12 @@
   function persist() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.comments)); }
     catch (e) { console.warn('[voc] save failed', e); }
+    // notify parent VOC page (if embedded in iframe) so its sidebar can refresh live
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'voc-changed', page: PAGE }, '*');
+      }
+    } catch {}
   }
   function uid(p) { return p + '_' + Math.random().toString(36).slice(2, 10); }
   function now() { return Date.now(); }
@@ -716,6 +722,36 @@
     }, 60);
   }
 
+  // ============ Postmessage API (parent VOC page → overlay) ============
+  function handleParentMessage(e) {
+    const d = e && e.data;
+    if (!d || typeof d !== 'object') return;
+    if (d.type === 'voc-open' && d.id) {
+      const c = state.comments.find((x) => x.id === d.id && x.page === PAGE);
+      if (!c) return;
+      window.scrollTo({ top: Math.max(0, c.y - window.innerHeight * 0.35), behavior: 'smooth' });
+      setTimeout(() => openThread(c), 320);
+    } else if (d.type === 'voc-close') {
+      closePopover();
+    } else if (d.type === 'voc-set-mode') {
+      setMode(d.mode === 'comment' ? 'comment' : 'browse');
+    } else if (d.type === 'voc-ping') {
+      // parent asks "are you ready?" — reply with current page
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'voc-ready', page: PAGE }, '*');
+        }
+      } catch {}
+    }
+  }
+  function announceReady() {
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'voc-ready', page: PAGE }, '*');
+      }
+    } catch {}
+  }
+
   // ============ Boot ============
   function start() {
     if (state.started) return;
@@ -730,6 +766,9 @@
     renderPins();
     updateCount();
     handleAnchor();
+    window.addEventListener('hashchange', handleAnchor);
+    window.addEventListener('message', handleParentMessage);
+    announceReady();
   }
 
   function bootWhenReady() {
