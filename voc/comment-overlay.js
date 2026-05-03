@@ -780,9 +780,10 @@
   }
 
   // ============ Render ============
-  // Resolve a comment's current document coords by anchoring on its
-  // selector + element-relative offset. Falls back to stored absolute
-  // (x, y) if the element no longer exists.
+  // Pins always anchor at the element's top-left corner (offsetX/Y on
+  // the comment is ignored for positioning — kept on disk only as a
+  // historical record of where the user originally clicked). Falls back
+  // to the stored absolute (x, y) if the element no longer exists.
   function resolvePinCoords(c) {
     if (c.selector) {
       try {
@@ -790,13 +791,11 @@
         if (el) {
           const rect = el.getBoundingClientRect();
           if (rect.width > 0 || rect.height > 0) {
-            const ox = (typeof c.offsetX === 'number') ? c.offsetX : Math.round(rect.width / 2);
-            const oy = (typeof c.offsetY === 'number') ? c.offsetY : Math.round(rect.height / 2);
             const sx = window.scrollX || window.pageXOffset || document.documentElement.scrollLeft || 0;
             const sy = window.scrollY || window.pageYOffset || document.documentElement.scrollTop  || 0;
             return {
-              x: Math.round(rect.left + ox + sx),
-              y: Math.round(rect.top  + oy + sy),
+              x: Math.round(rect.left + sx),
+              y: Math.round(rect.top  + sy),
             };
           }
         }
