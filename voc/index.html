@@ -1407,15 +1407,39 @@
     function pageApplied() { return pageOf('applied'); }
 
     // ---- mutators (all touch DRAFT only — iframe untouched until Save) ----
-    // ---- Live-preview helper ----
-    // Every mutator funnels through this so the iframe reflects pending
-    // edits in real-time. Save just persists the draft as applied.
+    // ---- Apply helpers ----
+    // applyAllToIframe is the catch-all (Save uses this). Per-section
+    // helpers are used by [적용] buttons so they only touch the relevant
+    // DOM bits.
     function applyAllToIframe() {
-      rebuildAddedDom();             // wipe + reinject from draft
-      applyFilterOrderToIframe();    // reads draft
-      applyColumnOrderToIframe();    // reads draft
-      applyFilterTypesToIframe();    // reads draft
-      applyEditCss();                // reads draft
+      rebuildAddedDom();
+      applyFilterOrderToIframe();
+      applyColumnOrderToIframe();
+      applyFilterTypesToIframe();
+      applyEditCss();
+    }
+    function rebuildAddedFiltersOnly() {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      doc.querySelectorAll('.scm-voc-added-filter').forEach((el) => el.remove());
+      applyAddedDom();   // idempotent for columns (id check); reinjects filters
+    }
+    function rebuildAddedColumnsOnly() {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      doc.querySelectorAll('[class*="voc-added-col-"]').forEach((el) => el.remove());
+      applyAddedDom();
+    }
+    function applyFilterSectionToIframe() {
+      rebuildAddedFiltersOnly();
+      applyFilterOrderToIframe();
+      applyFilterTypesToIframe();
+      applyEditCss();
+    }
+    function applyColumnSectionToIframe() {
+      rebuildAddedColumnsOnly();
+      applyColumnOrderToIframe();
+      applyEditCss();
     }
 
     function setHidden(selector, hide) {
@@ -1627,10 +1651,12 @@
             const id = `voc-added-col-${c.id}`;
             if (doc.getElementById(id)) return;
             const klass = `voc-added-col-${c.id}`;
-            // explicit width / padding so the column is visible inside
-            // table-layout:fixed mp-tables (otherwise scm-table sizes
-            // unknown columns to ~0).
-            const cellStyle = 'min-width:120px;width:120px;padding:8px 12px;';
+            // explicit width so the column is visible inside table-layout:
+            // fixed mp-tables (otherwise scm-table sizes unknown columns
+            // to ~0). Padding matches `.mp-table thead th` (12 16) so
+            // adding a column doesn't shove the data row taller than the
+            // group row above it.
+            const cellStyle = 'min-width:120px;width:120px;padding:12px 16px;';
             const th = doc.createElement('th');
             th.id = id;
             th.className = `col-auto scm-voc-added-col ${klass}`;
@@ -1672,6 +1698,28 @@
       return JSON.stringify(state.draft[state.currentPage] || null)
           !== JSON.stringify(state.applied[state.currentPage] || null);
     }
+    function _isFilterSel(s) { return /^\[data-voc-key="flt-/.test(s) || /^#voc-added-filter-/.test(s); }
+    function _isColumnSel(s) { return /^\[data-voc-key="(col|grp)-/.test(s) || /^#voc-added-col-/.test(s); }
+    function _filterSlice(p) {
+      return JSON.stringify({
+        filterOrder: p.filterOrder || [],
+        filterTypes: p.filterTypes || {},
+        added:       (p.added && p.added.filters) || [],
+        hidden:      (p.hidden || []).filter(_isFilterSel),
+      });
+    }
+    function _columnSlice(p) {
+      return JSON.stringify({
+        columnOrder:       p.columnOrder || [],
+        columnLeafOrder:   p.columnLeafOrder || {},
+        showSort:          p.showSort || [],
+        showFilter:        p.showFilter || [],
+        added:             (p.added && p.added.columns) || [],
+        hidden:            (p.hidden || []).filter(_isColumnSel),
+      });
+    }
+    function isFilterDirty() { return _filterSlice(pageDraft()) !== _filterSlice(pageApplied()); }
+    function isColumnDirty() { return _columnSlice(pageDraft()) !== _columnSlice(pageApplied()); }
     function commitDraft() {
       // Save also pushes to iframe (in case user hadn't clicked the
       // section apply buttons yet) so the new baseline is visible.
@@ -1812,7 +1860,9 @@
       showToast('변경 사항 되돌림');
     }
     function refreshSaveBtn() {
-      const dirty = isDirty();
+      const dirty       = isDirty();
+      const filterDirty = isFilterDirty();
+      const columnDirty = isColumnDirty();
       const saveBtn   = document.getElementById('editSaveBtn');
       const revertBtn = document.getElementById('editRevertBtn');
       const status    = document.getElementById('editStatus');
@@ -1822,9 +1872,12 @@
         status.classList.toggle('is-dirty', dirty);
         status.textContent = dirty ? '저장하지 않은 변경 사항' : '저장됨 · 데모와 동기화';
       }
-      // Section [적용] buttons share the dirty state — nothing to push if
-      // draft already matches applied.
-      document.querySelectorAll('.edit-apply-btn').forEach((b) => { b.disabled = !dirty; });
+      // Each section's [적용] button enables only when THAT section has
+      // pending edits — filter changes don't enable the column apply etc.
+      document.querySelectorAll('.edit-apply-btn').forEach((b) => {
+        const which = b.dataset.apply;
+        b.disabled = which === 'filter' ? !filterDirty : !columnDirty;
+      });
     }
 
     // Stable CSS path for an iframe element (no temp ids).
@@ -2158,7 +2211,11 @@
       const applyBtn = t.closest && t.closest('.edit-apply-btn');
       if (applyBtn) {
         e.preventDefault();
-        applyAllToIframe();
+        if (applyBtn.disabled) return;
+        const which = applyBtn.dataset.apply;
+        if (which === 'filter') applyFilterSectionToIframe();
+        else if (which === 'column') applyColumnSectionToIframe();
+        else applyAllToIframe();
         showToast('편집 내용이 좌측 데모에 반영됐습니다');
         return;
       }
