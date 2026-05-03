@@ -785,6 +785,21 @@ function setupTableInteractions(root = document, opts = {}) {
 
   // init 시점에도 col-frozen-last 적용 (boundary 라인이 처음부터 표시되도록)
   refreshFrozenClassesAndOffsets();
+
+  // ----- 외부(예: VOC 편집 패널)에서 reorder 를 트리거할 수 있도록 API 노출 -----
+  // cloneTable 에 stamp — VOC iframe 부모가 이 핸들로 정확한 reorder + frozen
+  // 재계산까지 한 번에 호출. closure 안의 model / moveColumn / moveRow1Group /
+  // refreshFrozenClassesAndOffsets 를 그대로 묶어 외부에서 사용.
+  cloneTable._scmReorder = {
+    model,
+    moveColumn,
+    moveRow1Group,
+    refreshFrozenClassesAndOffsets,
+    frozenCount,
+  };
+  if (origTable && origTable !== cloneTable) {
+    origTable._scmReorder = cloneTable._scmReorder;
+  }
 }
 
 
