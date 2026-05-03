@@ -67,6 +67,27 @@
     }
     .page-select:hover { border-color: var(--line-2); }
     .page-select:focus { border-color: var(--accent); }
+    .page-select.menu-l2 { min-width: 200px; }
+
+    /* L1 menu chips (depth 1) */
+    .menu-l1 {
+      display: inline-flex; gap: 2px;
+      padding: 3px;
+      background: var(--bg); border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    .menu-l1__chip {
+      padding: 5px 12px;
+      background: transparent; color: var(--fg-mute); border: 0;
+      border-radius: 6px;
+      font-family: inherit; font-size: 13px; font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+    .menu-l1__chip:hover { color: var(--fg); }
+    .menu-l1__chip.is-active { background: var(--accent); color: #fff; }
+    .menu-arrow { color: var(--fg-dim); font-size: 16px; user-select: none; }
 
     .icon-btn {
       display: inline-flex; align-items: center; justify-content: center;
@@ -482,7 +503,9 @@
   <header class="topbar">
     <span class="brand">SCM HUB<span class="dot"></span>협업 VOC<span class="role-tag">작업자</span></span>
     <span class="topbar__sep"></span>
-    <select class="page-select" id="pageSelect"></select>
+    <div class="menu-l1" id="menuL1"></div>
+    <span class="menu-arrow">›</span>
+    <select class="page-select menu-l2" id="l2Select"></select>
     <button class="icon-btn" id="reloadBtn" title="새로고침">
       <svg viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 0 1 15.3-6.4L21 8M21 4v4h-4M21 12a9 9 0 0 1-15.3 6.4L3 16M3 20v-4h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
@@ -612,15 +635,31 @@
   (function () {
     'use strict';
     const STORAGE_KEY = 'scm:voc:comments:v1';
-    const PAGES = [
-      { path: '/demo/dashboard.html',                label: '대시보드' },
-      { path: '/demo/sku-management.html',           label: 'SKU 관리' },
-      { path: '/demo/sku-detail.html',               label: 'SKU 상세' },
-      { path: '/demo/sku-register.html',             label: 'SKU 등록' },
-      { path: '/demo/editshop-restock-request.html', label: '편집샵 보충 요청' },
-      { path: '/demo/editshop-restock-status.html',  label: '편집샵 보충 현황' },
-      { path: '/demo/index.html',                    label: '무탠 전개상품 관리' },
+    // Two-depth menu mirroring the demo's LNB structure.
+    const MENU = [
+      { l1: 'dashboard', label: '대시보드', children: [
+        { path: '/demo/dashboard.html', label: '대시보드' },
+      ]},
+      { l1: 'store', label: '스토어', children: [
+        { path: '/demo/index.html',                    label: '무탠 전개상품 관리' },
+        { path: '/demo/editshop-restock-request.html', label: '편집샵 보충 요청' },
+        { path: '/demo/editshop-restock-status.html',  label: '편집샵 보충 현황' },
+      ]},
+      { l1: 'hanger', label: '상품 관리', children: [
+        { path: '/demo/sku-management.html', label: 'SKU 관리' },
+        { path: '/demo/sku-register.html',   label: 'SKU 등록' },
+        { path: '/demo/sku-detail.html',     label: 'SKU 상세' },
+      ]},
     ];
+    // Flat list — preserved for label lookups (sidebar 'pageLabel(path)').
+    const PAGES = MENU.flatMap((m) => m.children);
+    function findMenuByPath(path) {
+      for (const m of MENU) {
+        const c = m.children.find((x) => x.path === path);
+        if (c) return { l1: m, l2: c };
+      }
+      return null;
+    }
 
     const state = {
       comments: load(),
@@ -697,7 +736,8 @@
     }
 
     const $ = (s) => document.querySelector(s);
-    const pageSelect = $('#pageSelect');
+    const menuL1 = $('#menuL1');
+    const l2Select = $('#l2Select');
     const reloadBtn = $('#reloadBtn');
     const iframe = $('#demoFrame');
     const urlText = $('#urlText');
@@ -729,13 +769,21 @@
     // Init
     // ====================================================
     function init() {
-      pageSelect.innerHTML = PAGES.map((p) => `<option value="${p.path}">${p.label}</option>`).join('');
-      pageSelect.value = state.currentPage;
+      // L1 chips
+      menuL1.innerHTML = MENU.map((m) => `<button type="button" class="menu-l1__chip" data-l1="${m.l1}">${escapeHtml(m.label)}</button>`).join('');
+      menuL1.addEventListener('click', (e) => {
+        const btn = e.target.closest('.menu-l1__chip');
+        if (!btn) return;
+        selectL1(btn.dataset.l1);
+      });
+      l2Select.addEventListener('change', () => navigateTo(l2Select.value));
+
       urlText.textContent = state.currentPage;
       urlOpen.href = state.currentPage;
-      navigateTo(state.currentPage);
+      // initial render — sets active chip + populates L2 + navigates
+      const initialMatch = findMenuByPath(state.currentPage) || { l1: MENU[0], l2: MENU[0].children[0] };
+      selectL1(initialMatch.l1.l1, initialMatch.l2.path);
 
-      pageSelect.addEventListener('change', () => navigateTo(pageSelect.value));
       reloadBtn.addEventListener('click', () => {
         if (!iframe.contentWindow) return;
         showLoading(true);
@@ -751,7 +799,7 @@
             state.currentPage = path;
             urlText.textContent = path;
             urlOpen.href = path;
-            if (PAGES.some((p) => p.path === path)) pageSelect.value = path;
+            syncMenuFromPath(path);
           }
         } catch {}
         // page change resets sim tracking (style tags died with previous doc)
@@ -843,12 +891,50 @@
       state.currentPage = path;
       urlText.textContent = path;
       urlOpen.href = path;
-      pageSelect.value = path;
+      syncMenuFromPath(path);
       state.iframeReady = false;
       showLoading(true);
       iframe.src = path;
     }
     function showLoading(on) { browserLoading.classList.toggle('is-on', !!on); }
+
+    // Activate an L1 chip — repopulates L2 select and navigates to either
+    // the requested L2 path, the current page if it lives under that L1,
+    // or the L1's first child by default.
+    function selectL1(l1id, preferL2Path) {
+      const item = MENU.find((m) => m.l1 === l1id) || MENU[0];
+      menuL1.querySelectorAll('.menu-l1__chip').forEach((b) => {
+        b.classList.toggle('is-active', b.dataset.l1 === item.l1);
+      });
+      l2Select.innerHTML = item.children
+        .map((c) => `<option value="${c.path}">${escapeHtml(c.label)}</option>`).join('');
+      l2Select.disabled = item.children.length <= 1;
+      let target;
+      if (preferL2Path && item.children.some((c) => c.path === preferL2Path)) target = preferL2Path;
+      else if (item.children.some((c) => c.path === state.currentPage))      target = state.currentPage;
+      else                                                                   target = item.children[0].path;
+      l2Select.value = target;
+      if (target !== state.currentPage) navigateTo(target);
+    }
+    // Reflect a path change (iframe internal nav, sidebar jump, etc.)
+    // back into the menu UI without triggering navigation.
+    function syncMenuFromPath(path) {
+      const m = findMenuByPath(path);
+      if (!m) return;
+      menuL1.querySelectorAll('.menu-l1__chip').forEach((b) => {
+        b.classList.toggle('is-active', b.dataset.l1 === m.l1.l1);
+      });
+      // rebuild L2 options if the L1 group changed
+      const currentValues = Array.from(l2Select.options).map((o) => o.value);
+      const expected = m.l1.children.map((c) => c.path);
+      const same = currentValues.length === expected.length && currentValues.every((v, i) => v === expected[i]);
+      if (!same) {
+        l2Select.innerHTML = m.l1.children
+          .map((c) => `<option value="${c.path}">${escapeHtml(c.label)}</option>`).join('');
+        l2Select.disabled = m.l1.children.length <= 1;
+      }
+      l2Select.value = path;
+    }
 
     function postIframe(msg) {
       try { iframe.contentWindow && iframe.contentWindow.postMessage(msg, '*'); }
