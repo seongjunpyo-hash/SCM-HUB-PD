@@ -630,14 +630,17 @@
       color: #9CA3AF; text-decoration: line-through;
     }
     .edit-row.is-added { background: #FAF5FF; }
-    .edit-row.is-added::before {
-      content: '+'; flex-shrink: 0;
-      width: 16px; height: 16px;
+    .edit-row__order-btn {
+      flex-shrink: 0;
+      width: 22px; height: 22px;
+      background: #fff; color: #6B7280;
+      border: 1px solid #E5E7EB; border-radius: 4px;
+      cursor: pointer; font-size: 11px; line-height: 1; font-weight: 700;
       display: inline-flex; align-items: center; justify-content: center;
-      background: #4F46E5; color: #fff;
-      border-radius: 4px;
-      font-size: 12px; font-weight: 700; line-height: 1;
+      transition: all 0.12s ease;
     }
+    .edit-row__order-btn:hover:not(:disabled) { color: #4F46E5; border-color: #4F46E5; }
+    .edit-row__order-btn:disabled { opacity: 0.35; cursor: not-allowed; }
     .edit-row__icon-toggle {
       height: 22px; padding: 0 8px;
       background: #fff; border: 1px solid #E5E7EB;
@@ -1434,6 +1437,18 @@
       const f = d.added.filters.find((x) => x.id === id);
       if (f) { f.type = type; persistDraft(); refreshSaveBtn(); }
     }
+    function moveAddedColumn(id, dir) {
+      const d = pageDraft();
+      const idx = d.added.columns.findIndex((c) => c.id === id);
+      if (idx < 0) return;
+      const newIdx = dir === 'up' ? idx - 1 : idx + 1;
+      if (newIdx < 0 || newIdx >= d.added.columns.length) return;
+      const [item] = d.added.columns.splice(idx, 1);
+      d.added.columns.splice(newIdx, 0, item);
+      persistDraft();
+      renderEditPane();
+      refreshSaveBtn();
+    }
 
     // ---- inject CSS / DOM into iframe (read APPLIED only) ----
     function applyEditCss() {
@@ -1514,15 +1529,21 @@
             const id = `voc-added-col-${c.id}`;
             if (doc.getElementById(id)) return;
             const klass = `voc-added-col-${c.id}`;
+            // explicit width / padding so the column is visible inside
+            // table-layout:fixed mp-tables (otherwise scm-table sizes
+            // unknown columns to ~0).
+            const cellStyle = 'min-width:120px;width:120px;padding:8px 12px;';
             const th = doc.createElement('th');
             th.id = id;
             th.className = `col-auto scm-voc-added-col ${klass}`;
             th.textContent = c.label;
+            th.setAttribute('style', cellStyle);
             const colSpacer = colTr.querySelector('.col-spacer');
             colTr.insertBefore(th, colSpacer || null);
             if (groupTr) {
               const gth = doc.createElement('th');
               gth.className = `scm-voc-added-col ${klass}`;
+              gth.setAttribute('style', cellStyle);
               const gSpacer = groupTr.querySelector('.col-spacer');
               groupTr.insertBefore(gth, gSpacer || null);
             }
@@ -1530,6 +1551,7 @@
               const td = doc.createElement('td');
               td.className = `scm-voc-added-col ${klass}`;
               td.textContent = '—';
+              td.setAttribute('style', cellStyle);
               const tdSpacer = tr.querySelector('.col-spacer, [data-empty="true"]');
               tr.insertBefore(td, tdSpacer || null);
             });
@@ -1728,11 +1750,23 @@
           const sel = escapeHtml(it.selector);
           let middle = '';
           if (it.kind === 'column') {
-            const sortOn   = showSort.has(it.selector);
-            const filterOn = showFilter.has(it.selector);
-            middle = `
-              <button type="button" class="edit-row__icon-toggle ${sortOn ? 'is-on' : ''}"   data-toggle-icon="sort"   data-selector="${sel}" title="컬럼 정렬 아이콘 표시/숨김">정렬</button>
-              <button type="button" class="edit-row__icon-toggle ${filterOn ? 'is-on' : ''}" data-toggle-icon="filter" data-selector="${sel}" title="컬럼 필터 아이콘 표시/숨김">필터</button>`;
+            if (it.added) {
+              const id = escapeHtml(it.added.id);
+              // index within added.columns to disable boundary buttons
+              const addedList = d.added.columns;
+              const aidx = addedList.findIndex((c) => c.id === it.added.id);
+              const upDis = aidx <= 0 ? 'disabled' : '';
+              const downDis = aidx >= addedList.length - 1 ? 'disabled' : '';
+              middle = `
+                <button type="button" class="edit-row__order-btn" data-order="up"   data-id="${id}" ${upDis} title="앞쪽으로 이동">↑</button>
+                <button type="button" class="edit-row__order-btn" data-order="down" data-id="${id}" ${downDis} title="뒤쪽으로 이동">↓</button>`;
+            } else {
+              const sortOn   = showSort.has(it.selector);
+              const filterOn = showFilter.has(it.selector);
+              middle = `
+                <button type="button" class="edit-row__icon-toggle ${sortOn ? 'is-on' : ''}"   data-toggle-icon="sort"   data-selector="${sel}" title="컬럼 정렬 아이콘 표시/숨김">정렬</button>
+                <button type="button" class="edit-row__icon-toggle ${filterOn ? 'is-on' : ''}" data-toggle-icon="filter" data-selector="${sel}" title="컬럼 필터 아이콘 표시/숨김">필터</button>`;
+            }
           } else if (it.kind === 'filter') {
             if (it.added) {
               const id = escapeHtml(it.added.id);
@@ -1790,6 +1824,14 @@
         e.preventDefault();
         const sel = lo.dataset.locate;
         if (sel) postIframe({ type: 'voc-flash', selector: sel });
+        return;
+      }
+      // reorder added column ↑ / ↓
+      const ord = t.closest && t.closest('[data-order]');
+      if (ord) {
+        e.preventDefault();
+        if (ord.disabled) return;
+        moveAddedColumn(ord.dataset.id, ord.dataset.order);
         return;
       }
       // sort/filter icon toggle
