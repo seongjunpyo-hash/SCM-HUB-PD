@@ -827,13 +827,16 @@
       background: #F9FAFB;
     }
     .edit-foot__status {
-      flex: 1; min-width: 0;
+      min-width: 0;
       font-size: 11.5px; color: #6B7280;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .edit-foot__status.is-dirty { color: #C2710C; font-weight: 600; }
     .edit-foot__btn-open-demo {
       display: inline-flex; align-items: center; gap: 4px;
+      /* 8px container gap + 8px extra = 16px total spacing from the
+         status text on the left of this button */
+      margin-left: 8px;
       height: 26px; padding: 0 10px;
       background: #fff; border: 1px solid #D1D5DB; border-radius: 999px;
       color: #4B5563; font-family: inherit; font-size: 11.5px; font-weight: 600;
@@ -843,6 +846,9 @@
     }
     .edit-foot__btn-open-demo:hover { color: #4F46E5; border-color: #4F46E5; }
     .edit-foot__btn-open-demo svg { display: block; flex-shrink: 0; }
+    /* push revert + save to the right edge so the [status — 데모 바로가기]
+       group stays grouped on the left */
+    .edit-foot__btn-revert { margin-left: auto; }
     .edit-foot__btn-revert,
     .edit-foot__btn-save {
       height: 32px; padding: 0 14px; border-radius: 6px;
