@@ -1635,7 +1635,18 @@
       }
       const a = pageDraft();   // live preview: read draft so iframe reflects pending changes
       const lines = [];
+      // Per-selector hide — covers FILTER chips and the column <th> itself.
+      // Column hide also relies on data-voc-hidden marking (below) to also
+      // hide tbody <td>s + colgroup <col>s + (for groups) row2 leaves.
       a.hidden.forEach((s) => lines.push(`${s} { display: none !important; }`));
+      // Universal "hide a cell anywhere" rule — used by applyHiddenCellsToIframe
+      // to mark th + td + col elements with `data-voc-hidden="true"` so an
+      // entire column collapses, not just the header.
+      lines.push(`[data-voc-hidden="true"] { display: none !important; }`);
+      // <col> elements: some browsers ignore display:none on col. Force the
+      // column to zero width so following columns shift left under
+      // table-layout: fixed.
+      lines.push(`col[data-voc-hidden="true"] { width: 0 !important; min-width: 0 !important; max-width: 0 !important; }`);
       // Default: ALL sort + filter icons hidden. Reveal selectively.
       lines.push(`.mp-table thead th .sort-ic, .mp-table thead th .scm-th-sort { display: none !important; }`);
       lines.push(`.mp-table thead th .filter-ic { display: none !important; }`);
@@ -1666,6 +1677,111 @@
         }
       `);
       style.textContent = lines.join('\n');
+      // After CSS, walk hidden column selectors and mark th + tds + col so
+      // the WHOLE column collapses, not just the header.
+      applyHiddenCellsToIframe(doc, a);
+    }
+
+    // For each hidden COLUMN selector, mark the corresponding cells with
+    // `data-voc-hidden="true"` so the universal CSS rule collapses the
+    // entire column (header + data + colgroup + group leaf row).
+    //
+    // scm-table sticky mode splits the table:
+    //   .mp-thead-sticky  > .mp-table   ← thead + colgroup (no tbody)
+    //   .mp-table-scroll > .mp-table    ← tbody + colgroup (no thead)
+    // These are LOGICALLY one table — so we resolve the leaf idx from the
+    // thead-bearing table and apply marks to ALL tbodies + colgroups across
+    // ALL .mp-tables in the doc.
+    function applyHiddenCellsToIframe(doc, page) {
+      doc.querySelectorAll('[data-voc-hidden]').forEach((el) => delete el.dataset.vocHidden);
+      const hidden = (page && page.hidden) || [];
+      if (!hidden.length) return;
+      const tables = [...doc.querySelectorAll('.mp-table')];
+      // Group tables by their host (.mp-table-host) so sticky-clone + body-table
+      // pairs share a leaf-idx coordinate space. Standalone tables (modals,
+      // 1-row tables) are their own group.
+      const groups = new Map();
+      tables.forEach((tbl) => {
+        const host = tbl.closest('.mp-table-host') || tbl;
+        if (!groups.has(host)) groups.set(host, []);
+        groups.get(host).push(tbl);
+      });
+      hidden.forEach((sel) => {
+        if (!sel || !_isColumnSel(sel)) return;
+        groups.forEach((tblList) => _markHiddenColumnInGroup(tblList, sel));
+      });
+    }
+    function _markHiddenColumnInGroup(tblList, sel) {
+      // find the thead-bearing table (sticky clone or single table)
+      const headTable = tblList.find((t) => t.querySelector('thead')) || tblList[0];
+      const thead = headTable && headTable.querySelector('thead');
+      if (!thead) return;
+      let cell;
+      try { cell = thead.querySelector(sel); } catch { return; }
+      if (!cell) return;
+      cell.dataset.vocHidden = 'true';
+      const trAll = thead.querySelectorAll('tr');
+      const isTwoRow = trAll.length > 1;
+      const rs = parseInt(cell.getAttribute('rowspan') || '1', 10) || 1;
+      const cs = parseInt(cell.getAttribute('colspan') || '1', 10) || 1;
+      const reorderApi = headTable._scmReorder;
+      // resolve leaf range [start, count] for the cell
+      let leafStart = -1, leafCount = 0;
+      if (reorderApi) {
+        const model = reorderApi.model;
+        if (isTwoRow && cell.parentElement === trAll[0] && (cs > 1 || rs >= 2)) {
+          const range = model.row1CellLeafRange(cell);
+          if (range) { leafStart = range.start; leafCount = range.count; }
+        } else {
+          const idx = model.thLeafIdx(cell);
+          if (idx >= 0) { leafStart = idx; leafCount = 1; }
+        }
+      } else {
+        // 1-row fallback: leaf idx = child idx in the only tr (excluding cs adjust)
+        const tr = cell.parentElement;
+        if (tr) {
+          let walk = 0, hit = -1;
+          for (let i = 0; i < tr.children.length; i++) {
+            const c = tr.children[i];
+            const ccs = parseInt(c.getAttribute('colspan') || '1', 10) || 1;
+            if (c === cell) { hit = walk; break; }
+            walk += ccs;
+          }
+          if (hit >= 0) { leafStart = hit; leafCount = cs; }
+        }
+      }
+      if (leafStart < 0) return;
+      // For 2-row group cell: also mark its row2 leaf cells
+      if (isTwoRow && cell.parentElement === trAll[0] && cs > 1 && reorderApi) {
+        const leafTr = trAll[trAll.length - 1];
+        const r2Start = reorderApi.model.row1CellRow2Start(cell);
+        if (r2Start >= 0) {
+          for (let i = r2Start; i < r2Start + cs; i++) {
+            const lc = leafTr.children[i];
+            if (lc) lc.dataset.vocHidden = 'true';
+          }
+        }
+      }
+      // Apply marks to colgroups + tbodies of ALL tables in this group (the
+      // sticky-clone + body-table pair share the same leaf-idx coord space)
+      tblList.forEach((tbl) => {
+        const colgroup = tbl.querySelector(':scope > colgroup');
+        if (colgroup) {
+          for (let i = leafStart; i < leafStart + leafCount; i++) {
+            const col = colgroup.children[i];
+            if (col) col.dataset.vocHidden = 'true';
+          }
+        }
+        const tbody = tbl.querySelector('tbody');
+        if (tbody) {
+          tbody.querySelectorAll(':scope > tr').forEach((tr) => {
+            for (let i = leafStart; i < leafStart + leafCount; i++) {
+              const td = tr.children[i];
+              if (td) td.dataset.vocHidden = 'true';
+            }
+          });
+        }
+      });
     }
 
     function applyAddedDom() {
