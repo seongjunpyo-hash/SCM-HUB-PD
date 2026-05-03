@@ -1250,28 +1250,41 @@
       if (!doc) return out;
       const main = doc.querySelector('main') || doc.body;
 
-      // Filters — children of any .scm-filter-bar (one entry per immediate child)
-      const filterBars = main.querySelectorAll('.scm-filter-bar');
-      filterBars.forEach((bar) => {
-        bar.children && [...bar.children].forEach((el) => {
-          if (!el.classList || el.classList.contains('scm-filter-bar__divider')) return;
-          out.filters.push({ label: pickLabel(el), selector: ifrCssPath(el) });
-        });
+      // Filters — every .scm-filter-select chip with a data-mp-filter
+      // (data-mp-filter is the marker for "real" filter chips; search box,
+      // reset button, "전체 필터" launcher don't carry it, so they're
+      // automatically excluded).
+      const filterEls = main.querySelectorAll('.scm-filter-bar .scm-filter-select[data-mp-filter]');
+      const filterSeen = new Set();
+      filterEls.forEach((el) => {
+        const sel = ifrCssPath(el);
+        if (filterSeen.has(sel)) return;
+        filterSeen.add(sel);
+        const labEl = el.querySelector('.scm-filter-select__label');
+        const valEl = el.querySelector('.scm-filter-select__value');
+        let label = (labEl && labEl.textContent.trim())
+                 || (valEl && valEl.textContent.trim())
+                 || el.dataset.mpFilter || '필터';
+        label = label.replace(/\s+/g, ' ').slice(0, 28);
+        out.filters.push({ label, selector: sel });
       });
 
-      // Table columns — header <th> in any .mp-table thead, skipping spacer/checkbox
-      const heads = main.querySelectorAll('.mp-table thead tr');
-      const seenColIdx = new Set();
-      heads.forEach((tr) => {
-        [...tr.children].forEach((th, i) => {
-          if (!(th instanceof Element) || th.tagName !== 'TH') return;
-          if (th.classList.contains('col-spacer') || th.classList.contains('cb-col')) return;
-          const key = i;
-          if (seenColIdx.has(key)) return;
-          seenColIdx.add(key);
-          const label = (th.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 30) || `컬럼 ${i + 1}`;
-          out.columns.push({ label, selector: ifrCssPath(th) });
-        });
+      // Table columns — every <th> in any .mp-table thead.
+      // Skip group cells (colspan > 1), the right spacer, and the leading
+      // checkbox column. SCM table headers are 2-row (group + actual),
+      // so we deduplicate via selector instead of column index.
+      const colSeen = new Set();
+      main.querySelectorAll('.mp-table thead th').forEach((th) => {
+        if (th.classList.contains('col-spacer') || th.classList.contains('cb-col')) return;
+        const colspan = parseInt(th.getAttribute('colspan') || '1', 10);
+        if (colspan > 1) return;
+        const sel = ifrCssPath(th);
+        if (colSeen.has(sel)) return;
+        colSeen.add(sel);
+        let label = (th.textContent || '').trim().replace(/\s+/g, ' ');
+        if (!label) label = '(빈 컬럼)';
+        if (label.length > 28) label = label.slice(0, 28) + '…';
+        out.columns.push({ label, selector: sel });
       });
 
       // Components — top-level scm-card / scm-page-section / scm-kpi-card / etc.
