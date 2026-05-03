@@ -576,7 +576,7 @@ ${jsxBody}
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 17v2a2 2 0 002 2h10a2 2 0 002-2v-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <span class="label">개발자 다운로드</span>
+      <span class="label">Handoff 파일 다운로드</span>
       <span class="pill"></span>
     `;
     elDownload.addEventListener('click', openModal);
