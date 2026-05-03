@@ -28,8 +28,8 @@
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; height: 100%; }
     body {
-      /* deep neutral gray — pairs with the gray browser frame, away from pure black */
-      background: #22252A; color: var(--fg);
+      /* lifted neutral gray — clearly graphite, not near-black */
+      background: #33363B; color: var(--fg);
       font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
       letter-spacing: -0.01em;
       overflow: hidden;
@@ -149,20 +149,20 @@
       display: flex; flex-direction: column;
       min-width: 0;
     }
-    /* Browser frame — neutral medium-gray (macOS-style) instead of pure black */
+    /* Browser frame — bright neutral gray, clearly raised over body */
     .browser {
       flex: 1; min-height: 0;
       display: flex; flex-direction: column;
-      background: #3A3D42; border: 1px solid #4A4D52;
+      background: #5C5F65; border: 1px solid #6E7177;
       border-radius: 12px; overflow: hidden;
-      box-shadow: 0 24px 48px -16px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04);
+      box-shadow: 0 24px 48px -16px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05);
       position: relative;
     }
     .browser__chrome {
       display: flex; align-items: center; gap: 12px;
       padding: 10px 14px;
-      background: #2C2E33;
-      border-bottom: 1px solid #4A4D52;
+      background: #4A4D52;
+      border-bottom: 1px solid #6E7177;
       flex-shrink: 0;
     }
     .traffic { display: inline-flex; gap: 6px; }
@@ -172,11 +172,11 @@
     .traffic span:nth-child(3) { background: #28C840; }
     .urlbar {
       flex: 1; height: 28px; padding: 0 14px;
-      background: #1F2125; border: 1px solid #4A4D52;
+      background: #2D2F33; border: 1px solid #6E7177;
       border-radius: 999px;
       display: inline-flex; align-items: center; gap: 8px;
       font-family: ui-monospace, "SF Mono", Menlo, monospace;
-      font-size: 11.5px; color: #C0C5CB;
+      font-size: 11.5px; color: #D1D5DB;
       overflow: hidden;
     }
     .urlbar .lock { color: #34D399; flex-shrink: 0; }
@@ -184,7 +184,7 @@
     .urlbar__open {
       flex-shrink: 0; font-size: 11px; color: #9CA3AF; padding: 2px 8px; border-radius: 4px;
     }
-    .urlbar__open:hover { color: #fff; background: rgba(255,255,255,0.08); }
+    .urlbar__open:hover { color: #fff; background: rgba(255,255,255,0.1); }
 
     .browser__body { flex: 1; min-height: 0; position: relative; background: #fff; }
     .browser__body iframe { width: 100%; height: 100%; border: 0; display: block; }
