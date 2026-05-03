@@ -604,6 +604,10 @@ ${jsxBody}
     group.appendChild(elAction);
 
     right.parentNode.insertBefore(group, right);
+    // Cancel the profile's own margin-left:auto so only the group absorbs
+    // the leftover horizontal space — keeps group flush against profile
+    // on the right edge instead of flexbox splitting the gap.
+    right.style.marginLeft = '0';
     refresh();
   }
 
