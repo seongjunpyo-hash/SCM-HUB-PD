@@ -42,6 +42,8 @@
   function persist() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.comments)); }
     catch (e) { console.warn('[voc] save failed', e); }
+    // refresh anything derived from comments
+    if (state.started) injectLnbCounts();
     // notify parent VOC page (if embedded in iframe) so its sidebar can refresh live
     try {
       if (window.parent && window.parent !== window) {
@@ -121,7 +123,9 @@
         width: 0; height: 0;
         pointer-events: none;
         z-index: ${Z};
+        display: none;
       }
+      .scm-voc-pin-layer.is-visible { display: block; }
       .scm-voc-pin {
         position: absolute;
         width: 28px; height: 28px;
@@ -273,6 +277,21 @@
         transition: all 0.2s ease;
       }
       .scm-voc-toast.is-on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+      /* LNB per-page count badge */
+      .scm-voc-lnb-count {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-width: 18px; height: 18px;
+        padding: 0 5px;
+        margin-left: 6px;
+        background: #6E6BFF; color: #fff;
+        border-radius: 999px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Pretendard Variable', Pretendard, sans-serif;
+        font-size: 10px; font-weight: 700; line-height: 1;
+        vertical-align: middle;
+        box-shadow: 0 0 0 2px rgba(110,107,255,0.18);
+      }
+      .scm-voc-lnb-count.is-resolved-only { background: #34D399; }
     `;
     document.head.appendChild(s);
   }
@@ -372,6 +391,7 @@
     document.body.classList.toggle('scm-voc-mode-active', m === 'comment');
     const labelEl = elFab.querySelector('.scm-voc-fab__label');
     if (labelEl) labelEl.textContent = m === 'comment' ? '코멘트 모드 ON' : '코멘트';
+    updatePinVisibility();
   }
 
   // ============ Listeners ============
@@ -693,6 +713,58 @@
     if (elFabCount) elFabCount.textContent = String(pageComments().length);
   }
 
+  // Pin visibility — pins are anchor markers; show only when in comment mode.
+  function updatePinVisibility() {
+    if (!elPinLayer) return;
+    elPinLayer.classList.toggle('is-visible', state.mode === 'comment');
+  }
+
+  // LNB per-page count badge — walks anchors with hrefs that resolve to a
+  // local path and tags each with the count of comments on that page.
+  function injectLnbCounts() {
+    const counts = new Map();
+    const resolved = new Map();
+    state.comments.forEach((c) => {
+      counts.set(c.page, (counts.get(c.page) || 0) + 1);
+      if (c.status === 'resolved') {
+        resolved.set(c.page, (resolved.get(c.page) || 0) + 1);
+      }
+    });
+    const anchors = document.querySelectorAll(
+      '.scm-lnb-l2[href], .scm-lnb-item > a.scm-lnb-row[href]'
+    );
+    anchors.forEach((a) => {
+      const href = a.getAttribute('href');
+      if (!href || href === '#' || /^(javascript:|mailto:|tel:)/i.test(href)) {
+        const ex = a.querySelector('.scm-voc-lnb-count');
+        if (ex) ex.remove();
+        return;
+      }
+      let path;
+      try { path = new URL(href, location.href).pathname; }
+      catch {
+        const ex = a.querySelector('.scm-voc-lnb-count');
+        if (ex) ex.remove();
+        return;
+      }
+      const total = counts.get(path) || 0;
+      const allResolved = total > 0 && (resolved.get(path) || 0) === total;
+      let badge = a.querySelector('.scm-voc-lnb-count');
+      if (total === 0) {
+        if (badge) badge.remove();
+        return;
+      }
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'scm-voc-lnb-count';
+        a.appendChild(badge);
+      }
+      badge.classList.toggle('is-resolved-only', !!allResolved);
+      badge.textContent = String(total);
+      badge.title = `이 페이지에 코멘트 ${total}개${allResolved ? ' (전부 해결됨)' : ''}`;
+    });
+  }
+
   // ============ Helpers ============
   function formatTarget(c) {
     if (!c) return '';
@@ -823,9 +895,19 @@
     attachListeners();
     renderPins();
     updateCount();
+    updatePinVisibility();
+    injectLnbCounts();
     handleAnchor();
     window.addEventListener('hashchange', handleAnchor);
     window.addEventListener('message', handleParentMessage);
+    // Cross-tab/storage sync — another window/tab edits comments
+    window.addEventListener('storage', (e) => {
+      if (e.key !== STORAGE_KEY) return;
+      state.comments = load();
+      renderPins();
+      updateCount();
+      injectLnbCounts();
+    });
     announceReady();
   }
 
