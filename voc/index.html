@@ -2147,12 +2147,13 @@
         if (confirm('이 추가 컬럼을 삭제할까요?')) removeAddedColumn(dC.dataset.delColumn);
         return;
       }
-      // section apply (push current draft to iframe)
+      // section apply — push current draft to the left-side iframe (preview).
+      // Save still does the same push + persists the baseline.
       const applyBtn = t.closest && t.closest('.edit-apply-btn');
       if (applyBtn) {
         e.preventDefault();
         applyAllToIframe();
-        showToast('편집 내용이 좌측 데모에 적용됐습니다');
+        showToast('편집 내용이 좌측 데모에 반영됐습니다');
         return;
       }
       // open / cancel / submit add forms
