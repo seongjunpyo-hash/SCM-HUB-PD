@@ -416,6 +416,8 @@ ${jsxBody}
     s.textContent = `
       .scm-dev-export-group {
         display: inline-flex; align-items: center; gap: 6px;
+        /* sit flush against the profile on the right edge of the GNB */
+        margin-left: auto;
         margin-right: 12px;
       }
       .scm-dev-export-btn {
