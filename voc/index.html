@@ -710,6 +710,52 @@
       padding: 2px 6px; border-radius: 4px;
       background: #EEF2FF; color: #4F46E5;
     }
+    .edit-row__type-select {
+      flex-shrink: 0;
+      height: 22px; padding: 0 22px 0 8px;
+      background: #fff; color: #1A1A1A;
+      border: 1px solid #E5E7EB; border-radius: 4px;
+      font-family: inherit; font-size: 11px; font-weight: 600;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='8' height='5' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l3 3 3-3' stroke='%236B7280' stroke-width='1.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 6px center;
+    }
+    .edit-row__type-select:hover  { border-color: #4F46E5; }
+    .edit-row__type-select:focus  { outline: none; border-color: #4F46E5; }
+
+    /* Edit pane sticky footer (save / revert) */
+    .side-pane[data-pane="edit"] { display: none; flex-direction: column; }
+    .side-pane[data-pane="edit"].is-active { display: flex; }
+    .edit-foot {
+      flex-shrink: 0;
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 16px;
+      border-top: 1px solid #E5E7EB;
+      background: #F9FAFB;
+    }
+    .edit-foot__status {
+      flex: 1; min-width: 0;
+      font-size: 11.5px; color: #6B7280;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .edit-foot__status.is-dirty { color: #C2710C; font-weight: 600; }
+    .edit-foot__btn-revert,
+    .edit-foot__btn-save {
+      height: 32px; padding: 0 14px; border-radius: 6px;
+      font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+      transition: all 0.12s ease;
+    }
+    .edit-foot__btn-revert {
+      background: #fff; color: #6B7280; border: 1px solid #E5E7EB;
+    }
+    .edit-foot__btn-revert:hover:not(:disabled) { color: #1A1A1A; border-color: #1A1A1A; }
+    .edit-foot__btn-save {
+      background: #4F46E5; color: #fff; border: 0;
+    }
+    .edit-foot__btn-save:hover:not(:disabled) { background: #4338CA; }
+    .edit-foot__btn-save:disabled,
+    .edit-foot__btn-revert:disabled { opacity: 0.45; cursor: not-allowed; }
     .edit-empty {
       padding: 32px 20px; text-align: center;
       color: #9CA3AF; font-size: 12.5px; line-height: 1.6;
@@ -907,6 +953,11 @@
             <div class="edit-list" id="editComponentList"></div>
           </section>
         </div>
+        <footer class="edit-foot">
+          <span class="edit-foot__status" id="editStatus">저장됨 · 데모와 동기화</span>
+          <button type="button" class="edit-foot__btn-revert" id="editRevertBtn" disabled>되돌리기</button>
+          <button type="button" class="edit-foot__btn-save"   id="editSaveBtn"   disabled>저장됨</button>
+        </footer>
       </div>
     </aside>
   </div>
@@ -918,6 +969,7 @@
     'use strict';
     const STORAGE_KEY  = 'scm:voc:comments:v1';
     const EDIT_KEY     = 'scm:voc:edits:v1';
+    const DRAFT_KEY    = 'scm:voc:edits:draft:v1';
     // Two-depth menu mirroring the demo's LNB structure.
     const MENU = [
       { l1: 'dashboard', label: '대시보드', children: [
@@ -946,7 +998,11 @@
 
     const state = {
       comments: load(),
-      edits: {},               // populated on first use (loaded after function defs)
+      // edit pane uses two parallel maps:
+      //   applied = what's currently injected into the iframe (and persisted)
+      //   draft   = what the user is configuring; iframe only updates on Save
+      applied: {},
+      draft: {},
       filter: 'page',
       currentPage: PAGES[0].path,
       iframeReady: false,
@@ -1071,8 +1127,12 @@
     // Init
     // ====================================================
     function init() {
-      // load edits state (function is defined later in the IIFE; safe by hoisting time)
-      state.edits = loadEdits();
+      // load edit state — applied (persisted, injected) + draft (pending UI changes)
+      state.applied = loadJsonKey(EDIT_KEY);
+      state.draft   = loadJsonKey(DRAFT_KEY);
+      if (!state.draft || !Object.keys(state.draft).length) {
+        state.draft = JSON.parse(JSON.stringify(state.applied || {}));
+      }
       // L1 chips
       menuL1.innerHTML = MENU.map((m) => `<button type="button" class="menu-l1__chip" data-l1="${m.l1}">${escapeHtml(m.label)}</button>`).join('');
       menuL1.addEventListener('click', (e) => {
@@ -1127,6 +1187,13 @@
         document.querySelectorAll('.side-tab').forEach((b) => b.classList.toggle('is-active', b === btn));
         document.querySelectorAll('.side-pane').forEach((p) => p.classList.toggle('is-active', p.dataset.pane === tab));
         if (tab === 'edit') renderEditPane();
+      });
+
+      // edit pane footer
+      document.getElementById('editSaveBtn').addEventListener('click', () => { if (isDirty()) commitDraft(); });
+      document.getElementById('editRevertBtn').addEventListener('click', () => {
+        if (!isDirty()) return;
+        if (confirm('저장하지 않은 변경 사항이 모두 사라집니다. 되돌릴까요?')) revertDraft();
       });
 
       filters.addEventListener('click', onFilterClick);
@@ -1267,43 +1334,108 @@
     // ====================================================
     // Edit pane — visibility editing of iframe elements
     // ====================================================
-    function loadEdits() {
-      try { return JSON.parse(localStorage.getItem(EDIT_KEY)) || {}; }
+    function loadJsonKey(key) {
+      try { const v = JSON.parse(localStorage.getItem(key)); return v && typeof v === 'object' ? v : {}; }
       catch { return {}; }
     }
-    function saveEdits() {
-      try { localStorage.setItem(EDIT_KEY, JSON.stringify(state.edits)); } catch {}
-    }
-    function pageEdit() {
-      let e = state.edits[state.currentPage];
-      if (!e) e = state.edits[state.currentPage] = {};
-      if (!Array.isArray(e.hidden))   e.hidden   = [];
-      if (!Array.isArray(e.noSort))   e.noSort   = [];
-      if (!Array.isArray(e.noFilter)) e.noFilter = [];
-      if (!e.added) e.added = { filters: [], columns: [] };
-      if (!Array.isArray(e.added.filters)) e.added.filters = [];
-      if (!Array.isArray(e.added.columns)) e.added.columns = [];
+    function persistApplied() { try { localStorage.setItem(EDIT_KEY,  JSON.stringify(state.applied)); } catch {} }
+    function persistDraft()   { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(state.draft));   } catch {} }
+    function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
+
+    // Returns the page slot for either 'applied' or 'draft'. For the draft
+    // slot, falls back to a deep-clone of the applied slot so a freshly
+    // visited page has draft == applied (no spurious dirty state).
+    function pageOf(scope) {
+      const obj = scope === 'applied' ? state.applied : state.draft;
+      let e = obj[state.currentPage];
+      if (!e) {
+        if (scope === 'draft' && state.applied[state.currentPage]) {
+          e = obj[state.currentPage] = deepClone(state.applied[state.currentPage]);
+        } else {
+          e = obj[state.currentPage] = {};
+        }
+      }
+      // legacy cleanup — old schema used noSort/noFilter (default ON), new
+      // schema uses showSort/showFilter (default OFF).
+      delete e.noSort; delete e.noFilter;
+      e.hidden     = Array.isArray(e.hidden)     ? e.hidden     : [];
+      e.showSort   = Array.isArray(e.showSort)   ? e.showSort   : [];
+      e.showFilter = Array.isArray(e.showFilter) ? e.showFilter : [];
+      if (!e.added) e.added = {};
+      e.added.filters = Array.isArray(e.added.filters) ? e.added.filters : [];
+      e.added.columns = Array.isArray(e.added.columns) ? e.added.columns : [];
       return e;
     }
+    function pageDraft()   { return pageOf('draft'); }
+    function pageApplied() { return pageOf('applied'); }
+
+    // ---- mutators (all touch DRAFT only — iframe untouched until Save) ----
     function setHidden(selector, hide) {
-      const e = pageEdit();
-      const set = new Set(e.hidden);
-      if (hide) set.add(selector); else set.delete(selector);
-      e.hidden = [...set];
-      saveEdits();
-      applyEditCss();
+      const d = pageDraft();
+      const s = new Set(d.hidden);
+      hide ? s.add(selector) : s.delete(selector);
+      d.hidden = [...s];
+      persistDraft();
+      refreshSaveBtn();
     }
-    function setIconOff(selector, kind, off) {
-      const e = pageEdit();
-      const arrName = kind === 'sort' ? 'noSort' : 'noFilter';
-      const set = new Set(e[arrName]);
-      if (off) set.add(selector); else set.delete(selector);
-      e[arrName] = [...set];
-      saveEdits();
-      applyEditCss();
+    function setIconShown(selector, kind, show) {
+      const d = pageDraft();
+      const arrName = kind === 'sort' ? 'showSort' : 'showFilter';
+      const s = new Set(d[arrName]);
+      show ? s.add(selector) : s.delete(selector);
+      d[arrName] = [...s];
+      persistDraft();
+      refreshSaveBtn();
+    }
+    function addFilter(label, type) {
+      const d = pageDraft();
+      d.added.filters.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+        label, type: type || 'single',
+      });
+      persistDraft();
+      renderEditPane();
+      refreshSaveBtn();
+    }
+    function addColumn(label) {
+      const d = pageDraft();
+      d.added.columns.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+        label,
+      });
+      persistDraft();
+      renderEditPane();
+      refreshSaveBtn();
+    }
+    function removeAddedFilter(id) {
+      const d = pageDraft();
+      d.added.filters = d.added.filters.filter((f) => f.id !== id);
+      const sel = `#voc-added-filter-${id}`;
+      d.hidden     = d.hidden.filter((s) => s !== sel);
+      d.showSort   = d.showSort.filter((s) => s !== sel);
+      d.showFilter = d.showFilter.filter((s) => s !== sel);
+      persistDraft();
+      renderEditPane();
+      refreshSaveBtn();
+    }
+    function removeAddedColumn(id) {
+      const d = pageDraft();
+      d.added.columns = d.added.columns.filter((c) => c.id !== id);
+      const sel = `#voc-added-col-${id}`;
+      d.hidden     = d.hidden.filter((s) => s !== sel);
+      d.showSort   = d.showSort.filter((s) => s !== sel);
+      d.showFilter = d.showFilter.filter((s) => s !== sel);
+      persistDraft();
+      renderEditPane();
+      refreshSaveBtn();
+    }
+    function updateAddedFilterType(id, type) {
+      const d = pageDraft();
+      const f = d.added.filters.find((x) => x.id === id);
+      if (f) { f.type = type; persistDraft(); refreshSaveBtn(); }
     }
 
-    // Inject (or update) all edit CSS into the iframe document.
+    // ---- inject CSS / DOM into iframe (read APPLIED only) ----
     function applyEditCss() {
       const doc = iframe.contentDocument;
       if (!doc || !doc.head) return;
@@ -1313,11 +1445,14 @@
         style.id = 'scm-voc-edit-css';
         doc.head.appendChild(style);
       }
-      const e = pageEdit();
+      const a = pageApplied();
       const lines = [];
-      e.hidden.forEach((s) => lines.push(`${s} { display: none !important; }`));
-      e.noSort.forEach((s) => lines.push(`${s} .sort-ic, ${s} .scm-th-sort { display: none !important; }`));
-      e.noFilter.forEach((s) => lines.push(`${s} .filter-ic, ${s} .th-icons { display: none !important; }`));
+      a.hidden.forEach((s) => lines.push(`${s} { display: none !important; }`));
+      // Default: ALL sort + filter icons hidden. Reveal selectively.
+      lines.push(`.mp-table thead th .sort-ic, .mp-table thead th .scm-th-sort { display: none !important; }`);
+      lines.push(`.mp-table thead th .filter-ic { display: none !important; }`);
+      a.showSort.forEach((s)   => lines.push(`${s} .sort-ic, ${s} .scm-th-sort { display: revert !important; }`));
+      a.showFilter.forEach((s) => lines.push(`${s} .filter-ic { display: revert !important; }`));
       // marker styles for added items
       lines.push(`
         .scm-voc-added-filter,
@@ -1340,17 +1475,15 @@
       style.textContent = lines.join('\n');
     }
 
-    // Inject persisted added filters/columns into the iframe DOM.
     function applyAddedDom() {
       const doc = iframe.contentDocument;
       if (!doc) return;
-      const e = pageEdit();
-
+      const a = pageApplied();
       // ---- Filters ----
       const filterBar = doc.querySelector('.scm-filter-bar');
       if (filterBar) {
         const wrapper = filterBar.firstElementChild || filterBar;
-        e.added.filters.forEach((f) => {
+        a.added.filters.forEach((f) => {
           const id = `voc-added-filter-${f.id}`;
           if (doc.getElementById(id)) return;
           const btn = doc.createElement('button');
@@ -1368,7 +1501,6 @@
           wrapper.appendChild(btn);
         });
       }
-
       // ---- Columns ----
       const table = doc.querySelector('.mp-table');
       if (table) {
@@ -1378,25 +1510,22 @@
           const trs = thead.querySelectorAll('tr');
           const colTr = trs[trs.length - 1];
           const groupTr = trs.length > 1 ? trs[0] : null;
-          e.added.columns.forEach((c) => {
+          a.added.columns.forEach((c) => {
             const id = `voc-added-col-${c.id}`;
             if (doc.getElementById(id)) return;
             const klass = `voc-added-col-${c.id}`;
-            // header th in actual column row
             const th = doc.createElement('th');
             th.id = id;
             th.className = `col-auto scm-voc-added-col ${klass}`;
             th.textContent = c.label;
             const colSpacer = colTr.querySelector('.col-spacer');
             colTr.insertBefore(th, colSpacer || null);
-            // group row — empty cell
             if (groupTr) {
               const gth = doc.createElement('th');
               gth.className = `scm-voc-added-col ${klass}`;
               const gSpacer = groupTr.querySelector('.col-spacer');
               groupTr.insertBefore(gth, gSpacer || null);
             }
-            // tbody tds
             tbody.querySelectorAll('tr').forEach((tr) => {
               const td = doc.createElement('td');
               td.className = `scm-voc-added-col ${klass}`;
@@ -1408,58 +1537,50 @@
         }
       }
     }
+    // Wipe injected DOM and re-inject from applied — used after Save when
+    // the applied state may have lost an entry that was previously on disk.
+    function rebuildAddedDom() {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      doc.querySelectorAll('.scm-voc-added-filter').forEach((el) => el.remove());
+      doc.querySelectorAll('[class*="voc-added-col-"]').forEach((el) => el.remove());
+      applyAddedDom();
+    }
 
-    function addFilter(label, type) {
-      const e = pageEdit();
-      e.added.filters.push({
-        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
-        label, type: type || 'single',
-      });
-      saveEdits();
-      applyAddedDom();
-      renderEditPane();
+    // ---- save / revert ----
+    function isDirty() {
+      return JSON.stringify(state.draft[state.currentPage] || null)
+          !== JSON.stringify(state.applied[state.currentPage] || null);
     }
-    function addColumn(label) {
-      const e = pageEdit();
-      e.added.columns.push({
-        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
-        label,
-      });
-      saveEdits();
-      applyAddedDom();
-      renderEditPane();
-    }
-    function removeAddedFilter(id) {
-      const e = pageEdit();
-      e.added.filters = e.added.filters.filter((f) => f.id !== id);
-      saveEdits();
-      const doc = iframe.contentDocument;
-      const el = doc && doc.getElementById(`voc-added-filter-${id}`);
-      if (el) el.remove();
-      // also drop from hidden/noSort/noFilter
-      const sel = `#voc-added-filter-${id}`;
-      e.hidden   = e.hidden.filter((s) => s !== sel);
-      e.noSort   = e.noSort.filter((s) => s !== sel);
-      e.noFilter = e.noFilter.filter((s) => s !== sel);
-      saveEdits();
+    function commitDraft() {
+      // copy draft slot for current page → applied slot
+      state.applied[state.currentPage] = deepClone(pageDraft());
+      persistApplied();
+      rebuildAddedDom();
       applyEditCss();
-      renderEditPane();
+      refreshSaveBtn();
+      showToast('편집 사항 저장 — 데모에 반영됨');
     }
-    function removeAddedColumn(id) {
-      const e = pageEdit();
-      e.added.columns = e.added.columns.filter((c) => c.id !== id);
-      saveEdits();
-      const doc = iframe.contentDocument;
-      if (doc) {
-        doc.querySelectorAll('.voc-added-col-' + id).forEach((el) => el.remove());
+    function revertDraft() {
+      // throw away draft for this page; copy applied → draft
+      state.draft[state.currentPage] = state.applied[state.currentPage]
+        ? deepClone(state.applied[state.currentPage]) : {};
+      persistDraft();
+      renderEditPane();
+      refreshSaveBtn();
+      showToast('변경 사항을 되돌렸습니다');
+    }
+    function refreshSaveBtn() {
+      const dirty = isDirty();
+      const saveBtn   = document.getElementById('editSaveBtn');
+      const revertBtn = document.getElementById('editRevertBtn');
+      const status    = document.getElementById('editStatus');
+      if (saveBtn)   { saveBtn.disabled   = !dirty; saveBtn.textContent = dirty ? '저장 (데모에 적용)' : '저장됨'; }
+      if (revertBtn)   revertBtn.disabled = !dirty;
+      if (status)    {
+        status.classList.toggle('is-dirty', dirty);
+        status.textContent = dirty ? '저장하지 않은 변경 사항' : '저장됨 · 데모와 동기화';
       }
-      const sel = `#voc-added-col-${id}`;
-      e.hidden   = e.hidden.filter((s) => s !== sel);
-      e.noSort   = e.noSort.filter((s) => s !== sel);
-      e.noFilter = e.noFilter.filter((s) => s !== sel);
-      saveEdits();
-      applyEditCss();
-      renderEditPane();
     }
 
     // Stable CSS path for an iframe element (no temp ids).
@@ -1565,15 +1686,15 @@
 
     function renderEditPane() {
       const targets = scanEditTargets();
-      const e = pageEdit();
-      const hidden   = new Set(e.hidden);
-      const noSort   = new Set(e.noSort);
-      const noFilter = new Set(e.noFilter);
+      const d = pageDraft();
+      const hidden     = new Set(d.hidden);
+      const showSort   = new Set(d.showSort);
+      const showFilter = new Set(d.showFilter);
 
-      // merge native + user-added items so added items are also editable
+      // merge native + user-added items
       const filterRows = [
         ...targets.filters.map((it) => ({ ...it, kind: 'filter' })),
-        ...e.added.filters.map((f) => ({
+        ...d.added.filters.map((f) => ({
           label: f.label, kind: 'filter',
           selector: `#voc-added-filter-${f.id}`,
           added: f, type: f.type,
@@ -1581,15 +1702,13 @@
       ];
       const columnRows = [
         ...targets.columns.map((it) => ({ ...it, kind: 'column' })),
-        ...e.added.columns.map((c) => ({
+        ...d.added.columns.map((c) => ({
           label: c.label, kind: 'column',
           selector: `#voc-added-col-${c.id}`,
           added: c,
         })),
       ];
       const componentRows = targets.components.map((it) => ({ ...it, kind: 'component' }));
-
-      const TYPE_LABEL = { single: '싱글', multi: '멀티', code: '코드' };
 
       const renderList = (containerId, countId, items) => {
         const cnt = document.getElementById(countId);
@@ -1604,13 +1723,21 @@
           const sel = escapeHtml(it.selector);
           let middle = '';
           if (it.kind === 'column') {
-            const sortOn   = !noSort.has(it.selector);
-            const filterOn = !noFilter.has(it.selector);
+            const sortOn   = showSort.has(it.selector);
+            const filterOn = showFilter.has(it.selector);
             middle = `
               <button type="button" class="edit-row__icon-toggle ${sortOn ? 'is-on' : ''}"   data-toggle-icon="sort"   data-selector="${sel}" title="컬럼 정렬 아이콘 표시/숨김">정렬</button>
               <button type="button" class="edit-row__icon-toggle ${filterOn ? 'is-on' : ''}" data-toggle-icon="filter" data-selector="${sel}" title="컬럼 필터 아이콘 표시/숨김">필터</button>`;
-          } else if (it.kind === 'filter' && it.type) {
-            middle = `<span class="edit-row__type">${escapeHtml(TYPE_LABEL[it.type] || it.type)}</span>`;
+          } else if (it.kind === 'filter') {
+            if (it.added) {
+              const id = escapeHtml(it.added.id);
+              middle = `
+                <select class="edit-row__type-select" data-edit-filter-type="${id}" title="필터 타입 변경">
+                  <option value="single" ${it.type === 'single' ? 'selected' : ''}>싱글</option>
+                  <option value="multi"  ${it.type === 'multi'  ? 'selected' : ''}>멀티</option>
+                  <option value="code"   ${it.type === 'code'   ? 'selected' : ''}>코드</option>
+                </select>`;
+            }
           }
           const del = it.added
             ? `<button type="button" class="edit-row__del" data-del-${it.kind}="${escapeHtml(it.added.id)}" title="삭제">×</button>`
@@ -1629,16 +1756,26 @@
       renderList('editFilterList',    'editFilterCount',    filterRows);
       renderList('editColumnList',    'editColumnCount',    columnRows);
       renderList('editComponentList', 'editComponentCount', componentRows);
+      refreshSaveBtn();
     }
 
     // ----- delegated handlers for the edit pane -----
     document.addEventListener('change', (e) => {
-      const cb = e.target.closest && e.target.closest('.edit-row__check');
-      if (!cb) return;
-      const sel = cb.dataset.selector;
-      if (!sel) return;
-      setHidden(sel, !cb.checked);
-      cb.closest('.edit-row').classList.toggle('is-hidden', !cb.checked);
+      const t = e.target;
+      const cb = t.closest && t.closest('.edit-row__check');
+      if (cb) {
+        const sel = cb.dataset.selector;
+        if (sel) {
+          setHidden(sel, !cb.checked);
+          cb.closest('.edit-row').classList.toggle('is-hidden', !cb.checked);
+        }
+        return;
+      }
+      const ts = t.closest && t.closest('[data-edit-filter-type]');
+      if (ts) {
+        updateAddedFilterType(ts.dataset.editFilterType, ts.value);
+        return;
+      }
     });
     document.addEventListener('click', (e) => {
       const t = e.target;
@@ -1657,7 +1794,7 @@
         const sel = tg.dataset.selector;
         const kind = tg.dataset.toggleIcon;
         const wasOn = tg.classList.contains('is-on');
-        setIconOff(sel, kind, wasOn);  // turning off = add to noSort/noFilter
+        setIconShown(sel, kind, !wasOn);  // turning ON = add to showSort/showFilter
         tg.classList.toggle('is-on', !wasOn);
         return;
       }
