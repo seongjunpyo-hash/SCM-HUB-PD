@@ -496,6 +496,143 @@
       transition: all 0.2s ease;
     }
     .toast.is-on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ============================================================
+     * Light theme — only the GNB topbar + the right comment sidebar
+     * flip to white. The browser-frame stage stays dark.
+     * Done by re-scoping the CSS variables on those two roots, so
+     * existing rules using var(--bg) / var(--surface) etc. inherit
+     * the new values automatically.
+     * ============================================================ */
+    .topbar, .sidebar {
+      --bg:        #fff;
+      --surface:   #fff;
+      --surface-h: #F9FAFB;
+      --line:      #E5E7EB;
+      --line-2:    #1A1A1A;
+      --fg:        #1A1A1A;
+      --fg-mute:   #6B7280;
+      --fg-dim:    #9CA3AF;
+      --accent:    #4F46E5;
+      --accent-bg: #EEF2FF;
+      --accent-2:  #4338CA;
+      --warn:      #C2710C;
+      --warn-bg:   #FFF4E5;
+      --ok:        #0E8A47;
+      --ok-bg:     #E6F7EE;
+      --danger:    #DC2626;
+    }
+    .topbar { background: #fff; border-bottom: 1px solid #E5E5E5; box-shadow: 0 1px 0 rgba(0,0,0,0.02); }
+    .sidebar { background: #fff; border-left: 1px solid #E5E5E5; }
+    /* page-select chevron needs a darker arrow on white */
+    .topbar .page-select {
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236B7280' stroke-width='1.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    }
+    /* keep simStatus warn-toned even on light */
+    .topbar .sim-status { background: #FFF4E5; border-color: #F8DDB1; color: #C2710C; }
+
+    /* ============================================================
+     * Sidebar tabs — split [코멘트] / [편집] above the panes.
+     * ============================================================ */
+    .side-tabs {
+      display: flex;
+      border-bottom: 1px solid #E5E7EB;
+      flex-shrink: 0;
+      background: #fff;
+    }
+    .side-tab {
+      flex: 1;
+      height: 44px; padding: 0;
+      background: transparent;
+      border: 0; border-bottom: 2px solid transparent;
+      font-family: inherit;
+      font-size: 13px; font-weight: 600;
+      color: #6B7280;
+      cursor: pointer;
+      transition: color 0.12s, border-color 0.12s;
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 6px;
+    }
+    .side-tab:hover { color: #1A1A1A; }
+    .side-tab.is-active {
+      color: #4F46E5;
+      border-bottom-color: #4F46E5;
+    }
+    .side-pane { display: none; flex: 1; min-height: 0; flex-direction: column; }
+    .side-pane.is-active { display: flex; }
+
+    /* ============================================================
+     * Edit pane
+     * ============================================================ */
+    .edit-head {
+      padding: 14px 20px;
+      border-bottom: 1px solid #E5E7EB;
+      flex-shrink: 0;
+    }
+    .edit-hint {
+      margin: 0; font-size: 12px; color: #6B7280; line-height: 1.6;
+    }
+    .edit-body {
+      flex: 1; min-height: 0;
+      overflow-y: auto;
+      padding: 6px 12px 18px;
+    }
+    .edit-body::-webkit-scrollbar { width: 6px; }
+    .edit-body::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 999px; }
+    .edit-sec { margin-top: 14px; }
+    .edit-sec__head {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 8px;
+      font-size: 12.5px; font-weight: 700; color: #1A1A1A;
+    }
+    .edit-sec__head h4 { margin: 0; font-size: inherit; font-weight: inherit; }
+    .edit-sec__count {
+      font-size: 11px; font-weight: 600; color: #6B7280;
+      background: #F3F4F6; border-radius: 999px;
+      padding: 2px 7px;
+    }
+    .edit-list {
+      display: flex; flex-direction: column;
+      background: #FAFBFC; border: 1px solid #EBEEF2; border-radius: 8px;
+      overflow: hidden;
+    }
+    .edit-list:empty::after {
+      content: '감지된 항목이 없습니다.';
+      display: block; padding: 14px; text-align: center;
+      font-size: 12px; color: #9CA3AF;
+    }
+    .edit-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      border-top: 1px solid #EFF1F4;
+      font-size: 12.5px; color: #1A1A1A;
+      cursor: pointer;
+      user-select: none;
+    }
+    .edit-row:first-child { border-top: 0; }
+    .edit-row:hover { background: #F3F4F6; }
+    .edit-row__check {
+      width: 16px; height: 16px;
+      flex-shrink: 0;
+      accent-color: #4F46E5;
+      cursor: pointer;
+    }
+    .edit-row__label {
+      flex: 1; min-width: 0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .edit-row.is-hidden .edit-row__label {
+      color: #9CA3AF; text-decoration: line-through;
+    }
+    .edit-row__locate {
+      background: transparent; border: 0; cursor: pointer;
+      font-size: 11px; color: #4F46E5; padding: 2px 6px; border-radius: 4px;
+    }
+    .edit-row__locate:hover { background: #EEF2FF; }
+    .edit-empty {
+      padding: 32px 20px; text-align: center;
+      color: #9CA3AF; font-size: 12.5px; line-height: 1.6;
+    }
   </style>
 </head>
 <body>
@@ -540,6 +677,14 @@
     </section>
 
     <aside class="sidebar">
+      <!-- TAB NAV -->
+      <div class="side-tabs" id="sideTabs">
+        <button type="button" class="side-tab is-active" data-tab="comments">💬 코멘트</button>
+        <button type="button" class="side-tab" data-tab="edit">✏️ 편집</button>
+      </div>
+
+      <!-- COMMENTS PANE (existing list + detail) -->
+      <div class="side-pane is-active" data-pane="comments">
       <!-- LIST VIEW -->
       <div class="sidebar__view" id="listView">
         <div class="side__head">
@@ -626,6 +771,37 @@
           </section>
         </div>
       </div>
+      </div><!-- /side-pane comments -->
+
+      <!-- EDIT PANE -->
+      <div class="side-pane" data-pane="edit">
+        <div class="edit-head">
+          <p class="edit-hint">현재 화면의 요소를 숨기거나 표시할 수 있습니다. 변경 사항은 자동 저장되며, 페이지를 새로고침해도 유지됩니다.</p>
+        </div>
+        <div class="edit-body">
+          <section class="edit-sec">
+            <header class="edit-sec__head">
+              <h4>🔍 필터</h4>
+              <span class="edit-sec__count" id="editFilterCount">0</span>
+            </header>
+            <div class="edit-list" id="editFilterList"></div>
+          </section>
+          <section class="edit-sec">
+            <header class="edit-sec__head">
+              <h4>📊 테이블 컬럼</h4>
+              <span class="edit-sec__count" id="editColumnCount">0</span>
+            </header>
+            <div class="edit-list" id="editColumnList"></div>
+          </section>
+          <section class="edit-sec">
+            <header class="edit-sec__head">
+              <h4>🧩 컴포넌트</h4>
+              <span class="edit-sec__count" id="editComponentCount">0</span>
+            </header>
+            <div class="edit-list" id="editComponentList"></div>
+          </section>
+        </div>
+      </div>
     </aside>
   </div>
 
@@ -634,7 +810,8 @@
   <script>
   (function () {
     'use strict';
-    const STORAGE_KEY = 'scm:voc:comments:v1';
+    const STORAGE_KEY  = 'scm:voc:comments:v1';
+    const EDIT_KEY     = 'scm:voc:edits:v1';
     // Two-depth menu mirroring the demo's LNB structure.
     const MENU = [
       { l1: 'dashboard', label: '대시보드', children: [
@@ -663,12 +840,13 @@
 
     const state = {
       comments: load(),
+      edits: {},               // populated on first use (loaded after function defs)
       filter: 'page',
       currentPage: PAGES[0].path,
       iframeReady: false,
-      view: 'list',          // 'list' | 'detail'
+      view: 'list',            // 'list' | 'detail'
       selectedId: null,
-      simActive: new Set(),  // ids whose CSS sim is currently injected in iframe
+      simActive: new Set(),    // ids whose CSS sim is currently injected in iframe
       saveTimer: null,
       user: { email: 'guest@local', name: '게스트' },
     };
@@ -787,6 +965,8 @@
     // Init
     // ====================================================
     function init() {
+      // load edits state (function is defined later in the IIFE; safe by hoisting time)
+      state.edits = loadEdits();
       // L1 chips
       menuL1.innerHTML = MENU.map((m) => `<button type="button" class="menu-l1__chip" data-l1="${m.l1}">${escapeHtml(m.label)}</button>`).join('');
       menuL1.addEventListener('click', (e) => {
@@ -827,6 +1007,19 @@
         state.simActive.clear();
         updateSimStatus();
         renderList();
+        // edit pane: re-apply persisted hides + re-scan editable elements
+        applyEditCss();
+        renderEditPane();
+      });
+
+      // sidebar tab switching
+      document.getElementById('sideTabs').addEventListener('click', (e) => {
+        const btn = e.target.closest('.side-tab');
+        if (!btn) return;
+        const tab = btn.dataset.tab;
+        document.querySelectorAll('.side-tab').forEach((b) => b.classList.toggle('is-active', b === btn));
+        document.querySelectorAll('.side-pane').forEach((p) => p.classList.toggle('is-active', p.dataset.pane === tab));
+        if (tab === 'edit') renderEditPane();
       });
 
       filters.addEventListener('click', onFilterClick);
@@ -963,6 +1156,179 @@
       try { iframe.contentWindow && iframe.contentWindow.postMessage(msg, '*'); }
       catch {}
     }
+
+    // ====================================================
+    // Edit pane — visibility editing of iframe elements
+    // ====================================================
+    function loadEdits() {
+      try { return JSON.parse(localStorage.getItem(EDIT_KEY)) || {}; }
+      catch { return {}; }
+    }
+    function saveEdits() {
+      try { localStorage.setItem(EDIT_KEY, JSON.stringify(state.edits)); } catch {}
+    }
+    function pageHidden() {
+      const e = state.edits[state.currentPage];
+      return (e && e.hidden) || [];
+    }
+    function setHidden(selector, hide) {
+      const cur = state.edits[state.currentPage] || { hidden: [] };
+      const set = new Set(cur.hidden || []);
+      if (hide) set.add(selector); else set.delete(selector);
+      cur.hidden = [...set];
+      state.edits[state.currentPage] = cur;
+      saveEdits();
+      applyEditCss();
+    }
+
+    // Inject (or update) the hide CSS into the iframe document.
+    function applyEditCss() {
+      const doc = iframe.contentDocument;
+      if (!doc || !doc.head) return;
+      let style = doc.getElementById('scm-voc-edit-css');
+      if (!style) {
+        style = doc.createElement('style');
+        style.id = 'scm-voc-edit-css';
+        doc.head.appendChild(style);
+      }
+      const list = pageHidden();
+      style.textContent = list.length
+        ? list.map((s) => `${s} { display: none !important; }`).join('\n')
+        : '';
+    }
+
+    // Stable CSS path for an iframe element (no temp ids).
+    function ifrCssPath(el) {
+      if (!el || el.nodeType !== 1) return '';
+      const doc = el.ownerDocument;
+      if (el.id && doc.querySelectorAll('#' + CSS.escape(el.id)).length === 1) {
+        return '#' + CSS.escape(el.id);
+      }
+      const parts = [];
+      let cur = el, depth = 0;
+      while (cur && cur.nodeType === 1 && cur.tagName !== 'HTML' && depth < 8) {
+        let part = cur.tagName.toLowerCase();
+        if (cur.id && doc.querySelectorAll('#' + CSS.escape(cur.id)).length === 1) {
+          parts.unshift('#' + CSS.escape(cur.id));
+          break;
+        }
+        const cls = [...cur.classList]
+          .filter((c) => !c.startsWith('scm-voc-'))
+          .slice(0, 2);
+        if (cls.length) part += '.' + cls.map((c) => CSS.escape(c)).join('.');
+        let nth = 1, sib = cur;
+        while ((sib = sib.previousElementSibling)) {
+          if (sib.tagName === cur.tagName) nth++;
+        }
+        if (nth > 1) part += `:nth-of-type(${nth})`;
+        parts.unshift(part);
+        cur = cur.parentElement;
+        depth++;
+      }
+      return parts.join(' > ');
+    }
+
+    function pickLabel(el) {
+      const head = el.querySelector('.scm-card-title, .scm-page-section__title, .scm-page-head__title, h1, h2, h3, h4, .scm-filter-select__label');
+      if (head && head.textContent.trim()) return head.textContent.trim().replace(/\s+/g, ' ').slice(0, 40);
+      const t = (el.getAttribute('aria-label') || el.title || '').trim();
+      if (t) return t.slice(0, 40);
+      const txt = (el.textContent || '').trim().replace(/\s+/g, ' ');
+      if (txt) return txt.slice(0, 40);
+      // fall back to leading class name
+      const cls = [...el.classList].find((c) => c.startsWith('scm-') || c.startsWith('db-')) || el.tagName.toLowerCase();
+      return cls;
+    }
+
+    // Scan iframe for editable filters / columns / components.
+    function scanEditTargets() {
+      const out = { filters: [], columns: [], components: [] };
+      const doc = iframe.contentDocument;
+      if (!doc) return out;
+      const main = doc.querySelector('main') || doc.body;
+
+      // Filters — children of any .scm-filter-bar (one entry per immediate child)
+      const filterBars = main.querySelectorAll('.scm-filter-bar');
+      filterBars.forEach((bar) => {
+        bar.children && [...bar.children].forEach((el) => {
+          if (!el.classList || el.classList.contains('scm-filter-bar__divider')) return;
+          out.filters.push({ label: pickLabel(el), selector: ifrCssPath(el) });
+        });
+      });
+
+      // Table columns — header <th> in any .mp-table thead, skipping spacer/checkbox
+      const heads = main.querySelectorAll('.mp-table thead tr');
+      const seenColIdx = new Set();
+      heads.forEach((tr) => {
+        [...tr.children].forEach((th, i) => {
+          if (!(th instanceof Element) || th.tagName !== 'TH') return;
+          if (th.classList.contains('col-spacer') || th.classList.contains('cb-col')) return;
+          const key = i;
+          if (seenColIdx.has(key)) return;
+          seenColIdx.add(key);
+          const label = (th.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 30) || `컬럼 ${i + 1}`;
+          out.columns.push({ label, selector: ifrCssPath(th) });
+        });
+      });
+
+      // Components — top-level scm-card / scm-page-section / scm-kpi-card / etc.
+      const compSel = '.scm-card, .scm-page-section, .scm-kpi-card, .scm-bar-chart, .db-pending-list, .db-schedule-list, .db-quick-grid';
+      const compEls = main.querySelectorAll(compSel);
+      const taken = new Set();
+      compEls.forEach((el) => {
+        // skip if a parent of `el` is also a detected component
+        for (const t of taken) { if (t.contains(el)) return; }
+        taken.add(el);
+        out.components.push({ label: pickLabel(el), selector: ifrCssPath(el) });
+      });
+
+      return out;
+    }
+
+    function renderEditPane() {
+      const targets = scanEditTargets();
+      const hidden = new Set(pageHidden());
+
+      const renderList = (containerId, countId, items) => {
+        const c = document.getElementById(countId);
+        const list = document.getElementById(containerId);
+        if (c) c.textContent = String(items.length);
+        if (!list) return;
+        list.innerHTML = items.map((it) => {
+          const isHidden = hidden.has(it.selector);
+          return `
+            <label class="edit-row${isHidden ? ' is-hidden' : ''}">
+              <input type="checkbox" class="edit-row__check" data-selector="${escapeHtml(it.selector)}" ${isHidden ? '' : 'checked'} />
+              <span class="edit-row__label">${escapeHtml(it.label)}</span>
+              <button type="button" class="edit-row__locate" data-locate="${escapeHtml(it.selector)}">↗</button>
+            </label>
+          `;
+        }).join('');
+      };
+
+      renderList('editFilterList',    'editFilterCount',    targets.filters);
+      renderList('editColumnList',    'editColumnCount',    targets.columns);
+      renderList('editComponentList', 'editComponentCount', targets.components);
+    }
+
+    // Delegated handlers on the edit body (covers all three lists).
+    document.addEventListener('change', (e) => {
+      const cb = e.target.closest && e.target.closest('.edit-row__check');
+      if (!cb) return;
+      const sel = cb.dataset.selector;
+      if (!sel) return;
+      setHidden(sel, !cb.checked);
+      cb.closest('.edit-row').classList.toggle('is-hidden', !cb.checked);
+    });
+    document.addEventListener('click', (e) => {
+      const lo = e.target.closest && e.target.closest('.edit-row__locate');
+      if (!lo) return;
+      e.preventDefault();
+      const sel = lo.dataset.locate;
+      if (!sel) return;
+      // ask overlay to flash
+      postIframe({ type: 'voc-flash', selector: sel });
+    });
 
     // ====================================================
     // List
