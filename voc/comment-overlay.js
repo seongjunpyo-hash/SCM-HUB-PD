@@ -365,7 +365,7 @@
   // ============ DOM build ============
   let elFab, elFabCount, elPinLayer, elPopover, elPopNum, elPopTarget,
       elPopThread, elPopInput, elPopSubmit, elPopFoot, elPopMeta,
-      elPopResolve, elPopDelete, elPopClose, elToast;
+      elPopResolve, elPopDelete, elPopClose, elPopCompose, elToast;
   let toastTimer = null;
 
   function buildDOM() {
@@ -424,6 +424,7 @@
     elPopSubmit  = elPopover.querySelector('[data-act="submit"]');
     elPopClose   = elPopover.querySelector('.scm-voc-popover__close');
     elPopFoot    = elPopover.querySelector('.scm-voc-popover__foot');
+    elPopCompose = elPopover.querySelector('.scm-voc-popover__compose');
     elPopMeta    = elPopFoot.querySelector('.meta');
     elPopResolve = elPopFoot.querySelector('[data-act="resolve"]');
     elPopDelete  = elPopFoot.querySelector('[data-act="delete"]');
@@ -538,8 +539,11 @@
     document.addEventListener('submit', (e) => {
       if (state.mode === 'comment') { e.preventDefault(); e.stopPropagation(); }
     }, true);
-    // Hover highlight
+    // Hover highlight — in worker mode we suppress this since clicking
+    // does nothing (read-only). Highlight would mislead viewers into
+    // expecting click-to-pin.
     document.addEventListener('mouseover', (e) => {
+      if (state.workerMode) { clearHover(); return; }
       if (state.mode !== 'comment') { clearHover(); return; }
       if (isOurUI(e.target) || isNonCommentable(e.target)) { clearHover(); return; }
       if (hoverEl === e.target) return;
@@ -591,6 +595,11 @@
   }
 
   function onPlacePin(e) {
+    // VOC worker mode = view-only. Pin placement (and the "+" pending pin
+    // popover that follows) is disabled — clicking the demo just does
+    // nothing. Existing pins remain clickable and open the read-only
+    // thread popover instead.
+    if (state.workerMode) return;
     const target = e.target;
     if (target && target.classList) target.classList.remove('scm-voc-hover');
     const sx = window.scrollX || window.pageXOffset || document.documentElement.scrollLeft || 0;
@@ -677,7 +686,18 @@
     elPopInput.value = '';
     elPopInput.placeholder = '답글…';
     elPopSubmit.textContent = '답글';
-    elPopFoot.style.display = '';
+    // VOC worker mode = read-only popover. Hide the reply textarea + the
+    // resolve / delete footer so the user can only INSPECT pin info.
+    // Reply-delete buttons inside the thread are also already gated by
+    // canDel (author === current user), so they won't appear for worker
+    // viewers in practice.
+    if (state.workerMode) {
+      if (elPopCompose) elPopCompose.style.display = 'none';
+      elPopFoot.style.display = 'none';
+    } else {
+      if (elPopCompose) elPopCompose.style.display = '';
+      elPopFoot.style.display = '';
+    }
     elPopMeta.textContent = c.status === 'resolved'
       ? '✓ 해결됨'
       : `${c.thread.length}개 코멘트`;
@@ -691,7 +711,7 @@
     });
     const pin = pinEl || document.querySelector(`.scm-voc-pin[data-cmt-id="${c.id}"]`);
     if (pin) positionAt(pin);
-    requestAnimationFrame(() => elPopInput.focus());
+    if (!state.workerMode) requestAnimationFrame(() => elPopInput.focus());
     highlightActive();
   }
 
