@@ -80,49 +80,73 @@
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .grid--3 { grid-template-columns: 1fr 1fr 1fr; }
 
+    /* Glassmorphism cards — translucent white over the dark workspace
+       background, frosted via backdrop-filter blur. Sits between the
+       previous noisy gradient cards and pure-white cards. */
     .card {
       display: flex; flex-direction: column; position: relative;
-      background: #FFFFFF;
-      color: #1A1A1A;
-      border: 1px solid #E5E7EB;
+      background: rgba(255, 255, 255, 0.04);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      backdrop-filter: blur(24px) saturate(180%);
+      color: var(--fg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 18px;
       padding: 48px 40px;
       min-height: 440px;
-      transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+      transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      overflow: hidden;
+    }
+    /* subtle top highlight to sell the glass material */
+    .card::before {
+      content: '';
+      position: absolute; inset: 0; pointer-events: none;
+      background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 40%);
+      border-radius: inherit;
     }
     .card:hover {
-      background: #F8F9FB;
-      border-color: #D1D5DB;
+      background: rgba(255, 255, 255, 0.07);
+      border-color: rgba(255, 255, 255, 0.16);
       transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 16px 40px rgba(0,0,0,0.4);
     }
-    .card__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 36px; }
+    .card__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 36px; position: relative; }
     .card__icon {
       display: inline-flex; align-items: center; justify-content: center;
       width: 64px; height: 64px;
-      background: #F3F4F6; color: #1A1A1A;
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.06);
       border-radius: 16px;
     }
     .card__icon svg { width: 32px; height: 32px; }
-    .card__num { font-size: 13px; font-weight: 700; letter-spacing: 0.6px; color: #9CA3AF; }
-    .card__title { margin: 0 0 20px; font-size: 32px; font-weight: 700; letter-spacing: -0.5px; color: #1A1A1A; }
-    .card__desc { margin: 0; font-size: 15px; color: #6B7280; line-height: 1.75; }
-    .card__path { margin-top: auto; padding-top: 32px; font-size: 12px; color: #9CA3AF; font-family: ui-monospace, monospace; }
+    .card__num { font-size: 13px; font-weight: 700; letter-spacing: 0.6px; color: var(--fg-dim); }
+    .card__title { margin: 0 0 20px; font-size: 32px; font-weight: 700; letter-spacing: -0.5px; color: var(--fg); position: relative; }
+    .card__desc { margin: 0; font-size: 15px; color: var(--fg-mute); line-height: 1.75; position: relative; }
+    .card__path { margin-top: auto; padding-top: 32px; font-size: 12px; color: var(--fg-dim); font-family: ui-monospace, monospace; position: relative; }
 
-    /* All three cards share a unified white surface — the previous
-       blue/violet/green gradients felt visually noisy. Removing the
-       per-card color variants and using a single neutral palette. */
+    /* Locked variant — applied to the 현업 VOC card for non-super users.
+       Dimmed glass + blocked clicks; the lock pill in the corner makes
+       the gate explicit. */
     .card--locked {
       opacity: 0.5;
       cursor: not-allowed;
       pointer-events: none;
+      filter: saturate(0.7);
     }
-    .card--locked .card__icon { background: #E5E7EB; color: #9CA3AF; }
+    .card--locked .card__icon {
+      background: rgba(255, 255, 255, 0.04);
+      color: rgba(255, 255, 255, 0.4);
+    }
     .card__lock-tag {
-      position: absolute; top: 16px; right: 20px;
+      position: absolute; top: 16px; right: 20px; z-index: 2;
       display: inline-flex; align-items: center; gap: 4px;
       padding: 4px 10px; border-radius: 999px;
-      background: #F3F4F6; color: #6B7280;
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
       font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px;
     }
 
