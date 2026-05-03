@@ -597,58 +597,38 @@
         </button>
       </div>
     </div>
+    <!-- 양식 다운로드 (무탠 — 단일 type, 업로드 유형 없음) -->
     <div class="scm-bu-type-section">
       <div class="scm-bu-type-row">
-        <span class="scm-bu-type-label">업로드 유형 <span class="req"></span></span>
+        <span class="scm-bu-type-label">템플릿</span>
         <div class="scm-bu-type-controls">
-          <span class="scm-radio-group scm-radio-group--sm">
-            <label class="scm-radio scm-radio--sm">
-              <input type="radio" name="bu-type" value="new" checked />
-              <span class="scm-radio-dot"></span>
-              <span>신규 등록</span>
-            </label>
-            <label class="scm-radio scm-radio--sm">
-              <input type="radio" name="bu-type" value="update" />
-              <span class="scm-radio-dot"></span>
-              <span>수정</span>
-            </label>
-          </span>
+          <div class="scm-bu-type-controls__row" style="gap:16px;">
+            <button class="scm-bu-template-btn" type="button" id="bu-template-dl">
+              <svg viewBox="0 0 16 16"><path d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              양식 다운로드
+            </button>
+            <div class="scm-bu-type-hint" style="margin:0;">※ 양식을 다운로드 받아 작성 후 업로드해 주세요.</div>
+          </div>
         </div>
       </div>
-      <div class="scm-bu-type-row">
-        <span class="scm-bu-type-label">템플릿 <span class="req"></span></span>
-        <div class="scm-bu-type-controls">
-          <button class="scm-select scm-select--bu" type="button" id="bu-template-select" aria-haspopup="listbox" data-state="filled">
-            <span class="scm-select__value" id="bu-template-label">SKU 등록</span>
-            <svg class="scm-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
-          </button>
-          <button class="scm-bu-template-btn" type="button" id="bu-template-dl">
-            <svg viewBox="0 0 16 16"><path d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            템플릿 다운로드
-          </button>
-        </div>
-      </div>
-      <div class="scm-bu-type-hint">※ 선택한 업로드 유형에 맞는 양식으로 업로드해 주세요.</div>
     </div>
 
     <!-- 요청 이력 -->
     <section class="scm-bu-history-section">
       <h3 class="scm-bu-history-title">요청 이력</h3>
-      <table class="scm-bu-history-table">
+      <table class="mp-table scm-bu-history-table" data-scm-no-sticky data-scm-frozen="0">
         <colgroup>
-          <col style="width:52px"/>
-          <col style="width:97px"/>
-          <col style="width:167px"/>
-          <col style="width:240px"/>
-          <col style="width:362px"/>
-          <col style="width:152px"/>
-          <col style="width:154px"/>
+          <col style="width:60px"/>
+          <col style="width:112px"/>
+          <col style="width:280px"/>
+          <col style="width:400px"/>
+          <col style="width:160px"/>
+          <col style="width:170px"/>
         </colgroup>
         <thead>
           <tr>
             <th>No</th>
             <th>상태</th>
-            <th>요청 유형 <span class="sort"><svg viewBox="0 0 16 16" fill="none"><path d="M4 6L8 2L12 6M4 10L8 14L12 10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span></th>
             <th>파일명</th>
             <th>처리결과/실패건 다운로드</th>
             <th>요청일시</th>
@@ -659,8 +639,7 @@
           <tr>
             <td>1</td>
             <td><span class="scm-bu-status-pill" data-state="processing">처리중</span></td>
-            <td>SKU 등록</td>
-            <td>20260221_SKU 등록.xlsx</td>
+            <td>20260221_무탠 전개상품.xlsx</td>
             <td class="scm-bu-result-cell">-</td>
             <td>2026.02.21. 11:00</td>
             <td>guji@musinsa.com</td>
@@ -668,8 +647,7 @@
           <tr>
             <td>2</td>
             <td><span class="scm-bu-status-pill" data-state="done">처리완료</span></td>
-            <td>상품 매핑</td>
-            <td>20260220_상품 매핑_001.xlsx</td>
+            <td>20260220_무탠 전개상품_001.xlsx</td>
             <td class="scm-bu-result-cell">
               <span class="scm-bu-result">
                 <span class="scm-bu-result-group scm-bu-result-group--success">성공 <em>599,900</em></span>
@@ -683,8 +661,7 @@
           <tr>
             <td>3</td>
             <td><span class="scm-bu-status-pill" data-state="partial">부분완료</span></td>
-            <td>플랫폼 상품 등록 후 매핑</td>
-            <td>20260219_플랫폼 상품 등록 후…</td>
+            <td>20260219_무탠 전개상품.xlsx</td>
             <td class="scm-bu-result-cell">
               <span class="scm-bu-result">
                 <span class="scm-bu-result-group scm-bu-result-group--success">성공 <em>599,900</em></span>
@@ -700,8 +677,7 @@
           <tr>
             <td>4</td>
             <td><span class="scm-bu-status-pill" data-state="partial">부분완료</span></td>
-            <td>SKU 등록</td>
-            <td>20260221_SKU 등록.xlsx</td>
+            <td>20260221_무탠 전개상품.xlsx</td>
             <td class="scm-bu-result-cell">
               <span class="scm-bu-result">
                 <span class="scm-bu-result-group scm-bu-result-group--success">성공 <em>1,000</em></span>

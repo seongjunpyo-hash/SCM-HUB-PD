@@ -6,6 +6,8 @@
   <title>SCM-Hub · 편집샵 재고 보충 요청 (모듈 기반)</title>
   <script src="/auth-gate.js"></script>
   <script src="/voc/comment-overlay.js" defer></script>
+  <!-- ExcelJS — 양식 다운로드용 -->
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
   <link rel="stylesheet" href="../design%20system/layer-desktop.css" />
@@ -577,7 +579,95 @@
             </button>
           </div>
         </div>
+
+        <!-- 양식 다운로드 (단일 type — type-section 없이 양식 다운로드 버튼만, hint 는 버튼 오른쪽 16px 띄움) -->
+        <div class="scm-bu-type-section">
+          <div class="scm-bu-type-row">
+            <span class="scm-bu-type-label">템플릿</span>
+            <div class="scm-bu-type-controls">
+              <div class="scm-bu-type-controls__row" style="gap:16px;">
+                <button class="scm-bu-template-btn" type="button" id="bu-template-dl">
+                  <svg viewBox="0 0 16 16"><path d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  양식 다운로드
+                </button>
+                <div class="scm-bu-type-hint" style="margin:0;">※ 양식을 다운로드 받아 작성 후 업로드해 주세요.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 요청 이력 — 단일 type 이라 '요청 유형' 컬럼 제외 -->
+        <section class="scm-bu-history-section">
+          <h3 class="scm-bu-history-title">요청 이력</h3>
+          <table class="mp-table scm-bu-history-table" data-scm-no-sticky data-scm-frozen="0">
+            <colgroup>
+              <col style="width:60px"/>
+              <col style="width:112px"/>
+              <col style="width:280px"/>
+              <col style="width:400px"/>
+              <col style="width:160px"/>
+              <col style="width:170px"/>
+            </colgroup>
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>상태</th>
+                <th>파일명</th>
+                <th>처리결과/실패건 다운로드</th>
+                <th>요청일시</th>
+                <th>요청자</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td><span class="scm-bu-status-pill" data-state="processing">처리중</span></td>
+                <td>20260221_재고보충요청.xlsx</td>
+                <td class="scm-bu-result-cell">-</td>
+                <td>2026.02.21. 11:00</td>
+                <td>guji@musinsa.com</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td><span class="scm-bu-status-pill" data-state="done">처리완료</span></td>
+                <td>20260220_재고보충요청_001.xlsx</td>
+                <td class="scm-bu-result-cell">
+                  <span class="scm-bu-result">
+                    <span class="scm-bu-result-group scm-bu-result-group--success">성공 <em>1,200</em></span>
+                    <span class="scm-bu-result-divider" aria-hidden="true"></span>
+                    <span class="scm-bu-result-group scm-bu-result-group--fail">실패 <em>0</em></span>
+                  </span>
+                </td>
+                <td>2026.02.20. 10:11</td>
+                <td>jun@musinsa.com</td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td><span class="scm-bu-status-pill" data-state="partial">부분완료</span></td>
+                <td>20260219_재고보충요청.xlsx</td>
+                <td class="scm-bu-result-cell">
+                  <span class="scm-bu-result">
+                    <span class="scm-bu-result-group scm-bu-result-group--success">성공 <em>980</em></span>
+                    <button class="scm-bu-result-dl" type="button">다운로드</button>
+                    <span class="scm-bu-result-divider" aria-hidden="true"></span>
+                    <span class="scm-bu-result-group scm-bu-result-group--fail">실패 <em>20</em></span>
+                    <button class="scm-bu-result-dl" type="button">다운로드</button>
+                  </span>
+                </td>
+                <td>2026.02.19. 10:11</td>
+                <td>jun@musinsa.com</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
       </div>
+      <footer class="scm-bu-footer">
+        <button class="scm-button" type="button" id="bu-cancel">닫기</button>
+        <button class="scm-button scm-button--primary" type="button" id="bu-submit">
+          <svg viewBox="0 0 16 16" fill="none" style="width:16px;height:16px;vertical-align:-3px;"><path d="M8 14V3M8 3L4 7M8 3L12 7M2 2H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          엑셀 업로드(요청시작)
+        </button>
+      </footer>
     </div>
 
   </main>
@@ -712,12 +802,15 @@
     const nameCell = isEmpty(r.name) ? NA
       : `<div class="cell-clamp"><span class="scm-product-name"><span class="scm-product-name__thumb"></span><span class="scm-product-name__text">${escapeHtml(r.name)}</span></span></div>`;
 
-    // 이동 요청 수량 — input cell
+    // 이동 요청 수량 — input cell. 현재 값이 available 이상이면 '최대' 버튼 disabled.
     const requestQtyVal = isEmpty(r.requestQty) ? '' : Number(r.requestQty).toLocaleString();
+    const reqNum = Number(r.requestQty) || 0;
+    const availNum = Number(r.available) || 0;
+    const isMaxed = !isEmpty(r.available) && reqNum >= availNum;
     const requestQtyCell = `
       <span class="scm-input-cell">
         <input type="text" class="scm-input-cell__input" value="${requestQtyVal}" inputmode="numeric"/>
-        <button class="scm-input-cell__max" type="button">최대</button>
+        <button class="scm-input-cell__max" type="button"${isMaxed ? ' disabled' : ''}>최대</button>
       </span>`;
 
     return `
@@ -873,10 +966,12 @@
     const buBackdrop = document.getElementById('bu-backdrop');
     const buModal = document.getElementById('bu-modal');
     const buClose = buModal.querySelector('.scm-bu-close');
+    const buCancel = document.getElementById('bu-cancel');     // 푸터 '닫기' 버튼
     function open()  { buBackdrop.classList.add('is-open'); buModal.classList.add('is-open'); }
     function close() { buBackdrop.classList.remove('is-open'); buModal.classList.remove('is-open'); }
     if (openBtn) openBtn.addEventListener('click', open);
     if (buClose) buClose.addEventListener('click', close);
+    if (buCancel) buCancel.addEventListener('click', close);   // 푸터 닫기 버튼
     if (buBackdrop) buBackdrop.addEventListener('click', close);
     // warning 접기/펴기
     const warn = buModal.querySelector('.scm-bu-warning');
@@ -1096,19 +1191,211 @@
     });
   })();
 
-  // 최대 버튼 → 토스트
+  // 이동 요청 수량 input — 더블클릭 시 전체 선택
+  // capture phase + preventDefault 로 브라우저 기본 word-select 차단 + 즉시 전체 선택
+  document.getElementById('data-tbody').addEventListener('dblclick', (e) => {
+    const input = e.target.closest('.scm-input-cell__input');
+    if (input) {
+      e.preventDefault();
+      e.stopPropagation();
+      input.focus();
+      input.select();
+    }
+  }, true);
+
+  // input 클릭 시 cell-selection 이 컬럼 선택 / drag-select 발동하지 않게 차단
+  document.getElementById('data-tbody').addEventListener('mousedown', (e) => {
+    const input = e.target.closest('.scm-input-cell__input');
+    if (input) e.stopPropagation();
+  }, true);
+
+  // 이동 요청 수량 input 변경 시 — 현재 값과 available 비교해서 '최대' 버튼 disabled 토글
+  document.getElementById('data-tbody').addEventListener('input', (e) => {
+    const input = e.target.closest('.scm-input-cell__input');
+    if (!input) return;
+    const wrap = input.closest('.scm-input-cell');
+    if (!wrap) return;
+    const max = wrap.querySelector('.scm-input-cell__max');
+    if (!max) return;
+    const tr = input.closest('tr');
+    const idx = Array.prototype.indexOf.call(tr.parentNode.children, tr);
+    const r = ROWS[idx];
+    if (!r) return;
+    const inputVal = parseInt(String(input.value).replace(/,/g, ''), 10) || 0;
+    const avail = Number(r.available) || 0;
+    if (avail > 0 && inputVal >= avail) max.setAttribute('disabled', '');
+    else max.removeAttribute('disabled');
+  });
+
+  // 최대 버튼 클릭 → 이동 가능 재고만큼 input 채우고 버튼 disabled
   document.getElementById('data-tbody').addEventListener('click', (e) => {
     const max = e.target.closest('.scm-input-cell__max');
-    if (max) {
-      const input = max.parentElement.querySelector('.scm-input-cell__input');
-      if (input) {
-        const tr = max.closest('tr');
-        const idx = Array.prototype.indexOf.call(tr.parentNode.children, tr);
-        const r = ROWS[idx];
-        if (r && !isNaN(r.available)) input.value = Number(r.available).toLocaleString();
-      }
+    if (!max || max.hasAttribute('disabled')) return;
+    const input = max.parentElement.querySelector('.scm-input-cell__input');
+    if (!input) return;
+    const tr = max.closest('tr');
+    const idx = Array.prototype.indexOf.call(tr.parentNode.children, tr);
+    const r = ROWS[idx];
+    if (r && !isNaN(r.available)) {
+      input.value = Number(r.available).toLocaleString();
+      max.setAttribute('disabled', '');
     }
   });
+
+  // ============================================================
+  // 양식 다운로드 — 재고 보충 요청 양식 (4컬럼: 스토어코드 / SKU번호 / 바코드 / 이동수량)
+  // ============================================================
+  const RESTOCK_TEMPLATE = {
+    label: '재고 보충 요청 양식',
+    sheetName: '재고 보충 요청 양식',
+    bannerText: '※ 템플릿 가이드 및 유의사항 수정/삭제 불가',
+    columns: ['스토어코드', 'SKU번호', '바코드', '이동수량'],
+    descriptions: [
+      '[필수]\n\n스토어코드를 입력해 주세요.\n\n[스토어코드 입력]\n- 스토어코드는 옆 탭의 \'스토어 코드 목록\'에서\n  확인하여 해당 스토어 코드를 입력해 주세요.',
+      '[필수]\n\nSKU번호를 입력해 주세요.\n\n[SKU번호 입력]\n- 시스템에 등록된 SKU 번호를 정확히\n  입력해 주세요.',
+      '[필수]\n\n바코드를 입력해 주세요.\n\n[바코드 입력]\n- 시스템에 등록된 바코드를 정확히\n  입력해 주세요.',
+      '[필수]\n\n이동 수량을 입력해 주세요.\n\n[이동수량 입력]\n- 이동 가능 재고를 초과해서 입력\n  하실 수 없습니다.\n  (※ 0 이상 & 숫자만 가능)',
+    ],
+    storeCodes: [
+      ['무신사 스탠다드 강남',  'MS_GANGNAM'],
+      ['무신사 스탠다드 홍대',   'MS_HONGDAE'],
+      ['무신사 스탠다드 성수',   'MS_SEONGSU'],
+      ['무신사 스탠다드 동대문', 'MS_DONGDAEMUN'],
+      ['무신사 스탠다드 남대문', 'MS_NAMDAEMUN'],
+    ],
+  };
+
+  function thinBorder(argb) {
+    return {
+      top:    { style: 'thin', color: { argb } },
+      bottom: { style: 'thin', color: { argb } },
+      left:   { style: 'thin', color: { argb } },
+      right:  { style: 'thin', color: { argb } },
+    };
+  }
+
+  function richDescription(text) {
+    if (!text) return null;
+    const FB = { name: 'Pretendard', size: 10 };
+    const fontRed       = { ...FB, color: { argb: 'FFFF0000' } };
+    const fontRedBold   = { ...FB, bold: true, color: { argb: 'FFFF0000' } };
+    const fontBlack     = { ...FB, color: { argb: 'FF000000' } };
+    const fontBlackBold = { ...FB, bold: true, color: { argb: 'FF000000' } };
+
+    const m = String(text).match(/^(\s*\[[^\]]+\])([\s\S]*)$/);
+    if (!m) return [{ font: fontBlack, text: String(text) }];
+    const marker = m[1];
+    const rest = m[2];
+    const labelMatch = rest.match(/^([\s\n]*)([^\n]+)([\s\S]*)$/);
+    const segs = [];
+    segs.push({ font: fontRedBold, text: marker });
+    if (labelMatch) {
+      const [, sep, label, after] = labelMatch;
+      if (sep) segs.push({ font: fontRed, text: sep });
+      segs.push({ font: fontBlackBold, text: label });
+      if (after) segs.push({ font: fontBlack, text: after });
+    } else {
+      segs.push({ font: fontBlack, text: rest });
+    }
+    return segs;
+  }
+
+  async function downloadRestockTemplate() {
+    if (!window.ExcelJS) { alert('ExcelJS 라이브러리가 로드되지 않았습니다.'); return; }
+    const t = RESTOCK_TEMPLATE;
+    const cols = t.columns.length;
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'SCM HUB';
+    wb.created = new Date();
+    const ws = wb.addWorksheet(t.sheetName);
+    ws.columns = t.columns.map(() => ({ width: 30 }));
+
+    // Row 1: banner (전체 merge)
+    const r1 = ws.addRow([t.bannerText]);
+    r1.height = 22;
+    ws.mergeCells('A1:' + String.fromCharCode(64 + cols) + '1');
+    const bannerCell = ws.getCell('A1');
+    bannerCell.font = { name: 'Pretendard', size: 11, bold: true, color: { argb: 'FFFB0007' } };
+    bannerCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFBDAD7' } };
+    bannerCell.alignment = { wrapText: true, vertical: 'middle', horizontal: 'left' };
+    bannerCell.border = thinBorder('FFCCCCCC');
+
+    // Row 2: descriptions — 동적 높이 (가장 긴 desc 의 wrap-line 추정값 사용)
+    ws.addRow(new Array(cols).fill(null));
+    const r2 = ws.getRow(2);
+    const CHAR_PER_LINE = 28;  // sz 10 / 컬럼 width 30 기준
+    let maxLines = 3;
+    for (const d of t.descriptions) {
+      const lines = String(d || '').split('\n');
+      let total = 0;
+      for (const line of lines) {
+        const len = Math.max(1, line.length);
+        total += Math.ceil(len / CHAR_PER_LINE);
+      }
+      if (total > maxLines) maxLines = total;
+    }
+    r2.height = Math.max(60, Math.min(180, maxLines * 13.5 + 8));
+    for (let c = 0; c < cols; c++) {
+      const cell = ws.getCell(2, c + 1);
+      cell.value = { richText: richDescription(t.descriptions[c]) };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF2CD' } };
+      cell.alignment = { wrapText: true, vertical: 'top', horizontal: 'left' };
+      cell.border = thinBorder('FFCCCCCC');
+    }
+
+    // Row 3: header
+    const headerRow = ws.addRow(t.columns);
+    headerRow.height = 32;
+    for (let c = 1; c <= cols; c++) {
+      const cell = ws.getCell(3, c);
+      cell.font = { name: 'Pretendard', size: 11, bold: true, color: { argb: 'FF000000' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+      cell.alignment = { wrapText: true, vertical: 'middle', horizontal: 'center' };
+      cell.border = thinBorder('FF000000');
+    }
+
+    // Sheet 2: 스토어코드 목록
+    const ws2 = wb.addWorksheet('스토어코드 목록');
+    ws2.columns = [{ width: 30 }, { width: 24 }];
+    const head2 = ws2.addRow(['스토어명', '스토어코드']);
+    head2.height = 28;
+    for (let c = 1; c <= 2; c++) {
+      const cell = ws2.getCell(1, c);
+      cell.font = { name: 'Pretendard', size: 11, bold: true };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+      cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      cell.border = thinBorder('FF000000');
+    }
+    t.storeCodes.forEach(row => {
+      const r = ws2.addRow(row);
+      r.height = 22;
+      for (let c = 1; c <= 2; c++) {
+        const cell = ws2.getCell(r.number, c);
+        cell.font = { name: 'Pretendard', size: 10 };
+        cell.alignment = { vertical: 'middle', horizontal: c === 1 ? 'left' : 'center' };
+        cell.border = thinBorder('FFCCCCCC');
+      }
+    });
+
+    // 다운로드
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    link.download = `${t.label}_${today}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+
+    if (window.SCM && SCM.toast) {
+      SCM.toast.show({ variant: 'success', title: '양식 다운로드 완료', desc: t.label });
+    }
+  }
+
+  document.getElementById('bu-template-dl')?.addEventListener('click', downloadRestockTemplate);
 })();
 </script>
 </body>

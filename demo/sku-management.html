@@ -6,8 +6,8 @@
   <title>SCM-Hub · SKU 관리 (모듈 기반)</title>
   <script src="/auth-gate.js"></script>
   <script src="/voc/comment-overlay.js" defer></script>
-  <!-- SheetJS for Excel import/export -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- ExcelJS — rich text / 셀 스타일 / 병합 / 폰트 출력 풀 지원 -->
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
   <link rel="stylesheet" href="../design%20system/layer-desktop.css" />
@@ -71,19 +71,26 @@
     /* 일괄 업로드 / SKU 단건 등록 버튼 — sticky 제거, page-head 안의 일반 flow → 스크롤하면 자연스럽게 사라짐 */
     .mp-table .cell-numeric { font-variant-numeric: tabular-nums; text-align: right; }
 
-    /* 일괄 업로드 모달 — 템플릿 select popup */
+    /* 일괄 업로드 모달 — 템플릿 select popup (디자인 시스템 단일 선택 popover 와 동일 톤) */
     .scm-bu-template-popup {
-      position: absolute; top: calc(100% + 4px); left: 0; min-width: 220px;
+      position: absolute; top: calc(100% + 4px); left: 0; min-width: 100%;
       background: #fff; border: 1px solid #E0E0E0; border-radius: 4px;
       box-shadow: 0 6px 16px rgba(0,0,0,0.12);
       list-style: none; margin: 0; padding: 4px 0;
       z-index: 100; max-height: 300px; overflow-y: auto;
     }
     .scm-bu-template-popup li {
-      padding: 8px 12px; font-size: 13px; cursor: pointer; line-height: 18px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px; font-size: 14px; cursor: pointer; line-height: 19.6px;
+      color: #000;
     }
-    .scm-bu-template-popup li:hover { background: #F5F7FA; }
-    .scm-bu-template-popup li.is-selected { background: #E2F1FF; color: #245EFF; font-weight: 600; }
+    .scm-bu-template-popup li:hover { background: var(--ld-bg-low, #FAFBFC); }
+    .scm-bu-template-popup li.is-selected { background: #F5F5F5; color: #000; font-weight: 500; }
+    .scm-bu-template-popup li.is-selected::after {
+      content: '';
+      width: 16px; height: 16px; flex-shrink: 0; margin-left: 12px;
+      background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'><path d='M3.45 7.3l3.28 3.28L12.55 4.85' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>") center/16px no-repeat;
+    }
     .scm-bu-template-popup li.is-disabled { color: #BBB; cursor: default; }
     .scm-bu-template-popup li.is-disabled:hover { background: transparent; }
 
@@ -482,7 +489,7 @@
     <div class="mp-table-host">
       <div class="mp-thead-sticky"><div class="mp-thead-scroll"></div></div>
       <div class="mp-table-scroll">
-        <table class="mp-table is-cell-selectable" id="mp-table">
+        <table class="mp-table is-cell-selectable" id="mp-table" data-scm-frozen="6">
           <thead>
             <tr class="group-row">
               <th class="cb-col col-frozen-1" rowspan="2"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" id="sku-cb-all" aria-label="전체 선택"></span></th>
@@ -573,56 +580,55 @@
           </div>
         </div>
 
-        <!-- 업로드 유형 선택 -->
+        <!-- 업로드 유형 선택 — 단일 row (라디오 + 템플릿 select + 양식 다운로드 + 안내) -->
         <div class="scm-bu-type-section">
           <div class="scm-bu-type-row">
-            <span class="scm-bu-type-label">업로드 유형 <span class="req"></span></span>
+            <span class="scm-bu-type-label">업로드 유형 선택 <span class="req"></span></span>
             <div class="scm-bu-type-controls">
-              <span class="scm-radio-group scm-radio-group--sm">
-                <label class="scm-radio scm-radio--sm">
-                  <input type="radio" name="bu-type-mode" value="register" checked />
-                  <span class="scm-radio-dot"></span>
-                  <span>등록 및 매핑</span>
-                </label>
-                <label class="scm-radio scm-radio--sm">
-                  <input type="radio" name="bu-type-mode" value="bulk-change" />
-                  <span class="scm-radio-dot"></span>
-                  <span>일괄변경</span>
-                </label>
-              </span>
+              <div class="scm-bu-type-controls__row">
+                <span class="scm-radio-group scm-radio-group--bu">
+                  <label class="scm-radio">
+                    <input type="radio" name="bu-type-mode" value="register" checked />
+                    <span class="scm-radio-dot"></span>
+                    <span>등록 및 매핑</span>
+                  </label>
+                  <label class="scm-radio">
+                    <input type="radio" name="bu-type-mode" value="bulk-change" />
+                    <span class="scm-radio-dot"></span>
+                    <span>일괄변경</span>
+                  </label>
+                </span>
+                <div class="scm-bu-template-actions">
+                  <span class="scm-bu-template-wrap" style="position:relative;display:inline-block;">
+                    <button class="scm-select scm-select--bu" type="button" id="bu-template-select" aria-haspopup="listbox" aria-expanded="false" data-state="filled">
+                      <span class="scm-select__value" id="bu-template-label">SKU 등록</span>
+                      <svg class="scm-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+                    </button>
+                    <ul class="scm-bu-template-popup" id="bu-template-popup" role="listbox" hidden></ul>
+                  </span>
+                  <button class="scm-bu-template-btn" type="button" id="bu-template-dl">
+                    <svg viewBox="0 0 16 16"><path d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    양식 다운로드
+                  </button>
+                </div>
+              </div>
+              <div class="scm-bu-type-hint">※ 선택한 업로드 유형에 맞는 양식으로 업로드해 주세요.</div>
             </div>
           </div>
-          <div class="scm-bu-type-row">
-            <span class="scm-bu-type-label">템플릿 <span class="req"></span></span>
-            <div class="scm-bu-type-controls">
-              <span class="scm-bu-template-wrap" style="position:relative;display:inline-block;">
-                <button class="scm-select scm-select--bu" type="button" id="bu-template-select" aria-haspopup="listbox" aria-expanded="false" data-state="filled">
-                  <span class="scm-select__value" id="bu-template-label">SKU 등록</span>
-                  <svg class="scm-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
-                </button>
-                <ul class="scm-bu-template-popup" id="bu-template-popup" role="listbox" hidden></ul>
-              </span>
-              <button class="scm-bu-template-btn" type="button" id="bu-template-dl">
-                <svg viewBox="0 0 16 16"><path d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                템플릿 다운로드
-              </button>
-            </div>
-          </div>
-          <div class="scm-bu-type-hint">※ 선택한 업로드 유형에 맞는 양식으로 업로드해 주세요.</div>
         </div>
 
         <!-- 요청 이력 -->
         <section class="scm-bu-history-section">
           <h3 class="scm-bu-history-title">요청 이력</h3>
-          <table class="scm-bu-history-table">
+          <table class="mp-table scm-bu-history-table" data-scm-no-sticky data-scm-frozen="0">
             <colgroup>
-              <col style="width:52px"/>
-              <col style="width:97px"/>
-              <col style="width:167px"/>
-              <col style="width:240px"/>
-              <col style="width:362px"/>
-              <col style="width:152px"/>
-              <col style="width:154px"/>
+              <col style="width:60px"/>
+              <col style="width:112px"/>
+              <col style="width:210px"/>
+              <col style="width:280px"/>
+              <col style="width:400px"/>
+              <col style="width:160px"/>
+              <col style="width:170px"/>
             </colgroup>
             <thead>
               <tr>
@@ -701,7 +707,7 @@
       <footer class="scm-bu-footer">
         <button class="scm-button" type="button" id="bu-cancel">닫기</button>
         <button class="scm-button scm-button--primary" type="button" id="bu-submit">
-          <svg viewBox="0 0 16 16" fill="none" style="width:16px;height:16px;margin-right:6px;vertical-align:-3px;"><path d="M8 14V3M8 3L4 7M8 3L12 7M2 2H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg viewBox="0 0 16 16" fill="none" style="width:16px;height:16px;vertical-align:-3px;"><path d="M8 14V3M8 3L4 7M8 3L12 7M2 2H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           엑셀 업로드(요청시작)
         </button>
       </footer>
@@ -908,8 +914,10 @@
   // ----- SCM Table 인터랙션 init -----
   // frozenCount=6: cb-col(1) + No(2) + SKU번호(3) + 바코드(4) + 운영상태(5) + 매핑상태(6)
   // 2단 thead 라 reorder 는 자동 비활성화됨 (scm-table.js 의 isTwoRow guard)
+  // 모든 .mp-table 자동 init — frozenCount 는 각 테이블의 data-scm-frozen 속성으로 결정
+  // (메인 테이블: data-scm-frozen="6", 모달 history 테이블: 속성 없음 → 0)
   if (window.SCMTable) {
-    try { window.SCMTable.init({ root: document, frozenCount: 6 }); } catch (e) { console.warn('SCMTable init failed:', e); }
+    try { window.SCMTable.init({ root: document }); } catch (e) { console.warn('SCMTable init failed:', e); }
   }
   // 정렬 (sort-ic 클릭 → asc/desc/default 토글 + tbody 재정렬)
   if (window.SCM && SCM.tableSort) SCM.tableSort.mount({ tableSelector: '.mp-table-scroll .mp-table' });
@@ -1083,15 +1091,28 @@
       try { uidItems = JSON.parse(e['UID정보(JSON)']); if (!Array.isArray(uidItems)) uidItems = []; }
       catch (_) { uidItems = []; }
     }
+    // 옵션 — 단일 '옵션' 필드 또는 '옵션값 1','옵션값 2'... 분리 컬럼 모두 허용
+    let opt = [];
+    if (e['옵션']) {
+      opt = String(e['옵션']).split(',').map(x => x.trim()).filter(Boolean);
+    } else {
+      const optParts = [];
+      for (let i = 1; i <= 4; i++) {
+        const v = e['옵션값 ' + i];
+        if (v != null && String(v).trim() !== '') optParts.push(String(v).trim());
+      }
+      opt = optParts;
+    }
     return {
       no: Number(e['No']) || fallbackNo,
-      skuNo: s(e['SKU번호']),
+      // SKU번호 미존재 시 스타일넘버 fallback (template 양식 호환)
+      skuNo: s(e['SKU번호']) || s(e['스타일넘버']),
       barcode: s(e['바코드']),
       op: OP_REVERSE[e['운영상태']] || 'active',
       map: MAP_REVERSE[e['매핑상태']] || 'unmapped',
-      name: s(e['상품명']),
-      opt: e['옵션'] ? String(e['옵션']).split(',').map(x => x.trim()).filter(Boolean) : [],
-      cat: s(e['카테고리']),
+      name: s(e['상품명']) || s(e['대표 SKU명']),
+      opt,
+      cat: s(e['카테고리']) || s(e['표준 카테고리']),
       styleNo: s(e['스타일넘버']),
       brand: s(e['브랜드']),
       purchase: s(e['매입형태']) || '매입',
@@ -1111,18 +1132,42 @@
     };
   }
 
-  // 엑셀 다운로드
-  document.getElementById('excel-download-btn')?.addEventListener('click', () => {
-    if (!window.XLSX) { alert('SheetJS 라이브러리가 로드되지 않았습니다.'); return; }
-    const data = SKU_ROWS.map(rowToExcel);
-    // null 셀은 SheetJS 가 빈 셀로 처리 (cellDates/skipHeader 는 기본값 유지)
-    const ws = XLSX.utils.json_to_sheet(data, { header: EXCEL_HEADERS });
-    // 컬럼 폭 자동 조정 (대략)
-    ws['!cols'] = EXCEL_HEADERS.map(h => ({ wch: Math.max(8, Math.min(40, h.length * 1.5 + 4)) }));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'SKU');
+  // ============================================================
+  // 다운로드 helper — ExcelJS workbook → 브라우저 다운로드
+  // ============================================================
+  async function downloadWorkbook(workbook, filename) {
+    const buf = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+
+  // 엑셀 다운로드 (전체 SKU)
+  document.getElementById('excel-download-btn')?.addEventListener('click', async () => {
+    if (!window.ExcelJS) { alert('ExcelJS 라이브러리가 로드되지 않았습니다.'); return; }
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('SKU');
+    // 헤더
+    ws.addRow(EXCEL_HEADERS);
+    ws.getRow(1).font = { name: 'Pretendard', size: 11, bold: true };
+    ws.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
+    ws.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+    // 데이터
+    SKU_ROWS.forEach(r => {
+      const obj = rowToExcel(r);
+      ws.addRow(EXCEL_HEADERS.map(h => obj[h] == null ? '' : obj[h]));
+    });
+    // 컬럼 폭
+    ws.columns = EXCEL_HEADERS.map(h => ({ width: Math.max(8, Math.min(40, h.length * 1.5 + 4)) }));
+
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    XLSX.writeFile(wb, `SKU_관리_${today}.xlsx`);
+    await downloadWorkbook(wb, `SKU_관리_${today}.xlsx`);
     if (window.SCM && SCM.toast) {
       SCM.toast.show({ variant: 'success', title: '엑셀 다운로드 완료', desc: `${SKU_ROWS.length}건 저장됨` });
     }
@@ -1239,51 +1284,137 @@
   // ============================================================
   // 일괄 업로드 — 모드 라디오 + 템플릿 select + 템플릿 다운로드
   // ============================================================
+  // 템플릿 양식 — 5단 구조:
+  //   Row 1 (banner)  — 전체 merged, 노란 배경 + 빨간 글씨 가이드
+  //   Row 2 (desc)    — 컬럼별 설명문, 일부는 여러 컬럼에 걸쳐 merged
+  //   Row 3 (section) — 전체 merged, 섹션 타이틀
+  //   Row 4 (header)  — 실제 컬럼 헤더
+  //   Row 5+ (example) — 예시 데이터
+  //
+  // descriptions[i] = { text, span?: number }
+  //   - span 미지정/1 = 단일 컬럼
+  //   - span >= 2 = 그 만큼의 컬럼에 걸쳐 merged. 다음 (span-1) 항목은 자동 skip
+  const BANNER_TEXT = '※ 템플릿 가이드 및 유의사항 수정/삭제 불가';
+
   const TEMPLATES = [
-    // 등록 및 매핑
+    // ========== 등록 및 매핑 ==========
     {
       mode: 'register', id: 'sku-register', label: 'SKU 등록',
       desc: 'SKU 신규 등록용 양식',
-      columns: ['SKU번호','바코드','상품명','옵션','카테고리','스타일넘버','브랜드','매입형태','제조','소유','공급사','행거사용','유효기간관리','유효기간','입수정보','팔레트','시즌','연도'],
-      example: ['10670001','100A/13029/EFGH','신규 상품명','블랙,M','상의 > 셔츠','MMJ-EXAMPLE','MUSINSA','매입','완제품 매입','무신사','Vendor_korea','미사용','미사용','','1','','26FW','2026'],
+      sectionTitle: 'SKU 등록 정보',
+      columns: ['스타일넘버','대표 SKU명','표준 카테고리','옵션사용여부','옵션명 1','옵션값 1','옵션명 2','옵션값 2','옵션명 3','옵션값 3','옵션명 4','옵션값 4','매입형태','제조구분','소유사','공급사(ID)','상품 컨디션','유통/조달 유형','인증/검증 유형','판매단위','행거사용여부','소비기한 관리 여부','소비기한일수','박스 입수(PCS)','팔레트 입수(PCS)','시즌정보','출시연도','바코드'],
+      descriptions: [
+        { text: '[필수]\n\n스타일넘버\n- 스타일넘버(SKU)는 동일 상품을 식별하는 번호입니다.' },
+        { text: '[필수]\n\n대표 SKU명\n- 상품을 대표하는 기본 SKU명입니다.\n  옵션 조합에 따라 자동으로 확장되어 개별 SKU명에 반영됩니다.' },
+        { text: '[필수]\n\n표준 카테고리\n- 상품이 속한 표준 카테고리를 입력해 주세요. 검색 기준으로 활용됩니다.' },
+        { text: '[필수]\n\n옵션 사용 여부 입력\n- 사용함\n- 사용안함(단품)' },
+        { text: '[필수]\n\n옵션명, 옵션값 입력\n표준 카테고리별 필수 옵션 정보 입력\n- 의류, 신발 : 컬러, 사이즈 필수\n- 가방, 잡화, 뷰티 : 사이즈 필수\n- 그외 : 직접입력\n\n※ 항목에 선택 가능 정보가 없는 경우 SAP에 사이즈런 생성 필요', span: 8 },
+        { text: '[필수]\n\n매입형태 입력\n- 매입\n- 위탁' },
+        { text: '[매입인 경우 필수]\n\n제조구분 입력\n- 완제품 매입\n- 자체제작(PB)' },
+        { text: '[필수]\n\n소유사 입력\n- 소유사를 선택해 주세요.' },
+        { text: '[필수]\n\n공급사(ID) 입력\n- 공급사를 선택해 주세요.' },
+        { text: '[필수]\n\n상품 컨디션 입력\n- 신상품\n- 중고\n- 리퍼\n- 전시상품' },
+        { text: '[필수]\n\n유통/조달 유형 입력\n- 미대상\n- 정식유통\n- 병행수입' },
+        { text: '[필수]\n\n인증/검증 유형 입력\n- 미대상\n- 공식 인증 상품\n- 미인증 상품' },
+        { text: '[필수]\n\n판매단위 입력\n- 단품\n- 박스' },
+        { text: '[필수]\n\n행거 사용 여부 입력\n- 사용\n- 미사용' },
+        { text: '[필수]\n\n소비기한 관리 여부 입력\n- 사용\n- 미사용' },
+        { text: "[소비기한 관리 여부 '사용' 일때 필수]\n\n소비기한일수 입력\n- 제조일자로 부터 소비기한일수를 입력해 주세요." },
+        { text: '[필수]\n\n박스 입수 입력\n- 1박스당 PCS 수량을 입력해주세요.\n- 1~999 정수만 입력 가능합니다.' },
+        { text: '[선택]\n\n팔레트 입수 입력\n- 1팔레트당 PCS 수량을 입력해주세요.\n- 1~99,999 정수만 입력 가능합니다.\n- 팔레트 입수(PCS)가 입력될 경우 박스 입수(PCS)보다 작을 수 없습니다.' },
+        { text: '[선택]\n\n시즌정보 및 출시연도 입력\n- 시즌정보와 출시연도는 상품의 판매 및 재고 관리 기준으로 사용됩니다.\n- 상품에 맞는 정보를 선택해 주세요.', span: 2 },
+        { text: '[필수]\n\n바코드 매핑 안내\n- 바코드는 최소 5자 이상 입력해야 합니다.\n- 공백 및 특수문자(!, @, #, $, %, ^, &, *, ?)는 사용할 수 없습니다.\n- 이미 사용 중인 바코드는 등록할 수 없습니다.\n- 동일한 바코드는 중복 등록할 수 없습니다.' },
+      ],
+      example: ['MMJ-EXAMPLE','신규 상품명','상의 > 셔츠','사용함','컬러','블랙','사이즈','M','','','','','매입','완제품 매입','무신사','Vendor_korea','신상품','정식유통','미대상','단품','미사용','미사용','','1','','26FW','2026','100A13029EFGH'],
     },
     {
       mode: 'register', id: 'product-mapping', label: '상품 매핑',
       desc: '기존 SKU 와 플랫폼 상품을 매핑',
-      columns: ['SKU번호','플랫폼','UID','옵션번호','상품옵션','기준카테고리'],
-      example: ['10669591','MUSINSA','383838','111111','블랙^280','신발 > 스포츠화 > 러닝화'],
+      sectionTitles: null,  // 섹션 row 없음 — 양식 (1) 참고
+      columns: ['SKU번호','플랫폼','UID','옵션번호'],
+      descriptions: [
+        { text: '[필수]\n\nSKU번호 입력\n- SKU번호를 확인 후 입력해 주세요.' },
+        { text: '[필수]\n\n플랫폼 입력\n- 무신사\n- 29CM' },
+        { text: '[필수]\n\nUID 입력\n플랫폼에 등록된 UID 입력' },
+        { text: '[필수]\n\n옵션번호 입력\n플랫폼에 등록된 옵션번호 입력' },
+      ],
+      example: ['10669591','무신사','383838','111111'],
     },
     {
       mode: 'register', id: 'register-and-map', label: '상품 등록 후 매핑',
       desc: 'SKU 신규 등록 + 동시에 플랫폼 매핑',
-      columns: ['SKU번호','바코드','상품명','옵션','카테고리','스타일넘버','브랜드','매입형태','제조','소유','공급사','행거사용','유효기간관리','유효기간','입수정보','팔레트','시즌','연도','플랫폼','UID','옵션번호','상품옵션','기준카테고리'],
-      example: ['10670002','101A/13029/EFGH','신규 상품명','블랙,M','상의 > 셔츠','MMJ-EXAMPLE','MUSINSA','매입','완제품 매입','무신사','Vendor_korea','미사용','미사용','','1','','26FW','2026','MUSINSA','383900','111200','블랙^M','상의 > 셔츠'],
+      sectionTitles: [
+        { text: 'SKU 등록 정보', span: 2 },
+        { text: '플랫폼에 등록할 상품 정보 입력', span: 21 },
+      ],
+      columns: ['SKU번호','바코드','상품명','옵션명 1','옵션값 1','옵션명 2','옵션값 2','옵션명 3','옵션값 3','옵션명 4','옵션값 4','등록 플랫폼','무신사 COM-ID','무신사 브랜드코드','무신사 기준 카테고리','무신사 판매가','무신사 상품 설명','29CM 파트너 번호','29CM 파트너브랜드 번호','29CM 프론트브랜드번호','29CM 기준 카테고리','29CM 판매가','29CM 상품 설명'],
+      descriptions: [
+        { text: '[필수]\n\nSKU번호 입력\n- SKU번호를 확인 후 입력해 주세요.' },
+        { text: '[필수]\n\n바코드 입력\n- 시스템에 등록된 바코드를 정확히 입력해 주세요.' },
+        { text: '[필수]\n\n상품명 수정 및 확인\n- 대표 SKU명을 기본으로 노출됩니다.\n- 상품명을 확인하신 후 수정해서 등록해 주세요.' },
+        { text: '[SKU 필수 옵션 정보와 동일하게 적용]\n\n플랫폼에 등록되는 상품 옵션은 SKU에 입력된 옵션과 동일하게 입력해야 합니다.\n※ 단, 컬러를 상품명으로 분리하여 UID를 컬러 단위로 생성할 경우, 옵션은 사이즈만 필수로 입력할 수 있습니다. (의류, 신발일때)\n※ SAP에 등록된 사이즈런이 없는 경우 SAP에 사이즈런 생성 후 진행 가능합니다.', span: 8 },
+        { text: '[필수]\n\n등록 플랫폼 입력\n상품 등록할 플랫폼을 선택해 주세요.\n- 무신사/29CM\n- 무신사\n- 29CM' },
+        { text: '[필수]\n\nCOM-ID 입력\n업체 ID(COM-ID)를 선택해 주세요.' },
+        { text: '[필수]\n\n무신사 브랜드 입력\n브랜드코드를 입력해 주세요.' },
+        { text: '[필수]\n\n기준 카테고리 입력\n무신사 기준 카테고리를 선택해 주세요.' },
+        { text: '[필수]\n\n판매가 입력\n판매가를 입력해주세요.\n(1,000원~999,999원)' },
+        { text: '[선택]\n\n무신사 상품 설명을 입력해주세요.' },
+        { text: '[필수]\n\n파트너 번호 입력\n파트너 번호를 선택해 주세요.' },
+        { text: '[필수]\n\n파트너 브랜드 번호 입력\n브랜드 번호를 선택해 주세요.' },
+        { text: '[필수]\n\n29CM 프론트브랜드 입력\n프론트브랜드번호를 입력해 주세요.' },
+        { text: '[필수]\n\n기준 카테고리 입력\n29CM 기준 카테고리를 선택해 주세요.' },
+        { text: '[필수]\n\n판매가 입력\n판매가를 입력해주세요.\n(1,000원~999,999원)' },
+        { text: '[선택]\n\n29CM 상품 설명을 입력해 주세요.' },
+      ],
+      example: ['10669591','100A/13029/EFGH','샘플 상품명','컬러','블랙','사이즈','M','','','','','무신사','12345','RBN','상의 > 셔츠','29900','상품 설명...','PRT-001','BRD-001','FRBR-001','상의 > 셔츠','29900','상품 설명...'],
     },
-    // 일괄변경
+    // ========== 일괄변경 ==========
     {
       mode: 'bulk-change', id: 'change-hanger', label: '행거 사용 여부 변경',
       desc: '기존 SKU 의 행거 사용 여부를 일괄 변경',
-      columns: ['SKU번호','행거사용'],
-      example: ['10669591','사용'],
-      hint: '행거사용 값: "사용" 또는 "미사용"',
+      sectionTitles: null,
+      columns: ['SKU번호','바코드','행거 사용 여부'],
+      descriptions: [
+        { text: '[필수]\n\nSKU번호 입력\n- SKU번호를 확인 후 입력해 주세요.' },
+        { text: '[필수]\n\n바코드 입력\n- 시스템에 등록된 바코드를 정확히 입력해 주세요.' },
+        { text: '[필수]\n\n행거 사용 여부 선택\n- 사용\n- 미사용' },
+      ],
+      example: ['10669591','100A/13029/EFGH','사용'],
     },
     {
       mode: 'bulk-change', id: 'change-box-pallet', label: '박스/팔레트 입수 정보 변경',
-      columns: ['SKU번호','입수정보','팔레트'],
-      example: ['10669591','12','PLT-A01'],
-      hint: '입수정보: 박스당 입수 수량(숫자) / 팔레트: 팔레트 코드',
+      sectionTitles: null,
+      columns: ['SKU번호','바코드','박스 입수(PCS)','팔레트 입수(PCS)'],
+      descriptions: [
+        { text: '[필수]\n\nSKU번호 입력\n- SKU번호를 확인 후 입력해 주세요.' },
+        { text: '[필수]\n\n바코드 입력\n- 시스템에 등록된 바코드를 정확히 입력해 주세요.' },
+        { text: '[필수]\n\n박스 입수 입력\n- 1박스당 PCS 수량을 입력해주세요.\n- 1~999 정수만 입력 가능합니다.' },
+        { text: '[선택]\n\n팔레트 입수 입력\n- 1팔레트당 PCS 수량을 입력해주세요.\n- 1~99,999 정수만 입력 가능합니다.\n- 팔레트 입수(PCS)가 입력될 경우 박스 입수(PCS)보다 작을 수 없습니다.' },
+      ],
+      example: ['10669591','100A/13029/EFGH','12','480'],
     },
     {
       mode: 'bulk-change', id: 'change-expiry', label: '소비기한 및 제한일수 변경',
-      columns: ['SKU번호','유효기간관리','유효기간'],
-      example: ['10669591','사용','120일'],
-      hint: '유효기간관리: "사용" / "미사용" — "사용" 인 경우 유효기간 일수 입력',
+      sectionTitles: null,
+      columns: ['SKU번호','바코드','소비기한 관리 여부','소비기한일수'],
+      descriptions: [
+        { text: '[필수]\n\nSKU번호 입력\n- SKU번호를 확인 후 입력해 주세요.' },
+        { text: '[필수]\n\n바코드 입력\n- 시스템에 등록된 바코드를 정확히 입력해 주세요.' },
+        { text: '[필수]\n\n소비기한 관리 여부 입력\n- 사용\n- 미사용' },
+        { text: "[소비기한 관리 여부 '사용' 일때 필수]\n\n소비기한일수 입력\n- 제조일자로 부터 소비기한일수를 입력해 주세요." },
+      ],
+      example: ['10669591','100A/13029/EFGH','사용','120'],
     },
     {
       mode: 'bulk-change', id: 'add-supplier', label: '공급사(ID) 추가',
-      columns: ['SKU번호','공급사'],
-      example: ['10669591','Vendor_korea(M00000088)'],
-      hint: '공급사: 공급사명 또는 (ID) 포함 풀 텍스트',
+      sectionTitles: null,
+      columns: ['SKU번호','바코드','공급사 ID'],
+      descriptions: [
+        { text: '[필수]\n\nSKU번호 입력\n- SKU번호를 확인 후 입력해 주세요.' },
+        { text: '[필수]\n\n바코드 입력\n- 시스템에 등록된 바코드를 정확히 입력해 주세요.' },
+        { text: '[필수]\n\n공급사 ID 입력\n- 추가하실 공급사 ID를 입력해 주세요.' },
+      ],
+      example: ['10669591','100A/13029/EFGH','Vendor_korea(M00000088)'],
     },
   ];
 
@@ -1357,64 +1488,232 @@
     if (!wrap) closeTemplatePopup();
   });
 
-  // 템플릿 다운로드 버튼 — 헤더 + 예시 1행 포함된 빈 양식 xlsx 생성
-  document.getElementById('bu-template-dl')?.addEventListener('click', () => {
-    if (!window.XLSX) { alert('SheetJS 라이브러리가 로드되지 않았습니다.'); return; }
+  // ============================================================
+  // 템플릿 워크북 빌더 — 사용자 양식과 동일한 5단 레이아웃 (banner / desc / section / header / example)
+  // ExcelJS API — rich text / 셀 스타일 / 병합 정상 작동
+  // ============================================================
+  // ARGB 형식 (앞 FF = alpha) — ExcelJS 는 argb 사용
+  const COLOR = {
+    BANNER_BG:  'FFFBDAD7',   // 옅은 분홍
+    BANNER_FG:  'FFFB0007',   // 빨강 (banner 글씨)
+    DESC_BG:    'FFFEF2CD',   // 옅은 노랑 (설명문 배경)
+    DESC_RED:   'FFFF0000',   // [필수] 등 마커 빨강
+    DESC_BLACK: 'FF000000',   // 본문 검정
+    SECTION_BG: 'FFD9D9D9',   // 그레이 fill (섹션)
+    HEADER_BG:  'FFF2F2F2',   // 옅은 그레이 fill (헤더)
+    BORDER:     'FFCCCCCC',
+    BORDER_DARK:'FF000000',
+  };
+
+  function thinBorder(argb) {
+    return {
+      top:    { style: 'thin', color: { argb } },
+      bottom: { style: 'thin', color: { argb } },
+      left:   { style: 'thin', color: { argb } },
+      right:  { style: 'thin', color: { argb } },
+    };
+  }
+
+  // Rich text 분해 — [필수] 마커 → 빨강 bold, 라벨 → 검정 bold, 본문 → 검정 normal
+  // ExcelJS richText 형식: { richText: [ { font: {...}, text: '...' } ] }
+  function richDescription(text) {
+    if (!text) return null;
+    const FB = { name: 'Pretendard', size: 10 };
+    const fontRed       = { ...FB, color: { argb: COLOR.DESC_RED } };
+    const fontRedBold   = { ...FB, bold: true, color: { argb: COLOR.DESC_RED } };
+    const fontBlack     = { ...FB, color: { argb: COLOR.DESC_BLACK } };
+    const fontBlackBold = { ...FB, bold: true, color: { argb: COLOR.DESC_BLACK } };
+
+    const m = String(text).match(/^(\s*\[[^\]]+\])([\s\S]*)$/);
+    if (!m) {
+      return [{ font: fontBlack, text: String(text) }];
+    }
+    const marker = m[1];   // "[필수]"
+    const rest = m[2];     // "\n\n스타일넘버\n- 설명..."
+    const labelMatch = rest.match(/^([\s\n]*)([^\n]+)([\s\S]*)$/);
+    const segs = [];
+    segs.push({ font: fontRedBold, text: marker });
+    if (labelMatch) {
+      const [, sep, label, after] = labelMatch;
+      if (sep) segs.push({ font: fontRed, text: sep });
+      segs.push({ font: fontBlackBold, text: label });
+      if (after) segs.push({ font: fontBlack, text: after });
+    } else {
+      segs.push({ font: fontBlack, text: rest });
+    }
+    return segs;
+  }
+
+  // 셀 좌표 헬퍼 (1-based: A=1, B=2, ...)
+  function colLetter(n) {
+    let s = '';
+    while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); }
+    return s;
+  }
+
+  function buildTemplateWorksheet(wb, t) {
+    const cols = t.columns.length;
+    const banner = t.bannerNotice || BANNER_TEXT;
+    const sheetName = (t.label || 'sheet').slice(0, 28);
+    const ws = wb.addWorksheet(sheetName);
+
+    // 컬럼 폭
+    ws.columns = t.columns.map((c) => ({ width: Math.max(14, Math.min(40, (c || '').length * 2.2 + 4)) }));
+
+    // ----- Row 1: banner -----
+    const r1 = ws.addRow([banner]);
+    r1.height = 22;
+    ws.mergeCells(`A1:${colLetter(cols)}1`);
+    const bannerCell = ws.getCell('A1');
+    bannerCell.font = { name: 'Pretendard', size: 11, bold: true, color: { argb: COLOR.BANNER_FG } };
+    bannerCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR.BANNER_BG } };
+    bannerCell.alignment = { wrapText: true, vertical: 'middle', horizontal: 'left' };
+    bannerCell.border = thinBorder(COLOR.BORDER);
+
+    // ----- Row 2: descriptions (rich text + 컬럼별 span merge) -----
+    const r2 = ws.addRow(new Array(cols).fill(null));
+    // 동적 높이 — 가장 긴 description 의 wrap-line 추정값 사용
+    // 각 description: 명시적 \n 개수 + 단일 컬럼 셀의 char/line capacity 로 wrap 라인 추정
+    const CHAR_PER_LINE_PER_COL = 11;   // sz 10 / Pretendard, 컬럼 width 14 기준
+    let maxLines = 3;                   // 최소 보장
+    for (const d of t.descriptions || []) {
+      const span = d.span || 1;
+      const lineCapacity = CHAR_PER_LINE_PER_COL * span;
+      const lines = String(d.text || '').split('\n');
+      let total = 0;
+      for (const line of lines) {
+        const len = Math.max(1, line.length);
+        total += Math.ceil(len / lineCapacity);
+      }
+      if (total > maxLines) maxLines = total;
+    }
+    // 1 line ≈ 13.5pt + 상하 패딩 8pt
+    r2.height = Math.max(60, Math.min(220, maxLines * 13.5 + 8));
+    let dCol = 0;
+    for (const d of t.descriptions || []) {
+      const span = d.span || 1;
+      const cellAddr = `${colLetter(dCol + 1)}2`;
+      const cell = ws.getCell(cellAddr);
+      const segs = richDescription(d.text);
+      cell.value = segs ? { richText: segs } : (d.text || '');
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR.DESC_BG } };
+      cell.alignment = { wrapText: true, vertical: 'top', horizontal: 'left' };
+      cell.border = thinBorder(COLOR.BORDER);
+      if (span > 1) {
+        ws.mergeCells(`${cellAddr}:${colLetter(dCol + span)}2`);
+      }
+      dCol += span;
+    }
+
+    // ----- Row 3: section titles (옵션) -----
+    const hasSection = Array.isArray(t.sectionTitles) && t.sectionTitles.length > 0;
+    let nextRowIdx = 3;
+    if (hasSection) {
+      const secRow = ws.addRow(new Array(cols).fill(null));
+      secRow.height = 28;
+      let sCol = 0;
+      for (const s of t.sectionTitles) {
+        const span = s.span || 1;
+        const cellAddr = `${colLetter(sCol + 1)}3`;
+        const cell = ws.getCell(cellAddr);
+        cell.value = s.text || '';
+        cell.font = { name: 'Pretendard', size: 11, bold: true, color: { argb: 'FF000000' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR.SECTION_BG } };
+        cell.alignment = { wrapText: true, vertical: 'middle', horizontal: 'center' };
+        cell.border = thinBorder(COLOR.BORDER_DARK);
+        if (span > 1) ws.mergeCells(`${cellAddr}:${colLetter(sCol + span)}3`);
+        sCol += span;
+      }
+      nextRowIdx = 4;
+    }
+
+    // ----- Header row -----
+    const headerRow = ws.addRow(t.columns);
+    headerRow.height = 32;
+    for (let c = 1; c <= cols; c++) {
+      const cell = ws.getCell(`${colLetter(c)}${nextRowIdx}`);
+      cell.font = { name: 'Pretendard', size: 11, bold: true, color: { argb: 'FF000000' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR.HEADER_BG } };
+      cell.alignment = { wrapText: true, vertical: 'middle', horizontal: 'center' };
+      cell.border = thinBorder(COLOR.BORDER_DARK);
+    }
+
+    // ----- Example row (옵션) -----
+    if (t.example && t.example.length === cols) {
+      const exRow = ws.addRow(t.example);
+      exRow.height = 22;
+      for (let c = 1; c <= cols; c++) {
+        const cell = ws.getCell(`${colLetter(c)}${nextRowIdx + 1}`);
+        cell.font = { name: 'Pretendard', size: 10, color: { argb: 'FF666666' } };
+        cell.alignment = { wrapText: true, vertical: 'middle', horizontal: 'left' };
+        cell.border = thinBorder(COLOR.BORDER);
+      }
+    }
+
+    return ws;
+  }
+
+  // 템플릿 다운로드 버튼
+  document.getElementById('bu-template-dl')?.addEventListener('click', async () => {
+    if (!window.ExcelJS) { alert('ExcelJS 라이브러리가 로드되지 않았습니다.'); return; }
     const t = getTemplateById(selectedTemplateId);
     if (!t) return;
 
-    // Sheet 1: 헤더 + 예시 1행
-    const aoa = [t.columns.slice()];
-    if (t.example && t.example.length === t.columns.length) {
-      aoa.push(t.example.slice());
-    }
-    const ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws['!cols'] = t.columns.map(c => ({ wch: Math.max(10, Math.min(36, c.length * 2 + 2)) }));
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'SCM HUB';
+    wb.created = new Date();
+    buildTemplateWorksheet(wb, t);
 
-    // Sheet 2: 가이드 (간단한 hint 표시)
-    const guideAoa = [
-      ['항목', '값'],
-      ['템플릿', t.label],
-      ['업로드 유형', t.mode === 'register' ? '등록 및 매핑' : '일괄변경'],
-      ['설명', t.desc || ''],
-      ['', ''],
-      ['컬럼 안내', ''],
-      ...t.columns.map(c => ['· ' + c, '']),
-    ];
-    if (t.hint) {
-      guideAoa.push(['', '']);
-      guideAoa.push(['주의', t.hint]);
-    }
-    const wsGuide = XLSX.utils.aoa_to_sheet(guideAoa);
-    wsGuide['!cols'] = [{ wch: 28 }, { wch: 60 }];
-
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, '양식');
-    XLSX.utils.book_append_sheet(wb, wsGuide, '가이드');
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    XLSX.writeFile(wb, `template_${t.id}_${today}.xlsx`);
+    await downloadWorkbook(wb, `${t.label} 양식_${today}.xlsx`);
+
     if (window.SCM && SCM.toast) {
-      SCM.toast.show({ variant: 'success', title: '템플릿 다운로드 완료', desc: t.label });
+      SCM.toast.show({ variant: 'success', title: '양식 다운로드 완료', desc: t.label });
     }
   });
 
   fileInput.addEventListener('change', async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!window.XLSX) { alert('SheetJS 라이브러리가 로드되지 않았습니다.'); return; }
+    if (!window.ExcelJS) { alert('ExcelJS 라이브러리가 로드되지 않았습니다.'); return; }
     if (bulkUploadInstance) bulkUploadInstance.close();
-
-    let workbook;
+    let aoa;
     try {
       const buf = await file.arrayBuffer();
-      workbook = XLSX.read(buf, { type: 'array' });
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.load(buf);
+      const ws = wb.worksheets[0];
+      if (!ws) throw new Error('시트가 없습니다.');
+      // ExcelJS 의 row.values 는 1-based 배열 (index 0 = undefined). 0-based 로 변환.
+      aoa = [];
+      ws.eachRow({ includeEmpty: true }, (row) => {
+        const vals = row.values.slice(1).map(v => {
+          if (v == null) return '';
+          if (typeof v === 'object' && v.richText) return v.richText.map(r => r.text).join('');
+          if (typeof v === 'object' && v.text != null) return v.text;
+          return v;
+        });
+        aoa.push(vals);
+      });
     } catch (err) {
       alert('엑셀 파일 읽기 실패: ' + (err.message || err));
       return;
     }
-    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
-    if (!rows.length) { alert('엑셀에 데이터가 없습니다.'); return; }
+    if (!aoa.length) { alert('엑셀에 데이터가 없습니다.'); return; }
+
+    // 헤더 행 자동 감지: 'SKU번호' 또는 '스타일넘버' 포함 row
+    let headerIdx = aoa.findIndex(row =>
+      Array.isArray(row) && row.some(v => v === 'SKU번호' || v === '스타일넘버')
+    );
+    if (headerIdx < 0) headerIdx = 0;
+    const headers = aoa[headerIdx].map(h => String(h || '').trim());
+    const dataRows = aoa.slice(headerIdx + 1).filter(r => r.some(v => v !== '' && v != null));
+    const rows = dataRows.map(r => {
+      const obj = {};
+      headers.forEach((h, i) => { if (h) obj[h] = r[i]; });
+      return obj;
+    });
+    if (!rows.length) { alert('엑셀에 데이터 행이 없습니다.'); return; }
 
     const pm = openProgress({ total: rows.length, status: '시작...' });
 
@@ -1430,10 +1729,11 @@
       const end = Math.min(i + CHUNK, rows.length);
       for (; i < end; i++) {
         const raw = rows[i];
-        const sku = String(raw['SKU번호'] || '').trim();
+        // SKU번호 우선, 없으면 스타일넘버 fallback (template 양식 호환)
+        const sku = String(raw['SKU번호'] || raw['스타일넘버'] || '').trim();
         if (!sku) {
           fail++;
-          errors.push(`행 ${i + 2}: SKU번호 누락`);
+          errors.push(`행 ${headerIdx + i + 2}: SKU번호/스타일넘버 누락`);
         } else if (existingSku.has(sku)) {
           skip++;
         } else {

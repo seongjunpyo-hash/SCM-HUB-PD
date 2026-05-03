@@ -17,6 +17,18 @@
   text-align: right;
   font-variant-numeric: tabular-nums;
   box-sizing: border-box;
+  /* mp-table.is-cell-selectable 의 user-select:none 이 부모에서 상속되는 것 override */
+  -webkit-user-select: text;
+  user-select: text;
+}
+/* mp-table.is-cell-selectable tbody td::selection { background: transparent } 가 input 까지 영향 — override */
+.scm-input-cell__input::selection {
+  background: rgba(36, 94, 255, 0.3);
+  color: inherit;
+}
+.scm-input-cell__input::-moz-selection {
+  background: rgba(36, 94, 255, 0.3);
+  color: inherit;
 }
 .scm-input-cell__input:focus { border-color: #000; }
 .scm-input-cell__max {
@@ -26,4 +38,9 @@
   font-family: inherit; font-size: 13px; font-weight: 500; line-height: 19.5px; color: #000;
   cursor: pointer;
 }
-.scm-input-cell__max:hover { background: rgba(138, 138, 138, 0.16); }
+.scm-input-cell__max:hover:not(:disabled) { background: rgba(138, 138, 138, 0.16); }
+.scm-input-cell__max:disabled {
+  background: rgba(138, 138, 138, 0.05);
+  color: rgba(0, 0, 0, 0.30);
+  cursor: not-allowed;
+}
