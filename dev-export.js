@@ -449,14 +449,15 @@ ${jsxBody}
       .scm-dev-export-action-btn {
         display: inline-flex; align-items: center; gap: 4px;
         height: 32px; padding: 0 12px;
-        background: #1A1A1A; color: #fff;
-        border: 1px solid #1A1A1A; border-radius: 6px;
+        /* matches the GNB DEMO tag color (#4F46E5 indigo) */
+        background: #4F46E5; color: #fff;
+        border: 1px solid #4F46E5; border-radius: 6px;
         font-family: -apple-system, BlinkMacSystemFont, 'Pretendard Variable', Pretendard, sans-serif;
         font-size: 12px; font-weight: 600;
         cursor: pointer; white-space: nowrap;
         transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
       }
-      .scm-dev-export-action-btn:hover:not(:disabled) { background: #000; }
+      .scm-dev-export-action-btn:hover:not(:disabled) { background: #4338CA; border-color: #4338CA; }
       .scm-dev-export-action-btn.is-revert {
         background: transparent; color: #6B7280; border-color: #E0E0E0;
         font-weight: 500;
