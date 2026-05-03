@@ -1304,6 +1304,9 @@
       });
 
       renderList();
+      // ensure save / apply / revert buttons reflect dirty state from the
+      // moment the page mounts (before iframe load fires).
+      refreshSaveBtn();
     }
 
     function navigateTo(path) {
@@ -1715,10 +1718,13 @@
       if (!doc) return;
       const a = pageDraft();   // live preview: read draft so iframe reflects pending changes
       if (!a.columnOrder || !a.columnOrder.length) return;
-      const table = doc.querySelector('.mp-table');
-      if (!table) return;
-      const thead = table.querySelector('thead');
-      const tbody = table.querySelector('tbody');
+      // scm-table moves the original <thead> into a sticky clone table:
+      //   .mp-thead-sticky > .mp-thead-scroll > .mp-table   (← thead lives here)
+      //   .mp-table-scroll > .mp-table                       (← tbody lives here)
+      // Query thead / tbody anywhere inside any .mp-table so we don't
+      // early-exit when the first .mp-table has only one of them.
+      const thead = doc.querySelector('.mp-table thead');
+      const tbody = doc.querySelector('.mp-table tbody');
       if (!thead || !tbody) return;
       const trs = thead.querySelectorAll('tr');
       const colTr = trs[trs.length - 1];
