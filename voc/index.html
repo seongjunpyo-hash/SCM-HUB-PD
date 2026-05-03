@@ -630,17 +630,21 @@
       color: #9CA3AF; text-decoration: line-through;
     }
     .edit-row.is-added { background: #FAF5FF; }
-    .edit-row__order-btn {
+    /* Drag-and-drop reorder for added rows */
+    .edit-row[draggable="true"] { cursor: grab; }
+    .edit-row[draggable="true"]:active { cursor: grabbing; }
+    .edit-row.is-dragging { opacity: 0.4; }
+    .edit-row.is-drop-above { box-shadow: inset 0 2px 0 #4F46E5; }
+    .edit-row.is-drop-below { box-shadow: inset 0 -2px 0 #4F46E5; }
+    .edit-row__grip {
       flex-shrink: 0;
-      width: 22px; height: 22px;
-      background: #fff; color: #6B7280;
-      border: 1px solid #E5E7EB; border-radius: 4px;
-      cursor: pointer; font-size: 11px; line-height: 1; font-weight: 700;
       display: inline-flex; align-items: center; justify-content: center;
-      transition: all 0.12s ease;
+      width: 14px; height: 18px;
+      color: #9CA3AF; font-size: 14px; line-height: 0.6; letter-spacing: -2px;
+      user-select: none;
+      cursor: grab;
     }
-    .edit-row__order-btn:hover:not(:disabled) { color: #4F46E5; border-color: #4F46E5; }
-    .edit-row__order-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .edit-row__grip:hover { color: #4F46E5; }
     .edit-row__icon-toggle {
       height: 22px; padding: 0 8px;
       background: #fff; border: 1px solid #E5E7EB;
@@ -1437,14 +1441,16 @@
       const f = d.added.filters.find((x) => x.id === id);
       if (f) { f.type = type; persistDraft(); refreshSaveBtn(); }
     }
-    function moveAddedColumn(id, dir) {
+    function moveAddedItem(kind, fromId, toId, above) {
       const d = pageDraft();
-      const idx = d.added.columns.findIndex((c) => c.id === id);
-      if (idx < 0) return;
-      const newIdx = dir === 'up' ? idx - 1 : idx + 1;
-      if (newIdx < 0 || newIdx >= d.added.columns.length) return;
-      const [item] = d.added.columns.splice(idx, 1);
-      d.added.columns.splice(newIdx, 0, item);
+      const arr = kind === 'filter' ? d.added.filters : d.added.columns;
+      const fromIdx = arr.findIndex((x) => x.id === fromId);
+      if (fromIdx < 0) return;
+      const [item] = arr.splice(fromIdx, 1);
+      let toIdx = arr.findIndex((x) => x.id === toId);
+      if (toIdx < 0) toIdx = arr.length;        // edge case
+      else if (!above) toIdx += 1;
+      arr.splice(toIdx, 0, item);
       persistDraft();
       renderEditPane();
       refreshSaveBtn();
@@ -1496,8 +1502,13 @@
       const a = pageApplied();
       // ---- Filters ----
       const filterBar = doc.querySelector('.scm-filter-bar');
-      if (filterBar) {
-        const wrapper = filterBar.firstElementChild || filterBar;
+      if (filterBar && a.added.filters.length) {
+        // pick the wrapper that already contains real chips so layout matches
+        const realChip = filterBar.querySelector(
+          '.scm-filter-select[data-mp-filter]:not(.scm-voc-added-filter)'
+        );
+        const wrapper = (realChip && realChip.parentElement) || filterBar.firstElementChild || filterBar;
+        const resetBtn = wrapper.querySelector(':scope > .scm-filter-reset-btn');
         a.added.filters.forEach((f) => {
           const id = `voc-added-filter-${f.id}`;
           if (doc.getElementById(id)) return;
@@ -1513,7 +1524,11 @@
             <span class="scm-filter-select__value">${escapeHtml(f.label)}</span>
             <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
           `;
-          wrapper.appendChild(btn);
+          if (resetBtn && resetBtn.parentNode === wrapper) {
+            wrapper.insertBefore(btn, resetBtn);
+          } else {
+            wrapper.appendChild(btn);
+          }
         });
       }
       // ---- Columns ----
@@ -1750,23 +1765,14 @@
           const sel = escapeHtml(it.selector);
           let middle = '';
           if (it.kind === 'column') {
-            if (it.added) {
-              const id = escapeHtml(it.added.id);
-              // index within added.columns to disable boundary buttons
-              const addedList = d.added.columns;
-              const aidx = addedList.findIndex((c) => c.id === it.added.id);
-              const upDis = aidx <= 0 ? 'disabled' : '';
-              const downDis = aidx >= addedList.length - 1 ? 'disabled' : '';
-              middle = `
-                <button type="button" class="edit-row__order-btn" data-order="up"   data-id="${id}" ${upDis} title="앞쪽으로 이동">↑</button>
-                <button type="button" class="edit-row__order-btn" data-order="down" data-id="${id}" ${downDis} title="뒤쪽으로 이동">↓</button>`;
-            } else {
+            if (!it.added) {
               const sortOn   = showSort.has(it.selector);
               const filterOn = showFilter.has(it.selector);
               middle = `
                 <button type="button" class="edit-row__icon-toggle ${sortOn ? 'is-on' : ''}"   data-toggle-icon="sort"   data-selector="${sel}" title="컬럼 정렬 아이콘 표시/숨김">정렬</button>
                 <button type="button" class="edit-row__icon-toggle ${filterOn ? 'is-on' : ''}" data-toggle-icon="filter" data-selector="${sel}" title="컬럼 필터 아이콘 표시/숨김">필터</button>`;
             }
+            // added column → drag handle + delete (rendered below)
           } else if (it.kind === 'filter') {
             if (it.added) {
               const id = escapeHtml(it.added.id);
@@ -1781,8 +1787,16 @@
           const del = it.added
             ? `<button type="button" class="edit-row__del" data-del-${it.kind}="${escapeHtml(it.added.id)}" title="삭제">×</button>`
             : '';
+          // drag affordances for user-added items only — native ones aren't reorderable
+          const dragAttrs = it.added && (it.kind === 'filter' || it.kind === 'column')
+            ? ` draggable="true" data-drag-id="${escapeHtml(it.added.id)}" data-drag-kind="${it.kind}"`
+            : '';
+          const grip = it.added && (it.kind === 'filter' || it.kind === 'column')
+            ? '<span class="edit-row__grip" aria-hidden="true" title="드래그하여 순서 변경">⋮⋮</span>'
+            : '';
           return `
-            <label class="${cls.join(' ')}">
+            <label class="${cls.join(' ')}"${dragAttrs}>
+              ${grip}
               <input type="checkbox" class="edit-row__check" data-selector="${sel}" ${isHidden ? '' : 'checked'} />
               <span class="edit-row__label">${escapeHtml(it.label)}</span>
               ${middle}
@@ -1799,6 +1813,53 @@
     }
 
     // ----- delegated handlers for the edit pane -----
+    // ----- drag-and-drop reorder for added rows -----
+    let _dragState = null;
+    document.addEventListener('dragstart', (e) => {
+      const row = e.target.closest && e.target.closest('.edit-row[data-drag-id]');
+      if (!row) return;
+      _dragState = { kind: row.dataset.dragKind, id: row.dataset.dragId };
+      row.classList.add('is-dragging');
+      try {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', row.dataset.dragId);
+      } catch {}
+    });
+    document.addEventListener('dragover', (e) => {
+      if (!_dragState) return;
+      const row = e.target.closest && e.target.closest('.edit-row[data-drag-id]');
+      if (!row) return;
+      if (row.dataset.dragKind !== _dragState.kind) return;
+      if (row.dataset.dragId === _dragState.id) return;
+      e.preventDefault();
+      try { e.dataTransfer.dropEffect = 'move'; } catch {}
+      const r = row.getBoundingClientRect();
+      const above = (e.clientY - r.top) < r.height / 2;
+      document.querySelectorAll('.edit-row.is-drop-above, .edit-row.is-drop-below')
+        .forEach((el) => el.classList.remove('is-drop-above', 'is-drop-below'));
+      row.classList.add(above ? 'is-drop-above' : 'is-drop-below');
+    });
+    document.addEventListener('dragleave', (e) => {
+      const row = e.target.closest && e.target.closest('.edit-row[data-drag-id]');
+      if (row) row.classList.remove('is-drop-above', 'is-drop-below');
+    });
+    document.addEventListener('drop', (e) => {
+      if (!_dragState) return;
+      const row = e.target.closest && e.target.closest('.edit-row[data-drag-id]');
+      if (!row) return;
+      if (row.dataset.dragKind !== _dragState.kind) return;
+      if (row.dataset.dragId === _dragState.id) return;
+      e.preventDefault();
+      const above = row.classList.contains('is-drop-above');
+      moveAddedItem(_dragState.kind, _dragState.id, row.dataset.dragId, above);
+      _dragState = null;
+    });
+    document.addEventListener('dragend', () => {
+      document.querySelectorAll('.is-dragging, .is-drop-above, .is-drop-below')
+        .forEach((el) => el.classList.remove('is-dragging', 'is-drop-above', 'is-drop-below'));
+      _dragState = null;
+    });
+
     document.addEventListener('change', (e) => {
       const t = e.target;
       const cb = t.closest && t.closest('.edit-row__check');
@@ -1824,14 +1885,6 @@
         e.preventDefault();
         const sel = lo.dataset.locate;
         if (sel) postIframe({ type: 'voc-flash', selector: sel });
-        return;
-      }
-      // reorder added column ↑ / ↓
-      const ord = t.closest && t.closest('[data-order]');
-      if (ord) {
-        e.preventDefault();
-        if (ord.disabled) return;
-        moveAddedColumn(ord.dataset.id, ord.dataset.order);
         return;
       }
       // sort/filter icon toggle
