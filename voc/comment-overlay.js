@@ -130,7 +130,11 @@
       .scm-voc-pin {
         position: absolute;
         width: 28px; height: 28px;
-        margin-left: -14px; margin-top: -28px;
+        /* Anchor: the sharp bottom-left corner is the tip — keep it
+           pinned at the saved (left, top) on hover/active too by setting
+           transform-origin there so scaling pivots on the tip. */
+        margin-left: 0; margin-top: -28px;
+        transform-origin: 0 100%;
         background: #6E6BFF; color: #fff;
         border-radius: 999px 999px 999px 0;
         display: flex; align-items: center; justify-content: center;
@@ -141,7 +145,7 @@
         transition: transform 0.12s ease, box-shadow 0.12s ease;
         user-select: none;
       }
-      .scm-voc-pin:hover { transform: scale(1.12) rotate(-4deg); }
+      .scm-voc-pin:hover { transform: scale(1.12); }
       .scm-voc-pin.is-resolved {
         background: #34D399;
         box-shadow: 0 4px 12px rgba(52, 211, 153, 0.4), 0 0 0 3px #fff;
