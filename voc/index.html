@@ -774,15 +774,18 @@
       menuL1.addEventListener('click', (e) => {
         const btn = e.target.closest('.menu-l1__chip');
         if (!btn) return;
-        selectL1(btn.dataset.l1);
+        const target = selectL1(btn.dataset.l1);
+        if (target !== state.currentPage) navigateTo(target);
       });
       l2Select.addEventListener('change', () => navigateTo(l2Select.value));
 
       urlText.textContent = state.currentPage;
       urlOpen.href = state.currentPage;
-      // initial render — sets active chip + populates L2 + navigates
+      // initial render — set up the menu UI then explicitly navigate so
+      // the iframe actually loads (iframe.src starts at about:blank).
       const initialMatch = findMenuByPath(state.currentPage) || { l1: MENU[0], l2: MENU[0].children[0] };
-      selectL1(initialMatch.l1.l1, initialMatch.l2.path);
+      const initialPath = selectL1(initialMatch.l1.l1, initialMatch.l2.path);
+      navigateTo(initialPath);
 
       reloadBtn.addEventListener('click', () => {
         if (!iframe.contentWindow) return;
@@ -901,6 +904,8 @@
     // Activate an L1 chip — repopulates L2 select and navigates to either
     // the requested L2 path, the current page if it lives under that L1,
     // or the L1's first child by default.
+    // Pure UI update — picks the appropriate L2 path and returns it.
+    // Caller decides whether to actually navigate.
     function selectL1(l1id, preferL2Path) {
       const item = MENU.find((m) => m.l1 === l1id) || MENU[0];
       menuL1.querySelectorAll('.menu-l1__chip').forEach((b) => {
@@ -914,7 +919,7 @@
       else if (item.children.some((c) => c.path === state.currentPage))      target = state.currentPage;
       else                                                                   target = item.children[0].path;
       l2Select.value = target;
-      if (target !== state.currentPage) navigateTo(target);
+      return target;
     }
     // Reflect a path change (iframe internal nav, sidebar jump, etc.)
     // back into the menu UI without triggering navigation.
