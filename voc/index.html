@@ -680,19 +680,26 @@
         return Array.isArray(arr) ? arr : [];
       } catch { return []; }
     }
-    // 권한 키 → 화면 표기. DB/API 키는 그대로 super/admin/biz/internal.
+    // 권한 키 → 화면 표기. DB/API 키는 그대로. pm/dev/pd 는 internal-tier.
     const ROLE_LABEL_KO = {
       super:    '최고 어드민',
       admin:    '어드민',
       biz:      '현업',
       internal: '내부',
+      pm:       'PM',
+      dev:      '개발팀',
+      pd:       'PD',
     };
     // Pin/badge color per role — mirrors comment-overlay.js. Keep in sync.
+    // pm/dev/pd share internal's gray (visually grouped as internal-tier).
     const ROLE_COLORS = {
       super:    '#F59E0B',
       admin:    '#6E6BFF',
       biz:      '#10B981',
       internal: '#9CA3AF',
+      pm:       '#9CA3AF',
+      dev:      '#9CA3AF',
+      pd:       '#9CA3AF',
     };
     const FALLBACK_COLORS = [
       '#6E6BFF', '#34D399', '#F59E0B', '#EC4899',

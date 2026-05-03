@@ -19,7 +19,10 @@
 //   env.RESEND_API_KEY  — Resend API key (for invite emails)
 // ============================================================
 
-const ROLES = ['super', 'admin', 'biz', 'internal'];
+// internal-tier roles (pm/dev/pd) share permissions with `internal` —
+// they're just labelled differently in the UI.
+const INTERNAL_TIER = ['biz', 'internal', 'pm', 'dev', 'pd'];
+const ROLES = ['super', 'admin', ...INTERNAL_TIER];
 const SESSION_DAYS = 30;
 const INVITE_DAYS = 7;
 
@@ -109,7 +112,7 @@ function setCookieHeader(name, value, opts = {}) {
 // Permission matrix
 function canCreateRole(creatorRole, targetRole) {
   if (creatorRole === 'super') return ROLES.includes(targetRole);
-  if (creatorRole === 'admin') return ['biz', 'internal'].includes(targetRole);
+  if (creatorRole === 'admin') return INTERNAL_TIER.includes(targetRole);
   return false;
 }
 
@@ -118,7 +121,7 @@ function canModify(actor, target) {
   if (!actor || !target) return false;
   if (actor.id === target.id) return false; // can't self-modify via this path
   if (actor.role === 'super') return true;
-  if (actor.role === 'admin' && ['biz', 'internal'].includes(target.role)) return true;
+  if (actor.role === 'admin' && INTERNAL_TIER.includes(target.role)) return true;
   return false;
 }
 

@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
   id                 INTEGER PRIMARY KEY AUTOINCREMENT,
   email              TEXT    NOT NULL UNIQUE,
   name               TEXT,
-  role               TEXT    NOT NULL CHECK (role IN ('super', 'admin', 'biz', 'internal')),
+  role               TEXT    NOT NULL CHECK (role IN ('super', 'admin', 'biz', 'internal', 'pm', 'dev', 'pd')),
   password_hash      TEXT,                          -- bcrypt hash. NULL until invite accepted.
   invite_token       TEXT    UNIQUE,                -- random 64-char hex. NULL after accepted.
   invite_expires_at  INTEGER,                       -- unix epoch (sec). NULL after accepted.
