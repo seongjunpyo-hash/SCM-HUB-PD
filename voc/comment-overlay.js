@@ -559,20 +559,22 @@
   function onPlacePin(e) {
     const target = e.target;
     if (target && target.classList) target.classList.remove('scm-voc-hover');
-    const docX = e.clientX + (document.documentElement.scrollLeft || document.body.scrollLeft || 0);
-    const docY = e.clientY + (document.documentElement.scrollTop  || document.body.scrollTop  || 0);
-    // Element-relative offset — survives layout shifts (LNB toggle, etc.)
-    let offsetX = null, offsetY = null;
+    const sx = window.scrollX || window.pageXOffset || document.documentElement.scrollLeft || 0;
+    const sy = window.scrollY || window.pageYOffset || document.documentElement.scrollTop  || 0;
+    // Pin is anchored to the element's top-left corner — same place no
+    // matter where the user clicks within the element.
+    let docX, docY;
     try {
       const rect = target.getBoundingClientRect();
-      if (rect && rect.width > 0 && rect.height > 0) {
-        offsetX = Math.round(e.clientX - rect.left);
-        offsetY = Math.round(e.clientY - rect.top);
-      }
-    } catch {}
+      docX = Math.round(rect.left + sx);
+      docY = Math.round(rect.top  + sy);
+    } catch {
+      docX = Math.round(e.clientX + sx);
+      docY = Math.round(e.clientY + sy);
+    }
     state.pendingPin = {
-      x: Math.round(docX), y: Math.round(docY),
-      offsetX, offsetY,
+      x: docX, y: docY,
+      offsetX: 0, offsetY: 0,
       viewportX: e.clientX, viewportY: e.clientY,
       selector: cssPath(target),
       elementText: ((target.innerText || target.textContent || '') + '').trim().slice(0, 80),
