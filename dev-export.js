@@ -448,18 +448,31 @@ ${jsxBody}
         display: inline-flex; align-items: center; gap: 4px;
         height: 32px; padding: 0 12px;
         background: #1A1A1A; color: #fff;
-        border: 0; border-radius: 6px;
+        border: 1px solid #1A1A1A; border-radius: 6px;
         font-family: -apple-system, BlinkMacSystemFont, 'Pretendard Variable', Pretendard, sans-serif;
         font-size: 12px; font-weight: 600;
         cursor: pointer; white-space: nowrap;
-        transition: background 0.12s ease;
+        transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
       }
-      .scm-dev-export-action-btn:hover { background: #000; }
+      .scm-dev-export-action-btn:hover:not(:disabled) { background: #000; }
       .scm-dev-export-action-btn.is-revert {
-        background: transparent; color: #6B7280; border: 1px solid #E0E0E0;
+        background: transparent; color: #6B7280; border-color: #E0E0E0;
         font-weight: 500;
       }
-      .scm-dev-export-action-btn.is-revert:hover { background: #F3F4F6; color: #1A1A1A; border-color: #1A1A1A; }
+      .scm-dev-export-action-btn.is-revert:hover:not(:disabled) { background: #F3F4F6; color: #1A1A1A; border-color: #1A1A1A; }
+      /* Non-super: button is a status pill, not interactive */
+      .scm-dev-export-action-btn.is-status {
+        cursor: not-allowed;
+        font-weight: 600;
+      }
+      .scm-dev-export-action-btn.is-status:not(.is-revert) {
+        /* 작업중 — yellow, matches the download pill */
+        background: #FFF4E5; color: #C2710C; border-color: #F8DDB1;
+      }
+      .scm-dev-export-action-btn.is-status.is-revert {
+        /* 화면 확정 (read-only) — green */
+        background: #E6F7EE; color: #0E8A47; border-color: #BCE8CE;
+      }
 
       .scm-dev-export-backdrop {
         position: fixed; inset: 0; z-index: ${Z};
@@ -577,7 +590,6 @@ ${jsxBody}
         <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 17v2a2 2 0 002 2h10a2 2 0 002-2v-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
       <span class="label">Handoff 파일 다운로드</span>
-      <span class="pill"></span>
     `;
     elDownload.addEventListener('click', openModal);
     group.appendChild(elDownload);
@@ -611,31 +623,33 @@ ${jsxBody}
 
     // download button
     elDownload.disabled = !ok;
-    const pill = elDownload.querySelector('.pill');
-    if (ok) {
-      pill.className = 'pill pill--ok';
-      pill.textContent = '✓ 화면 확정';
-      elDownload.title = `이 화면을 React 파일 + 스펙 문서로 다운로드 (${meta.by || '확정자 미상'})`;
-    } else {
-      pill.className = 'pill pill--pending';
-      pill.textContent = '작업중';
-      elDownload.title = '최고 관리자가 작업완료(화면 확정)해야 다운로드 가능합니다';
-    }
+    elDownload.title = ok
+      ? `이 화면을 React 파일 + 스펙 문서로 다운로드 (${meta.by || '확정자 미상'})`
+      : '최고 관리자가 작업완료(화면 확정)해야 다운로드 가능합니다';
 
-    // action button — super only
+    // action button — visible to everyone, but only super can interact.
+    // Non-super sees a disabled status pill in button form.
+    elAction.style.display = '';
+    elAction.classList.toggle('is-revert', ok);
+    elAction.classList.toggle('is-status', myRole !== 'super');
     if (myRole === 'super') {
-      elAction.style.display = '';
+      elAction.disabled = false;
       if (ok) {
-        elAction.classList.add('is-revert');
         elAction.textContent = '↩ 확정 해제';
         elAction.title = '확정 상태를 해제하고 다시 작업중으로 되돌립니다';
       } else {
-        elAction.classList.remove('is-revert');
         elAction.textContent = '✓ 작업완료';
         elAction.title = '이 화면을 확정해 개발자가 다운로드할 수 있도록 합니다';
       }
     } else {
-      elAction.style.display = 'none';
+      elAction.disabled = true;
+      if (ok) {
+        elAction.textContent = '✓ 화면 확정';
+        elAction.title = `최고 관리자가 확정한 화면입니다${meta.by ? ' (' + meta.by + ')' : ''}`;
+      } else {
+        elAction.textContent = '작업중';
+        elAction.title = '최고 관리자가 작업완료(화면 확정)할 때까지 다운로드는 비활성입니다';
+      }
     }
   }
 
