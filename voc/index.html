@@ -672,6 +672,30 @@
       flex-shrink: 0; line-height: 1;
     }
     .edit-row__del:hover { color: #DC2626; background: #FEE2E2; }
+    /* 2-level column rows: group header + indented leaves under it. */
+    .edit-row.is-group {
+      background: #F8F9FB;
+      font-weight: 600;
+    }
+    .edit-row.is-group .edit-row__label { color: #1A1A1A; }
+    .edit-row.is-group:hover { background: #EEF1F5; }
+    .edit-row.is-leaf {
+      padding-left: 28px;        /* indent under the group header */
+      background: #FFFFFF;
+    }
+    .edit-row__check--placeholder {
+      width: 16px; height: 16px;
+      flex-shrink: 0;
+      display: inline-block;
+    }
+    .edit-row__group-count {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 22px; height: 18px; padding: 0 6px;
+      border-radius: 999px;
+      background: #E5E7EB; color: #4B5563;
+      font-size: 10.5px; font-weight: 600;
+      flex-shrink: 0;
+    }
 
     .edit-add {
       padding: 8px 10px 10px;
@@ -1397,6 +1421,10 @@
       e.showFilter  = Array.isArray(e.showFilter)  ? e.showFilter  : [];
       e.filterOrder = Array.isArray(e.filterOrder) ? e.filterOrder : [];
       e.columnOrder = Array.isArray(e.columnOrder) ? e.columnOrder : [];
+      // 2-level support: top-level `columnOrder` holds groups + ungrouped
+      // leaves; `columnLeafOrder[groupSel]` holds the leaves under each
+      // native group. Old saves without this key just default to {}.
+      e.columnLeafOrder = (e.columnLeafOrder && typeof e.columnLeafOrder === 'object' && !Array.isArray(e.columnLeafOrder)) ? e.columnLeafOrder : {};
       e.filterTypes = (e.filterTypes && typeof e.filterTypes === 'object' && !Array.isArray(e.filterTypes)) ? e.filterTypes : {};
       if (!e.added) e.added = {};
       e.added.filters = Array.isArray(e.added.filters) ? e.added.filters : [];
@@ -1521,29 +1549,90 @@
     // selectors (e.g., from a previous session that used the old class+nth
     // format before voc-key) and appends any missing current items at the
     // end. Returns a NEW array (caller assigns).
+    //
+    // For columns, we keep two parallel structures:
+    //   - `columnOrder`     : top-level (groups + ungrouped leaves)
+    //   - `columnLeafOrder` : { [groupSel]: [leafSel,…] } per native group
+    // syncOrderArr('column') reconciles BOTH.
     function syncOrderArr(kind) {
+      // Auto-population (discovery from scan) should not flag draft as
+      // "dirty" against applied. We sync the same shape into BOTH slots and
+      // only break the mirroring when a real user reorder happens later.
       const d = pageDraft();
-      const arr = kind === 'filter' ? d.filterOrder : d.columnOrder;
+      const a = pageApplied();
       const targets = scanEditTargets();
-      const natives = (kind === 'filter' ? targets.filters : targets.columns).map((it) => it.selector);
-      const added = (kind === 'filter' ? d.added.filters : d.added.columns)
-        .map((it) => kind === 'filter' ? `#voc-added-filter-${it.id}` : `#voc-added-col-${it.id}`);
-      const all = new Set([...natives, ...added]);
-      const cleaned = arr.filter((s) => all.has(s));
-      const inArr = new Set(cleaned);
-      [...natives, ...added].forEach((s) => { if (!inArr.has(s)) cleaned.push(s); });
-      if (kind === 'filter') d.filterOrder = cleaned;
-      else                   d.columnOrder = cleaned;
-      return cleaned;
+      if (kind === 'filter') {
+        const natives = targets.filters.map((it) => it.selector);
+        const added   = d.added.filters.map((it) => `#voc-added-filter-${it.id}`);
+        const all = new Set([...natives, ...added]);
+        const _clean = (arr) => {
+          const cleaned = (arr || []).filter((s) => all.has(s));
+          const inArr = new Set(cleaned);
+          [...natives, ...added].forEach((s) => { if (!inArr.has(s)) cleaned.push(s); });
+          return cleaned;
+        };
+        d.filterOrder = _clean(d.filterOrder);
+        if (a) a.filterOrder = _clean(a.filterOrder);
+        return d.filterOrder;
+      }
+      // ---- columns ----
+      const groups       = targets.groups || [];
+      const cols         = targets.columns || [];
+      const ungrouped    = cols.filter((c) => !c.parent).map((c) => c.selector);
+      const groupSels    = groups.map((g) => g.selector);
+      const addedCols    = d.added.columns.map((c) => `#voc-added-col-${c.id}`);
+      // Top-level: groups + ungrouped leaves + added columns.
+      const topAll = new Set([...groupSels, ...ungrouped, ...addedCols]);
+      const _cleanTop = (arr) => {
+        const cleaned = (arr || []).filter((s) => topAll.has(s));
+        const inArr = new Set(cleaned);
+        [...groupSels, ...ungrouped, ...addedCols].forEach((s) => {
+          if (!inArr.has(s)) cleaned.push(s);
+        });
+        return cleaned;
+      };
+      d.columnOrder = _cleanTop(d.columnOrder);
+      if (a) a.columnOrder = _cleanTop(a.columnOrder);
+      // Per-group leaf orders: only native leaves with that parent.
+      const leavesByGroup = {};
+      cols.forEach((c) => {
+        if (!c.parent) return;
+        (leavesByGroup[c.parent] = leavesByGroup[c.parent] || []).push(c.selector);
+      });
+      const _cleanLeaf = (prevMap) => {
+        const out = {};
+        groupSels.forEach((gsel) => {
+          const valid = new Set(leavesByGroup[gsel] || []);
+          const prev  = Array.isArray(prevMap && prevMap[gsel]) ? prevMap[gsel] : [];
+          const cleaned = prev.filter((s) => valid.has(s));
+          const inArr = new Set(cleaned);
+          (leavesByGroup[gsel] || []).forEach((s) => { if (!inArr.has(s)) cleaned.push(s); });
+          out[gsel] = cleaned;
+        });
+        return out;
+      };
+      d.columnLeafOrder = _cleanLeaf(d.columnLeafOrder);
+      if (a) a.columnLeafOrder = _cleanLeaf(a.columnLeafOrder);
+      return d.columnOrder;
     }
 
     // Unified reorder for filter / column rows.
-    function moveItem(kind, fromKey, toKey, above) {
+    // For column moves, `parent` selects which array is mutated:
+    //   - undefined / null  → top-level columnOrder (groups + ungrouped leaves)
+    //   - groupSel string   → columnLeafOrder[groupSel] (within-group leaf reorder)
+    function moveItem(kind, fromKey, toKey, above, parent) {
       const d = pageDraft();
-      // Always sync the order array to current items first — this purges
-      // stale selectors (e.g. legacy class+nth from older sessions) so the
-      // move actually finds fromKey/toKey instead of silently appending.
-      const arr = syncOrderArr(kind);
+      // Always sync the order array(s) to current items first — purges stale
+      // selectors so the move actually finds fromKey/toKey.
+      syncOrderArr(kind);
+      let arr;
+      if (kind === 'column' && parent) {
+        arr = d.columnLeafOrder[parent] = Array.isArray(d.columnLeafOrder[parent]) ? d.columnLeafOrder[parent] : [];
+      } else if (kind === 'column') {
+        arr = d.columnOrder;
+      } else {
+        arr = d.filterOrder;
+      }
       const fromIdx = arr.indexOf(fromKey);
       if (fromIdx >= 0) arr.splice(fromIdx, 1);
       let toIdx = arr.indexOf(toKey);
@@ -1775,53 +1864,198 @@
       const tbody = doc.querySelector('.mp-table tbody');
       if (!thead || !tbody) return;
       const trs = thead.querySelectorAll('tr');
-      const colTr = trs[trs.length - 1];
+      const colTr = trs[trs.length - 1];           // leaf row (always the last)
       const groupTr = trs.length > 1 ? trs[0] : null;
-      // count rowspan>1 group cells — they occupy the data row but only sit
-      // in the group row, so tbody td indices are offset by this count.
-      let rowspanOffset = 0;
-      if (groupTr) {
-        [...groupTr.children].forEach((c) => {
-          if (parseInt(c.getAttribute('rowspan') || '1', 10) > 1) rowspanOffset++;
-        });
-      }
-      // snapshot data-row ths (excluding spacer)
-      const ths = [...colTr.children].filter((th) =>
-        th.tagName === 'TH' && !th.classList.contains('col-spacer')
-      );
-      if (!ths.length) return;
-      // tag each th + matching td with col-pos
-      ths.forEach((th, i) => { th.dataset.vocColPos = String(i); });
       const tbodyRows = tbody.querySelectorAll('tr');
+
+      // Helper: try-match a selector against a candidate cell.
+      const matches = (cell, sel) => { try { return cell.matches(sel); } catch { return false; } };
+
+      // ---- Single-row tables (no group row): keep flat behavior. ----
+      if (!groupTr) {
+        const ths = [...colTr.children].filter((th) =>
+          th.tagName === 'TH' && !th.classList.contains('col-spacer')
+        );
+        if (!ths.length) return;
+        ths.forEach((th, i) => { th.dataset.vocColPos = String(i); });
+        tbodyRows.forEach((tr) => {
+          const dataTds = [...tr.children].filter((c) => c.tagName === 'TD' && !c.classList.contains('col-spacer'));
+          dataTds.forEach((td, i) => { td.dataset.vocColPos = String(i); });
+        });
+        const sorted = [];
+        a.columnOrder.forEach((sel) => {
+          const th = ths.find((t) => matches(t, sel) && !sorted.includes(t));
+          if (th) sorted.push(th);
+        });
+        ths.forEach((th) => { if (!sorted.includes(th)) sorted.push(th); });
+        const spacer = colTr.querySelector('.col-spacer');
+        sorted.forEach((th) => colTr.insertBefore(th, spacer || null));
+        tbodyRows.forEach((tr) => {
+          const tdSpacer = tr.querySelector('.col-spacer');
+          sorted.forEach((th) => {
+            const td = tr.querySelector(`td[data-voc-col-pos="${th.dataset.vocColPos}"]`);
+            if (td) tr.insertBefore(td, tdSpacer || null);
+          });
+        });
+        ths.forEach((th) => delete th.dataset.vocColPos);
+        tbodyRows.forEach((tr) => {
+          tr.querySelectorAll('[data-voc-col-pos]').forEach((td) => delete td.dataset.vocColPos);
+        });
+        return;
+      }
+
+      // ---- Two-row tables (group row + leaf row). ----
+      // Walk groupTr to classify each cell:
+      //   - rowspan>1: anchor cell that occupies BOTH rows (cb, "No", spacer)
+      //   - colspan>1: native group; its leaves live in colTr at the
+      //     "leaf-row child idx" range we track via a cursor
+      //   - colspan=1 + rowspan=1: ungrouped leaf in row 1 (rare)
+      //   - scm-voc-added-col: user-added group placeholder (top-level leaf)
+      const groupCells = [];      // { el, kind: 'group'|'rsAnchor'|'addedTop', sel, leaves: [th|null,…] }
+      let leafCursor = 0;
+      [...groupTr.children].forEach((cell) => {
+        const colspan = parseInt(cell.getAttribute('colspan') || '1', 10);
+        const rowspan = parseInt(cell.getAttribute('rowspan') || '1', 10);
+        if (cell.classList.contains('col-spacer')) {
+          groupCells.push({ el: cell, kind: 'spacer', leaves: [] });
+          return;
+        }
+        if (cell.classList.contains('cb-col')) {
+          groupCells.push({ el: cell, kind: 'cb', leaves: [] });
+          return;
+        }
+        if (cell.classList.contains('scm-voc-added-col')) {
+          // user-added column header in the group row (placeholder); the
+          // matching leaf-row <th> with the same id stamp is the actual leaf
+          const id = (cell.className.match(/voc-added-col-([\w-]+)/) || [])[1];
+          const leafTh = id ? colTr.querySelector(`#voc-added-col-${id}`) : null;
+          groupCells.push({ el: cell, kind: 'addedTop', sel: leafTh ? `#voc-added-col-${id}` : null, leaves: leafTh ? [leafTh] : [] });
+          leafCursor += 1;       // added-col occupies 1 leaf-row slot
+          return;
+        }
+        if (rowspan > 1) {
+          const sel = cell.dataset && cell.dataset.vocKey ? `[data-voc-key="${cell.dataset.vocKey}"]` : null;
+          groupCells.push({ el: cell, kind: 'rsAnchor', sel, leaves: [] });
+          return;
+        }
+        if (colspan > 1) {
+          const sel = cell.dataset && cell.dataset.vocKey ? `[data-voc-key="${cell.dataset.vocKey}"]` : null;
+          // collect the next `colspan` leaf <th>s from colTr starting at leafCursor
+          const allLeafChildren = [...colTr.children].filter((c) => c.tagName === 'TH' && !c.classList.contains('col-spacer'));
+          const groupLeaves = allLeafChildren.slice(leafCursor, leafCursor + colspan);
+          leafCursor += colspan;
+          groupCells.push({ el: cell, kind: 'group', sel, leaves: groupLeaves });
+          return;
+        }
+        // colspan=1, rowspan=1 — treat as ungrouped leaf in row 1
+        const sel = cell.dataset && cell.dataset.vocKey ? `[data-voc-key="${cell.dataset.vocKey}"]` : null;
+        groupCells.push({ el: cell, kind: 'leaf1', sel, leaves: [] });
+      });
+
+      // Stamp tbody data-tds with positions matching the current visual
+      // leaf order. Walk groupCells left to right; each rsAnchor / leaf1 /
+      // addedTop emits 1 td position, each group emits N (one per leaf).
+      const desiredVisualLeaves = [];   // [{ from: 'group', el: th|null }] in CURRENT order
+      groupCells.forEach((g) => {
+        if (g.kind === 'cb' || g.kind === 'spacer') return;
+        if (g.kind === 'rsAnchor' || g.kind === 'leaf1') desiredVisualLeaves.push(g.el);
+        else if (g.kind === 'addedTop' && g.leaves[0]) desiredVisualLeaves.push(g.leaves[0]);
+        else if (g.kind === 'group') g.leaves.forEach((th) => desiredVisualLeaves.push(th));
+      });
+      // tbody td positions follow desiredVisualLeaves index. Stamp now.
       tbodyRows.forEach((tr) => {
-        const tds = [...tr.children].filter((c) => c.tagName === 'TD' && !c.classList.contains('col-spacer'));
-        const dataTds = tds.slice(rowspanOffset);
-        dataTds.forEach((td, i) => { td.dataset.vocColPos = String(i); });
+        const tdsExclSpacer = [...tr.children].filter((c) => c.tagName === 'TD' && !c.classList.contains('col-spacer') && !c.classList.contains('cb-col'));
+        // skip leading td that aligns with cb-col (some demos render a TD for cb)
+        // the dataTds align 1-1 with desiredVisualLeaves
+        let i = 0;
+        tdsExclSpacer.forEach((td) => {
+          if (i >= desiredVisualLeaves.length) return;
+          td.dataset.vocColPos = String(i);
+          i++;
+        });
       });
-      // build the desired ordering of ths from a.columnOrder, preserving
-      // any unrecognized ths at the end
-      const sortedThs = [];
+      // Stamp leaf-row ths with positions too (so we can reorder via lookup).
+      desiredVisualLeaves.forEach((th, i) => { th.dataset.vocLeafPos = String(i); });
+
+      // ---- Build new group-cell order in row 1 ----
+      // columnOrder contains: groupSel | ungrouped-leaf-sel | added-col-sel.
+      // Map each entry to a groupCells item.
+      const newRow1Order = [];
+      const usedRow1 = new Set();
+      // anchors that are NOT user-orderable: cb (always front), spacer (always end)
+      const cbCell      = groupCells.find((g) => g.kind === 'cb');
+      const spacerCell  = groupCells.find((g) => g.kind === 'spacer');
       a.columnOrder.forEach((sel) => {
-        try {
-          const th = ths.find((t) => t.matches(sel) && !sortedThs.includes(t));
-          if (th) sortedThs.push(th);
-        } catch {}
+        const g = groupCells.find((x) => {
+          if (!x.sel) return false;
+          if (x.sel === sel) return true;
+          return matches(x.el, sel);
+        });
+        if (g && !usedRow1.has(g)) { usedRow1.add(g); newRow1Order.push(g); }
       });
-      ths.forEach((th) => { if (!sortedThs.includes(th)) sortedThs.push(th); });
-      // reorder ths
-      const spacer = colTr.querySelector('.col-spacer');
-      sortedThs.forEach((th) => colTr.insertBefore(th, spacer || null));
-      // reorder tbody tds to follow new th positions
+      // append any remaining (orderable) cells we didn't see in columnOrder
+      groupCells.forEach((g) => {
+        if (g.kind === 'cb' || g.kind === 'spacer') return;
+        if (!usedRow1.has(g)) { usedRow1.add(g); newRow1Order.push(g); }
+      });
+
+      // Reorder row 1 children: cb → newRow1Order → spacer.
+      const row1RefAfter = spacerCell ? spacerCell.el : null;
+      newRow1Order.forEach((g) => groupTr.insertBefore(g.el, row1RefAfter));
+      if (cbCell) groupTr.insertBefore(cbCell.el, groupTr.firstChild);
+      if (spacerCell) groupTr.appendChild(spacerCell.el);
+
+      // ---- Reorder leaf row to match new row 1 ordering + per-group leaf order ----
+      // For each entry in newRow1Order:
+      //   - rsAnchor: its leaf is itself (rowspan=2 cell); skip in leaf row (it's not there).
+      //   - leaf1   : same as rsAnchor — only in row 1.
+      //   - addedTop: the leaf-row <th> with the same id; reposition it.
+      //   - group   : reposition each of its leaves per columnLeafOrder[g.sel].
+      const colSpacer = colTr.querySelector('.col-spacer');
+      const newLeafOrder = [];     // visual leaf order after reorder
+      newRow1Order.forEach((g) => {
+        if (g.kind === 'rsAnchor' || g.kind === 'leaf1') {
+          newLeafOrder.push(g.el);
+          return;
+        }
+        if (g.kind === 'addedTop') {
+          const leaf = g.leaves[0];
+          if (leaf) {
+            colTr.insertBefore(leaf, colSpacer || null);
+            newLeafOrder.push(leaf);
+          }
+          return;
+        }
+        if (g.kind === 'group') {
+          const desired = (a.columnLeafOrder && a.columnLeafOrder[g.sel]) || [];
+          const orig = g.leaves.slice();
+          const ordered = [];
+          desired.forEach((sel) => {
+            const th = orig.find((t) => !ordered.includes(t) && matches(t, sel));
+            if (th) ordered.push(th);
+          });
+          orig.forEach((t) => { if (!ordered.includes(t)) ordered.push(t); });
+          ordered.forEach((th) => {
+            colTr.insertBefore(th, colSpacer || null);
+            newLeafOrder.push(th);
+          });
+        }
+      });
+
+      // ---- Reorder tbody tds ----
+      // Each tbody row has 1 td per visual leaf. Look up by stamped vocLeafPos.
       tbodyRows.forEach((tr) => {
         const tdSpacer = tr.querySelector('.col-spacer');
-        sortedThs.forEach((th) => {
-          const pos = th.dataset.vocColPos;
+        newLeafOrder.forEach((th) => {
+          const pos = th.dataset.vocLeafPos;
+          if (pos == null) return;
           const td = tr.querySelector(`td[data-voc-col-pos="${pos}"]`);
           if (td) tr.insertBefore(td, tdSpacer || null);
         });
       });
-      // cleanup temporary attrs
-      ths.forEach((th) => delete th.dataset.vocColPos);
+
+      // cleanup
+      desiredVisualLeaves.forEach((th) => delete th.dataset.vocLeafPos);
       tbodyRows.forEach((tr) => {
         tr.querySelectorAll('[data-voc-col-pos]').forEach((td) => delete td.dataset.vocColPos);
       });
@@ -1938,7 +2172,7 @@
 
     // Scan iframe for editable filters / columns / components.
     function scanEditTargets() {
-      const out = { filters: [], columns: [], components: [] };
+      const out = { filters: [], columns: [], groups: [], components: [] };
       const doc = iframe.contentDocument;
       if (!doc) return out;
       const main = doc.querySelector('main') || doc.body;
@@ -1967,26 +2201,105 @@
         out.filters.push({ label, selector: sel });
       });
 
-      // Table columns — every <th> in any .mp-table thead.
-      // Skip group cells (colspan > 1), the right spacer, and the leading
-      // checkbox column. SCM table headers are 2-row (group + actual),
-      // so we deduplicate via selector instead of column index.
-      const colSeen = new Set();
-      let colCounter = 0;
-      main.querySelectorAll('.mp-table thead th').forEach((th) => {
-        if (th.classList.contains('col-spacer') || th.classList.contains('cb-col')) return;
-        if (th.classList.contains('scm-voc-added-col')) return;  // user-added: shown via draft list, not scan
-        const colspan = parseInt(th.getAttribute('colspan') || '1', 10);
-        if (colspan > 1) return;
-        ensureVocKey(th, 'col', colCounter++);
-        const sel = ifrCssPath(th);
-        if (colSeen.has(sel)) return;
-        colSeen.add(sel);
-        let label = (th.textContent || '').trim().replace(/\s+/g, ' ');
-        if (!label) label = '(빈 컬럼)';
-        if (label.length > 28) label = label.slice(0, 28) + '…';
-        out.columns.push({ label, selector: sel });
+      // Table columns — 2-row scm-table thead (group row + leaf row).
+      // We surface groups + their children separately so the edit pane can
+      // render a 2-level hierarchy.
+      //   row 0 (`group-row`) carries:
+      //     - rowspan=2 cells: ungrouped leaves (e.g. cb, "No"). The cell
+      //       itself IS the leaf; it has no group parent.
+      //     - colspan>1 cells: native groups (e.g. "기본 정보"). The N
+      //       leaves under it sit in row 1 at the same visual range.
+      //   row 1 carries the actual leaf <th>s for each colspan>1 group.
+      // We track each leaf's parent group selector so reorder can be
+      // constrained to within-group moves.
+      const tables = main.querySelectorAll('.mp-table');
+      // pick the first table that has BOTH a group row and a leaf row
+      let primaryThead = null;
+      tables.forEach((tbl) => {
+        const t = tbl.querySelector('thead');
+        if (!t) return;
+        const trs = t.querySelectorAll('tr');
+        if (!primaryThead && trs.length >= 1) primaryThead = t;
       });
+      const colSeen = new Set();
+      const groupSeen = new Set();
+      let colCounter = 0;
+      let grpCounter = 0;
+      if (primaryThead) {
+        const trs = primaryThead.querySelectorAll('tr');
+        const groupTr = trs.length > 1 ? trs[0] : null;
+        const leafTr  = trs[trs.length - 1];
+        // Walk the group row first to detect groups + ungrouped rowspan=2
+        // leaves. We also build a map of "next leaf-row child index → parent
+        // group selector" so the leaf walk below can attach a parent.
+        let leafIdx = 0;                  // moving cursor into the leaf row
+        const leafParentByPos = [];       // index = leaf-row child idx, value = group sel | null
+        if (groupTr) {
+          [...groupTr.children].forEach((cell) => {
+            if (cell.classList.contains('col-spacer')) return;
+            if (cell.classList.contains('scm-voc-added-col')) return;
+            const colspan = parseInt(cell.getAttribute('colspan') || '1', 10);
+            const rowspan = parseInt(cell.getAttribute('rowspan') || '1', 10);
+            if (rowspan > 1) {
+              // ungrouped leaf — the row1 cell IS the leaf
+              if (cell.classList.contains('cb-col')) return;   // cb: still skip
+              ensureVocKey(cell, 'col', colCounter++);
+              const sel = ifrCssPath(cell);
+              if (!colSeen.has(sel)) {
+                colSeen.add(sel);
+                let label = (cell.textContent || '').trim().replace(/\s+/g, ' ');
+                if (!label) label = '(빈 컬럼)';
+                if (label.length > 28) label = label.slice(0, 28) + '…';
+                out.columns.push({ label, selector: sel, parent: null });
+              }
+            } else if (colspan > 1) {
+              // native group — N leaves follow in row 1
+              ensureVocKey(cell, 'grp', grpCounter++);
+              const gsel = ifrCssPath(cell);
+              let glabel = (cell.textContent || '').trim().replace(/\s+/g, ' ');
+              if (!glabel) glabel = '(그룹)';
+              if (glabel.length > 28) glabel = glabel.slice(0, 28) + '…';
+              if (!groupSeen.has(gsel)) {
+                groupSeen.add(gsel);
+                out.groups.push({ label: glabel, selector: gsel });
+              }
+              for (let i = 0; i < colspan; i++) leafParentByPos[leafIdx + i] = gsel;
+              leafIdx += colspan;
+            } else {
+              // colspan=1 + rowspan=1 in the group row (rare): treat as ungrouped leaf
+              ensureVocKey(cell, 'col', colCounter++);
+              const sel = ifrCssPath(cell);
+              if (!colSeen.has(sel)) {
+                colSeen.add(sel);
+                let label = (cell.textContent || '').trim().replace(/\s+/g, ' ');
+                if (!label) label = '(빈 컬럼)';
+                if (label.length > 28) label = label.slice(0, 28) + '…';
+                out.columns.push({ label, selector: sel, parent: null });
+              }
+            }
+          });
+        }
+        // Walk the leaf row (row 1 when groupTr exists, the only row otherwise).
+        let leafChildIdx = 0;
+        [...leafTr.children].forEach((th) => {
+          if (th.classList.contains('col-spacer') || th.classList.contains('cb-col')) return;
+          if (th.classList.contains('scm-voc-added-col')) return;
+          // groupTr's rowspan>1 cells already consumed via the loop above —
+          // they don't appear in the leaf row at all.
+          const colspan = parseInt(th.getAttribute('colspan') || '1', 10);
+          if (colspan > 1) { leafChildIdx += colspan; return; }
+          const parent = groupTr ? (leafParentByPos[leafChildIdx] || null) : null;
+          ensureVocKey(th, 'col', colCounter++);
+          const sel = ifrCssPath(th);
+          leafChildIdx += 1;
+          if (colSeen.has(sel)) return;
+          colSeen.add(sel);
+          let label = (th.textContent || '').trim().replace(/\s+/g, ' ');
+          if (!label) label = '(빈 컬럼)';
+          if (label.length > 28) label = label.slice(0, 28) + '…';
+          out.columns.push({ label, selector: sel, parent });
+        });
+      }
 
       // Components — top-level scm-card / scm-page-section / scm-kpi-card / etc.
       const compSel = '.scm-card, .scm-page-section, .scm-kpi-card, .scm-bar-chart, .db-pending-list, .db-schedule-list, .db-quick-grid';
@@ -2031,16 +2344,45 @@
           added: f, type: f.type,
         })),
       ];
-      const columnRowsRaw = [
-        ...targets.columns.map((it) => ({ ...it, kind: 'column' })),
-        ...d.added.columns.map((c) => ({
-          label: c.label, kind: 'column',
-          selector: `#voc-added-col-${c.id}`,
-          added: c,
-        })),
-      ];
+      // ---- 2-level column rows (groups + leaves) ----
+      // Top-level rows = ordered groups + ungrouped leaves (added + native).
+      // Each native group expands to its leaves below it (per leafOrder).
+      // Drag drop is constrained to same depth + same parent.
+      syncOrderArr('column');                 // make sure orders are clean
+      const groupBySel = Object.fromEntries((targets.groups || []).map((g) => [g.selector, g]));
+      const colBySel   = Object.fromEntries((targets.columns || []).map((c) => [c.selector, c]));
+      const addedColMeta = d.added.columns.map((c) => ({
+        label: c.label, kind: 'column',
+        selector: `#voc-added-col-${c.id}`,
+        added: c, parent: null,
+      }));
+      const addedBySel = Object.fromEntries(addedColMeta.map((c) => [c.selector, c]));
+      const buildLeafRow = (sel) => {
+        const native = colBySel[sel];
+        if (native) return { ...native, kind: 'column', depth: 1 };
+        const added  = addedBySel[sel];
+        if (added)  return { ...added, depth: 0 };           // added rows are top-level
+        return null;
+      };
+      // Walk top-level columnOrder; for each group emit header + its leaves.
+      const columnRows = [];
+      (d.columnOrder || []).forEach((sel) => {
+        const grp = groupBySel[sel];
+        if (grp) {
+          const leaves = (d.columnLeafOrder[sel] || []).map((lsel) => colBySel[lsel]).filter(Boolean);
+          const childCount = leaves.length;
+          columnRows.push({
+            kind: 'column', isGroup: true, depth: 0,
+            label: grp.label, selector: sel,
+            childCount,
+          });
+          leaves.forEach((leaf) => columnRows.push({ ...leaf, kind: 'column', depth: 1 }));
+          return;
+        }
+        const leafRow = buildLeafRow(sel);
+        if (leafRow) columnRows.push(leafRow);
+      });
       const filterRows    = orderRows(filterRowsRaw, d.filterOrder);
-      const columnRows    = orderRows(columnRowsRaw, d.columnOrder);
       const componentRows = targets.components.map((it) => ({ ...it, kind: 'component' }));
 
       const renderList = (containerId, countId, items) => {
@@ -2053,15 +2395,20 @@
           const cls = ['edit-row'];
           if (isHidden)  cls.push('is-hidden');
           if (it.added)  cls.push('is-added');
+          if (it.isGroup) cls.push('is-group');
+          if (it.depth === 1) cls.push('is-leaf');
           const sel = escapeHtml(it.selector);
           let middle = '';
-          if (it.kind === 'column' && !it.added) {
-            // native column gets sort/filter icon toggles
+          if (it.kind === 'column' && !it.added && !it.isGroup) {
+            // native leaf column gets sort/filter icon toggles
             const sortOn   = showSort.has(it.selector);
             const filterOn = showFilter.has(it.selector);
             middle = `
               <button type="button" class="edit-row__icon-toggle ${sortOn ? 'is-on' : ''}"   data-toggle-icon="sort"   data-selector="${sel}" title="컬럼 정렬 아이콘 표시/숨김">정렬</button>
               <button type="button" class="edit-row__icon-toggle ${filterOn ? 'is-on' : ''}" data-toggle-icon="filter" data-selector="${sel}" title="컬럼 필터 아이콘 표시/숨김">필터</button>`;
+          } else if (it.isGroup) {
+            // group header — show child count badge
+            middle = `<span class="edit-row__group-count" title="이 그룹의 컬럼 수">${it.childCount}</span>`;
           } else if (it.kind === 'filter') {
             // EVERY filter row (native + added) gets the type select
             const currentType = it.added ? (it.type || 'single') : (d.filterTypes[it.selector] || 'single');
@@ -2077,14 +2424,33 @@
           const del = it.added
             ? `<button type="button" class="edit-row__del" data-del-${it.kind}="${escapeHtml(it.added.id)}" title="삭제">×</button>`
             : '';
-          // ALL filter and column rows are drag-reorderable now (not just added)
+          // For columns with groups: groups + ungrouped leaves drag at depth 0 (parent=''),
+          // grouped leaves drag at depth 1 with parent=group selector. Drag drop is
+          // constrained client-side to (kind, depth, parent) match.
           const reorderable = (it.kind === 'filter' || it.kind === 'column');
+          const dragKind  = it.kind;
+          const dragDepth = it.kind === 'column' ? (it.depth | 0) : 0;
+          const dragParent = (it.kind === 'column' && it.depth === 1 && it.parent) ? it.parent : '';
           const dragAttrs = reorderable
-            ? ` draggable="true" data-drag-id="${sel}" data-drag-kind="${it.kind}"`
+            ? ` draggable="true" data-drag-id="${sel}" data-drag-kind="${dragKind}" data-drag-depth="${dragDepth}" data-drag-parent="${escapeHtml(dragParent)}"`
             : '';
           const grip = reorderable
             ? '<span class="edit-row__grip" aria-hidden="true" title="드래그하여 순서 변경"><svg viewBox="0 0 6 12" fill="currentColor"><circle cx="1.25" cy="2" r="1"/><circle cx="4.75" cy="2" r="1"/><circle cx="1.25" cy="6" r="1"/><circle cx="4.75" cy="6" r="1"/><circle cx="1.25" cy="10" r="1"/><circle cx="4.75" cy="10" r="1"/></svg></span>'
             : '';
+          // group rows are not hidable / not-locatable in the iframe (they
+          // have no concrete element of their own beyond the group <th>);
+          // we still render the checkbox column for layout consistency, but
+          // keep it disabled.
+          if (it.isGroup) {
+            return `
+              <div class="${cls.join(' ')}"${dragAttrs}>
+                ${grip}
+                <span class="edit-row__check edit-row__check--placeholder" aria-hidden="true"></span>
+                <span class="edit-row__label">${escapeHtml(it.label)}</span>
+                ${middle}
+                <button type="button" class="edit-row__locate" data-locate="${sel}" title="화면에서 위치 확인">↗</button>
+              </div>`;
+          }
           return `
             <label class="${cls.join(' ')}"${dragAttrs}>
               ${grip}
@@ -2106,10 +2472,25 @@
     // ----- delegated handlers for the edit pane -----
     // ----- drag-and-drop reorder for added rows -----
     let _dragState = null;
+    // Drop is valid only if (kind, depth, parent) all match — this enforces
+    // the "groups reorder among groups; leaves only within their group" rule.
+    function _dropOk(row) {
+      if (!_dragState) return false;
+      if (row.dataset.dragKind   !== _dragState.kind)   return false;
+      if (row.dataset.dragDepth  !== _dragState.depth)  return false;
+      if ((row.dataset.dragParent || '') !== (_dragState.parent || '')) return false;
+      if (row.dataset.dragId     === _dragState.id)     return false;
+      return true;
+    }
     document.addEventListener('dragstart', (e) => {
       const row = e.target.closest && e.target.closest('.edit-row[data-drag-id]');
       if (!row) return;
-      _dragState = { kind: row.dataset.dragKind, id: row.dataset.dragId };
+      _dragState = {
+        kind:   row.dataset.dragKind,
+        id:     row.dataset.dragId,
+        depth:  row.dataset.dragDepth || '0',
+        parent: row.dataset.dragParent || '',
+      };
       row.classList.add('is-dragging');
       try {
         e.dataTransfer.effectAllowed = 'move';
@@ -2119,9 +2500,7 @@
     document.addEventListener('dragover', (e) => {
       if (!_dragState) return;
       const row = e.target.closest && e.target.closest('.edit-row[data-drag-id]');
-      if (!row) return;
-      if (row.dataset.dragKind !== _dragState.kind) return;
-      if (row.dataset.dragId === _dragState.id) return;
+      if (!row || !_dropOk(row)) return;
       e.preventDefault();
       try { e.dataTransfer.dropEffect = 'move'; } catch {}
       const r = row.getBoundingClientRect();
@@ -2137,12 +2516,14 @@
     document.addEventListener('drop', (e) => {
       if (!_dragState) return;
       const row = e.target.closest && e.target.closest('.edit-row[data-drag-id]');
-      if (!row) return;
-      if (row.dataset.dragKind !== _dragState.kind) return;
-      if (row.dataset.dragId === _dragState.id) return;
+      if (!row || !_dropOk(row)) return;
       e.preventDefault();
       const above = row.classList.contains('is-drop-above');
-      moveItem(_dragState.kind, _dragState.id, row.dataset.dragId, above);
+      // depth=1 means within-group leaf reorder; pass parent so moveItem
+      // mutates columnLeafOrder[parent] instead of top-level columnOrder.
+      const parent = (_dragState.kind === 'column' && _dragState.depth === '1')
+        ? _dragState.parent : null;
+      moveItem(_dragState.kind, _dragState.id, row.dataset.dragId, above, parent);
       _dragState = null;
     });
     document.addEventListener('dragend', () => {
