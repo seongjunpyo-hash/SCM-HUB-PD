@@ -676,14 +676,27 @@
     .edit-add {
       padding: 8px 10px 10px;
     }
+    .edit-add-row {
+      display: flex; gap: 6px; align-items: stretch;
+    }
     .edit-add-btn {
-      width: 100%; padding: 9px;
+      flex: 1; padding: 9px;
       background: #fff; border: 1px dashed #D1D5DB; border-radius: 8px;
       color: #4F46E5; font-family: inherit; font-size: 12.5px; font-weight: 600;
       cursor: pointer;
       transition: all 0.12s ease;
     }
     .edit-add-btn:hover { background: #EEF2FF; border-color: #4F46E5; }
+    .edit-apply-btn {
+      flex-shrink: 0;
+      padding: 9px 16px;
+      background: #4F46E5; color: #fff;
+      border: 0; border-radius: 8px;
+      font-family: inherit; font-size: 12.5px; font-weight: 600;
+      cursor: pointer;
+      transition: background 0.12s ease;
+    }
+    .edit-apply-btn:hover { background: #4338CA; }
     .edit-add-form {
       display: none; flex-direction: column; gap: 8px;
       padding: 12px; margin-top: 8px;
@@ -921,7 +934,10 @@
             </header>
             <div class="edit-list" id="editFilterList"></div>
             <div class="edit-add">
-              <button type="button" class="edit-add-btn" data-add="filter">+ 필터 추가</button>
+              <div class="edit-add-row">
+                <button type="button" class="edit-add-btn" data-add="filter">+ 필터 추가</button>
+                <button type="button" class="edit-apply-btn" data-apply="filter" title="현재 편집 사항을 좌측 데모 화면에 반영">적용</button>
+              </div>
               <div class="edit-add-form" id="addFilterForm">
                 <input type="text" id="addFilterLabel" placeholder="필터 라벨 (예: 출고처)" maxlength="20" />
                 <select id="addFilterType">
@@ -943,7 +959,10 @@
             </header>
             <div class="edit-list" id="editColumnList"></div>
             <div class="edit-add">
-              <button type="button" class="edit-add-btn" data-add="column">+ 컬럼 추가</button>
+              <div class="edit-add-row">
+                <button type="button" class="edit-add-btn" data-add="column">+ 컬럼 추가</button>
+                <button type="button" class="edit-apply-btn" data-apply="column" title="현재 편집 사항을 좌측 데모 화면에 반영">적용</button>
+              </div>
               <div class="edit-add-form" id="addColumnForm">
                 <input type="text" id="addColumnLabel" placeholder="컬럼 라벨 (예: 비고)" maxlength="20" />
                 <div class="edit-add-form__actions">
@@ -1401,7 +1420,6 @@
       hide ? s.add(selector) : s.delete(selector);
       d.hidden = [...s];
       persistDraft();
-      applyEditCss();
       refreshSaveBtn();
     }
     function setIconShown(selector, kind, show) {
@@ -1411,7 +1429,6 @@
       show ? s.add(selector) : s.delete(selector);
       d[arrName] = [...s];
       persistDraft();
-      applyEditCss();
       refreshSaveBtn();
     }
     function addFilter(label, type) {
@@ -1421,7 +1438,6 @@
         label, type: type || 'single',
       });
       persistDraft();
-      applyAllToIframe();
       renderEditPane();
       refreshSaveBtn();
     }
@@ -1432,7 +1448,6 @@
         label,
       });
       persistDraft();
-      applyAllToIframe();
       renderEditPane();
       refreshSaveBtn();
     }
@@ -1445,7 +1460,6 @@
       d.showFilter = d.showFilter.filter((s) => s !== sel);
       d.filterOrder = d.filterOrder.filter((s) => s !== sel);
       persistDraft();
-      applyAllToIframe();
       renderEditPane();
       refreshSaveBtn();
     }
@@ -1458,14 +1472,13 @@
       d.showFilter = d.showFilter.filter((s) => s !== sel);
       d.columnOrder = d.columnOrder.filter((s) => s !== sel);
       persistDraft();
-      applyAllToIframe();
       renderEditPane();
       refreshSaveBtn();
     }
     function updateAddedFilterType(id, type) {
       const d = pageDraft();
       const f = d.added.filters.find((x) => x.id === id);
-      if (f) { f.type = type; persistDraft(); applyAllToIframe(); refreshSaveBtn(); }
+      if (f) { f.type = type; persistDraft(); refreshSaveBtn(); }
     }
     // Set filter type (singular/multi/code) for a NATIVE filter chip via
     // a per-page filterTypes map. Added filters use updateAddedFilterType.
@@ -1474,26 +1487,35 @@
       if (!type || type === 'single') delete d.filterTypes[selector];
       else d.filterTypes[selector] = type;
       persistDraft();
-      applyFilterTypesToIframe();
       refreshSaveBtn();
     }
-    // Unified reorder for filter / column rows. Operates on the kind's
-    // order array (d.filterOrder / d.columnOrder), which is bootstrapped
-    // lazily from current scan order on first move so the user doesn't
-    // need to enable anything first.
-    function moveItem(kind, fromKey, toKey, above) {
+    // Sync an order array with current scan + added items: drops stale
+    // selectors (e.g., from a previous session that used the old class+nth
+    // format before voc-key) and appends any missing current items at the
+    // end. Returns a NEW array (caller assigns).
+    function syncOrderArr(kind) {
       const d = pageDraft();
       const arr = kind === 'filter' ? d.filterOrder : d.columnOrder;
-      // Bootstrap natural order on first move
-      if (arr.length === 0) {
-        const targets = scanEditTargets();
-        const natives = (kind === 'filter' ? targets.filters : targets.columns);
-        natives.forEach((it) => arr.push(it.selector));
-        const addedItems = kind === 'filter' ? d.added.filters : d.added.columns;
-        addedItems.forEach((it) => {
-          arr.push(kind === 'filter' ? `#voc-added-filter-${it.id}` : `#voc-added-col-${it.id}`);
-        });
-      }
+      const targets = scanEditTargets();
+      const natives = (kind === 'filter' ? targets.filters : targets.columns).map((it) => it.selector);
+      const added = (kind === 'filter' ? d.added.filters : d.added.columns)
+        .map((it) => kind === 'filter' ? `#voc-added-filter-${it.id}` : `#voc-added-col-${it.id}`);
+      const all = new Set([...natives, ...added]);
+      const cleaned = arr.filter((s) => all.has(s));
+      const inArr = new Set(cleaned);
+      [...natives, ...added].forEach((s) => { if (!inArr.has(s)) cleaned.push(s); });
+      if (kind === 'filter') d.filterOrder = cleaned;
+      else                   d.columnOrder = cleaned;
+      return cleaned;
+    }
+
+    // Unified reorder for filter / column rows.
+    function moveItem(kind, fromKey, toKey, above) {
+      const d = pageDraft();
+      // Always sync the order array to current items first — this purges
+      // stale selectors (e.g. legacy class+nth from older sessions) so the
+      // move actually finds fromKey/toKey instead of silently appending.
+      const arr = syncOrderArr(kind);
       const fromIdx = arr.indexOf(fromKey);
       if (fromIdx >= 0) arr.splice(fromIdx, 1);
       let toIdx = arr.indexOf(toKey);
@@ -1504,9 +1526,6 @@
         arr.splice(toIdx, 0, fromKey);
       }
       persistDraft();
-      // live preview the new order
-      if (kind === 'filter') applyFilterOrderToIframe();
-      else                   applyColumnOrderToIframe();
       renderEditPane();
       refreshSaveBtn();
     }
@@ -1650,12 +1669,13 @@
           !== JSON.stringify(state.applied[state.currentPage] || null);
     }
     function commitDraft() {
-      // iframe is already showing draft (live preview). Save just persists
-      // it as the applied baseline so a refresh / revert returns to it.
+      // Save also pushes to iframe (in case user hadn't clicked the
+      // section apply buttons yet) so the new baseline is visible.
+      applyAllToIframe();
       state.applied[state.currentPage] = deepClone(pageDraft());
       persistApplied();
       refreshSaveBtn();
-      showToast('편집 사항 저장 완료');
+      showToast('저장 완료 — 화면 적용 + baseline');
     }
 
     // Move filter chips inside the iframe to match a.filterOrder.
@@ -2121,6 +2141,14 @@
       if (dC) {
         e.preventDefault();
         if (confirm('이 추가 컬럼을 삭제할까요?')) removeAddedColumn(dC.dataset.delColumn);
+        return;
+      }
+      // section apply (push current draft to iframe)
+      const applyBtn = t.closest && t.closest('.edit-apply-btn');
+      if (applyBtn) {
+        e.preventDefault();
+        applyAllToIframe();
+        showToast('편집 내용이 좌측 데모에 적용됐습니다');
         return;
       }
       // open / cancel / submit add forms
