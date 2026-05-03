@@ -832,6 +832,17 @@
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .edit-foot__status.is-dirty { color: #C2710C; font-weight: 600; }
+    .edit-foot__btn-open-demo {
+      display: inline-flex; align-items: center; gap: 4px;
+      height: 26px; padding: 0 10px;
+      background: #fff; border: 1px solid #D1D5DB; border-radius: 999px;
+      color: #4B5563; font-family: inherit; font-size: 11.5px; font-weight: 600;
+      cursor: pointer; text-decoration: none;
+      transition: all 0.12s ease;
+      flex-shrink: 0;
+    }
+    .edit-foot__btn-open-demo:hover { color: #4F46E5; border-color: #4F46E5; }
+    .edit-foot__btn-open-demo svg { display: block; flex-shrink: 0; }
     .edit-foot__btn-revert,
     .edit-foot__btn-save {
       height: 32px; padding: 0 14px; border-radius: 6px;
@@ -1057,6 +1068,12 @@
         </div>
         <footer class="edit-foot">
           <span class="edit-foot__status" id="editStatus">저장됨 · 데모와 동기화</span>
+          <a class="edit-foot__btn-open-demo" id="editOpenDemoBtn" href="#" target="_blank" rel="noopener" title="현재 데모 페이지를 새 창에서 열기">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 3h4v4M13 3L7 9M11 9v4H3V5h4"/>
+            </svg>
+            데모 바로가기
+          </a>
           <button type="button" class="edit-foot__btn-revert" id="editRevertBtn" disabled>되돌리기</button>
           <button type="button" class="edit-foot__btn-save"   id="editSaveBtn"   disabled>저장됨</button>
         </footer>
@@ -1278,6 +1295,8 @@
             state.currentPage = path;
             urlText.textContent = path;
             urlOpen.href = path;
+            const editOpenDemoBtn = document.getElementById('editOpenDemoBtn');
+            if (editOpenDemoBtn) editOpenDemoBtn.href = path;
             syncMenuFromPath(path);
           }
         } catch {}
@@ -1397,6 +1416,8 @@
       state.currentPage = path;
       urlText.textContent = path;
       urlOpen.href = path;
+      const editOpenDemoBtn = document.getElementById('editOpenDemoBtn');
+      if (editOpenDemoBtn) editOpenDemoBtn.href = path;
       syncMenuFromPath(path);
       state.iframeReady = false;
       showLoading(true);

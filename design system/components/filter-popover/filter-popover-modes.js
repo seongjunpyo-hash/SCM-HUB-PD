@@ -671,7 +671,22 @@
     function openPopover(key, anchorBtn) {
       if (openFor === key) { fp.close(); return; }
       openFor = key;
-      if (codeinputTabs[key]) {
+      // VOC override — when the VOC edit pane sets a filter chip's type
+      // (`data-voc-filter-type`), it wins over the registry-defined mode.
+      // Lets reviewers preview a chip as single / multi / code without
+      // touching the demo registry. Falls through to the registry path
+      // when the attribute isn't set or its value is unknown.
+      var override = anchorBtn && anchorBtn.dataset && anchorBtn.dataset.vocFilterType;
+      if (override === 'code') {
+        renderCodeInput(key);
+        fp.openAt(anchorBtn, 'code');
+      } else if (override === 'single') {
+        renderSingle(key);
+        fp.openAt(anchorBtn, 'single');
+      } else if (override === 'multi') {
+        renderMulti(key, '');
+        fp.openAt(anchorBtn, 'list');
+      } else if (codeinputTabs[key]) {
         renderCodeInputTabs(key);
         fp.openAt(anchorBtn, 'code');
       } else if (codeinputKeys.indexOf(key) !== -1) {
