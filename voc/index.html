@@ -627,11 +627,87 @@
     .edit-row.is-hidden .edit-row__label {
       color: #9CA3AF; text-decoration: line-through;
     }
+    .edit-row.is-added { background: #FAF5FF; }
+    .edit-row.is-added::before {
+      content: '+'; flex-shrink: 0;
+      width: 16px; height: 16px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: #4F46E5; color: #fff;
+      border-radius: 4px;
+      font-size: 12px; font-weight: 700; line-height: 1;
+    }
+    .edit-row__icon-toggle {
+      height: 22px; padding: 0 8px;
+      background: #fff; border: 1px solid #E5E7EB;
+      border-radius: 999px;
+      font-family: inherit; font-size: 10.5px; font-weight: 600;
+      color: #6B7280; cursor: pointer;
+      transition: all 0.12s ease;
+      flex-shrink: 0;
+    }
+    .edit-row__icon-toggle.is-on {
+      background: #EEF2FF; color: #4F46E5; border-color: #4F46E5;
+    }
+    .edit-row__icon-toggle:hover { border-color: #1A1A1A; color: #1A1A1A; }
+    .edit-row__icon-toggle.is-on:hover { border-color: #4F46E5; color: #4F46E5; }
     .edit-row__locate {
       background: transparent; border: 0; cursor: pointer;
       font-size: 11px; color: #4F46E5; padding: 2px 6px; border-radius: 4px;
+      flex-shrink: 0;
     }
     .edit-row__locate:hover { background: #EEF2FF; }
+    .edit-row__del {
+      background: transparent; border: 0; cursor: pointer;
+      font-size: 14px; color: #9CA3AF; padding: 2px 4px; border-radius: 4px;
+      flex-shrink: 0; line-height: 1;
+    }
+    .edit-row__del:hover { color: #DC2626; background: #FEE2E2; }
+
+    .edit-add {
+      padding: 8px 10px 10px;
+    }
+    .edit-add-btn {
+      width: 100%; padding: 9px;
+      background: #fff; border: 1px dashed #D1D5DB; border-radius: 8px;
+      color: #4F46E5; font-family: inherit; font-size: 12.5px; font-weight: 600;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+    .edit-add-btn:hover { background: #EEF2FF; border-color: #4F46E5; }
+    .edit-add-form {
+      display: none; flex-direction: column; gap: 8px;
+      padding: 12px; margin-top: 8px;
+      background: #fff; border: 1px solid #4F46E5; border-radius: 8px;
+    }
+    .edit-add-form.is-open { display: flex; }
+    .edit-add-form input,
+    .edit-add-form select {
+      padding: 8px 10px;
+      background: #fff; color: #1A1A1A;
+      border: 1px solid #E5E7EB; border-radius: 6px;
+      font-family: inherit; font-size: 13px;
+      outline: none;
+    }
+    .edit-add-form input:focus, .edit-add-form select:focus { border-color: #4F46E5; }
+    .edit-add-form__row { display: flex; gap: 6px; }
+    .edit-add-form__row > * { flex: 1; }
+    .edit-add-form__actions { display: flex; gap: 6px; justify-content: flex-end; margin-top: 4px; }
+    .edit-add-form__btn {
+      padding: 7px 14px; border-radius: 6px;
+      font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .edit-add-form__btn--primary { background: #4F46E5; color: #fff; border: 0; }
+    .edit-add-form__btn--primary:hover { background: #4338CA; }
+    .edit-add-form__btn--ghost {
+      background: #fff; color: #6B7280; border: 1px solid #E5E7EB;
+    }
+    .edit-add-form__btn--ghost:hover { color: #1A1A1A; border-color: #1A1A1A; }
+    .edit-row__type {
+      flex-shrink: 0;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.2px;
+      padding: 2px 6px; border-radius: 4px;
+      background: #EEF2FF; color: #4F46E5;
+    }
     .edit-empty {
       padding: 32px 20px; text-align: center;
       color: #9CA3AF; font-size: 12.5px; line-height: 1.6;
@@ -788,6 +864,21 @@
               <span class="edit-sec__count" id="editFilterCount">0</span>
             </header>
             <div class="edit-list" id="editFilterList"></div>
+            <div class="edit-add">
+              <button type="button" class="edit-add-btn" data-add="filter">+ 필터 추가</button>
+              <div class="edit-add-form" id="addFilterForm">
+                <input type="text" id="addFilterLabel" placeholder="필터 라벨 (예: 출고처)" maxlength="20" />
+                <select id="addFilterType">
+                  <option value="single">싱글 — 하나만 선택</option>
+                  <option value="multi">멀티 — 다중 선택</option>
+                  <option value="code">코드 — 입력형</option>
+                </select>
+                <div class="edit-add-form__actions">
+                  <button type="button" class="edit-add-form__btn edit-add-form__btn--ghost" data-cancel="filter">취소</button>
+                  <button type="button" class="edit-add-form__btn edit-add-form__btn--primary" data-submit="filter">추가</button>
+                </div>
+              </div>
+            </div>
           </section>
           <section class="edit-sec">
             <header class="edit-sec__head">
@@ -795,6 +886,16 @@
               <span class="edit-sec__count" id="editColumnCount">0</span>
             </header>
             <div class="edit-list" id="editColumnList"></div>
+            <div class="edit-add">
+              <button type="button" class="edit-add-btn" data-add="column">+ 컬럼 추가</button>
+              <div class="edit-add-form" id="addColumnForm">
+                <input type="text" id="addColumnLabel" placeholder="컬럼 라벨 (예: 비고)" maxlength="20" />
+                <div class="edit-add-form__actions">
+                  <button type="button" class="edit-add-form__btn edit-add-form__btn--ghost" data-cancel="column">취소</button>
+                  <button type="button" class="edit-add-form__btn edit-add-form__btn--primary" data-submit="column">추가</button>
+                </div>
+              </div>
+            </div>
           </section>
           <section class="edit-sec">
             <header class="edit-sec__head">
@@ -1010,7 +1111,8 @@
         state.simActive.clear();
         updateSimStatus();
         renderList();
-        // edit pane: re-apply persisted hides + re-scan editable elements
+        // edit pane: replay user-added items, then apply hide/icon CSS, then re-scan
+        applyAddedDom();
         applyEditCss();
         renderEditPane();
       });
@@ -1170,21 +1272,36 @@
     function saveEdits() {
       try { localStorage.setItem(EDIT_KEY, JSON.stringify(state.edits)); } catch {}
     }
-    function pageHidden() {
-      const e = state.edits[state.currentPage];
-      return (e && e.hidden) || [];
+    function pageEdit() {
+      let e = state.edits[state.currentPage];
+      if (!e) e = state.edits[state.currentPage] = {};
+      if (!Array.isArray(e.hidden))   e.hidden   = [];
+      if (!Array.isArray(e.noSort))   e.noSort   = [];
+      if (!Array.isArray(e.noFilter)) e.noFilter = [];
+      if (!e.added) e.added = { filters: [], columns: [] };
+      if (!Array.isArray(e.added.filters)) e.added.filters = [];
+      if (!Array.isArray(e.added.columns)) e.added.columns = [];
+      return e;
     }
     function setHidden(selector, hide) {
-      const cur = state.edits[state.currentPage] || { hidden: [] };
-      const set = new Set(cur.hidden || []);
+      const e = pageEdit();
+      const set = new Set(e.hidden);
       if (hide) set.add(selector); else set.delete(selector);
-      cur.hidden = [...set];
-      state.edits[state.currentPage] = cur;
+      e.hidden = [...set];
+      saveEdits();
+      applyEditCss();
+    }
+    function setIconOff(selector, kind, off) {
+      const e = pageEdit();
+      const arrName = kind === 'sort' ? 'noSort' : 'noFilter';
+      const set = new Set(e[arrName]);
+      if (off) set.add(selector); else set.delete(selector);
+      e[arrName] = [...set];
       saveEdits();
       applyEditCss();
     }
 
-    // Inject (or update) the hide CSS into the iframe document.
+    // Inject (or update) all edit CSS into the iframe document.
     function applyEditCss() {
       const doc = iframe.contentDocument;
       if (!doc || !doc.head) return;
@@ -1194,10 +1311,153 @@
         style.id = 'scm-voc-edit-css';
         doc.head.appendChild(style);
       }
-      const list = pageHidden();
-      style.textContent = list.length
-        ? list.map((s) => `${s} { display: none !important; }`).join('\n')
-        : '';
+      const e = pageEdit();
+      const lines = [];
+      e.hidden.forEach((s) => lines.push(`${s} { display: none !important; }`));
+      e.noSort.forEach((s) => lines.push(`${s} .sort-ic, ${s} .scm-th-sort { display: none !important; }`));
+      e.noFilter.forEach((s) => lines.push(`${s} .filter-ic, ${s} .th-icons { display: none !important; }`));
+      // marker styles for added items
+      lines.push(`
+        .scm-voc-added-filter,
+        .scm-voc-added-col {
+          background: #FAF5FF !important;
+          box-shadow: inset 0 0 0 1px #C4B5FD !important;
+        }
+        td.scm-voc-added-col { color: #6B7280; }
+        .scm-voc-added-filter[data-voc-filter-type="multi"]::after {
+          content: 'M'; margin-left: 4px;
+          font-size: 9px; font-weight: 700; color: #4F46E5;
+          background: #EEF2FF; padding: 1px 4px; border-radius: 3px;
+        }
+        .scm-voc-added-filter[data-voc-filter-type="code"]::after {
+          content: 'C'; margin-left: 4px;
+          font-size: 9px; font-weight: 700; color: #4F46E5;
+          background: #EEF2FF; padding: 1px 4px; border-radius: 3px;
+        }
+      `);
+      style.textContent = lines.join('\n');
+    }
+
+    // Inject persisted added filters/columns into the iframe DOM.
+    function applyAddedDom() {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      const e = pageEdit();
+
+      // ---- Filters ----
+      const filterBar = doc.querySelector('.scm-filter-bar');
+      if (filterBar) {
+        const wrapper = filterBar.firstElementChild || filterBar;
+        e.added.filters.forEach((f) => {
+          const id = `voc-added-filter-${f.id}`;
+          if (doc.getElementById(id)) return;
+          const btn = doc.createElement('button');
+          btn.id = id;
+          btn.type = 'button';
+          btn.className = 'scm-filter-select scm-voc-added-filter';
+          btn.dataset.state = 'placeholder';
+          btn.dataset.mpFilter = `voc-added-${f.id}`;
+          btn.dataset.vocFilterType = f.type || 'single';
+          btn.innerHTML = `
+            <span class="scm-filter-select__label">${escapeHtml(f.label)}</span>
+            <span class="scm-filter-select__value">${escapeHtml(f.label)}</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          `;
+          wrapper.appendChild(btn);
+        });
+      }
+
+      // ---- Columns ----
+      const table = doc.querySelector('.mp-table');
+      if (table) {
+        const thead = table.querySelector('thead');
+        const tbody = table.querySelector('tbody');
+        if (thead && tbody) {
+          const trs = thead.querySelectorAll('tr');
+          const colTr = trs[trs.length - 1];
+          const groupTr = trs.length > 1 ? trs[0] : null;
+          e.added.columns.forEach((c) => {
+            const id = `voc-added-col-${c.id}`;
+            if (doc.getElementById(id)) return;
+            const klass = `voc-added-col-${c.id}`;
+            // header th in actual column row
+            const th = doc.createElement('th');
+            th.id = id;
+            th.className = `col-auto scm-voc-added-col ${klass}`;
+            th.textContent = c.label;
+            const colSpacer = colTr.querySelector('.col-spacer');
+            colTr.insertBefore(th, colSpacer || null);
+            // group row — empty cell
+            if (groupTr) {
+              const gth = doc.createElement('th');
+              gth.className = `scm-voc-added-col ${klass}`;
+              const gSpacer = groupTr.querySelector('.col-spacer');
+              groupTr.insertBefore(gth, gSpacer || null);
+            }
+            // tbody tds
+            tbody.querySelectorAll('tr').forEach((tr) => {
+              const td = doc.createElement('td');
+              td.className = `scm-voc-added-col ${klass}`;
+              td.textContent = '—';
+              const tdSpacer = tr.querySelector('.col-spacer, [data-empty="true"]');
+              tr.insertBefore(td, tdSpacer || null);
+            });
+          });
+        }
+      }
+    }
+
+    function addFilter(label, type) {
+      const e = pageEdit();
+      e.added.filters.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+        label, type: type || 'single',
+      });
+      saveEdits();
+      applyAddedDom();
+      renderEditPane();
+    }
+    function addColumn(label) {
+      const e = pageEdit();
+      e.added.columns.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+        label,
+      });
+      saveEdits();
+      applyAddedDom();
+      renderEditPane();
+    }
+    function removeAddedFilter(id) {
+      const e = pageEdit();
+      e.added.filters = e.added.filters.filter((f) => f.id !== id);
+      saveEdits();
+      const doc = iframe.contentDocument;
+      const el = doc && doc.getElementById(`voc-added-filter-${id}`);
+      if (el) el.remove();
+      // also drop from hidden/noSort/noFilter
+      const sel = `#voc-added-filter-${id}`;
+      e.hidden   = e.hidden.filter((s) => s !== sel);
+      e.noSort   = e.noSort.filter((s) => s !== sel);
+      e.noFilter = e.noFilter.filter((s) => s !== sel);
+      saveEdits();
+      applyEditCss();
+      renderEditPane();
+    }
+    function removeAddedColumn(id) {
+      const e = pageEdit();
+      e.added.columns = e.added.columns.filter((c) => c.id !== id);
+      saveEdits();
+      const doc = iframe.contentDocument;
+      if (doc) {
+        doc.querySelectorAll('.voc-added-col-' + id).forEach((el) => el.remove());
+      }
+      const sel = `#voc-added-col-${id}`;
+      e.hidden   = e.hidden.filter((s) => s !== sel);
+      e.noSort   = e.noSort.filter((s) => s !== sel);
+      e.noFilter = e.noFilter.filter((s) => s !== sel);
+      saveEdits();
+      applyEditCss();
+      renderEditPane();
     }
 
     // Stable CSS path for an iframe element (no temp ids).
@@ -1303,31 +1563,73 @@
 
     function renderEditPane() {
       const targets = scanEditTargets();
-      const hidden = new Set(pageHidden());
+      const e = pageEdit();
+      const hidden   = new Set(e.hidden);
+      const noSort   = new Set(e.noSort);
+      const noFilter = new Set(e.noFilter);
+
+      // merge native + user-added items so added items are also editable
+      const filterRows = [
+        ...targets.filters.map((it) => ({ ...it, kind: 'filter' })),
+        ...e.added.filters.map((f) => ({
+          label: f.label, kind: 'filter',
+          selector: `#voc-added-filter-${f.id}`,
+          added: f, type: f.type,
+        })),
+      ];
+      const columnRows = [
+        ...targets.columns.map((it) => ({ ...it, kind: 'column' })),
+        ...e.added.columns.map((c) => ({
+          label: c.label, kind: 'column',
+          selector: `#voc-added-col-${c.id}`,
+          added: c,
+        })),
+      ];
+      const componentRows = targets.components.map((it) => ({ ...it, kind: 'component' }));
+
+      const TYPE_LABEL = { single: '싱글', multi: '멀티', code: '코드' };
 
       const renderList = (containerId, countId, items) => {
-        const c = document.getElementById(countId);
+        const cnt = document.getElementById(countId);
         const list = document.getElementById(containerId);
-        if (c) c.textContent = String(items.length);
+        if (cnt) cnt.textContent = String(items.length);
         if (!list) return;
         list.innerHTML = items.map((it) => {
           const isHidden = hidden.has(it.selector);
+          const cls = ['edit-row'];
+          if (isHidden)  cls.push('is-hidden');
+          if (it.added)  cls.push('is-added');
+          const sel = escapeHtml(it.selector);
+          let middle = '';
+          if (it.kind === 'column') {
+            const sortOn   = !noSort.has(it.selector);
+            const filterOn = !noFilter.has(it.selector);
+            middle = `
+              <button type="button" class="edit-row__icon-toggle ${sortOn ? 'is-on' : ''}"   data-toggle-icon="sort"   data-selector="${sel}" title="컬럼 정렬 아이콘 표시/숨김">정렬</button>
+              <button type="button" class="edit-row__icon-toggle ${filterOn ? 'is-on' : ''}" data-toggle-icon="filter" data-selector="${sel}" title="컬럼 필터 아이콘 표시/숨김">필터</button>`;
+          } else if (it.kind === 'filter' && it.type) {
+            middle = `<span class="edit-row__type">${escapeHtml(TYPE_LABEL[it.type] || it.type)}</span>`;
+          }
+          const del = it.added
+            ? `<button type="button" class="edit-row__del" data-del-${it.kind}="${escapeHtml(it.added.id)}" title="삭제">×</button>`
+            : '';
           return `
-            <label class="edit-row${isHidden ? ' is-hidden' : ''}">
-              <input type="checkbox" class="edit-row__check" data-selector="${escapeHtml(it.selector)}" ${isHidden ? '' : 'checked'} />
+            <label class="${cls.join(' ')}">
+              <input type="checkbox" class="edit-row__check" data-selector="${sel}" ${isHidden ? '' : 'checked'} />
               <span class="edit-row__label">${escapeHtml(it.label)}</span>
-              <button type="button" class="edit-row__locate" data-locate="${escapeHtml(it.selector)}">↗</button>
-            </label>
-          `;
+              ${middle}
+              <button type="button" class="edit-row__locate" data-locate="${sel}" title="화면에서 위치 확인">↗</button>
+              ${del}
+            </label>`;
         }).join('');
       };
 
-      renderList('editFilterList',    'editFilterCount',    targets.filters);
-      renderList('editColumnList',    'editColumnCount',    targets.columns);
-      renderList('editComponentList', 'editComponentCount', targets.components);
+      renderList('editFilterList',    'editFilterCount',    filterRows);
+      renderList('editColumnList',    'editColumnCount',    columnRows);
+      renderList('editComponentList', 'editComponentCount', componentRows);
     }
 
-    // Delegated handlers on the edit body (covers all three lists).
+    // ----- delegated handlers for the edit pane -----
     document.addEventListener('change', (e) => {
       const cb = e.target.closest && e.target.closest('.edit-row__check');
       if (!cb) return;
@@ -1337,13 +1639,87 @@
       cb.closest('.edit-row').classList.toggle('is-hidden', !cb.checked);
     });
     document.addEventListener('click', (e) => {
-      const lo = e.target.closest && e.target.closest('.edit-row__locate');
-      if (!lo) return;
-      e.preventDefault();
-      const sel = lo.dataset.locate;
-      if (!sel) return;
-      // ask overlay to flash
-      postIframe({ type: 'voc-flash', selector: sel });
+      const t = e.target;
+      // locate
+      const lo = t.closest && t.closest('.edit-row__locate');
+      if (lo) {
+        e.preventDefault();
+        const sel = lo.dataset.locate;
+        if (sel) postIframe({ type: 'voc-flash', selector: sel });
+        return;
+      }
+      // sort/filter icon toggle
+      const tg = t.closest && t.closest('.edit-row__icon-toggle');
+      if (tg) {
+        e.preventDefault();
+        const sel = tg.dataset.selector;
+        const kind = tg.dataset.toggleIcon;
+        const wasOn = tg.classList.contains('is-on');
+        setIconOff(sel, kind, wasOn);  // turning off = add to noSort/noFilter
+        tg.classList.toggle('is-on', !wasOn);
+        return;
+      }
+      // delete added filter / column
+      const dF = t.closest && t.closest('[data-del-filter]');
+      if (dF) {
+        e.preventDefault();
+        if (confirm('이 추가 항목을 삭제할까요?')) removeAddedFilter(dF.dataset.delFilter);
+        return;
+      }
+      const dC = t.closest && t.closest('[data-del-column]');
+      if (dC) {
+        e.preventDefault();
+        if (confirm('이 추가 컬럼을 삭제할까요?')) removeAddedColumn(dC.dataset.delColumn);
+        return;
+      }
+      // open / cancel / submit add forms
+      const addBtn = t.closest && t.closest('.edit-add-btn');
+      if (addBtn) {
+        e.preventDefault();
+        const which = addBtn.dataset.add;
+        const form = document.getElementById(which === 'filter' ? 'addFilterForm' : 'addColumnForm');
+        if (form) {
+          form.classList.add('is-open');
+          addBtn.style.display = 'none';
+          setTimeout(() => { const inp = form.querySelector('input'); inp && inp.focus(); }, 0);
+        }
+        return;
+      }
+      const cancel = t.closest && t.closest('[data-cancel]');
+      if (cancel) {
+        e.preventDefault();
+        const which = cancel.dataset.cancel;
+        const form = document.getElementById(which === 'filter' ? 'addFilterForm' : 'addColumnForm');
+        if (form) {
+          form.classList.remove('is-open');
+          form.querySelectorAll('input').forEach((i) => (i.value = ''));
+          const btn = form.parentElement.querySelector('.edit-add-btn');
+          if (btn) btn.style.display = '';
+        }
+        return;
+      }
+      const submit = t.closest && t.closest('[data-submit]');
+      if (submit) {
+        e.preventDefault();
+        const which = submit.dataset.submit;
+        if (which === 'filter') {
+          const label = (document.getElementById('addFilterLabel').value || '').trim();
+          const type  = document.getElementById('addFilterType').value || 'single';
+          if (!label) { document.getElementById('addFilterLabel').focus(); return; }
+          addFilter(label, type);
+          document.getElementById('addFilterLabel').value = '';
+          document.getElementById('addFilterForm').classList.remove('is-open');
+          document.querySelector('.edit-add-btn[data-add="filter"]').style.display = '';
+        } else {
+          const label = (document.getElementById('addColumnLabel').value || '').trim();
+          if (!label) { document.getElementById('addColumnLabel').focus(); return; }
+          addColumn(label);
+          document.getElementById('addColumnLabel').value = '';
+          document.getElementById('addColumnForm').classList.remove('is-open');
+          document.querySelector('.edit-add-btn[data-add="column"]').style.display = '';
+        }
+        return;
+      }
     });
 
     // ====================================================
