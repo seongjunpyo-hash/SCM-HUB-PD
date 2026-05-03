@@ -639,11 +639,12 @@
     .edit-row__grip {
       flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
-      width: 14px; height: 18px;
-      color: #9CA3AF; font-size: 14px; line-height: 0.6; letter-spacing: -2px;
+      width: 12px; height: 16px;
+      color: #9CA3AF;
       user-select: none;
       cursor: grab;
     }
+    .edit-row__grip svg { width: 6px; height: 12px; display: block; }
     .edit-row__grip:hover { color: #4F46E5; }
     .edit-row__icon-toggle {
       height: 22px; padding: 0 8px;
@@ -1383,12 +1384,24 @@
     function pageApplied() { return pageOf('applied'); }
 
     // ---- mutators (all touch DRAFT only — iframe untouched until Save) ----
+    // ---- Live-preview helper ----
+    // Every mutator funnels through this so the iframe reflects pending
+    // edits in real-time. Save just persists the draft as applied.
+    function applyAllToIframe() {
+      rebuildAddedDom();             // wipe + reinject from draft
+      applyFilterOrderToIframe();    // reads draft
+      applyColumnOrderToIframe();    // reads draft
+      applyFilterTypesToIframe();    // reads draft
+      applyEditCss();                // reads draft
+    }
+
     function setHidden(selector, hide) {
       const d = pageDraft();
       const s = new Set(d.hidden);
       hide ? s.add(selector) : s.delete(selector);
       d.hidden = [...s];
       persistDraft();
+      applyEditCss();
       refreshSaveBtn();
     }
     function setIconShown(selector, kind, show) {
@@ -1398,6 +1411,7 @@
       show ? s.add(selector) : s.delete(selector);
       d[arrName] = [...s];
       persistDraft();
+      applyEditCss();
       refreshSaveBtn();
     }
     function addFilter(label, type) {
@@ -1407,6 +1421,7 @@
         label, type: type || 'single',
       });
       persistDraft();
+      applyAllToIframe();
       renderEditPane();
       refreshSaveBtn();
     }
@@ -1417,6 +1432,7 @@
         label,
       });
       persistDraft();
+      applyAllToIframe();
       renderEditPane();
       refreshSaveBtn();
     }
@@ -1427,7 +1443,9 @@
       d.hidden     = d.hidden.filter((s) => s !== sel);
       d.showSort   = d.showSort.filter((s) => s !== sel);
       d.showFilter = d.showFilter.filter((s) => s !== sel);
+      d.filterOrder = d.filterOrder.filter((s) => s !== sel);
       persistDraft();
+      applyAllToIframe();
       renderEditPane();
       refreshSaveBtn();
     }
@@ -1438,14 +1456,16 @@
       d.hidden     = d.hidden.filter((s) => s !== sel);
       d.showSort   = d.showSort.filter((s) => s !== sel);
       d.showFilter = d.showFilter.filter((s) => s !== sel);
+      d.columnOrder = d.columnOrder.filter((s) => s !== sel);
       persistDraft();
+      applyAllToIframe();
       renderEditPane();
       refreshSaveBtn();
     }
     function updateAddedFilterType(id, type) {
       const d = pageDraft();
       const f = d.added.filters.find((x) => x.id === id);
-      if (f) { f.type = type; persistDraft(); refreshSaveBtn(); }
+      if (f) { f.type = type; persistDraft(); applyAllToIframe(); refreshSaveBtn(); }
     }
     // Set filter type (singular/multi/code) for a NATIVE filter chip via
     // a per-page filterTypes map. Added filters use updateAddedFilterType.
@@ -1454,6 +1474,7 @@
       if (!type || type === 'single') delete d.filterTypes[selector];
       else d.filterTypes[selector] = type;
       persistDraft();
+      applyFilterTypesToIframe();
       refreshSaveBtn();
     }
     // Unified reorder for filter / column rows. Operates on the kind's
@@ -1483,6 +1504,9 @@
         arr.splice(toIdx, 0, fromKey);
       }
       persistDraft();
+      // live preview the new order
+      if (kind === 'filter') applyFilterOrderToIframe();
+      else                   applyColumnOrderToIframe();
       renderEditPane();
       refreshSaveBtn();
     }
@@ -1497,7 +1521,7 @@
         style.id = 'scm-voc-edit-css';
         doc.head.appendChild(style);
       }
-      const a = pageApplied();
+      const a = pageDraft();   // live preview: read draft so iframe reflects pending changes
       const lines = [];
       a.hidden.forEach((s) => lines.push(`${s} { display: none !important; }`));
       // Default: ALL sort + filter icons hidden. Reveal selectively.
@@ -1530,7 +1554,7 @@
     function applyAddedDom() {
       const doc = iframe.contentDocument;
       if (!doc) return;
-      const a = pageApplied();
+      const a = pageDraft();   // live preview: read draft so iframe reflects pending changes
       // ---- Filters ----
       const filterBar = doc.querySelector('.scm-filter-bar');
       if (filterBar && a.added.filters.length) {
@@ -1621,16 +1645,12 @@
           !== JSON.stringify(state.applied[state.currentPage] || null);
     }
     function commitDraft() {
-      // copy draft slot for current page → applied slot
+      // iframe is already showing draft (live preview). Save just persists
+      // it as the applied baseline so a refresh / revert returns to it.
       state.applied[state.currentPage] = deepClone(pageDraft());
       persistApplied();
-      rebuildAddedDom();
-      applyFilterOrderToIframe();
-      applyColumnOrderToIframe();
-      applyFilterTypesToIframe();
-      applyEditCss();
       refreshSaveBtn();
-      showToast('편집 사항 저장 — 데모에 반영됨');
+      showToast('편집 사항 저장 완료');
     }
 
     // Move filter chips inside the iframe to match a.filterOrder.
@@ -1639,7 +1659,7 @@
     function applyFilterOrderToIframe() {
       const doc = iframe.contentDocument;
       if (!doc) return;
-      const a = pageApplied();
+      const a = pageDraft();   // live preview: read draft so iframe reflects pending changes
       if (!a.filterOrder || !a.filterOrder.length) return;
       let parent = null, resetBtn = null;
       a.filterOrder.forEach((sel) => {
@@ -1664,7 +1684,7 @@
     function applyColumnOrderToIframe() {
       const doc = iframe.contentDocument;
       if (!doc) return;
-      const a = pageApplied();
+      const a = pageDraft();   // live preview: read draft so iframe reflects pending changes
       if (!a.columnOrder || !a.columnOrder.length) return;
       const table = doc.querySelector('.mp-table');
       if (!table) return;
@@ -1730,7 +1750,7 @@
     function applyFilterTypesToIframe() {
       const doc = iframe.contentDocument;
       if (!doc) return;
-      const a = pageApplied();
+      const a = pageDraft();   // live preview: read draft so iframe reflects pending changes
       doc.querySelectorAll('.scm-filter-select[data-mp-filter]').forEach((el) => {
         if (!el.classList.contains('scm-voc-added-filter')) {
           delete el.dataset.vocFilterType;
@@ -1746,13 +1766,15 @@
       });
     }
     function revertDraft() {
-      // throw away draft for this page; copy applied → draft
+      // throw away draft for this page; copy applied → draft. Iframe was
+      // showing the (now-discarded) draft state, so re-apply.
       state.draft[state.currentPage] = state.applied[state.currentPage]
         ? deepClone(state.applied[state.currentPage]) : {};
       persistDraft();
+      applyAllToIframe();
       renderEditPane();
       refreshSaveBtn();
-      showToast('변경 사항을 되돌렸습니다');
+      showToast('변경 사항 되돌림');
     }
     function refreshSaveBtn() {
       const dirty = isDirty();
@@ -1954,7 +1976,7 @@
             ? ` draggable="true" data-drag-id="${sel}" data-drag-kind="${it.kind}"`
             : '';
           const grip = reorderable
-            ? '<span class="edit-row__grip" aria-hidden="true" title="드래그하여 순서 변경">⋮⋮</span>'
+            ? '<span class="edit-row__grip" aria-hidden="true" title="드래그하여 순서 변경"><svg viewBox="0 0 6 12" fill="currentColor"><circle cx="1.25" cy="2" r="1"/><circle cx="4.75" cy="2" r="1"/><circle cx="1.25" cy="6" r="1"/><circle cx="4.75" cy="6" r="1"/><circle cx="1.25" cy="10" r="1"/><circle cx="4.75" cy="10" r="1"/></svg></span>'
             : '';
           return `
             <label class="${cls.join(' ')}"${dragAttrs}>
