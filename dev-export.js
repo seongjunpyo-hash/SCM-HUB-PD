@@ -789,7 +789,6 @@ ${jsxBody}
         </div>
         <footer class="scm-dev-export-modal__foot">
           <button class="scm-dev-export-btn-ghost"   type="button" data-act="cancel">취소</button>
-          <span class="scm-dev-export-modal__count" id="scm-dev-export-count">0개 선택</span>
           <button class="scm-dev-export-btn-primary" type="button" data-act="download">📥 선택 파일 다운로드</button>
         </footer>
       </div>
@@ -800,12 +799,10 @@ ${jsxBody}
     bd.querySelector('.scm-dev-export-modal__close').addEventListener('click', close);
     bd.querySelector('[data-act="cancel"]').addEventListener('click', close);
 
-    // Selected count + button enable state
-    const countEl = bd.querySelector('#scm-dev-export-count');
-    const dlBtn   = bd.querySelector('[data-act="download"]');
+    // Download-button enable state — disabled when nothing checked.
+    const dlBtn = bd.querySelector('[data-act="download"]');
     const refresh = () => {
       const checked = bd.querySelectorAll('[data-pick]:checked');
-      countEl.textContent = checked.length + '개 선택';
       dlBtn.disabled = checked.length === 0;
     };
     bd.addEventListener('change', (e) => {
@@ -1031,10 +1028,6 @@ ${jsxBody}
         font-size: 11px;
         background: #fff; border: 1px solid #FDE68A; border-radius: 3px;
         padding: 0 4px; color: #92400E;
-      }
-      .scm-dev-export-modal__count {
-        flex: 1; align-self: center;
-        font-size: 12px; color: #6B7280; font-weight: 500;
       }
       .scm-dev-export-btn-primary:disabled {
         opacity: 0.4; cursor: not-allowed;
