@@ -518,14 +518,25 @@
     if (!el || !el.closest) return false;
     return !!(el.closest('.scm-topbar') || el.closest('.scm-lnb'));
   }
+  // Inside the topbar there are a few interactive controls (version
+  // selector dropdown, …) that should remain clickable even when worker
+  // mode otherwise locks the topbar. This whitelist is consulted before
+  // we preventDefault on a topbar click in worker mode.
+  function isWorkerInteractive(el) {
+    if (!el || !el.closest) return false;
+    return !!el.closest('.scm-dev-version-wrap');
+  }
 
   function attachListeners() {
     // Click capture — intercept before page handlers
     document.addEventListener('click', (e) => {
       if (isOurUI(e.target)) return;
       // In worker mode (VOC iframe), GNB/LNB are entirely off-limits —
-      // no navigation, no toggle, no comment.
+      // no navigation, no toggle, no comment. EXCEPT: a few interactive
+      // controls (the version selector dropdown) need to keep working
+      // — let those clicks fall through to the page's own handlers.
       if (state.workerMode && isNonCommentable(e.target)) {
+        if (isWorkerInteractive(e.target)) return;
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation && e.stopImmediatePropagation();
@@ -547,6 +558,7 @@
     document.addEventListener('mousedown', (e) => {
       if (isOurUI(e.target)) return;
       if (state.workerMode && isNonCommentable(e.target)) {
+        if (isWorkerInteractive(e.target)) return;
         e.preventDefault();
         e.stopPropagation();
         return;
