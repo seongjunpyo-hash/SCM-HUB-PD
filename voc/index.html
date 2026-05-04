@@ -1820,14 +1820,16 @@
       applyEditCss();
       // Snapshot the filter slice we just pushed; per-section [적용] dirty
       // compares against this so the button disables until the user makes
-      // another filter edit.
+      // another filter edit. refreshSaveBtn re-evaluates the buttons.
       _setPreviewedFilter();
+      refreshSaveBtn();
     }
     function applyColumnSectionToIframe() {
       rebuildAddedColumnsOnly();
       applyColumnOrderToIframe();
       applyEditCss();
       _setPreviewedColumn();
+      refreshSaveBtn();
     }
     // Components only support show/hide — no order, no add/remove. The
     // hide rules ride along in `applyEditCss` (universal `a.hidden` →
@@ -1836,6 +1838,7 @@
     function applyComponentSectionToIframe() {
       applyEditCss();
       _setPreviewedComponent();
+      refreshSaveBtn();
     }
 
     function setHidden(selector, hide) {

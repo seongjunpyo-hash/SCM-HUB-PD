@@ -905,6 +905,170 @@ ${jsxBody}
   // sort/filter icon inject) lives in voc/index.html and runs against the
   // iframe when the demo is opened through VOC. Standalone demos only need
   // the hide pass to reflect the active version baseline.
+  // Saved hide selectors are voc-key based ([data-voc-key="col-N"] /
+  // [data-voc-key="grp-N"]) — stamped by VOC's edit pane scanner. The
+  // standalone demo has never run that scanner, so without this stamp
+  // pass the saved CSS rules don't match anything. Walk the table the
+  // same way scanEditTargets() does in voc/index.html so the same cell
+  // gets the same key on both sides.
+  function _stampVocKeysOnTable(table) {
+    const thead = table && table.querySelector('thead');
+    if (!thead) return;
+    const trAll = [...thead.querySelectorAll('tr')];
+    if (!trAll.length) return;
+    let colCounter = 0, grpCounter = 0;
+    const groupTr = trAll.length > 1 ? trAll[0] : null;
+    const leafTr  = trAll[trAll.length - 1];
+    if (groupTr) {
+      [...groupTr.children].forEach((cell) => {
+        if (cell.classList.contains('col-spacer')) return;
+        if (cell.classList.contains('scm-voc-added-col')) return;
+        const cs = parseInt(cell.getAttribute('colspan') || '1', 10);
+        const rs = parseInt(cell.getAttribute('rowspan') || '1', 10);
+        if (rs > 1) {
+          if (cell.classList.contains('cb-col')) return;
+          if (!cell.dataset.vocKey) cell.dataset.vocKey = 'col-' + (colCounter++);
+        } else if (cs > 1) {
+          if (!cell.dataset.vocKey) cell.dataset.vocKey = 'grp-' + (grpCounter++);
+        } else {
+          if (!cell.dataset.vocKey) cell.dataset.vocKey = 'col-' + (colCounter++);
+        }
+      });
+    }
+    if (leafTr) {
+      [...leafTr.children].forEach((th) => {
+        if (th.classList.contains('col-spacer') || th.classList.contains('cb-col')) return;
+        if (th.classList.contains('scm-voc-added-col')) return;
+        const cs = parseInt(th.getAttribute('colspan') || '1', 10);
+        if (cs > 1) return;             // group cell — handled in groupTr pass
+        if (!th.dataset.vocKey) th.dataset.vocKey = 'col-' + (colCounter++);
+      });
+    }
+  }
+  // Mirror voc/index.html's applyHiddenCellsToIframe: for each hidden
+  // selector targeting a column / group, mark th + tbody td + colgroup
+  // col with data-voc-hidden="true" so the universal CSS rule collapses
+  // the entire column. Then cascade-hide row1 group cells whose every
+  // 2뎁스 leaf is hidden.
+  function _applyHiddenCellsForVersion(hidden) {
+    if (!Array.isArray(hidden) || !hidden.length) return;
+    const isColSel = (s) => /^\[data-voc-key="(col|grp)-/.test(s) || /^#voc-added-col-/.test(s);
+    const tables = [...document.querySelectorAll('.mp-table')];
+    if (!tables.length) return;
+    // Group tables by .mp-table-host so sticky-clone + body share leaf-idx
+    const groups = new Map();
+    tables.forEach((tbl) => {
+      const host = tbl.closest('.mp-table-host') || tbl;
+      if (!groups.has(host)) groups.set(host, []);
+      groups.get(host).push(tbl);
+    });
+    hidden.forEach((sel) => {
+      if (!isColSel(sel)) return;
+      groups.forEach((tblList) => _markHiddenColumnInGroupV(tblList, sel));
+    });
+    groups.forEach((tblList) => _cascadeHideEmptyGroupsV(tblList));
+    // Re-run frozen offset compute so sticky cells shift left into the
+    // hidden columns' space (zeroed col widths above).
+    const reorderApi = tables.map((t) => t._scmReorder).find(Boolean);
+    if (reorderApi && reorderApi.refreshFrozenClassesAndOffsets) {
+      try { reorderApi.refreshFrozenClassesAndOffsets(); } catch {}
+    }
+  }
+  function _markHiddenColumnInGroupV(tblList, sel) {
+    const headTable = tblList.find((t) => t.querySelector('thead')) || tblList[0];
+    const thead = headTable && headTable.querySelector('thead');
+    if (!thead) return;
+    let cell;
+    try { cell = thead.querySelector(sel); } catch { return; }
+    if (!cell) return;
+    cell.dataset.vocHidden = 'true';
+    const trAll = thead.querySelectorAll('tr');
+    const isTwoRow = trAll.length > 1;
+    const cs = parseInt(cell.getAttribute('colspan') || '1', 10) || 1;
+    const reorderApi = headTable._scmReorder;
+    let leafStart = -1, leafCount = 0;
+    if (reorderApi) {
+      const model = reorderApi.model;
+      const rs = parseInt(cell.getAttribute('rowspan') || '1', 10) || 1;
+      if (isTwoRow && cell.parentElement === trAll[0] && (cs > 1 || rs >= 2)) {
+        const range = model.row1CellLeafRange(cell);
+        if (range) { leafStart = range.start; leafCount = range.count; }
+      } else {
+        const idx = model.thLeafIdx(cell);
+        if (idx >= 0) { leafStart = idx; leafCount = 1; }
+      }
+    } else {
+      const tr = cell.parentElement;
+      if (tr) {
+        let walk = 0, hit = -1;
+        for (let i = 0; i < tr.children.length; i++) {
+          const c = tr.children[i];
+          const ccs = parseInt(c.getAttribute('colspan') || '1', 10) || 1;
+          if (c === cell) { hit = walk; break; }
+          walk += ccs;
+        }
+        if (hit >= 0) { leafStart = hit; leafCount = cs; }
+      }
+    }
+    if (leafStart < 0) return;
+    if (isTwoRow && cell.parentElement === trAll[0] && cs > 1 && reorderApi) {
+      const leafTr = trAll[trAll.length - 1];
+      const r2Start = reorderApi.model.row1CellRow2Start(cell);
+      if (r2Start >= 0) {
+        for (let i = r2Start; i < r2Start + cs; i++) {
+          const lc = leafTr.children[i];
+          if (lc) lc.dataset.vocHidden = 'true';
+        }
+      }
+    }
+    tblList.forEach((tbl) => {
+      const colgroup = tbl.querySelector(':scope > colgroup');
+      if (colgroup) {
+        for (let i = leafStart; i < leafStart + leafCount; i++) {
+          const col = colgroup.children[i];
+          if (col) col.dataset.vocHidden = 'true';
+        }
+      }
+      const tbody = tbl.querySelector('tbody');
+      if (tbody) {
+        tbody.querySelectorAll(':scope > tr').forEach((tr) => {
+          for (let i = leafStart; i < leafStart + leafCount; i++) {
+            const td = tr.children[i];
+            if (td) td.dataset.vocHidden = 'true';
+          }
+        });
+      }
+    });
+  }
+  function _cascadeHideEmptyGroupsV(tblList) {
+    const headTable = tblList.find((t) => t.querySelector('thead'));
+    if (!headTable) return;
+    const thead = headTable.querySelector('thead');
+    if (!thead) return;
+    const trs = thead.querySelectorAll('tr');
+    if (trs.length < 2) return;
+    const groupTr = trs[0];
+    const colgroup = headTable.querySelector(':scope > colgroup');
+    if (!colgroup) return;
+    let leafIdx = 0;
+    [...groupTr.children].forEach((cell) => {
+      const cs = parseInt(cell.getAttribute('colspan') || '1', 10) || 1;
+      const rs = parseInt(cell.getAttribute('rowspan') || '1', 10) || 1;
+      if (rs > 1) { leafIdx += cs; return; }
+      if (cs > 1) {
+        let allHidden = true;
+        for (let i = leafIdx; i < leafIdx + cs; i++) {
+          const col = colgroup.children[i];
+          if (!col || col.dataset.vocHidden !== 'true') { allHidden = false; break; }
+        }
+        if (allHidden) {
+          cell.dataset.vocHidden = 'true';
+          cell.style.display = 'none';
+        }
+      }
+      leafIdx += cs;
+    });
+  }
   function applyActiveVersionMinimal() {
     try {
       const versions = _loadVersions();
@@ -913,14 +1077,48 @@ ${jsxBody}
       const active = ver.list && ver.list.find((v) => v.id === ver.activeId);
       const a = active && active.applied;
       if (!a || !Array.isArray(a.hidden) || !a.hidden.length) return;
+      // 1) CSS — covers per-selector hide + universal data-voc-hidden rules.
       const css = a.hidden.map((s) => `${s} { display: none !important; }`).join('\n')
         + '\n[data-voc-hidden="true"] { display: none !important; }'
         + '\nth[data-voc-hidden="true"], td[data-voc-hidden="true"] { padding: 0 !important; border: 0 !important; width: 0 !important; min-width: 0 !important; max-width: 0 !important; }'
-        + '\ncol[data-voc-hidden="true"] { width: 0 !important; min-width: 0 !important; max-width: 0 !important; }';
+        + '\ncol[data-voc-hidden="true"] { width: 0 !important; min-width: 0 !important; max-width: 0 !important; }'
+        + '\n.mp-table thead .group-row th[data-voc-hidden="true"] { position: static !important; visibility: hidden !important; font-size: 0 !important; line-height: 0 !important; background: transparent !important; box-shadow: none !important; }';
       const style = document.createElement('style');
       style.id = 'scm-voc-version-hide';
       style.textContent = css;
       document.head.appendChild(style);
+      // 2) Stamp voc-keys + DOM-mark cells once scm-table has finished
+      //    splitting the table (clone thead + body table). scm-table runs
+      //    its own DOMContentLoaded init; we may load before or after it,
+      //    so retry briefly until either the API is attached or we time
+      //    out (single-table no-sticky tables won't have _scmReorder but
+      //    still need stamping).
+      let attempts = 0;
+      const tryApply = () => {
+        const tables = [...document.querySelectorAll('.mp-table')];
+        const hasApi = tables.some((t) => t._scmReorder);
+        const hasThead = tables.some((t) => t.querySelector('thead'));
+        if (!hasThead && attempts < 30) {
+          attempts++;
+          setTimeout(tryApply, 50);
+          return;
+        }
+        // Some tables route their thead through scm-table sticky split
+        // (thead lives on cloneTable). Skip API wait if 30 retries pass —
+        // the no-sticky case still works without it.
+        if (!hasApi && attempts < 30) {
+          attempts++;
+          setTimeout(tryApply, 50);
+          return;
+        }
+        tables.forEach(_stampVocKeysOnTable);
+        _applyHiddenCellsForVersion(a.hidden);
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', tryApply, { once: true });
+      } else {
+        tryApply();
+      }
     } catch {}
   }
 
