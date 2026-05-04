@@ -634,17 +634,18 @@
     }
     .side-tab {
       flex: 1;
-      height: 44px; padding: 0;
+      height: 48px; padding: 0;
       background: transparent;
       border: 0; border-bottom: 2px solid transparent;
       font-family: inherit;
-      font-size: 13px; font-weight: 600;
+      font-size: 15px; font-weight: 600;
       color: #6B7280;
       cursor: pointer;
       transition: color 0.12s, border-color 0.12s;
       display: inline-flex; align-items: center; justify-content: center;
-      gap: 6px;
+      gap: 8px;
     }
+    .side-tab__icon { width: 18px; height: 18px; flex-shrink: 0; display: block; }
     .side-tab:hover { color: #1A1A1A; }
     .side-tab.is-active {
       color: #4F46E5;
@@ -1016,8 +1017,18 @@
     <aside class="sidebar">
       <!-- TAB NAV -->
       <div class="side-tabs" id="sideTabs">
-        <button type="button" class="side-tab is-active" data-tab="comments">💬 코멘트</button>
-        <button type="button" class="side-tab" data-tab="edit">✏️ 편집</button>
+        <button type="button" class="side-tab is-active" data-tab="comments">
+          <svg class="side-tab__icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M10 14.75C14.1421 14.75 17.5 12.1756 17.5 9C17.5 5.82436 14.1421 3.25 10 3.25C5.85786 3.25 2.5 5.82436 2.5 9C2.5 10.658 3.41534 12.1521 4.87973 13.2015L4.55838 16.4119C4.53393 16.6562 4.79734 16.8248 5.00899 16.7003L8.51605 14.6375C8.99574 14.7113 9.49197 14.75 10 14.75Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="square"/>
+          </svg>
+          코멘트
+        </button>
+        <button type="button" class="side-tab" data-tab="edit">
+          <svg class="side-tab__icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M10.9402 3.91505H4.0802V15.92H16.0852V9.06004M15.2612 2.92273L17.0802 4.74176L11.0168 10.8052L8.28823 11.7147L9.19774 8.98616L15.2612 2.92273Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+          </svg>
+          편집
+        </button>
       </div>
 
       <!-- COMMENTS PANE (existing list + detail) -->
