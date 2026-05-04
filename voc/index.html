@@ -1702,13 +1702,20 @@
       oldestFirst.forEach((v, i) => { labelMap[v.id] = 'DEMO_V' + (i + 1); });
       // newest → oldest in dropdown
       const newestFirst = oldestFirst.slice().reverse();
+      // '(최종)' 태그는 ver.finalId 를 따른다 (이전엔 ver.activeId 였음).
+      // ver.activeId 는 사용자가 지금 미리보기로 선택한 버전이라 '최종'
+      // 의미와 다르며, 협업/데모 첫 진입 모두 finalId 기준으로 표시.
+      const finalId = (ver.finalId && ver.list.some((v) => v.id === ver.finalId)) ? ver.finalId : null;
       sel.innerHTML = newestFirst.map((v) => {
-        const isActive = v.id === ver.activeId;
-        return `<option value="${escapeHtml(v.id)}">${labelMap[v.id]}${isActive ? ' (활성)' : ''}</option>`;
+        const isFinal = v.id === finalId;
+        return `<option value="${escapeHtml(v.id)}">${labelMap[v.id]}${isFinal ? ' (최종)' : ''}</option>`;
       }).join('');
-      const activeId = (ver.activeId && ver.list.some((v) => v.id === ver.activeId))
-        ? ver.activeId : (newestFirst[0] && newestFirst[0].id);
-      sel.value = activeId;
+      // 드롭다운 선택 위치는 미리보기(activeId)를 따르되, activeId 가
+      // 비어있으면 finalId, 그것도 없으면 가장 최근 버전으로 폴백.
+      const previewId = (ver.activeId && ver.list.some((v) => v.id === ver.activeId))
+        ? ver.activeId
+        : (finalId || (newestFirst[0] && newestFirst[0].id));
+      sel.value = previewId;
     }
     function onVersionSelectChange(versionId) {
       const page = _normalizePageKey(state.currentPage);
@@ -2636,7 +2643,7 @@
           items.push({
             value: 'merge:' + v.id,
             label: `${display(v.id)} 에 머지(덮어쓰기)`,
-            sub: fmt(v.createdAt) + (v.id === ver.activeId ? ' · 활성' : ''),
+            sub: fmt(v.createdAt) + (v.id === ver.finalId ? ' · 최종' : ''),
           });
         });
         optsHost.innerHTML = items.map((it, i) => (

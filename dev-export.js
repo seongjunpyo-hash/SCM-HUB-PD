@@ -2,17 +2,21 @@
  * SCM HUB · Dev Export
  * ------------------------------------------------------------
  * GNB 우측 프로필 앞에 두 개의 버튼을 주입:
- *   1) 📥 개발자 다운로드 — 모두에게 보이지만 '화면 확정' 상태에서만 활성
- *   2) ✓ 작업완료 / ↩ 확정 해제 — 최고 관리자(super)만 보이는 토글
+ *   1) 📥 Handoff 파일 다운로드 — 모두에게 보이지만 '최종 확정' 상태에서만 활성
+ *   2) ✓ 최종확정 — 최고 관리자(super)만 누를 수 있음. 같은 버전 위에 있을 땐
+ *      비활성, 다른 버전을 보는 중에 누르면 그 버전이 새 final 로 승격된다.
+ *      한번 누른 뒤에는 '해제' 동작 없음 — 다른 버전을 final 로 다시 지정하는
+ *      방식으로만 옮겨감.
  *
- * 활성화된 다운로드 버튼을 누르면 현재 데모 화면의 main 콘텐츠
- * (GNB / LNB 제외) 를
- *   • React 컴포넌트 파일 (.jsx)  — HTML→JSX 기본 변환
- *   • 스펙 문서 (.md)             — 의존성 / 컴포넌트 / TODO
- * 두 파일로 만들어 다운로드한다.
+ * 활성화된 다운로드 버튼을 누르면 현재 데모 화면의 변경분 + 컨텍스트
+ * (changes.json/md, acceptance.md, voc-thread.md 등) 를 묶어 다운로드한다.
  *
- * 화면 확정 상태는 localStorage('scm:dev-export:confirmed:v1') 에 저장,
- * 다른 탭과는 storage 이벤트로 동기화.
+ * 데이터 모델:
+ *   versions[page].activeId — 사용자가 드롭다운에서 미리보기로 선택한 버전.
+ *   versions[page].finalId  — 최종 확정된 운영 베이스라인 버전 ('최종' 태그
+ *                             가 따라가고, 다운로드/협업 첫 진입 기준).
+ *   confirmed[page]         — 레거시 확정 플래그. finalId 가 채워지면서
+ *                             자연스럽게 isConfirmed() = true 로 매핑.
  * ============================================================ */
 (function () {
   'use strict';
@@ -38,49 +42,88 @@
     catch (e) { console.warn('[dev-export] save failed', e); }
   }
   function pageKey() { return location.pathname; }
-  function isConfirmed() { return !!confirmed[pageKey()]; }
+  // 최종 확정 (finalId) — '최종확정' 버튼이 가리키는 운영 베이스라인 버전.
+  // ver.activeId 는 사용자가 드롭다운에서 미리보기로 선택한 버전(임시),
+  // ver.finalId 는 super 가 명시적으로 확정한 버전(영속). 다운로드 활성 +
+  // '최종' 태그는 항상 finalId 를 따른다. 페이지 첫 진입 / 협업 첫 진입
+  // 시에도 finalId 가 보이도록 finalize 시 activeId = finalId 로 동기화.
+  function _finalIdForPage() {
+    const versions = _loadVersions ? _loadVersions() : null;
+    if (!versions) return null;
+    const ver = _verEntryFor ? _verEntryFor(versions, location.pathname) : null;
+    if (!ver || !ver.finalId) return null;
+    // finalId 가 list 안의 실제 버전을 가리키는지 확인 (삭제 후 잔존 방지)
+    return (ver.list || []).some((v) => v.id === ver.finalId) ? ver.finalId : null;
+  }
+  function isConfirmed() {
+    // 새 모델: finalId 존재 = 확정. 레거시: confirmed[page] 도 hold.
+    if (_finalIdForPage()) return true;
+    return !!confirmed[pageKey()];
+  }
+  // 최종확정 — 현재 보고 있는 버전(activeId)을 finalId 로 승격.
+  // 버전이 하나도 없으면 v1 을 자동 생성한 뒤 그걸 finalId 로 지정.
   function confirmPage(by) {
     confirmed[pageKey()] = { by: by || null, at: Date.now() };
     saveConfirmed();
-    // 작업완료 = "이 화면이 운영 베이스라인이다" 선언. 이 시점까지 협업
-    // 도구에서 저장된 버전이 하나도 없으면 현재 상태(빈 applied)를 DEMO_V1
-    // 으로 자동 승격해, topbar 라벨(DEMO_V1)과 셀렉트 드롭다운이 일치하게
-    // 만든다. 이미 저장된 버전이 있으면 건드리지 않음.
-    _ensureV1OnConfirm(by);
+    _finalizeActiveAsFinal(by);
     refresh();
     if (typeof refreshVersionLabel === 'function') refreshVersionLabel();
     if (elVersionWrap && elVersionWrap.classList.contains('is-open')) {
       try { renderVersionMenu(); } catch (_) {}
     }
   }
+  // 작업완료 토글의 '확정 해제' 분기는 제거됨 — 한번 최종확정되면 같은 버전에서는
+  // 버튼이 비활성. 다른 버전을 보면서 '최종확정' 누르면 finalId 가 그쪽으로 옮겨감.
+  // revertPage 는 호환을 위해 함수만 남겨둠 (외부에서 호출하지 않는 한 영향 없음).
   function revertPage() {
     delete confirmed[pageKey()];
     saveConfirmed();
     refresh();
   }
-  function _ensureV1OnConfirm(by) {
-    // Forward declarations live further down in this IIFE — guard each
-    // call so this runs even before the version-selector module is
-    // wired (e.g. when dev-export.js executes init in a page that
-    // hasn't reached the version-selector boot yet).
+  function _finalizeActiveAsFinal(by) {
     if (typeof _loadVersions !== 'function' || typeof _saveVersions !== 'function') return;
     if (typeof _verEntryFor !== 'function' || typeof _normalizePageKey !== 'function') return;
     const versions = _loadVersions();
-    const existing = _verEntryFor(versions, location.pathname);
-    if (existing && Array.isArray(existing.list) && existing.list.length) return;
     const page = _normalizePageKey(location.pathname);
-    const now = Date.now();
-    const id = 'v' + now.toString(36) + Math.random().toString(36).slice(2, 5);
-    versions[page] = {
-      list: [{
-        id, label: 'v1', createdAt: now, applied: {},
-        // 작업완료 시 자동 생성된 베이스라인이라는 출처 메타. 협업 도구
-        // 에서 명시적으로 저장한 버전과 구분하고 싶을 때 사용 가능.
-        confirmedBy: by || null,
-        autoCreated: true,
-      }],
-      activeId: id,
-    };
+    let ver = _verEntryFor(versions, location.pathname);
+    if (!ver || !Array.isArray(ver.list) || !ver.list.length) {
+      // 버전 없음 — 빈 applied 로 v1 자동 생성하고 finalId 로 지정
+      const now = Date.now();
+      const id = 'v' + now.toString(36) + Math.random().toString(36).slice(2, 5);
+      ver = {
+        list: [{
+          id, label: 'v1', createdAt: now, applied: {},
+          finalizedBy: by || null, finalizedAt: now, autoCreated: true,
+        }],
+        activeId: id,
+        finalId: id,
+      };
+      versions[page] = ver;
+      _saveVersions(versions);
+      return;
+    }
+    // 기존 버전이 있으면 현재 activeId 를 finalId 로 승격.
+    // activeId 가 누락/유실 상태면 list 의 최신을 활성으로 폴백.
+    let target = ver.activeId && ver.list.some((v) => v.id === ver.activeId)
+      ? ver.activeId
+      : ver.list.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0].id;
+    ver.finalId = target;
+    ver.activeId = target;       // 첫 진입에서 finalId 가 보이도록 sync
+    const v = ver.list.find((x) => x.id === target);
+    if (v) {
+      v.finalizedBy = by || null;
+      v.finalizedAt = Date.now();
+      // EDIT_KEY 의 applied 도 final 의 applied 로 동기화 — 협업(VOC) 첫
+      // 진입 시 state.applied 가 final 을 반영해 화면 첫 그림이 final 로
+      // 일치한다. 동기화 안 하면 finalize 직후에도 협업은 직전 commit 한
+      // 버전의 applied 를 그대로 보여줘 어긋남.
+      try {
+        const applied = _loadAppliedMap();
+        applied[page] = JSON.parse(JSON.stringify(v.applied || {}));
+        _saveAppliedMap(applied);
+      } catch (_) {}
+    }
+    versions[page] = ver;
     _saveVersions(versions);
   }
 
@@ -344,7 +387,7 @@ ${jsScripts || '  <!-- (외부 JS 의존성 없음) -->'}
     return `// ${Component}.jsx
 // Auto-exported on ${date} from /demo/${slug}.html
 // 화면: ${title}
-// 화면 확정: ${meta.by ? meta.by + ' (' + new Date(meta.at).toISOString().slice(0,16).replace('T',' ') + ')' : '미확정'}
+// 최종 확정: ${meta.by ? meta.by + ' (' + new Date(meta.at).toISOString().slice(0,16).replace('T',' ') + ')' : '미확정'}
 //
 // 개발 인계 (반드시 처리):
 //   1) GNB / LNB 제외된 main 영역만 추출됐습니다. 앱 셸은 별도 컴포넌트로 통합하세요.
@@ -389,7 +432,7 @@ ${jsxBody}
     lines.push(`- **추출 범위**: \`<main>\` 콘텐츠만 (GNB / LNB 는 공통 셸이므로 제외)`);
     lines.push(`- **함께 다운로드된 파일**: \`${pascal(slug)}Page.jsx\``);
     if (meta.by) {
-      lines.push(`- **화면 확정자**: ${meta.by}`);
+      lines.push(`- **최종 확정자**: ${meta.by}`);
       lines.push(`- **확정 일시**: ${new Date(meta.at).toISOString().slice(0, 16).replace('T', ' ')} UTC`);
     }
     lines.push('');
@@ -461,10 +504,18 @@ ${jsxBody}
     } catch { return sel; }
   }
   function _activeVersionForExport() {
+    // 핸드오프는 '최종확정된' 버전 = finalId 가 가리키는 버전을 기준으로
+    // 묶는다. finalId 가 없으면(아직 확정 전이거나 레거시 데이터) 미리보기
+    // 인 activeId 로 폴백 — 그 경우에도 무엇이 패키징됐는지는 changes.json
+    // 의 version 필드로 확인 가능.
     const versions = _loadVersions();
     const ver = _verEntryFor(versions, location.pathname);
-    if (!ver || !ver.activeId) return { ver: null, active: null };
-    const active = (ver.list || []).find((v) => v.id === ver.activeId) || null;
+    if (!ver) return { ver: null, active: null };
+    const targetId = (ver.finalId && (ver.list || []).some((v) => v.id === ver.finalId))
+      ? ver.finalId
+      : (ver.activeId && (ver.list || []).some((v) => v.id === ver.activeId) ? ver.activeId : null);
+    if (!targetId) return { ver, active: null };
+    const active = (ver.list || []).find((v) => v.id === targetId) || null;
     return { ver, active };
   }
   // Display label like the VOC editor's selector: position-based
@@ -885,7 +936,7 @@ ${jsxBody}
         </header>
         <div class="scm-dev-export-modal__body">
           <div class="scm-dev-export-modal__pill scm-dev-export-modal__pill--ok">
-            ✓ 화면 확정${meta.by ? ' · ' + escapeHtml(meta.by) : ''}
+            ✓ 최종 확정${meta.by ? ' · ' + escapeHtml(meta.by) : ''}
           </div>
           <p class="scm-dev-export-modal__lede">
             <b>운영 중인 화면에 변경분을 적용</b>하기 위한 핸드오프 패키지입니다. 기본 4종은 변경 사항을 정확히 전달하고, 나머지는 필요할 때만 체크해서 받으세요.
@@ -1415,8 +1466,11 @@ ${jsxBody}
     const versions = _loadVersions();
     const ver = _verEntryFor(versions, location.pathname);
     const activeId = _activeIdResolved(ver);
+    const finalId = (ver && ver.finalId && (ver.list || []).some((v) => v.id === ver.finalId)) ? ver.finalId : null;
     const labelMap = _displayLabelMap(ver);
-    // 관리자(super OR admin) can delete any non-active version (including v1).
+    // 관리자(super OR admin) 는 finalId 가 아닌 버전을 삭제할 수 있음.
+    // (activeId 만 보호하던 기존 정책에서 → finalId 보호로 전환:
+    // 미리보기로 옮긴 비-final 버전은 자유롭게 삭제 가능해야 함.)
     const isAdmin = (myRole === 'super' || myRole === 'admin');
     const title = '<div class="scm-dev-version-title">데모 버전 선택</div>';
     if (!ver || !ver.list || !ver.list.length) {
@@ -1426,12 +1480,13 @@ ${jsxBody}
     // newest → oldest in the dropdown
     const sorted = ver.list.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     const rows = sorted.map((v) => {
-      const isActive = v.id === activeId;
+      const isActive = v.id === activeId;       // 현재 미리보기 (드롭다운 하이라이트)
+      const isFinal  = v.id === finalId;        // 최종확정된 버전 (배지)
       const date = _formatDate(v.createdAt);
       const label = (labelMap[v.id] || '').replace(/[<>&]/g, '');
-      const tag = isActive ? '<span class="scm-dev-version-item__active-tag">활성</span>' : '';
-      // active version is locked from delete; everything else is fair game for admins.
-      const del = (isAdmin && !isActive)
+      const tag = isFinal ? '<span class="scm-dev-version-item__active-tag">최종</span>' : '';
+      // 최종 버전만 삭제 잠금. 그 외엔 admin 이 자유롭게 정리 가능.
+      const del = (isAdmin && !isFinal)
         ? `<button type="button" class="scm-dev-version-item__del" data-del-version="${v.id}" title="삭제">×</button>`
         : '';
       const dataId = v.id;
@@ -1488,12 +1543,18 @@ ${jsxBody}
     const page = _normalizePageKey(location.pathname);
     const ver = _verEntryFor(versions, location.pathname);
     if (!ver || !ver.list) return;
-    if (ver.activeId === versionId) return;       // safety — can't delete active
+    // 최종 확정된 버전은 보호 — 운영 베이스라인이라 삭제 불가.
+    if (ver.finalId && ver.finalId === versionId) return;
     if (!confirm('이 버전을 삭제할까요? 되돌릴 수 없습니다.')) return;
     ver.list = ver.list.filter((x) => x.id !== versionId);
+    // 미리보기 활성 (activeId) 이 삭제 대상이었다면 final 로 폴백.
+    if (ver.activeId === versionId) {
+      ver.activeId = ver.finalId || (ver.list[0] && ver.list[0].id) || null;
+    }
     _saveVersions(versions);
     renderVersionMenu();
     refreshVersionLabel();
+    refresh();
   }
   // ---------- Apply active version's hidden cells on demo standalone ----------
   // Minimal apply: hide selectors from the active version's `applied.hidden`.
@@ -1774,48 +1835,56 @@ ${jsxBody}
 
   function onActionClick() {
     if (myRole !== 'super') return;
-    if (isConfirmed()) {
-      if (!confirm('이 화면의 확정을 해제하시겠습니까?\n다운로드가 다시 비활성화됩니다.')) return;
-      revertPage();
-    } else {
-      confirmPage((window.SCM_USER && window.SCM_USER.email) || null);
-    }
+    // 토글 해제 분기는 없음 — 보고 있는 버전이 이미 최종이면 버튼 자체가
+    // disabled 라 여기 도달하지 않는다. 그 외엔 항상 '최종확정' 진행.
+    confirmPage((window.SCM_USER && window.SCM_USER.email) || null);
   }
 
   // ---------- refresh button states ----------
   function refresh() {
     if (!elDownload) return;
+    const finalId = _finalIdForPage();
     const ok = isConfirmed();
     const meta = confirmed[pageKey()] || {};
+    // 현재 보고 있는 버전이 finalId 와 같은지 — 같으면 버튼 비활성.
+    const versions = (typeof _loadVersions === 'function') ? _loadVersions() : null;
+    const ver = versions && _verEntryFor ? _verEntryFor(versions, location.pathname) : null;
+    const viewingId = ver && ver.activeId && (ver.list || []).some((v) => v.id === ver.activeId) ? ver.activeId : null;
+    const viewingFinal = !!finalId && viewingId === finalId;
 
     // download button
     elDownload.disabled = !ok;
     elDownload.title = ok
-      ? `이 화면을 React 파일 + 스펙 문서로 다운로드 (${meta.by || '확정자 미상'})`
-      : '최고 관리자가 작업완료(화면 확정)해야 다운로드 가능합니다';
+      ? `이 화면의 핸드오프 파일 다운로드 (${meta.by || '확정자 미상'})`
+      : '최고 관리자가 최종확정해야 다운로드 가능합니다';
 
-    // action button — visible to everyone, but only super can interact.
-    // Non-super sees a disabled status pill in button form.
+    // action button — '최종확정'. 다른 버전을 보면서 누르면 그 버전이 새 final 이 됨.
+    // 같은 final 버전 위에 있으면 비활성. 개발자(dev) / 비-super 권한도 비활성.
     elAction.style.display = '';
-    elAction.classList.toggle('is-revert', ok);
+    elAction.classList.remove('is-revert');
     elAction.classList.toggle('is-status', myRole !== 'super');
+    elAction.classList.toggle('is-final', !!finalId && viewingFinal);
     if (myRole === 'super') {
-      elAction.disabled = false;
-      if (ok) {
-        elAction.textContent = '↩ 확정 해제';
-        elAction.title = '확정 상태를 해제하고 다시 작업중으로 되돌립니다';
+      // viewingFinal 일 때만 비활성 — 그 외엔 항상 누를 수 있음.
+      elAction.disabled = !!viewingFinal;
+      if (viewingFinal) {
+        elAction.textContent = '✓ 최종 확정됨';
+        elAction.title = `이 버전이 현재 최종 확정 상태입니다${meta.by ? ' (' + meta.by + ')' : ''}`;
       } else {
-        elAction.textContent = '✓ 작업완료';
-        elAction.title = '이 화면을 확정해 개발자가 다운로드할 수 있도록 합니다';
+        elAction.textContent = '✓ 최종확정';
+        elAction.title = finalId
+          ? '현재 보고 있는 버전을 최종으로 확정합니다 (이전 최종 대체)'
+          : '이 화면을 최종확정해 개발자가 다운로드할 수 있도록 합니다';
       }
     } else {
+      // 개발자 포함 비-super 권한 — 항상 비활성, 상태만 표시
       elAction.disabled = true;
-      if (ok) {
-        elAction.textContent = '✓ 화면 확정';
-        elAction.title = `최고 관리자가 확정한 화면입니다${meta.by ? ' (' + meta.by + ')' : ''}`;
+      if (finalId) {
+        elAction.textContent = '✓ 최종 확정됨';
+        elAction.title = `최고 관리자가 최종확정한 화면입니다${meta.by ? ' (' + meta.by + ')' : ''}`;
       } else {
         elAction.textContent = '작업중';
-        elAction.title = '최고 관리자가 작업완료(화면 확정)할 때까지 다운로드는 비활성입니다';
+        elAction.title = '최고 관리자가 최종확정할 때까지 다운로드는 비활성입니다';
       }
     }
   }
