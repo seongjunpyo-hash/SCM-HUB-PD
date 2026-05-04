@@ -628,11 +628,11 @@ ${jsxBody}
         font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
         color: #6B7280; text-transform: uppercase;
       }
-      /* Left-aligned variant — sits inside .scm-topbar__left, 72px after
+      /* Left-aligned variant — sits inside .scm-topbar__left, 53px after
          the DEMO tag / logo. Overrides the default selector wrap margins. */
       .scm-dev-version-wrap.is-leftaligned {
         margin-right: 0;
-        margin-left: 72px;
+        margin-left: 53px;
       }
       /* DEMO tag repurposed for VOC iframe — shows the current version
          label (e.g. demo_v1) instead of the literal "DEMO". Keep the
