@@ -159,6 +159,11 @@
       }
       .scm-voc-fab.is-active .scm-voc-fab__count { background: rgba(255,255,255,0.25); }
 
+      /* 코멘트 모드일 때 좌측 'DEMO' 태그도 레드로 — FAB(#DC2626) 와
+         동일 톤. 사용자가 모드 토글 상태를 한눈에 알도록 시각 단서 추가. */
+      body.scm-voc-mode-active .scm-topbar__demo-tag {
+        background: #DC2626 !important;
+      }
       body.scm-voc-mode-active, body.scm-voc-mode-active * { cursor: crosshair !important; }
       body.scm-voc-mode-active .scm-voc-pin,
       body.scm-voc-mode-active .scm-voc-pin *,
