@@ -955,7 +955,19 @@ ${jsxBody}
       </div>
     `;
     document.body.appendChild(bd);
-    const close = () => { try { document.body.removeChild(bd); } catch (_) {} };
+    // 모달이 떠 있는 동안 뒤 화면 스크롤 잠금. 휠 / 키보드 / 터치 모두
+    // 막혀야 해서 body.style.overflow:hidden 으로 viewport 잠그고, html
+    // 도 같이 처리(브라우저별로 둘 중 하나만 먹는 케이스가 있음). close
+    // 시점에 원래 값으로 복원해 다른 모달과 충돌하지 않게 함.
+    const _prevBodyOverflow = document.body.style.overflow;
+    const _prevHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    const close = () => {
+      try { document.body.removeChild(bd); } catch (_) {}
+      document.body.style.overflow = _prevBodyOverflow;
+      document.documentElement.style.overflow = _prevHtmlOverflow;
+    };
     bd.addEventListener('click', (e) => { if (e.target === bd) close(); });
     bd.querySelector('.scm-dev-export-modal__close').addEventListener('click', close);
     bd.querySelector('[data-act="cancel"]').addEventListener('click', close);
