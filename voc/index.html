@@ -374,12 +374,14 @@
       flex-shrink: 0;
     }
     .detail__back {
-      background: transparent; color: var(--fg-mute);
-      border: 1px solid var(--line); border-radius: 8px;
-      height: 30px; padding: 0 12px;
-      font-size: 12px; transition: all 0.12s ease;
+      background: #fff; color: #1A1A1A;
+      border: 1px solid #E5E7EB; border-radius: 4px;
+      height: 32px; padding: 0 12px;
+      font-size: 12.5px; font-weight: 500;
+      cursor: pointer;
+      transition: background 0.12s ease, border-color 0.12s ease;
     }
-    .detail__back:hover { color: var(--fg); border-color: var(--line-2); }
+    .detail__back:hover { background: #F3F4F6; border-color: #D1D5DB; }
     .detail__num {
       width: 26px; height: 26px;
       display: inline-flex; align-items: center; justify-content: center;
@@ -406,115 +408,123 @@
     .sec { margin-bottom: 22px; }
     .sec__lab {
       display: flex; align-items: center; justify-content: space-between;
-      font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase;
-      color: var(--fg-mute);
-      margin-bottom: 8px;
+      font-size: 13px; font-weight: 700; letter-spacing: 0;
+      color: #1A1A1A;
+      margin-bottom: 10px;
     }
     .sec__lab__act {
       background: transparent; border: 0; color: var(--accent);
-      font-size: 11px; font-weight: 600; cursor: pointer; letter-spacing: 0;
-      padding: 2px 6px; border-radius: 4px;
+      font-size: 12px; font-weight: 600; cursor: pointer; letter-spacing: 0;
+      padding: 4px 8px; border-radius: 4px;
     }
     .sec__lab__act:hover { background: var(--accent-bg); }
 
     .loc {
-      background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+      background: var(--bg); border: 1px solid var(--line); border-radius: 4px;
       padding: 12px 14px;
     }
-    .loc__row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+    .loc__row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; font-size: 13px; }
     .loc__row:last-child { margin-bottom: 0; }
-    .loc__k { width: 56px; flex-shrink: 0; font-size: 11px; color: var(--fg-dim); }
-    .loc__v { color: var(--fg); font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11.5px; word-break: break-all; }
-    .loc__v.text { font-family: inherit; font-size: 13px; }
+    .loc__k { width: 56px; flex-shrink: 0; font-size: 12px; color: #6B7280; }
+    .loc__v { color: #1A1A1A; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; word-break: break-all; }
+    .loc__v.text { font-family: inherit; font-size: 13.5px; }
 
     .replies { display: flex; flex-direction: column; gap: 8px; }
     .reply {
-      background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+      background: var(--bg); border: 1px solid var(--line); border-radius: 4px;
       padding: 10px 12px;
     }
     .reply__meta {
       display: flex; align-items: center; gap: 8px;
-      font-size: 11px; color: var(--fg-dim); margin-bottom: 4px;
+      font-size: 12px; color: #6B7280; margin-bottom: 4px;
     }
-    .reply__author { color: var(--fg); font-weight: 600; font-size: 12px; }
+    .reply__author { color: #1A1A1A; font-weight: 600; font-size: 12.5px; }
     .reply__del {
-      margin-left: auto; background: transparent; border: 0; color: var(--fg-dim);
-      font-size: 11px; padding: 2px 4px; cursor: pointer;
+      margin-left: auto; background: transparent; border: 0; color: #6B7280;
+      font-size: 12px; padding: 4px 8px; cursor: pointer;
+      border-radius: 4px;
     }
-    .reply__del:hover { color: var(--danger); }
+    .reply__del:hover { color: var(--danger); background: #FEE2E2; }
     .reply__body {
-      font-size: 13px; color: var(--fg); line-height: 1.6;
+      font-size: 13.5px; color: #1A1A1A; line-height: 1.6;
       white-space: pre-wrap; word-break: break-word;
     }
 
     .compose { margin-top: 10px; }
     .compose textarea {
       width: 100%;
-      background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
-      color: var(--fg);
-      font-family: inherit; font-size: 13px; line-height: 1.55;
+      background: var(--bg); border: 1px solid var(--line); border-radius: 4px;
+      color: #1A1A1A;
+      font-family: inherit; font-size: 13.5px; line-height: 1.55;
       padding: 10px 12px; resize: vertical; min-height: 64px;
       outline: none;
       transition: border-color 0.12s ease;
     }
     .compose textarea:focus { border-color: var(--accent); }
-    .compose textarea::placeholder { color: var(--fg-dim); }
+    .compose textarea::placeholder { color: #9CA3AF; }
     .compose__row {
       display: flex; align-items: center; gap: 8px; margin-top: 8px;
     }
-    .compose__hint { flex: 1; font-size: 11px; color: var(--fg-dim); }
+    .compose__hint { flex: 1; font-size: 12px; color: #6B7280; }
 
     .proposal__row { display: flex; flex-direction: column; gap: 10px; }
     .proposal__field { display: flex; flex-direction: column; gap: 6px; }
     .proposal__field label {
-      font-size: 11px; color: var(--fg-mute); font-weight: 600;
+      font-size: 12.5px; color: #1A1A1A; font-weight: 600;
     }
     .proposal__note, .proposal__css {
-      background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
-      color: var(--fg);
+      background: var(--bg); border: 1px solid var(--line); border-radius: 4px;
+      color: #1A1A1A;
       padding: 10px 12px; resize: vertical;
       outline: none;
       transition: border-color 0.12s ease;
     }
     .proposal__note {
-      font-family: inherit; font-size: 13px; line-height: 1.55;
+      font-family: inherit; font-size: 13.5px; line-height: 1.55;
       min-height: 56px;
     }
     .proposal__css {
       font-family: ui-monospace, "SF Mono", Menlo, monospace;
-      font-size: 12px; line-height: 1.5;
+      font-size: 12.5px; line-height: 1.55;
       min-height: 110px;
       tab-size: 2;
     }
+    .proposal__note::placeholder, .proposal__css::placeholder { color: #9CA3AF; }
     .proposal__note:focus, .proposal__css:focus { border-color: var(--accent); }
     .proposal__hint {
-      font-size: 11px; color: var(--fg-dim); line-height: 1.6;
-      padding: 8px 10px; background: var(--bg); border: 1px dashed var(--line);
-      border-radius: 6px; margin-top: 4px;
+      font-size: 12px; color: #4B5563; line-height: 1.6;
+      padding: 10px 12px; background: #F8F9FB; border: 1px solid #E5E7EB;
+      border-radius: 4px; margin-top: 4px;
     }
     .proposal__hint code {
       font-family: ui-monospace, "SF Mono", Menlo, monospace;
-      font-size: 11px; color: var(--accent);
+      font-size: 11.5px; color: var(--accent);
       padding: 1px 4px; border-radius: 3px; background: var(--accent-bg);
     }
 
     .row-btns { display: flex; flex-wrap: wrap; gap: 8px; }
     .btn {
-      height: 32px; padding: 0 14px;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      height: 36px; padding: 0 14px;
       border: 0; border-radius: 4px;
-      font-family: inherit; font-size: 12.5px; font-weight: 600;
-      transition: all 0.12s ease;
+      font-family: inherit; font-size: 13px; font-weight: 600;
+      cursor: pointer;
+      transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
     }
-    .btn--ghost { background: transparent; color: var(--fg-mute); border: 1px solid var(--line); }
-    .btn--ghost:hover { color: var(--fg); border-color: var(--line-2); }
+    .btn--icon svg { width: 14px; height: 14px; flex-shrink: 0; }
+    /* Outlined neutrals — replaces the old murky orange/green pill look. */
+    .btn--ghost   { background: #fff; color: #1A1A1A; border: 1px solid #E5E7EB; }
+    .btn--ghost:hover   { background: #F3F4F6; border-color: #D1D5DB; }
     .btn--primary { background: var(--accent); color: #fff; }
     .btn--primary:hover { background: var(--accent-2); }
-    .btn--ok { background: var(--ok); color: #062b21; }
-    .btn--ok:hover { background: #2bc78c; }
-    .btn--warn { background: var(--warn); color: #3a2700; }
-    .btn--warn:hover { background: #e58a06; }
-    .btn--danger { background: transparent; color: var(--danger); border: 1px solid rgba(248,113,113,0.4); }
-    .btn--danger:hover { background: rgba(248,113,113,0.12); border-color: var(--danger); }
+    /* OK / Warn / Danger — outline + colored label. Cleaner than the
+       solid pastel fills the previous palette used. */
+    .btn--ok      { background: #fff; color: #047857; border: 1px solid #10B981; }
+    .btn--ok:hover      { background: #ECFDF5; }
+    .btn--warn    { background: #fff; color: #B45309; border: 1px solid #F59E0B; }
+    .btn--warn:hover    { background: #FFFBEB; }
+    .btn--danger  { background: #fff; color: var(--danger); border: 1px solid rgba(248,113,113,0.5); }
+    .btn--danger:hover  { background: #FEE2E2; border-color: var(--danger); }
     .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
     .saved-note {
@@ -1071,7 +1081,7 @@
           <!-- Location -->
           <section class="sec">
             <div class="sec__lab">
-              <span>📍 위치</span>
+              <span>위치</span>
               <button class="sec__lab__act" id="dLocate">위치로 이동 ↗</button>
             </div>
             <div class="loc">
@@ -1084,7 +1094,7 @@
 
           <!-- Thread -->
           <section class="sec">
-            <div class="sec__lab"><span>💬 스레드</span></div>
+            <div class="sec__lab"><span>스레드</span></div>
             <div class="replies" id="dReplies"></div>
             <div class="compose">
               <textarea id="dReply" placeholder="답글을 남기거나 추가 질문을 작성…"></textarea>
@@ -1098,7 +1108,7 @@
           <!-- Proposal + simulate -->
           <section class="sec">
             <div class="sec__lab">
-              <span>💡 개선안 / 시뮬레이션</span>
+              <span>개선안 / 시뮬레이션</span>
               <span class="saved-note" id="dSaved">저장됨</span>
             </div>
             <div class="proposal__row">
@@ -1110,22 +1120,27 @@
                 <label>CSS 오버라이드 (시뮬레이션용)</label>
                 <textarea class="proposal__css" id="dCss" spellcheck="false" placeholder="예: .btn--primary { background: #DC2626; color: #fff; }"></textarea>
                 <div class="proposal__hint">
-                  💡 <code id="dSelHint">selector</code> 가 자동으로 채워졌습니다. 값을 바꾼 뒤 <b>시뮬레이션 적용</b> 을 누르면 실제 데모에 즉시 반영돼서 결과를 미리 볼 수 있습니다.
+                  <code id="dSelHint">selector</code> 가 자동으로 채워졌습니다. 값을 바꾼 뒤 <b>시뮬레이션 적용</b> 을 누르면 실제 데모에 즉시 반영돼서 결과를 미리 볼 수 있습니다.
                 </div>
               </div>
               <div class="row-btns">
-                <button class="btn btn--warn" id="simApplyBtn">▶ 시뮬레이션 적용</button>
-                <button class="btn btn--ghost" id="simResetBtn">↺ 시뮬 해제</button>
-                <button class="btn btn--ghost" id="proposalSaveBtn">💾 저장</button>
+                <button class="btn btn--warn" id="simApplyBtn">시뮬레이션 적용</button>
+                <button class="btn btn--ghost" id="simResetBtn">시뮬 해제</button>
+                <button class="btn btn--ghost btn--icon" id="proposalSaveBtn">
+                  <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M3.5 9L8.28134 13.7813C8.40102 13.901 8.59594 13.8981 8.71193 13.7748L16.5 5.5" stroke="currentColor" stroke-width="1.4"/>
+                  </svg>
+                  저장
+                </button>
               </div>
             </div>
           </section>
 
           <!-- Status / actions -->
           <section class="sec">
-            <div class="sec__lab"><span>⚙️ 상태</span></div>
+            <div class="sec__lab"><span>상태</span></div>
             <div class="row-btns">
-              <button class="btn btn--ok" id="dResolveBtn">✓ 해결됨으로 표시</button>
+              <button class="btn btn--ok" id="dResolveBtn">해결됨으로 표시</button>
               <button class="btn btn--danger" id="dDeleteBtn">핀 삭제</button>
             </div>
           </section>
@@ -3979,11 +3994,11 @@
       dCss.value  = p.css  || defaultCssTemplate(c);
 
       // Resolve button label
-      $('#dResolveBtn').textContent = c.status === 'resolved' ? '↩ 미해결로 되돌리기' : '✓ 해결됨으로 표시';
+      $('#dResolveBtn').textContent = c.status === 'resolved' ? '미해결로 되돌리기' : '해결됨으로 표시';
       // Sim button label
       const isSim = state.simActive.has(c.id);
       const simBtn = $('#simApplyBtn');
-      simBtn.textContent = isSim ? '🔄 시뮬 다시 적용' : '▶ 시뮬레이션 적용';
+      simBtn.textContent = isSim ? '시뮬 다시 적용' : '시뮬레이션 적용';
       $('#simResetBtn').disabled = !isSim;
 
       flashSavedLabel(false);
