@@ -1044,23 +1044,34 @@ ${jsxBody}
         transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
       }
       .scm-dev-export-action-btn:hover:not(:disabled) { background: #000; border-color: #000; }
-      .scm-dev-export-action-btn.is-revert {
-        background: transparent; color: #6B7280; border-color: #E0E0E0;
+      /* Disabled (e.g. super viewing the current 최종) — muted, no fill,
+         clearly non-interactive. Without this the disabled button kept
+         the solid black surface and visually read as active. */
+      .scm-dev-export-action-btn:disabled {
+        background: #fff; color: #9CA3AF;
+        border-color: #E5E7EB;
+        cursor: not-allowed;
+      }
+      .scm-dev-export-action-btn.is-final:disabled {
+        background: #F8F9FB; color: #6B7280;
+        border-color: #E5E7EB;
         font-weight: 500;
       }
-      .scm-dev-export-action-btn.is-revert:hover:not(:disabled) { background: #F3F4F6; color: #1A1A1A; border-color: #1A1A1A; }
       /* Non-super: button is a status pill, not interactive */
       .scm-dev-export-action-btn.is-status {
         cursor: not-allowed;
         font-weight: 600;
       }
-      .scm-dev-export-action-btn.is-status:not(.is-revert) {
-        /* 작업중 — yellow, matches the download pill */
+      /* 작업중 (non-super, no final yet) — yellow pending state */
+      .scm-dev-export-action-btn.is-status:not(.is-final) {
         background: #FFF4E5; color: #C2710C; border-color: #F8DDB1;
       }
-      .scm-dev-export-action-btn.is-status.is-revert {
-        /* 화면 확정 (read-only) — green */
-        background: #E6F7EE; color: #0E8A47; border-color: #BCE8CE;
+      /* 최종 확정됨 (non-super viewing the final) — same muted look as
+         super-disabled so the visual model is consistent */
+      .scm-dev-export-action-btn.is-status.is-final {
+        background: #F8F9FB; color: #6B7280;
+        border-color: #E5E7EB;
+        font-weight: 500;
       }
 
       .scm-dev-export-backdrop {
