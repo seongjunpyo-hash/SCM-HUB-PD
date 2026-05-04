@@ -944,9 +944,6 @@ ${jsxBody}
           ${renderGroup('delta')}
           ${renderGroup('helper')}
           ${renderGroup('legacy')}
-          <p class="scm-dev-export-modal__warn">
-            ⚠ 셀렉터(<code>data-voc-key</code>)는 데모 위치 기반 키이며, 운영 코드의 컬럼 식별자(필드명/key)와 다를 수 있습니다. <code>column-map.template.json</code> 으로 매핑을 채우면 자동화 적용이 가능합니다.
-          </p>
         </div>
         <footer class="scm-dev-export-modal__foot">
           <button class="scm-dev-export-btn-ghost"   type="button" data-act="cancel">취소</button>
@@ -1194,18 +1191,6 @@ ${jsxBody}
       }
       .scm-dev-export-modal__pick-desc {
         font-size: 12px; color: #6B7280; line-height: 1.55;
-      }
-      .scm-dev-export-modal__warn {
-        margin: 4px 0 0;
-        padding: 10px 12px;
-        background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px;
-        font-size: 11.5px; line-height: 1.6; color: #92400E;
-      }
-      .scm-dev-export-modal__warn code {
-        font-family: ui-monospace, "SF Mono", Menlo, monospace;
-        font-size: 11px;
-        background: #fff; border: 1px solid #FDE68A; border-radius: 3px;
-        padding: 0 4px; color: #92400E;
       }
       .scm-dev-export-btn-primary:disabled {
         opacity: 0.4; cursor: not-allowed;
