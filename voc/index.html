@@ -319,6 +319,21 @@
       font-size: 11px; color: var(--fg-dim);
     }
     .cmt__meta .author { color: var(--fg-mute); }
+    .cmt__role-tag {
+      display: inline-flex; align-items: center;
+      height: 16px; padding: 0 6px;
+      border-radius: 999px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.2px;
+      background: rgba(0, 0, 0, 0.06);
+      color: #4B5563;
+      flex-shrink: 0;
+    }
+    .cmt__role-tag[data-role="super"]   { background: rgba(245, 158, 11, 0.18); color: #B45309; }
+    .cmt__role-tag[data-role="admin"]   { background: rgba(110, 107, 255, 0.18); color: #4F46E5; }
+    .cmt__role-tag[data-role="biz"]     { background: rgba(16, 185, 129, 0.18); color: #047857; }
+    .cmt__role-tag[data-role="pm"],
+    .cmt__role-tag[data-role="dev"],
+    .cmt__role-tag[data-role="pd"]      { background: rgba(0, 0, 0, 0.06); color: #4B5563; }
     .cmt__replies { margin-left: 4px; color: var(--accent); display: inline-flex; align-items: center; gap: 4px; }
     .cmt__sim {
       margin-left: auto; font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
@@ -3524,6 +3539,7 @@
             <div class="cmt__page">📄 ${escapeHtml(pageLabel(c.page))}</div>
             <div class="cmt__body">${escapeHtml(last ? last.text : '')}</div>
             <div class="cmt__meta">
+              ${c.authorRole ? `<span class="cmt__role-tag" data-role="${escapeHtml(c.authorRole)}">${escapeHtml(ROLE_LABEL_KO[c.authorRole] || c.authorRole)}</span>` : ''}
               <span class="author">${escapeHtml(c.author || '익명')}</span>
               <span>·</span>
               <span>${relTime(c.createdAt)}</span>
@@ -3608,6 +3624,7 @@
       dReplies.innerHTML = c.thread.map((r) => `
         <div class="reply" data-reply-id="${r.id}">
           <div class="reply__meta">
+            ${r.authorRole ? `<span class="cmt__role-tag" data-role="${escapeHtml(r.authorRole)}">${escapeHtml(ROLE_LABEL_KO[r.authorRole] || r.authorRole)}</span>` : ''}
             <span class="reply__author">${escapeHtml(r.author || '익명')}</span>
             <span>·</span>
             <span>${relTime(r.createdAt)}</span>
