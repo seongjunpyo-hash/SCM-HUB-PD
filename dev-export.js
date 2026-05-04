@@ -42,12 +42,46 @@
   function confirmPage(by) {
     confirmed[pageKey()] = { by: by || null, at: Date.now() };
     saveConfirmed();
+    // 작업완료 = "이 화면이 운영 베이스라인이다" 선언. 이 시점까지 협업
+    // 도구에서 저장된 버전이 하나도 없으면 현재 상태(빈 applied)를 DEMO_V1
+    // 으로 자동 승격해, topbar 라벨(DEMO_V1)과 셀렉트 드롭다운이 일치하게
+    // 만든다. 이미 저장된 버전이 있으면 건드리지 않음.
+    _ensureV1OnConfirm(by);
     refresh();
+    if (typeof refreshVersionLabel === 'function') refreshVersionLabel();
+    if (elVersionWrap && elVersionWrap.classList.contains('is-open')) {
+      try { renderVersionMenu(); } catch (_) {}
+    }
   }
   function revertPage() {
     delete confirmed[pageKey()];
     saveConfirmed();
     refresh();
+  }
+  function _ensureV1OnConfirm(by) {
+    // Forward declarations live further down in this IIFE — guard each
+    // call so this runs even before the version-selector module is
+    // wired (e.g. when dev-export.js executes init in a page that
+    // hasn't reached the version-selector boot yet).
+    if (typeof _loadVersions !== 'function' || typeof _saveVersions !== 'function') return;
+    if (typeof _verEntryFor !== 'function' || typeof _normalizePageKey !== 'function') return;
+    const versions = _loadVersions();
+    const existing = _verEntryFor(versions, location.pathname);
+    if (existing && Array.isArray(existing.list) && existing.list.length) return;
+    const page = _normalizePageKey(location.pathname);
+    const now = Date.now();
+    const id = 'v' + now.toString(36) + Math.random().toString(36).slice(2, 5);
+    versions[page] = {
+      list: [{
+        id, label: 'v1', createdAt: now, applied: {},
+        // 작업완료 시 자동 생성된 베이스라인이라는 출처 메타. 협업 도구
+        // 에서 명시적으로 저장한 버전과 구분하고 싶을 때 사용 가능.
+        confirmedBy: by || null,
+        autoCreated: true,
+      }],
+      activeId: id,
+    };
+    _saveVersions(versions);
   }
 
   // ---------- helpers ----------
