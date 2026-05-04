@@ -740,7 +740,7 @@ ${jsxBody}
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'scm-dev-version-btn';
-    btn.innerHTML = '<span class="lbl">demo_v1</span><svg class="chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l3 3 3-3"/></svg>';
+    btn.innerHTML = '<span class="lbl">DEMO_V1</span><svg class="chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l3 3 3-3"/></svg>';
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       elVersionWrap.classList.toggle('is-open');
@@ -771,11 +771,13 @@ ${jsxBody}
     if (!ver.activeId) return null;
     return ver.list.some((v) => v.id === ver.activeId) ? ver.activeId : null;
   }
-  // Prefix raw version labels (stored as 'v1', 'v2'…) with 'demo_' for
-  // display. Idempotent — labels already prefixed pass through unchanged.
+  // Prefix raw version labels (stored as 'v1', 'v2'…) with 'DEMO_' for
+  // display, uppercased. Idempotent — labels already prefixed pass
+  // through unchanged but get upper-cased.
   function _displayLabel(raw) {
     if (!raw) return '';
-    return /^demo_/.test(raw) ? raw : 'demo_' + raw;
+    const prefixed = /^demo_/i.test(raw) ? raw : 'demo_' + raw;
+    return prefixed.toUpperCase();
   }
   function refreshVersionLabel() {
     const versions = _loadVersions();

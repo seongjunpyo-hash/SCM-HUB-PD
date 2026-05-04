@@ -2392,7 +2392,11 @@
         // v1 is implicit origin → cannot be a merge target. Saved versions
         // (v2+) are merge targets.
         const nextLabel = 'v' + (ver.list.length + 2);
-        const display = (raw) => raw && /^demo_/.test(raw) ? raw : 'demo_' + raw;
+        const display = (raw) => {
+          if (!raw) return '';
+          const prefixed = /^demo_/i.test(raw) ? raw : 'demo_' + raw;
+          return prefixed.toUpperCase();
+        };
         const fmt = (ts) => {
           if (!ts) return '';
           const d = new Date(ts);
@@ -2497,7 +2501,7 @@
       _clearPreviewed();
       refreshSaveBtn();
       const toast = mode === 'first'
-        ? '저장 완료 (demo_v2 생성)'
+        ? '저장 완료 (DEMO_V2 생성)'
         : (mode === 'new' ? '새 버전 저장 완료' : '버전에 머지됨');
       showToast(toast);
     }
