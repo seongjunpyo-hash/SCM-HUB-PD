@@ -71,6 +71,15 @@
     .page-select:hover { border-color: var(--line-2); }
     .page-select:focus { border-color: var(--accent); }
     .page-select.menu-l2 { min-width: 200px; }
+    .page-select.menu-version { min-width: 140px; }
+
+    /* Label preceding each navigation control (1뎁스 / 2뎁스 / 버전) */
+    .menu-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+      color: var(--fg-dim); text-transform: uppercase;
+      flex-shrink: 0;
+      margin: 0 4px 0 0;
+    }
 
     /* L1 menu chips (depth 1) */
     .menu-l1 {
@@ -954,9 +963,13 @@
   <header class="topbar">
     <span class="brand">SCM HUB<span class="dot"></span>협업 VOC<span class="role-tag">작업자</span></span>
     <span class="topbar__sep"></span>
+    <span class="menu-label">1뎁스</span>
     <div class="menu-l1" id="menuL1"></div>
     <span class="menu-arrow">›</span>
+    <span class="menu-label">2뎁스</span>
     <select class="page-select menu-l2" id="l2Select"></select>
+    <span class="menu-label">버전</span>
+    <select class="page-select menu-version" id="versionSelect"></select>
     <button class="icon-btn" id="reloadBtn" title="새로고침">
       <svg viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 0 1 15.3-6.4L21 8M21 4v4h-4M21 12a9 9 0 0 1-15.3 6.4L3 16M3 20v-4h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
@@ -1403,6 +1416,8 @@
         if (target !== state.currentPage) navigateTo(target);
       });
       l2Select.addEventListener('change', () => navigateTo(l2Select.value));
+      const versionSelectEl = document.getElementById('versionSelect');
+      if (versionSelectEl) versionSelectEl.addEventListener('change', () => onVersionSelectChange(versionSelectEl.value));
 
       urlText.textContent = state.currentPage;
       urlOpen.href = state.currentPage;
@@ -1451,6 +1466,7 @@
         applyFilterTypesToIframe();
         applyEditCss();
         renderEditPane();
+        renderVersionSelect();
       });
 
       // sidebar tab switching
@@ -1606,6 +1622,53 @@
         l2Select.disabled = m.l1.children.length <= 1;
       }
       l2Select.value = path;
+      renderVersionSelect();
+    }
+
+    // ----- 버전 select (3뎁스: 데모 버전) -----
+    // Populate from the current page's saved versions in
+    // state.versions[currentPage]. Display labels are recomputed from
+    // createdAt-ascending position so deletes don't leave gaps in
+    // visible numbering. Active = state.versions[page].activeId.
+    function renderVersionSelect() {
+      const sel = document.getElementById('versionSelect');
+      if (!sel) return;
+      const page = state.currentPage;
+      const ver = state.versions && state.versions[page];
+      if (!ver || !Array.isArray(ver.list) || !ver.list.length) {
+        sel.innerHTML = '<option value="">버전 없음</option>';
+        sel.disabled = true;
+        return;
+      }
+      sel.disabled = false;
+      const oldestFirst = ver.list.slice().sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+      const labelMap = {};
+      oldestFirst.forEach((v, i) => { labelMap[v.id] = 'DEMO_V' + (i + 1); });
+      // newest → oldest in dropdown
+      const newestFirst = oldestFirst.slice().reverse();
+      sel.innerHTML = newestFirst.map((v) => {
+        const isActive = v.id === ver.activeId;
+        return `<option value="${escapeHtml(v.id)}">${labelMap[v.id]}${isActive ? ' (활성)' : ''}</option>`;
+      }).join('');
+      const activeId = (ver.activeId && ver.list.some((v) => v.id === ver.activeId))
+        ? ver.activeId : (newestFirst[0] && newestFirst[0].id);
+      sel.value = activeId;
+    }
+    function onVersionSelectChange(versionId) {
+      const page = state.currentPage;
+      const ver = state.versions && state.versions[page];
+      if (!ver || !Array.isArray(ver.list)) return;
+      const v = ver.list.find((x) => x.id === versionId);
+      if (!v || ver.activeId === versionId) return;
+      ver.activeId = versionId;
+      // mirror active applied snapshot into state.applied so the next
+      // iframe load (via reload) renders the chosen version.
+      state.applied[page] = JSON.parse(JSON.stringify(v.applied || {}));
+      persistVersions();
+      persistApplied();
+      _clearPreviewed();
+      // hard-reload the iframe so the demo re-applies cleanly
+      try { iframe.contentWindow.location.reload(); } catch { iframe.src = page; }
     }
 
     function postIframe(msg) {
@@ -2512,6 +2575,7 @@
       persistVersions();
       _clearPreviewed();
       refreshSaveBtn();
+      renderVersionSelect();
       const toast = mode === 'first'
         ? '저장 완료 (DEMO_V1 생성)'
         : (mode === 'new' ? '새 버전 저장 완료' : '버전에 머지됨');

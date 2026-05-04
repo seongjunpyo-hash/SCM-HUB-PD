@@ -653,11 +653,11 @@ ${jsxBody}
   function injectButtons() {
     const right = document.querySelector('.scm-topbar__right');
     if (!right) return;
-    // Order in the GNB (left → right): handoff group, version selector,
-    // profile (.scm-topbar__right). Insert handoff FIRST so the version
-    // selector — inserted before `right` afterwards — lands between
-    // the handoff group and the profile.
-    if (!isInIframe() && !document.querySelector('.scm-dev-export-group')) {
+    // Inside VOC's iframe (협업 view), the VOC parent owns the version
+    // selector — it lives in the VOC topbar after the L2 page select.
+    // Skip both the handoff group AND the version selector here.
+    if (isInIframe()) return;
+    if (!document.querySelector('.scm-dev-export-group')) {
       const group = document.createElement('div');
       group.className = 'scm-dev-export-group';
 
