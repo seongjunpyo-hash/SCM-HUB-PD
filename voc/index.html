@@ -2003,6 +2003,13 @@
       // column to zero width so following columns shift left under
       // table-layout: fixed.
       lines.push(`col[data-voc-hidden="true"] { width: 0 !important; min-width: 0 !important; max-width: 0 !important; }`);
+      // Row1 group cells (1뎁스) use `position: sticky; left: var(--frozen-l-end)`
+      // (scm-table.css §"2단 thead group cell sticky"). On some engines a
+      // `display: none` on a positioned element can still leave the cell's
+      // text painting at its sticky offset. Defeat sticky + clear the
+      // visual fingerprint completely so the group title can't bleed
+      // through when all of its 2뎁스 leaves are hidden.
+      lines.push(`.mp-table thead .group-row th[data-voc-hidden="true"] { position: static !important; visibility: hidden !important; font-size: 0 !important; line-height: 0 !important; background: transparent !important; box-shadow: none !important; }`);
       // Default: ALL sort + filter icons hidden. Reveal selectively.
       lines.push(`.mp-table thead th .sort-ic, .mp-table thead th .scm-th-sort { display: none !important; }`);
       lines.push(`.mp-table thead th .filter-ic { display: none !important; }`);
@@ -2113,7 +2120,14 @@
         delete col.dataset.vocOrigColWidth;
       });
       // 3) Clear all marks; we'll re-stamp from scratch below.
-      doc.querySelectorAll('[data-voc-hidden]').forEach((el) => delete el.dataset.vocHidden);
+      doc.querySelectorAll('[data-voc-hidden]').forEach((el) => {
+        delete el.dataset.vocHidden;
+        // Cascade also stamps inline `display: none` on row1 group
+        // cells (belt-and-suspenders against sticky paint residue).
+        // Restore it here so re-runs with different `hidden` lists
+        // don't keep cells hidden after the user re-checks them.
+        if (el.style && el.style.display === 'none') el.style.removeProperty('display');
+      });
       const hidden = (page && page.hidden) || [];
       const tables = [...doc.querySelectorAll('.mp-table')];
       // Group tables by their host (.mp-table-host) so sticky-clone + body-table
@@ -2177,6 +2191,12 @@
           }
           if (allHidden) {
             cell.dataset.vocHidden = 'true';
+            // Belt-and-suspenders: also set inline `display: none` so
+            // engine-specific painting of position:sticky cells can't
+            // leave a residual group title. The CSS rule above with
+            // !important should already do this; the inline style is
+            // a guarantee against any specificity surprises.
+            cell.style.display = 'none';
             // Apply matching mark on body-table colgroup if present (already
             // would be marked from the per-leaf pass — no-op here, included
             // for safety when added cols partially shift positions).

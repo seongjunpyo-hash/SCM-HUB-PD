@@ -386,6 +386,38 @@
       }
       /* Worker mode is always-commenting — the toggle FAB is redundant. */
       html.scm-voc-worker .scm-voc-fab { display: none !important; }
+
+      /* Worker-mode click hint — a transient bubble that appears near the
+         cursor when the user clicks anywhere in the demo. Helps users
+         understand demo features (buttons, dropdowns) won't react in
+         this view; clicks place review comments instead. */
+      .scm-voc-click-hint {
+        position: fixed; z-index: ${Z + 5};
+        max-width: 260px; padding: 8px 12px;
+        background: #15151D; color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 12px 28px rgba(0,0,0,0.28), 0 4px 8px rgba(0,0,0,0.18);
+        font-family: -apple-system, BlinkMacSystemFont, 'Pretendard Variable', Pretendard, sans-serif;
+        font-size: 12px; line-height: 1.5; font-weight: 500;
+        letter-spacing: -0.01em;
+        pointer-events: none;
+        opacity: 0;
+        transform: translate(12px, 12px) scale(0.96);
+        transition: opacity 0.14s ease, transform 0.14s ease;
+        white-space: normal;
+      }
+      .scm-voc-click-hint.is-visible {
+        opacity: 1;
+        transform: translate(12px, 12px) scale(1);
+      }
+      .scm-voc-click-hint__title {
+        display: block; margin-bottom: 2px;
+        font-weight: 700; font-size: 12px;
+      }
+      .scm-voc-click-hint__body {
+        display: block;
+        opacity: 0.82;
+      }
     `;
     document.head.appendChild(s);
   }
@@ -474,6 +506,37 @@
     elToast = document.createElement('div');
     elToast.className = 'scm-voc-toast';
     document.body.appendChild(elToast);
+
+    // Worker-mode click hint — explains why demo buttons don't react.
+    // Single shared instance; positions follow the cursor on each click.
+    elClickHint = document.createElement('div');
+    elClickHint.className = 'scm-voc-click-hint';
+    elClickHint.innerHTML =
+      '<span class="scm-voc-click-hint__title">협업 화면에서는 데모 기능이 동작하지 않아요</span>' +
+      '<span class="scm-voc-click-hint__body">클릭한 위치에 코멘트를 남길 수 있습니다.</span>';
+    document.body.appendChild(elClickHint);
+  }
+
+  // Show the worker-mode click hint near (clientX, clientY). Auto-hides
+  // after a short delay; subsequent clicks reset the timer + reposition.
+  let elClickHint = null;
+  let clickHintTimer = null;
+  function showClickHint(x, y) {
+    if (!elClickHint) return;
+    // Keep within viewport — flip to the upper-left if too close to right/bottom.
+    const w = 280, h = 64;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    let left = x, top = y;
+    if (x + w + 24 > vw) left = x - w - 24;
+    if (y + h + 24 > vh) top = y - h - 24;
+    elClickHint.style.left = Math.max(8, left) + 'px';
+    elClickHint.style.top  = Math.max(8, top) + 'px';
+    elClickHint.classList.add('is-visible');
+    if (clickHintTimer) clearTimeout(clickHintTimer);
+    clickHintTimer = setTimeout(() => {
+      elClickHint.classList.remove('is-visible');
+      clickHintTimer = null;
+    }, 1800);
   }
 
   // ============ Mode ============
@@ -541,10 +604,20 @@
       // — let those clicks fall through to the page's own handlers.
       if (state.workerMode && isNonCommentable(e.target)) {
         if (isWorkerInteractive(e.target)) return;
+        // Surface the same click-hint here so the user understands the
+        // GNB/LNB clicks are also non-functional, not just main area.
+        showClickHint(e.clientX, e.clientY);
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation && e.stopImmediatePropagation();
         return;
+      }
+      // Worker mode + main area click — pin will be placed below by the
+      // mode === 'comment' branch (worker mode forces comment mode). Also
+      // surface a transient hint so the user understands why the demo's
+      // buttons / dropdowns / links didn't react to their click.
+      if (state.workerMode) {
+        showClickHint(e.clientX, e.clientY);
       }
       if (state.mode !== 'comment') return;
       // In comment mode, GNB/LNB clicks are suppressed too (no pin there).
