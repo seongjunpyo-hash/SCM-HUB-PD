@@ -512,7 +512,7 @@
     elClickHint = document.createElement('div');
     elClickHint.className = 'scm-voc-click-hint';
     elClickHint.innerHTML =
-      '<span class="scm-voc-click-hint__title">협업 화면에서는 데모 기능이 동작하지 않아요</span>' +
+      '<span class="scm-voc-click-hint__title">현재 화면에서는 데모 기능이 동작하지 않아요.</span>' +
       '<span class="scm-voc-click-hint__body">등록된 코멘트 핀을 클릭하면 내용을 확인할 수 있어요.</span>';
     document.body.appendChild(elClickHint);
   }
