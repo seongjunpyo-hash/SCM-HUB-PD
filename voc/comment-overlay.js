@@ -256,7 +256,7 @@
       }
       .scm-voc-popover__close {
         background: transparent; color: #9CA3AF; border: 0;
-        width: 24px; height: 24px; border-radius: 6px; cursor: pointer;
+        width: 24px; height: 24px; border-radius: 4px; cursor: pointer;
         display: inline-flex; align-items: center; justify-content: center;
       }
       .scm-voc-popover__close:hover { background: #F3F4F6; color: #15151D; }
@@ -311,7 +311,7 @@
       .scm-voc-popover__hint { flex: 1; font-size: 11px; color: #9CA3AF; }
       .scm-voc-btn {
         height: 28px; padding: 0 12px;
-        border: 0; border-radius: 6px; cursor: pointer;
+        border: 0; border-radius: 4px; cursor: pointer;
         font-family: inherit; font-size: 12.5px; font-weight: 600;
         transition: all 0.12s ease;
       }
