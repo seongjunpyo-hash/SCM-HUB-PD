@@ -727,18 +727,12 @@ ${jsxBody}
   }
   function injectVersionSelector(rightEl) {
     if (document.querySelector('.scm-dev-version-wrap')) return;
-    const inIframe = isInIframe();
-    if (inIframe) {
-      // Inside VOC iframe (협업), don't add a separate version badge.
-      // Instead, repurpose the existing `.scm-topbar__demo-tag` to show
-      // the current version label (e.g. DEMO → demo_v1). Cheap + matches
-      // the user's preferred layout for the embedded view.
-      refreshVersionLabel();   // reads localStorage and updates the demo tag
-      return;
-    }
+    // Same selector UI in both standalone and VOC iframe contexts —
+    // the user wants 협업 view to switch versions the same way the
+    // demo does. DEMO tag stays as the literal "DEMO" everywhere.
     elVersionWrap = document.createElement('div');
     // `is-leftaligned` puts the selector on the LEFT side of the topbar,
-    // 80px after the logo/DEMO tag — matches the user's preferred layout.
+    // 48px after the logo/DEMO tag — matches the user's preferred layout.
     elVersionWrap.className = 'scm-dev-version-wrap is-leftaligned';
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -793,22 +787,10 @@ ${jsxBody}
       const active = ver.list.find((v) => v.id === activeId);
       label = _displayLabel((active && active.label) || '?');
     }
-    // Standalone: update the dropdown button label.
     if (elVersionWrap) {
       elVersionWrap.style.display = '';
       const lbl = elVersionWrap.querySelector('.lbl');
       if (lbl) lbl.textContent = label;
-    }
-    // VOC iframe: no separate badge — repurpose the existing DEMO tag in
-    // the topbar so it shows the version instead (e.g. DEMO → demo_v1).
-    // Keep the original tag styling (black pill, white text) — text only.
-    // Standalone keeps the literal "DEMO" text.
-    if (isInIframe()) {
-      const demoTag = document.querySelector('.scm-topbar__demo-tag');
-      if (demoTag) {
-        demoTag.textContent = label;
-        demoTag.setAttribute('aria-label', '활성 버전: ' + label);
-      }
     }
   }
   function renderVersionMenu() {

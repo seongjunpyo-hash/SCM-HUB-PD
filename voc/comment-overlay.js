@@ -80,6 +80,28 @@
     return FALLBACK_COLORS[h % FALLBACK_COLORS.length];
   }
 
+  // ---- version helpers (read-only) ----
+  // Returns the active version id for `page` (or null = v1 origin).
+  // Reads localStorage 'scm:voc:versions:v1' on every call so cross-frame
+  // changes surface immediately.
+  function _currentVersionIdFor(page) {
+    try {
+      const raw = localStorage.getItem('scm:voc:versions:v1');
+      if (!raw) return null;
+      const map = JSON.parse(raw);
+      const ver = map && map[page];
+      if (!ver || !ver.list || !ver.list.length) return null;
+      if (!ver.activeId) return null;
+      return ver.list.some((v) => v.id === ver.activeId) ? ver.activeId : null;
+    } catch (_) { return null; }
+  }
+  function _commentMatchesActiveVersion(c, page) {
+    const active = _currentVersionIdFor(page);
+    // Legacy comments (no versionId) belong to the origin v1.
+    const cv = c.versionId == null ? null : c.versionId;
+    return cv === active;
+  }
+
   // Comments visible to the current user — everything in worker mode
   // (VOC iframe), only the user's own comments otherwise (standalone demo).
   function visibleComments() {
@@ -87,7 +109,9 @@
     const me = state.user.email;
     return state.comments.filter((c) => c.author === me);
   }
-  function pageComments() { return visibleComments().filter((c) => c.page === PAGE); }
+  function pageComments() {
+    return visibleComments().filter((c) => c.page === PAGE && _commentMatchesActiveVersion(c, PAGE));
+  }
   function indexOfInPage(c) {
     const sorted = pageComments().sort((a, b) => a.createdAt - b.createdAt);
     return sorted.findIndex((x) => x.id === c.id) + 1;
@@ -775,6 +799,9 @@
       const c = {
         id: uid('c'),
         page: PAGE,
+        // Tag the comment with the currently active version so the VOC
+        // sidebar can filter comments per version. `null` = origin (v1).
+        versionId: _currentVersionIdFor(PAGE),
         x: p.x, y: p.y,
         selector: p.selector,
         elementText: p.elementText,
@@ -1087,13 +1114,19 @@
     handleAnchor();
     window.addEventListener('hashchange', handleAnchor);
     window.addEventListener('message', handleParentMessage);
-    // Cross-tab/storage sync — another window/tab edits comments
+    // Cross-tab/storage sync — another window/tab edits comments OR
+    // switches the active version (which changes the visible-comment set).
     window.addEventListener('storage', (e) => {
-      if (e.key !== STORAGE_KEY) return;
-      state.comments = load();
-      renderPins();
-      updateCount();
-      injectLnbCounts();
+      if (e.key === STORAGE_KEY) {
+        state.comments = load();
+        renderPins();
+        updateCount();
+        injectLnbCounts();
+      } else if (e.key === 'scm:voc:versions:v1') {
+        // active version may have changed → re-filter
+        renderPins();
+        updateCount();
+      }
     });
     // Layout-affecting changes — re-anchor pins to their elements
     window.addEventListener('resize', () => schedulePinRender(120));

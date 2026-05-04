@@ -1432,6 +1432,14 @@
             syncMenuFromPath(path);
           }
         } catch {}
+        // re-sync state from localStorage in case the iframe (or another
+        // tab) just switched the active version. state.applied always
+        // tracks the active snapshot; state.draft resets to applied so
+        // the user starts clean against the new version baseline.
+        state.applied = loadJsonKey(EDIT_KEY) || {};
+        state.versions = loadJsonKey(VERSIONS_KEY) || {};
+        state.draft = JSON.parse(JSON.stringify(state.applied));
+        _clearPreviewed();
         // page change resets sim tracking (style tags died with previous doc)
         state.simActive.clear();
         updateSimStatus();
@@ -3480,8 +3488,21 @@
     // ====================================================
     // List
     // ====================================================
+    // Active version per page — comments are filtered by the version they
+    // were left under so v2's edits + comments don't bleed into v1.
+    function _activeVersionId(page) {
+      const ver = state.versions && state.versions[page];
+      if (!ver || !ver.list || !ver.list.length) return null;
+      if (!ver.activeId) return null;
+      return ver.list.some((v) => v.id === ver.activeId) ? ver.activeId : null;
+    }
+    function _commentInActiveVersion(c) {
+      const cv = c.versionId == null ? null : c.versionId;
+      return cv === _activeVersionId(c.page);
+    }
     function renderList() {
-      const all = state.comments;
+      // pre-filter: comments whose versionId matches THEIR page's active.
+      const all = state.comments.filter(_commentInActiveVersion);
       const onPage = all.filter((c) => c.page === state.currentPage);
       const open   = all.filter((c) => c.status !== 'resolved');
       const done   = all.filter((c) => c.status === 'resolved');
