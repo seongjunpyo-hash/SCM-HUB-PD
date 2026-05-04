@@ -278,9 +278,10 @@
       }
       .scm-voc-popover__close {
         background: transparent; color: #9CA3AF; border: 0;
-        width: 24px; height: 24px; border-radius: 4px; cursor: pointer;
+        width: 32px; height: 32px; border-radius: 4px; cursor: pointer;
         display: inline-flex; align-items: center; justify-content: center;
       }
+      .scm-voc-popover__close svg { width: 16px; height: 16px; }
       .scm-voc-popover__close:hover { background: #F3F4F6; color: #15151D; }
       .scm-voc-popover__thread {
         max-height: 280px; overflow-y: auto;
@@ -302,11 +303,12 @@
         white-space: pre-wrap; word-break: break-word;
       }
       .scm-voc-reply__del {
-        margin-left: auto; padding: 2px 4px;
+        margin-left: auto; padding: 4px 8px;
         background: transparent; border: 0; cursor: pointer;
-        font-size: 11px; color: #9CA3AF;
+        font-size: 12.5px; font-weight: 500; color: #6B7280;
+        border-radius: 4px;
       }
-      .scm-voc-reply__del:hover { color: #DC2626; }
+      .scm-voc-reply__del:hover { color: #DC2626; background: #FEE2E2; }
 
       .scm-voc-popover__compose {
         padding: 10px 14px 12px;
