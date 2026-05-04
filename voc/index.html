@@ -60,7 +60,7 @@
 
     .page-select {
       background: var(--bg); color: var(--fg);
-      border: 1px solid var(--line); border-radius: 8px;
+      border: 1px solid var(--line); border-radius: 4px;
       font-family: inherit; font-size: 13px;
       padding: 7px 30px 7px 12px; outline: none;
       appearance: none;
@@ -86,12 +86,12 @@
       display: inline-flex; gap: 2px;
       padding: 3px;
       background: var(--bg); border: 1px solid var(--line);
-      border-radius: 8px;
+      border-radius: 4px;
     }
     .menu-l1__chip {
       padding: 5px 12px;
       background: transparent; color: var(--fg-mute); border: 0;
-      border-radius: 6px;
+      border-radius: 4px;
       font-family: inherit; font-size: 13px; font-weight: 500;
       cursor: pointer;
       white-space: nowrap;
@@ -815,7 +815,7 @@
     .edit-frozen-row__select {
       flex: 1;
       padding: 7px 10px;
-      background: #fff; border: 1px solid #D1D5DB; border-radius: 6px;
+      background: #fff; border: 1px solid #D1D5DB; border-radius: 4px;
       font-family: inherit; font-size: 12.5px; color: #1A1A1A;
       cursor: pointer;
     }
@@ -2534,9 +2534,19 @@
     }
 
     // ---- save / revert ----
+    // 저장 버튼은 '데모에 [적용]된 변경분이 아직 저장되지 않은 상태'에서만
+    // 활성화. 이전 구현은 draft vs applied 를 비교해서 사용자가 [적용] 도
+    // 누르지 않은 채 체크박스만 토글해도 곧바로 활성화됐다. 이제 각 섹션의
+    // previewed 슬라이스(= [적용] 버튼이 누르는 순간 캡처) 를 applied 의
+    // 같은 슬라이스와 비교해, [적용] 후 저장 전 구간에서만 dirty=true.
     function isDirty() {
-      return JSON.stringify(state.draft[state.currentPage] || null)
-          !== JSON.stringify(state.applied[state.currentPage] || null);
+      const e = state.previewed && state.previewed[state.currentPage];
+      if (!e) return false;       // [적용] 한 번도 누르지 않음 → 저장할 거 없음
+      const a = pageApplied();
+      if (e.filterSlice    != null && e.filterSlice    !== _filterSlice(a))    return true;
+      if (e.columnSlice    != null && e.columnSlice    !== _columnSlice(a))    return true;
+      if (e.componentSlice != null && e.componentSlice !== _componentSlice(a)) return true;
+      return false;
     }
     function _isFilterSel(s) { return /^\[data-voc-key="flt-/.test(s) || /^#voc-added-filter-/.test(s); }
     function _isColumnSel(s) { return /^\[data-voc-key="(col|grp)-/.test(s) || /^#voc-added-col-/.test(s); }
