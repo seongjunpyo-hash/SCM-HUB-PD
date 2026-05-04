@@ -635,16 +635,9 @@ ${jsxBody}
         margin-left: 72px;
       }
       /* DEMO tag repurposed for VOC iframe — shows the current version
-         label (e.g. demo_v1) instead of the literal "DEMO". The class
-         flips the colors to the indigo accent so the version reads as
-         a chip rather than a label. */
-      .scm-topbar__demo-tag.scm-topbar__demo-tag--version {
-        background: #EEF2FF !important;
-        color: #4F46E5 !important;
-        border: 1px solid #C7D2FE;
-        height: auto;
-        padding: 2px 8px;
-      }
+         label (e.g. demo_v1) instead of the literal "DEMO". Keep the
+         original tag styling (black pill, white text, etc.) — only the
+         TEXT is swapped. */
     `;
     document.head.appendChild(s);
   }
@@ -803,12 +796,12 @@ ${jsxBody}
     }
     // VOC iframe: no separate badge — repurpose the existing DEMO tag in
     // the topbar so it shows the version instead (e.g. DEMO → demo_v1).
-    // Standalone keeps the original "DEMO" text.
+    // Keep the original tag styling (black pill, white text) — text only.
+    // Standalone keeps the literal "DEMO" text.
     if (isInIframe()) {
       const demoTag = document.querySelector('.scm-topbar__demo-tag');
       if (demoTag) {
         demoTag.textContent = label;
-        demoTag.classList.add('scm-topbar__demo-tag--version');
         demoTag.setAttribute('aria-label', '활성 버전: ' + label);
       }
     }
