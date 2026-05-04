@@ -1215,6 +1215,21 @@
     //       list: [{ id, label, createdAt, updatedAt, applied }]
     //   }}
     const VERSIONS_KEY = 'scm:voc:versions:v1';
+    // Page-key normalization. The VOC iframe reads `iframe.contentWindow
+    // .location.pathname`, which on Cloudflare Pages clean URLs strips
+    // the `.html` extension, while standalone demo pages may report
+    // either form depending on how the user landed there. Strip `.html`
+    // when writing, and try both forms when reading, so a version saved
+    // in either context is findable from the other.
+    function _normalizePageKey(p) {
+      if (!p) return p;
+      return p.replace(/\.html?$/i, '');
+    }
+    function _verEntryFor(map, path) {
+      if (!map || !path) return null;
+      const n = _normalizePageKey(path);
+      return map[n] || map[path] || map[path + '.html'] || null;
+    }
     // Two-depth menu mirroring the demo's LNB structure.
     const MENU = [
       { l1: 'dashboard', label: '대시보드', children: [
@@ -1250,7 +1265,7 @@
         const newPages = JSON.parse(localStorage.getItem('scm:prd:newPages:v1') || '[]');
         if (Array.isArray(newPages) && newPages.indexOf(path) >= 0) return ' (NEW)';
         const versions = JSON.parse(localStorage.getItem('scm:voc:versions:v1') || '{}');
-        const ver = versions && versions[path];
+        const ver = _verEntryFor(versions, path);
         if (ver && Array.isArray(ver.list) && ver.list.length > 0) return ' (MODIFIED)';
       } catch (_) {}
       return '';
@@ -1633,8 +1648,7 @@
     function renderVersionSelect() {
       const sel = document.getElementById('versionSelect');
       if (!sel) return;
-      const page = state.currentPage;
-      const ver = state.versions && state.versions[page];
+      const ver = _verEntryFor(state.versions, state.currentPage);
       if (!ver || !Array.isArray(ver.list) || !ver.list.length) {
         sel.innerHTML = '<option value="">버전 없음</option>';
         sel.disabled = true;
@@ -1655,20 +1669,21 @@
       sel.value = activeId;
     }
     function onVersionSelectChange(versionId) {
-      const page = state.currentPage;
-      const ver = state.versions && state.versions[page];
+      const page = _normalizePageKey(state.currentPage);
+      const ver = _verEntryFor(state.versions, state.currentPage);
       if (!ver || !Array.isArray(ver.list)) return;
       const v = ver.list.find((x) => x.id === versionId);
       if (!v || ver.activeId === versionId) return;
       ver.activeId = versionId;
       // mirror active applied snapshot into state.applied so the next
       // iframe load (via reload) renders the chosen version.
+      state.versions[page] = ver;
       state.applied[page] = JSON.parse(JSON.stringify(v.applied || {}));
       persistVersions();
       persistApplied();
       _clearPreviewed();
       // hard-reload the iframe so the demo re-applies cleanly
-      try { iframe.contentWindow.location.reload(); } catch { iframe.src = page; }
+      try { iframe.contentWindow.location.reload(); } catch { iframe.src = state.currentPage; }
     }
 
     function postIframe(msg) {
@@ -2531,9 +2546,19 @@
       // Save also pushes to iframe (in case user hadn't clicked the
       // section apply buttons yet) so the new baseline is visible.
       applyAllToIframe();
-      const page = state.currentPage;
+      // Normalize the page key on write so a version saved here is
+      // visible from the standalone demo (whose `location.pathname`
+      // may or may not include `.html`). Existing entries under the
+      // raw key are migrated into the normalized slot.
+      const page = _normalizePageKey(state.currentPage);
       const draftClone = deepClone(pageDraft());
-      const ver = state.versions[page] = state.versions[page] || { list: [], activeId: null };
+      let ver = _verEntryFor(state.versions, state.currentPage);
+      if (!ver) ver = { list: [], activeId: null };
+      state.versions[page] = ver;
+      // remove any stale duplicate at the un-normalized key
+      if (state.currentPage !== page && state.versions[state.currentPage]) {
+        delete state.versions[state.currentPage];
+      }
       let mode, mergeId;
       // v1 is the demo's implicit origin (empty applied). User saves start
       // at v2 to keep numbering aligned with what the selector shows.
@@ -2571,6 +2596,11 @@
         }
       }
       state.applied[page] = draftClone;
+      // mirror the normalization for state.applied so the demo's
+      // standalone read (which uses normalized key) finds the snapshot.
+      if (state.currentPage !== page && state.applied[state.currentPage]) {
+        delete state.applied[state.currentPage];
+      }
       persistApplied();
       persistVersions();
       _clearPreviewed();
@@ -2855,17 +2885,27 @@
         return v != null;
       });
       const hasUiPrefs = state.ui.collapsedGroups[page] != null;
-      const hasVersions = state.versions[page] && state.versions[page].list && state.versions[page].list.length > 0;
+      const verEntry = _verEntryFor(state.versions, page);
+      const hasVersions = verEntry && verEntry.list && verEntry.list.length > 0;
       if (!hasApplied && !hasUiPrefs && !hasVersions) {
         showToast('이미 초기 상태입니다');
         return;
       }
       if (!confirm('이 페이지의 모든 편집 내용을 초기화 합니다. 진행할까요?')) return;
+      const np = _normalizePageKey(page);
       delete state.applied[page];
+      delete state.applied[np];
       delete state.draft[page];
-      if (state.ui.collapsedGroups) delete state.ui.collapsedGroups[page];
-      // also drop every saved version for this page
-      if (state.versions) delete state.versions[page];
+      delete state.draft[np];
+      if (state.ui.collapsedGroups) {
+        delete state.ui.collapsedGroups[page];
+        delete state.ui.collapsedGroups[np];
+      }
+      // also drop every saved version for this page (both raw + normalized)
+      if (state.versions) {
+        delete state.versions[page];
+        delete state.versions[np];
+      }
       persistApplied();
       persistDraft();
       persistUi();
@@ -3564,7 +3604,7 @@
     // Active version per page — comments are filtered by the version they
     // were left under so v2's edits + comments don't bleed into v1.
     function _activeVersionId(page) {
-      const ver = state.versions && state.versions[page];
+      const ver = _verEntryFor(state.versions, page);
       if (!ver || !ver.list || !ver.list.length) return null;
       if (!ver.activeId) return null;
       return ver.list.some((v) => v.id === ver.activeId) ? ver.activeId : null;

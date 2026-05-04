@@ -89,7 +89,11 @@
       const raw = localStorage.getItem('scm:voc:versions:v1');
       if (!raw) return null;
       const map = JSON.parse(raw);
-      const ver = map && map[page];
+      // Same path normalization as voc/index.html + dev-export.js — VOC
+      // may have stored the version under '/demo/foo' while the demo
+      // standalone reports '/demo/foo.html' (or vice versa).
+      const np = page ? page.replace(/\.html?$/i, '') : page;
+      const ver = map && (map[np] || map[page] || map[page + '.html']);
       if (!ver || !ver.list || !ver.list.length) return null;
       if (!ver.activeId) return null;
       return ver.list.some((v) => v.id === ver.activeId) ? ver.activeId : null;

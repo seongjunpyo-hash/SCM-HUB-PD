@@ -702,6 +702,20 @@ ${jsxBody}
       return raw ? JSON.parse(raw) : {};
     } catch { return {}; }
   }
+  // Page-key normalization. VOC iframe's `iframe.contentWindow.location
+  // .pathname` can differ from a standalone demo's `location.pathname`
+  // by an `.html` extension (Cloudflare Pages serves clean URLs but
+  // some entry points still use the explicit file name). Normalize the
+  // key on both sides so saved versions are findable regardless.
+  function _normalizePageKey(p) {
+    if (!p) return p;
+    return p.replace(/\.html?$/i, '');
+  }
+  function _verEntryFor(versions, path) {
+    if (!versions || !path) return null;
+    const normalized = _normalizePageKey(path);
+    return versions[normalized] || versions[path] || versions[path + '.html'] || null;
+  }
   function _saveVersions(map) {
     try { localStorage.setItem(VOC_VERSIONS_KEY, JSON.stringify(map)); } catch {}
   }
@@ -780,7 +794,7 @@ ${jsxBody}
   }
   function refreshVersionLabel() {
     const versions = _loadVersions();
-    const ver = versions[location.pathname];
+    const ver = _verEntryFor(versions, location.pathname);
     const labelMap = _displayLabelMap(ver);
     const activeId = _activeIdResolved(ver);
     let label;
@@ -803,7 +817,7 @@ ${jsxBody}
   function renderVersionMenu() {
     const menu = elVersionWrap.querySelector('.scm-dev-version-menu');
     const versions = _loadVersions();
-    const ver = versions[location.pathname];
+    const ver = _verEntryFor(versions, location.pathname);
     const activeId = _activeIdResolved(ver);
     const labelMap = _displayLabelMap(ver);
     // 관리자(super OR admin) can delete any non-active version (including v1).
@@ -850,8 +864,8 @@ ${jsxBody}
   }
   function switchActiveVersion(versionId) {
     const versions = _loadVersions();
-    const page = location.pathname;
-    const ver = versions[page];
+    const page = _normalizePageKey(location.pathname);
+    const ver = _verEntryFor(versions, location.pathname);
     if (!ver || !ver.list || !ver.list.length) return;
     const v = ver.list.find((x) => x.id === versionId);
     if (!v) return;
@@ -860,6 +874,8 @@ ${jsxBody}
       return;
     }
     ver.activeId = versionId;
+    // Always write back under the normalized key (drop legacy .html keys).
+    versions[page] = ver;
     _saveVersions(versions);
     // Sync state.applied with the now-active snapshot so the next demo
     // load (and any VOC iframe push) uses it as the baseline.
@@ -873,8 +889,8 @@ ${jsxBody}
     // 관리자(super OR admin) can delete; member-tier roles cannot.
     if (myRole !== 'super' && myRole !== 'admin') return;
     const versions = _loadVersions();
-    const page = location.pathname;
-    const ver = versions[page];
+    const page = _normalizePageKey(location.pathname);
+    const ver = _verEntryFor(versions, location.pathname);
     if (!ver || !ver.list) return;
     if (ver.activeId === versionId) return;       // safety — can't delete active
     if (!confirm('이 버전을 삭제할까요? 되돌릴 수 없습니다.')) return;
@@ -892,7 +908,7 @@ ${jsxBody}
   function applyActiveVersionMinimal() {
     try {
       const versions = _loadVersions();
-      const ver = versions[location.pathname];
+      const ver = _verEntryFor(versions, location.pathname);
       if (!ver || !ver.activeId) return;
       const active = ver.list && ver.list.find((v) => v.id === ver.activeId);
       const a = active && active.applied;
