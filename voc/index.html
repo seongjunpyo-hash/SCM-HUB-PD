@@ -1864,6 +1864,12 @@
         if (!sel || !_isColumnSel(sel)) return;
         groups.forEach((tblList) => _markHiddenColumnInGroup(tblList, sel));
       });
+      // Cascade: any 1뎁스 group whose ALL 2뎁스 leaves are now hidden
+      // gets its row1 cell hidden too. Without this, the group header
+      // (e.g., the empty cs=4 cell representing a frozen-split 기본 정보)
+      // would still occupy padding/layout even though every leaf below
+      // it is gone.
+      groups.forEach((tblList) => _cascadeHideEmptyGroups(tblList));
       // Recompute table.style.width = sum of visible col widths so the
       // hidden columns' space actually disappears (display:none on <col>
       // alone doesn't shrink the table when style.width is set explicitly).
@@ -1878,6 +1884,52 @@
         try { reorderApi.refreshFrozenClassesAndOffsets(); } catch {}
       }
     }
+    // Walk the row1 of each group's thead-bearing table; for every
+    // colspan>1 cell (a 1뎁스 group), check the matching colgroup col
+    // range — if all are already marked vocHidden (because the user
+    // hid every leaf under this group), mark the group cell itself so
+    // the row1 row collapses too.
+    function _cascadeHideEmptyGroups(tblList) {
+      const headTable = tblList.find((t) => t.querySelector('thead'));
+      if (!headTable) return;
+      const thead = headTable.querySelector('thead');
+      if (!thead) return;
+      const trs = thead.querySelectorAll('tr');
+      if (trs.length < 2) return;                 // 1-row tables: no group row
+      const groupTr = trs[0];
+      const colgroup = headTable.querySelector(':scope > colgroup');
+      if (!colgroup) return;
+      let leafIdx = 0;
+      [...groupTr.children].forEach((cell) => {
+        const cs = parseInt(cell.getAttribute('colspan') || '1', 10) || 1;
+        const rs = parseInt(cell.getAttribute('rowspan') || '1', 10) || 1;
+        if (rs > 1) { leafIdx += cs; return; }    // anchor (cb / No / spacer) — never a group
+        if (cs > 1) {
+          let allHidden = true;
+          for (let i = leafIdx; i < leafIdx + cs; i++) {
+            const col = colgroup.children[i];
+            if (!col || col.dataset.vocHidden !== 'true') { allHidden = false; break; }
+          }
+          if (allHidden) {
+            cell.dataset.vocHidden = 'true';
+            // Apply matching mark on body-table colgroup if present (already
+            // would be marked from the per-leaf pass — no-op here, included
+            // for safety when added cols partially shift positions).
+            tblList.forEach((tbl) => {
+              if (tbl === headTable) return;
+              const cg = tbl.querySelector(':scope > colgroup');
+              if (!cg) return;
+              for (let i = leafIdx; i < leafIdx + cs; i++) {
+                const c = cg.children[i];
+                if (c) c.dataset.vocHidden = 'true';
+              }
+            });
+          }
+        }
+        leafIdx += cs;
+      });
+    }
+
     function _shrinkTableToVisibleCols(tblList) {
       tblList.forEach((tbl) => {
         const colgroup = tbl.querySelector(':scope > colgroup');
