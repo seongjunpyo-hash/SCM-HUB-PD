@@ -978,11 +978,65 @@ ${jsxBody}
       groups.forEach((tblList) => _markHiddenColumnInGroupV(tblList, sel));
     });
     groups.forEach((tblList) => _cascadeHideEmptyGroupsV(tblList));
+    // Zero inline widths on hidden cols — refreshFrozenClassesAndOffsets
+    // reads `style.width` first, so without this it would still see the
+    // original widths and mis-compute --frozen-lN offsets.
+    groups.forEach((tblList) => {
+      tblList.forEach((tbl) => {
+        const cg = tbl.querySelector(':scope > colgroup');
+        if (!cg) return;
+        [...cg.children].forEach((col) => {
+          if (col.dataset.vocHidden === 'true' && col.style.width !== '0px') {
+            col.dataset.vocOrigColWidth = col.style.width || '';
+            col.style.width = '0px';
+          }
+        });
+      });
+    });
     // Re-run frozen offset compute so sticky cells shift left into the
     // hidden columns' space (zeroed col widths above).
     const reorderApi = tables.map((t) => t._scmReorder).find(Boolean);
     if (reorderApi && reorderApi.refreshFrozenClassesAndOffsets) {
       try { reorderApi.refreshFrozenClassesAndOffsets(); } catch {}
+    }
+    // refreshFrozenClassesAndOffsets stamps col-frozen-last at the leaf
+    // at (frozenCount - 1). If that leaf is hidden, the right-side
+    // boundary border disappears — relocate the marker to the last
+    // VISIBLE frozen leaf so the divider stays drawn.
+    groups.forEach((tblList) => _relocateFrozenLastToLastVisibleV(tblList));
+  }
+  function _relocateFrozenLastToLastVisibleV(tblList) {
+    const reorderApi = tblList.map((t) => t._scmReorder).find(Boolean);
+    if (!reorderApi) return;
+    const frozenCount = reorderApi.frozenCount | 0;
+    if (frozenCount <= 0) return;
+    const headTable = tblList.find((t) => t.querySelector('thead')) || tblList[0];
+    const cg = headTable.querySelector(':scope > colgroup');
+    if (!cg) return;
+    let newLastIdx = -1;
+    for (let i = frozenCount - 1; i >= 0; i--) {
+      const col = cg.children[i];
+      if (col && col.dataset.vocHidden !== 'true') { newLastIdx = i; break; }
+    }
+    if (newLastIdx < 0) return;
+    tblList.forEach((tbl) => {
+      tbl.querySelectorAll('.col-frozen-last').forEach((el) => el.classList.remove('col-frozen-last'));
+    });
+    tblList.forEach((tbl) => {
+      const cgT = tbl.querySelector(':scope > colgroup');
+      if (cgT && cgT.children[newLastIdx]) cgT.children[newLastIdx].classList.add('col-frozen-last');
+      tbl.querySelectorAll('tbody > tr').forEach((tr) => {
+        if (tr.children[newLastIdx]) tr.children[newLastIdx].classList.add('col-frozen-last');
+      });
+    });
+    const model = reorderApi.model;
+    const headerLastIdx = model.leafIdxToLeafChildIdx(newLastIdx);
+    if (headerLastIdx >= 0 && model.leafTr && model.leafTr.children[headerLastIdx]) {
+      model.leafTr.children[headerLastIdx].classList.add('col-frozen-last');
+    }
+    if (model.isTwoRow) {
+      const row1Cell = model.leafIdxToRow1Cell(newLastIdx);
+      if (row1Cell) row1Cell.classList.add('col-frozen-last');
     }
   }
   function _markHiddenColumnInGroupV(tblList, sel) {

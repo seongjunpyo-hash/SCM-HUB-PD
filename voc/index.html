@@ -2204,6 +2204,48 @@
       if (reorderApi && reorderApi.refreshFrozenClassesAndOffsets) {
         try { reorderApi.refreshFrozenClassesAndOffsets(); } catch {}
       }
+      // refreshFrozenClassesAndOffsets always stamps col-frozen-last at
+      // leafIdx (frozenCount - 1). If that leaf is hidden, the boundary
+      // border (border-right on .col-frozen-last) is invisible — the
+      // user sees the frozen area end without a divider line. Walk back
+      // to the last VISIBLE frozen leaf and move the marker there.
+      groups.forEach((tblList) => _relocateFrozenLastToLastVisible(tblList));
+    }
+    function _relocateFrozenLastToLastVisible(tblList) {
+      const reorderApi = tblList.map((t) => t._scmReorder).find(Boolean);
+      if (!reorderApi) return;
+      const frozenCount = reorderApi.frozenCount | 0;
+      if (frozenCount <= 0) return;
+      const headTable = tblList.find((t) => t.querySelector('thead')) || tblList[0];
+      const cg = headTable.querySelector(':scope > colgroup');
+      if (!cg) return;
+      let newLastIdx = -1;
+      for (let i = frozenCount - 1; i >= 0; i--) {
+        const col = cg.children[i];
+        if (col && col.dataset.vocHidden !== 'true') { newLastIdx = i; break; }
+      }
+      if (newLastIdx < 0) return;
+      // Strip col-frozen-last from every cell in the group, then re-stamp
+      // at the new index across colgroup, leafTr, tbody, and (2단) row1.
+      tblList.forEach((tbl) => {
+        tbl.querySelectorAll('.col-frozen-last').forEach((el) => el.classList.remove('col-frozen-last'));
+      });
+      tblList.forEach((tbl) => {
+        const cgT = tbl.querySelector(':scope > colgroup');
+        if (cgT && cgT.children[newLastIdx]) cgT.children[newLastIdx].classList.add('col-frozen-last');
+        tbl.querySelectorAll('tbody > tr').forEach((tr) => {
+          if (tr.children[newLastIdx]) tr.children[newLastIdx].classList.add('col-frozen-last');
+        });
+      });
+      const model = reorderApi.model;
+      const headerLastIdx = model.leafIdxToLeafChildIdx(newLastIdx);
+      if (headerLastIdx >= 0 && model.leafTr && model.leafTr.children[headerLastIdx]) {
+        model.leafTr.children[headerLastIdx].classList.add('col-frozen-last');
+      }
+      if (model.isTwoRow) {
+        const row1Cell = model.leafIdxToRow1Cell(newLastIdx);
+        if (row1Cell) row1Cell.classList.add('col-frozen-last');
+      }
     }
     // Walk the row1 of each group's thead-bearing table; for every
     // colspan>1 cell (a 1뎁스 group), check the matching colgroup col
