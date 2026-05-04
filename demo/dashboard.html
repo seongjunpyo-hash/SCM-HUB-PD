@@ -117,8 +117,11 @@
       position: absolute; top: 0; left: 0; bottom: 0;
       background: #245EFF; border-radius: 4px;
     }
-    .db-store-row__bar-fill--warn { background: #F39C12; }
-    .db-store-row__bar-fill--critical { background: #E74C3C; }
+    /* 톤 통일 — 모든 막대를 단일 블루로 두고, 채움률만 막대 길이로 표현.
+       '경고/위험' 도 같은 블루 계열의 라이터 셰이드로 처리해 다채색 칩
+       느낌(원래 #F39C12 / #E74C3C) 의 촌스러움을 제거. */
+    .db-store-row__bar-fill--warn     { background: #93B5FF; }
+    .db-store-row__bar-fill--critical { background: #C7D5F4; }
     .db-store-row__pct {
       font-size: 13px; font-weight: 600; color: #000; text-align: right;
     }
