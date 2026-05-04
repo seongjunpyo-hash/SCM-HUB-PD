@@ -1782,6 +1782,11 @@
       // to mark th + td + col elements with `data-voc-hidden="true"` so an
       // entire column collapses, not just the header.
       lines.push(`[data-voc-hidden="true"] { display: none !important; }`);
+      // Defensive overrides for cells: scm-table uses content-box +
+      // padding 12 16 + border-left 1px, so even with display:none some
+      // browsers / layouts can leave padding-width residue. Force every
+      // box dimension to 0 on hidden cells so they truly collapse.
+      lines.push(`th[data-voc-hidden="true"], td[data-voc-hidden="true"] { padding: 0 !important; border: 0 !important; width: 0 !important; min-width: 0 !important; max-width: 0 !important; }`);
       // <col> elements: some browsers ignore display:none on col. Force the
       // column to zero width so following columns shift left under
       // table-layout: fixed.
@@ -1819,6 +1824,54 @@
       // After CSS, walk hidden column selectors and mark th + tds + col so
       // the WHOLE column collapses, not just the header.
       applyHiddenCellsToIframe(doc, a);
+      // Some demo column <th>s ship without sort-ic / filter-ic SVG
+      // (e.g. SKU번호, 매핑상태 in sku-management). The CSS show-rule has
+      // nothing to flip on for those cells, so we inject the icons when
+      // the user toggles 정렬 / 필터 ON in the edit pane.
+      applySortFilterIconsToIframe(doc, a);
+    }
+
+    function applySortFilterIconsToIframe(doc, page) {
+      const showSort   = (page && page.showSort)   || [];
+      const showFilter = (page && page.showFilter) || [];
+      const ensureIcon = (cell, kind) => {
+        if (!cell) return;
+        // Most cells wrap their content in a div.cell-clamp; insert the icon
+        // there if present so the layout matches the demo's existing cells.
+        const host = cell.querySelector(':scope > .cell-clamp, :scope > .cell-clamp-2') || cell;
+        if (kind === 'sort') {
+          if (host.querySelector('.sort-ic')) return;
+          const svg = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          svg.setAttribute('class', 'sort-ic');
+          svg.setAttribute('viewBox', '0 0 16 16');
+          svg.innerHTML = '<use href="#ic-arrowUpDown"/>';
+          host.appendChild(svg);
+        } else if (kind === 'filter') {
+          if (host.querySelector('.filter-ic')) return;
+          // wrap in .th-icons span if the cell already has one (matches demo)
+          const wrap = host.querySelector('.th-icons') || (() => {
+            const span = doc.createElement('span');
+            span.className = 'th-icons';
+            host.appendChild(span);
+            return span;
+          })();
+          const svg = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          svg.setAttribute('class', 'filter-ic');
+          svg.setAttribute('viewBox', '0 0 20 20');
+          svg.innerHTML = '<use href="#ic-funnel"/>';
+          wrap.appendChild(svg);
+        }
+      };
+      const inject = (selectors, kind) => {
+        selectors.forEach((sel) => {
+          if (!sel) return;
+          let cells;
+          try { cells = doc.querySelectorAll('.mp-table thead ' + sel); } catch { return; }
+          cells.forEach((c) => ensureIcon(c, kind));
+        });
+      };
+      inject(showSort, 'sort');
+      inject(showFilter, 'filter');
     }
 
     // For each hidden COLUMN selector, mark the corresponding cells with
