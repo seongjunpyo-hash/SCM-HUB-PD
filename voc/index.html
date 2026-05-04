@@ -780,6 +780,11 @@
       flex-shrink: 0;
       display: inline-block;
     }
+    /* 1뎁스 group rows have no real checkbox — drop the placeholder so
+       the title sits right next to the drag handle. Leaf rows below
+       are still indented (padding-left: 28px) so the visual hierarchy
+       between group title and leaf labels is preserved. */
+    .edit-row.is-group .edit-row__check--placeholder { display: none; }
     .edit-row__group-count {
       display: inline-flex; align-items: center; justify-content: center;
       min-width: 22px; height: 18px; padding: 0 6px;
