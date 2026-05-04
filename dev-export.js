@@ -571,6 +571,56 @@ ${jsxBody}
         font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
       }
       .scm-dev-export-btn-primary:hover { background: #000; }
+      /* ---------- Version selector (left of handoff button) ---------- */
+      .scm-dev-version-wrap {
+        position: relative;
+        display: inline-flex; align-items: center;
+        margin-right: 4px;
+      }
+      .scm-dev-version-btn {
+        display: inline-flex; align-items: center; gap: 6px;
+        height: 32px; padding: 0 12px;
+        background: #fff; color: #1A1A1A;
+        border: 1px solid #E0E0E0; border-radius: 6px;
+        font-family: inherit; font-size: 12px; font-weight: 500;
+        cursor: pointer; white-space: nowrap;
+        transition: background 0.12s ease, border-color 0.12s ease;
+      }
+      .scm-dev-version-btn:hover { background: #FAFAFA; border-color: #1A1A1A; }
+      .scm-dev-version-btn .chev { width: 10px; height: 10px; opacity: 0.6; }
+      .scm-dev-version-menu {
+        display: none;
+        position: absolute; top: calc(100% + 4px); right: 0;
+        min-width: 280px; max-width: 380px;
+        background: #fff; border: 1px solid #E0E0E0; border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        z-index: 100;
+        padding: 6px;
+      }
+      .scm-dev-version-wrap.is-open .scm-dev-version-menu { display: block; }
+      .scm-dev-version-item {
+        display: flex; align-items: center; gap: 8px;
+        padding: 8px 10px; border-radius: 6px;
+        font-size: 12px; color: #1A1A1A; cursor: pointer;
+      }
+      .scm-dev-version-item:hover { background: #F5F5F5; }
+      .scm-dev-version-item.is-active { background: #EEF2FF; }
+      .scm-dev-version-item__label { font-weight: 600; flex-shrink: 0; }
+      .scm-dev-version-item__date  { color: #6B7280; font-size: 11px; flex: 1; }
+      .scm-dev-version-item__active-tag {
+        font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
+        color: #4F46E5; background: #fff; border: 1px solid #C7D2FE;
+        padding: 2px 6px; border-radius: 999px;
+      }
+      .scm-dev-version-item__del {
+        background: transparent; border: 0; cursor: pointer;
+        color: #9CA3AF; font-size: 14px; line-height: 1;
+        padding: 2px 6px; border-radius: 4px;
+      }
+      .scm-dev-version-item__del:hover { color: #DC2626; background: #FEE2E2; }
+      .scm-dev-version-empty {
+        padding: 14px; text-align: center; color: #9CA3AF; font-size: 12px;
+      }
     `;
     document.head.appendChild(s);
   }
@@ -607,12 +657,190 @@ ${jsxBody}
     elAction.addEventListener('click', onActionClick);
     group.appendChild(elAction);
 
+    // Version selector — sits to the LEFT of the handoff button group when
+    // there's at least one saved version for this page. Shows label +
+    // creation date; super admin gets a delete button per row. Switching
+    // the active version rewrites state.applied (the demo's currently
+    // displayed snapshot) and reloads the page so the demo re-renders
+    // against the new active.
+    injectVersionSelector(group);
+
     right.parentNode.insertBefore(group, right);
     // Cancel the profile's own margin-left:auto so only the group absorbs
     // the leftover horizontal space — keeps group flush against profile
     // on the right edge instead of flexbox splitting the gap.
     right.style.marginLeft = '0';
     refresh();
+  }
+
+  // ---------- Version selector ----------
+  const VOC_VERSIONS_KEY = 'scm:voc:versions:v1';
+  const VOC_EDITS_KEY    = 'scm:voc:edits:v1';
+  let elVersionWrap = null;
+  function _loadVersions() {
+    try {
+      const raw = localStorage.getItem(VOC_VERSIONS_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  }
+  function _saveVersions(map) {
+    try { localStorage.setItem(VOC_VERSIONS_KEY, JSON.stringify(map)); } catch {}
+  }
+  function _loadAppliedMap() {
+    try {
+      const raw = localStorage.getItem(VOC_EDITS_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  }
+  function _saveAppliedMap(map) {
+    try { localStorage.setItem(VOC_EDITS_KEY, JSON.stringify(map)); } catch {}
+  }
+  function _formatDate(ts) {
+    try {
+      const d = new Date(ts);
+      const yy = String(d.getFullYear()).slice(2);
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mi = String(d.getMinutes()).padStart(2, '0');
+      return `${yy}.${mm}.${dd} ${hh}:${mi}`;
+    } catch { return ''; }
+  }
+  function injectVersionSelector(group) {
+    elVersionWrap = document.createElement('div');
+    elVersionWrap.className = 'scm-dev-version-wrap';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'scm-dev-version-btn';
+    btn.innerHTML = '<span class="lbl">버전 —</span><svg class="chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l3 3 3-3"/></svg>';
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      elVersionWrap.classList.toggle('is-open');
+      if (elVersionWrap.classList.contains('is-open')) renderVersionMenu();
+    });
+    elVersionWrap.appendChild(btn);
+    const menu = document.createElement('div');
+    menu.className = 'scm-dev-version-menu';
+    elVersionWrap.appendChild(menu);
+    // Outside click closes
+    document.addEventListener('click', (e) => {
+      if (!elVersionWrap.contains(e.target)) elVersionWrap.classList.remove('is-open');
+    });
+    // Insert as the FIRST child of the group so it sits left of handoff.
+    group.insertBefore(elVersionWrap, group.firstChild);
+    refreshVersionLabel();
+  }
+  function refreshVersionLabel() {
+    if (!elVersionWrap) return;
+    const versions = _loadVersions();
+    const ver = versions[location.pathname];
+    const lbl = elVersionWrap.querySelector('.lbl');
+    if (!ver || !ver.list || !ver.list.length) {
+      if (lbl) lbl.textContent = '버전 —';
+      elVersionWrap.style.display = 'none';
+      return;
+    }
+    elVersionWrap.style.display = '';
+    const active = ver.list.find((v) => v.id === ver.activeId) || ver.list[ver.list.length - 1];
+    if (lbl) lbl.textContent = '버전 ' + (active.label || '?');
+  }
+  function renderVersionMenu() {
+    const menu = elVersionWrap.querySelector('.scm-dev-version-menu');
+    const versions = _loadVersions();
+    const ver = versions[location.pathname];
+    if (!ver || !ver.list || !ver.list.length) {
+      menu.innerHTML = '<div class="scm-dev-version-empty">저장된 버전이 없습니다</div>';
+      return;
+    }
+    const items = ver.list.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    const isSuper = (myRole === 'super');
+    menu.innerHTML = items.map((v) => {
+      const active = v.id === ver.activeId;
+      const date = _formatDate(v.createdAt);
+      const label = (v.label || v.id || '').replace(/[<>&]/g, '');
+      const tag = active ? '<span class="scm-dev-version-item__active-tag">활성</span>' : '';
+      const del = isSuper && !active
+        ? `<button type="button" class="scm-dev-version-item__del" data-del-version="${v.id}" title="삭제">×</button>`
+        : '';
+      return `<div class="scm-dev-version-item ${active ? 'is-active' : ''}" data-version-id="${v.id}">`
+        + `<span class="scm-dev-version-item__label">${label}</span>`
+        + `<span class="scm-dev-version-item__date">${date}</span>`
+        + tag
+        + del
+        + '</div>';
+    }).join('');
+    menu.querySelectorAll('[data-version-id]').forEach((row) => {
+      row.addEventListener('click', (e) => {
+        if (e.target.closest('[data-del-version]')) return;
+        const vid = row.dataset.versionId;
+        switchActiveVersion(vid);
+      });
+    });
+    menu.querySelectorAll('[data-del-version]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const vid = btn.dataset.delVersion;
+        deleteVersion(vid);
+      });
+    });
+  }
+  function switchActiveVersion(versionId) {
+    const versions = _loadVersions();
+    const page = location.pathname;
+    const ver = versions[page];
+    if (!ver || !ver.list) return;
+    const v = ver.list.find((x) => x.id === versionId);
+    if (!v) return;
+    if (ver.activeId === versionId) {
+      elVersionWrap.classList.remove('is-open');
+      return;
+    }
+    ver.activeId = versionId;
+    _saveVersions(versions);
+    // Sync state.applied with the now-active snapshot so the next demo
+    // load (and any VOC iframe push) uses it as the baseline.
+    const applied = _loadAppliedMap();
+    applied[page] = JSON.parse(JSON.stringify(v.applied || {}));
+    _saveAppliedMap(applied);
+    // Reload so the demo re-renders against the new active state.
+    location.reload();
+  }
+  function deleteVersion(versionId) {
+    if (myRole !== 'super') return;
+    const versions = _loadVersions();
+    const page = location.pathname;
+    const ver = versions[page];
+    if (!ver || !ver.list) return;
+    if (ver.activeId === versionId) return;       // safety — can't delete active
+    if (!confirm('이 버전을 삭제할까요? 되돌릴 수 없습니다.')) return;
+    ver.list = ver.list.filter((x) => x.id !== versionId);
+    _saveVersions(versions);
+    renderVersionMenu();
+    refreshVersionLabel();
+  }
+  // ---------- Apply active version's hidden cells on demo standalone ----------
+  // Minimal apply: hide selectors from the active version's `applied.hidden`.
+  // The full apply pipeline (column reorder, frozen override, added cols,
+  // sort/filter icon inject) lives in voc/index.html and runs against the
+  // iframe when the demo is opened through VOC. Standalone demos only need
+  // the hide pass to reflect the active version baseline.
+  function applyActiveVersionMinimal() {
+    try {
+      const versions = _loadVersions();
+      const ver = versions[location.pathname];
+      if (!ver || !ver.activeId) return;
+      const active = ver.list && ver.list.find((v) => v.id === ver.activeId);
+      const a = active && active.applied;
+      if (!a || !Array.isArray(a.hidden) || !a.hidden.length) return;
+      const css = a.hidden.map((s) => `${s} { display: none !important; }`).join('\n')
+        + '\n[data-voc-hidden="true"] { display: none !important; }'
+        + '\nth[data-voc-hidden="true"], td[data-voc-hidden="true"] { padding: 0 !important; border: 0 !important; width: 0 !important; min-width: 0 !important; max-width: 0 !important; }'
+        + '\ncol[data-voc-hidden="true"] { width: 0 !important; min-width: 0 !important; max-width: 0 !important; }';
+      const style = document.createElement('style');
+      style.id = 'scm-voc-version-hide';
+      style.textContent = css;
+      document.head.appendChild(style);
+    } catch {}
   }
 
   function onActionClick() {
@@ -667,12 +895,24 @@ ${jsxBody}
   function init() {
     injectStyles();
     injectButtons();
-    if (window.SCM_USER) { myRole = window.SCM_USER.role || null; refresh(); }
+    // Apply the active version's hide rules (standalone only). Runs even
+    // if injectButtons skipped (for embedded iframes), so opening the
+    // demo path directly always reflects the active version baseline.
+    let inIframe = false;
+    try { inIframe = window.parent && window.parent !== window; } catch { inIframe = true; }
+    if (!inIframe) applyActiveVersionMinimal();
+    if (window.SCM_USER) {
+      myRole = window.SCM_USER.role || null;
+      refresh();
+      // role changed → re-render selector so super gets delete buttons
+      if (elVersionWrap && elVersionWrap.classList.contains('is-open')) renderVersionMenu();
+    }
   }
   function bootAuth() {
     document.addEventListener('scm:auth-ready', (e) => {
       myRole = (e.detail && e.detail.user && e.detail.user.role) || null;
       refresh();
+      if (elVersionWrap && elVersionWrap.classList.contains('is-open')) renderVersionMenu();
     });
   }
   // cross-tab sync

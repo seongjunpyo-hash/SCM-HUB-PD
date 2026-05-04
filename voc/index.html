@@ -1098,6 +1098,13 @@
     // UI-only state (group collapse/expand etc.) — separate from edit state
     // because it shouldn't trigger dirty / save flow.
     const UI_KEY       = 'scm:voc:ui:v1';
+    // Versioned saves — each save can fork into a new version or merge into
+    // the currently-active one. Schema:
+    //   { [pagePath]: {
+    //       activeId: string,
+    //       list: [{ id, label, createdAt, updatedAt, applied }]
+    //   }}
+    const VERSIONS_KEY = 'scm:voc:versions:v1';
     // Two-depth menu mirroring the demo's LNB structure.
     const MENU = [
       { l1: 'dashboard', label: '대시보드', children: [
@@ -1272,6 +1279,9 @@
       const uiRaw = loadJsonKey(UI_KEY);
       state.ui = (uiRaw && typeof uiRaw === 'object' && !Array.isArray(uiRaw)) ? uiRaw : {};
       state.ui.collapsedGroups = (state.ui.collapsedGroups && typeof state.ui.collapsedGroups === 'object') ? state.ui.collapsedGroups : {};
+      // Versioned saves: list of snapshots per page + which is currently active.
+      const verRaw = loadJsonKey(VERSIONS_KEY);
+      state.versions = (verRaw && typeof verRaw === 'object' && !Array.isArray(verRaw)) ? verRaw : {};
       // L1 chips
       menuL1.innerHTML = MENU.map((m) => `<button type="button" class="menu-l1__chip" data-l1="${m.l1}">${escapeHtml(m.label)}</button>`).join('');
       menuL1.addEventListener('click', (e) => {
@@ -1487,9 +1497,10 @@
       try { const v = JSON.parse(localStorage.getItem(key)); return v && typeof v === 'object' ? v : {}; }
       catch { return {}; }
     }
-    function persistApplied() { try { localStorage.setItem(EDIT_KEY,  JSON.stringify(state.applied)); } catch {} }
-    function persistDraft()   { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(state.draft));   } catch {} }
-    function persistUi()      { try { localStorage.setItem(UI_KEY,    JSON.stringify(state.ui));      } catch {} }
+    function persistApplied()  { try { localStorage.setItem(EDIT_KEY,     JSON.stringify(state.applied));  } catch {} }
+    function persistDraft()    { try { localStorage.setItem(DRAFT_KEY,    JSON.stringify(state.draft));    } catch {} }
+    function persistUi()       { try { localStorage.setItem(UI_KEY,       JSON.stringify(state.ui));       } catch {} }
+    function persistVersions() { try { localStorage.setItem(VERSIONS_KEY, JSON.stringify(state.versions)); } catch {} }
     // Group collapse/expand — UI-only, not part of edit dirty flow.
     function isGroupCollapsed(groupSel) {
       const map = state.ui && state.ui.collapsedGroups;
@@ -2259,13 +2270,53 @@
       // Save also pushes to iframe (in case user hadn't clicked the
       // section apply buttons yet) so the new baseline is visible.
       applyAllToIframe();
-      state.applied[state.currentPage] = deepClone(pageDraft());
+      const page = state.currentPage;
+      const draftClone = deepClone(pageDraft());
+      const ver = state.versions[page] = state.versions[page] || { list: [], activeId: null };
+      let mode;
+      if (!ver.list.length) {
+        // First save for this page → implicitly creates v1.
+        mode = 'first';
+      } else {
+        // Subsequent saves prompt: 새 버전 vs 머지(현재 버전 덮어쓰기).
+        const active = ver.list.find((v) => v.id === ver.activeId);
+        const activeLabel = (active && active.label) || ver.activeId || '활성 버전';
+        const newVer = confirm(
+          '편집 내용을 저장합니다.\n\n' +
+          '[확인] = 새 버전으로 저장 (버전 ' + (ver.list.length + 1) + ' 생성)\n' +
+          '[취소] = ' + activeLabel + ' 에 머지(덮어쓰기)'
+        );
+        mode = newVer ? 'new' : 'merge';
+      }
+      const now = Date.now();
+      if (mode === 'first' || mode === 'new') {
+        const id = 'v' + now.toString(36) + Math.random().toString(36).slice(2, 5);
+        const label = 'v' + (ver.list.length + 1);
+        ver.list.push({ id, label, createdAt: now, applied: draftClone });
+        ver.activeId = id;
+      } else { // merge
+        const active = ver.list.find((v) => v.id === ver.activeId);
+        if (active) {
+          active.applied = draftClone;
+          active.updatedAt = now;
+        } else {
+          // active id missing — fall back to creating a new version.
+          const id = 'v' + now.toString(36) + Math.random().toString(36).slice(2, 5);
+          ver.list.push({ id, label: 'v' + (ver.list.length + 1), createdAt: now, applied: draftClone });
+          ver.activeId = id;
+        }
+      }
+      state.applied[page] = draftClone;
       persistApplied();
+      persistVersions();
       // After save: applied == draft, so previewed snapshots fall back to
       // the (now-current) applied state and both apply buttons turn off.
       _clearPreviewed();
       refreshSaveBtn();
-      showToast('저장 완료 — 화면 적용 + baseline');
+      const toast = mode === 'first'
+        ? '저장 완료 (버전 1 생성)'
+        : (mode === 'new' ? '새 버전 저장 완료' : '활성 버전에 머지됨');
+      showToast(toast);
     }
 
     // Move filter chips inside the iframe to match a.filterOrder.
@@ -2541,7 +2592,8 @@
         return v != null;
       });
       const hasUiPrefs = state.ui.collapsedGroups[page] != null;
-      if (!hasApplied && !hasUiPrefs) {
+      const hasVersions = state.versions[page] && state.versions[page].list && state.versions[page].list.length > 0;
+      if (!hasApplied && !hasUiPrefs && !hasVersions) {
         showToast('이미 초기 상태입니다');
         return;
       }
@@ -2549,9 +2601,12 @@
       delete state.applied[page];
       delete state.draft[page];
       if (state.ui.collapsedGroups) delete state.ui.collapsedGroups[page];
+      // also drop every saved version for this page
+      if (state.versions) delete state.versions[page];
       persistApplied();
       persistDraft();
       persistUi();
+      persistVersions();
       _clearPreviewed();
       // Reload iframe so the demo's untouched layout returns; the load
       // handler will re-run renderEditPane afterwards with clean state.
