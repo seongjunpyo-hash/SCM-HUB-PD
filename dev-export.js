@@ -621,18 +621,43 @@ ${jsxBody}
       .scm-dev-version-empty {
         padding: 14px; text-align: center; color: #9CA3AF; font-size: 12px;
       }
+      .scm-dev-version-title {
+        padding: 6px 10px 8px;
+        margin: 0 0 4px;
+        border-bottom: 1px solid #EFF1F4;
+        font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+        color: #6B7280; text-transform: uppercase;
+      }
+      /* Read-only version badge (VOC iframe context) */
+      .scm-dev-version-wrap.is-readonly { margin-right: 8px; }
+      .scm-dev-version-badge {
+        display: inline-flex; align-items: center;
+        height: 24px; padding: 0 10px;
+        background: #EEF2FF; color: #4F46E5;
+        border: 1px solid #C7D2FE; border-radius: 999px;
+        font-family: inherit; font-size: 11px; font-weight: 700;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+      }
     `;
     document.head.appendChild(s);
   }
 
   // ---------- inject buttons ----------
   let elDownload, elAction;
+  function isInIframe() {
+    try { return !!(window.parent && window.parent !== window); } catch { return true; }
+  }
   function injectButtons() {
-    // Skip when this demo is embedded in an iframe (e.g. inside the VOC
-    // viewer). Handoff is a standalone-demo affordance only.
-    try { if (window.parent && window.parent !== window) return; } catch (_) { return; }
     const right = document.querySelector('.scm-topbar__right');
     if (!right) return;
+    // Always inject the version selector — VOC's iframe view (협업) wants
+    // the current version label visible too. It renders read-only inside
+    // an iframe (no dropdown / no actions).
+    injectVersionSelector(right);
+    // Handoff group only in standalone — it triggers downloads, not useful
+    // inside VOC.
+    if (isInIframe()) return;
     if (document.querySelector('.scm-dev-export-group')) return;
 
     const group = document.createElement('div');
@@ -656,14 +681,6 @@ ${jsxBody}
     elAction.style.display = 'none';
     elAction.addEventListener('click', onActionClick);
     group.appendChild(elAction);
-
-    // Version selector — sits to the LEFT of the handoff button group when
-    // there's at least one saved version for this page. Shows label +
-    // creation date; super admin gets a delete button per row. Switching
-    // the active version rewrites state.applied (the demo's currently
-    // displayed snapshot) and reloads the page so the demo re-renders
-    // against the new active.
-    injectVersionSelector(group);
 
     right.parentNode.insertBefore(group, right);
     // Cancel the profile's own margin-left:auto so only the group absorbs
@@ -706,70 +723,99 @@ ${jsxBody}
       return `${yy}.${mm}.${dd} ${hh}:${mi}`;
     } catch { return ''; }
   }
-  function injectVersionSelector(group) {
+  function injectVersionSelector(rightEl) {
+    if (document.querySelector('.scm-dev-version-wrap')) return;
+    const inIframe = isInIframe();
     elVersionWrap = document.createElement('div');
-    elVersionWrap.className = 'scm-dev-version-wrap';
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'scm-dev-version-btn';
-    btn.innerHTML = '<span class="lbl">버전 —</span><svg class="chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l3 3 3-3"/></svg>';
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      elVersionWrap.classList.toggle('is-open');
-      if (elVersionWrap.classList.contains('is-open')) renderVersionMenu();
-    });
-    elVersionWrap.appendChild(btn);
-    const menu = document.createElement('div');
-    menu.className = 'scm-dev-version-menu';
-    elVersionWrap.appendChild(menu);
-    // Outside click closes
-    document.addEventListener('click', (e) => {
-      if (!elVersionWrap.contains(e.target)) elVersionWrap.classList.remove('is-open');
-    });
-    // Insert as the FIRST child of the group so it sits left of handoff.
-    group.insertBefore(elVersionWrap, group.firstChild);
+    elVersionWrap.className = 'scm-dev-version-wrap' + (inIframe ? ' is-readonly' : '');
+    if (inIframe) {
+      // Read-only badge inside VOC iframe — just shows the current version
+      // label; switching/deleting only available on the standalone demo.
+      const badge = document.createElement('span');
+      badge.className = 'scm-dev-version-badge';
+      badge.innerHTML = '<span class="lbl">v1</span>';
+      elVersionWrap.appendChild(badge);
+    } else {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'scm-dev-version-btn';
+      btn.innerHTML = '<span class="lbl">v1</span><svg class="chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l3 3 3-3"/></svg>';
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        elVersionWrap.classList.toggle('is-open');
+        if (elVersionWrap.classList.contains('is-open')) renderVersionMenu();
+      });
+      elVersionWrap.appendChild(btn);
+      const menu = document.createElement('div');
+      menu.className = 'scm-dev-version-menu';
+      elVersionWrap.appendChild(menu);
+      document.addEventListener('click', (e) => {
+        if (!elVersionWrap.contains(e.target)) elVersionWrap.classList.remove('is-open');
+      });
+    }
+    // Sit immediately to the LEFT of the profile/right block. In standalone
+    // the handoff group will be inserted between the version wrap and
+    // .scm-topbar__right by injectButtons (it inserts BEFORE rightEl too,
+    // so DOM order ends up: [version][handoff-group][right]).
+    rightEl.parentNode.insertBefore(elVersionWrap, rightEl);
     refreshVersionLabel();
+  }
+  // Active resolution: when versions[page].activeId is null OR doesn't match
+  // any saved snapshot, "원본" (the demo's natural state) is the active row.
+  function _activeIdOrOrigin(ver) {
+    if (!ver || !ver.list || !ver.list.length) return null;
+    if (!ver.activeId) return null;
+    return ver.list.some((v) => v.id === ver.activeId) ? ver.activeId : null;
   }
   function refreshVersionLabel() {
     if (!elVersionWrap) return;
     const versions = _loadVersions();
     const ver = versions[location.pathname];
+    // Both the standalone button (.scm-dev-version-btn) and the iframe
+    // badge (.scm-dev-version-badge) carry a `.lbl` text node — same query
+    // works for either layout.
     const lbl = elVersionWrap.querySelector('.lbl');
     elVersionWrap.style.display = '';
-    if (!ver || !ver.list || !ver.list.length) {
-      // No saved versions yet — keep the selector visible so the user can
-      // discover the feature; menu shows an empty-state message.
-      if (lbl) lbl.textContent = '원본';
+    const activeId = _activeIdOrOrigin(ver);
+    if (!activeId) {
+      // implicit v1 = the demo's original / unedited state
+      if (lbl) lbl.textContent = 'v1';
       return;
     }
-    const active = ver.list.find((v) => v.id === ver.activeId) || ver.list[ver.list.length - 1];
-    if (lbl) lbl.textContent = '버전 ' + (active.label || '?');
+    const active = ver.list.find((v) => v.id === activeId);
+    if (lbl) lbl.textContent = (active && active.label) || '?';
   }
   function renderVersionMenu() {
     const menu = elVersionWrap.querySelector('.scm-dev-version-menu');
     const versions = _loadVersions();
     const ver = versions[location.pathname];
-    if (!ver || !ver.list || !ver.list.length) {
-      menu.innerHTML = '<div class="scm-dev-version-empty">저장된 버전이 없습니다</div>';
-      return;
-    }
-    const items = ver.list.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    const activeId = _activeIdOrOrigin(ver);
     const isSuper = (myRole === 'super');
-    menu.innerHTML = items.map((v) => {
-      const active = v.id === ver.activeId;
-      const date = _formatDate(v.createdAt);
+    // Implicit v1 = original demo state. User saves append as v2, v3, …
+    const items = [{ id: '__origin__', label: 'v1', isOrigin: true }];
+    if (ver && ver.list && ver.list.length) {
+      ver.list.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+        .forEach((v) => items.push(v));
+    }
+    const title = '<div class="scm-dev-version-title">데모 버전 선택</div>';
+    const rows = items.map((v) => {
+      const isActive = v.isOrigin ? !activeId : (v.id === activeId);
+      const date = v.isOrigin ? '데모 기본 (편집 없음)' : _formatDate(v.createdAt);
       const label = (v.label || v.id || '').replace(/[<>&]/g, '');
-      const tag = active ? '<span class="scm-dev-version-item__active-tag">활성</span>' : '';
-      const del = isSuper && !active
+      const tag = isActive ? '<span class="scm-dev-version-item__active-tag">활성</span>' : '';
+      // v1 (원본) cannot be deleted; only user-saved versions, only when not active.
+      const del = (isSuper && !v.isOrigin && !isActive)
         ? `<button type="button" class="scm-dev-version-item__del" data-del-version="${v.id}" title="삭제">×</button>`
         : '';
-      return `<div class="scm-dev-version-item ${active ? 'is-active' : ''}" data-version-id="${v.id}">`
+      const dataId = v.isOrigin ? '__origin__' : v.id;
+      return `<div class="scm-dev-version-item ${isActive ? 'is-active' : ''}" data-version-id="${dataId}">`
         + `<span class="scm-dev-version-item__label">${label}</span>`
         + `<span class="scm-dev-version-item__date">${date}</span>`
         + tag
         + del
         + '</div>';
     }).join('');
+    menu.innerHTML = title + rows;
     menu.querySelectorAll('[data-version-id]').forEach((row) => {
       row.addEventListener('click', (e) => {
         if (e.target.closest('[data-del-version]')) return;
@@ -896,12 +942,10 @@ ${jsxBody}
   function init() {
     injectStyles();
     injectButtons();
-    // Apply the active version's hide rules (standalone only). Runs even
-    // if injectButtons skipped (for embedded iframes), so opening the
-    // demo path directly always reflects the active version baseline.
-    let inIframe = false;
-    try { inIframe = window.parent && window.parent !== window; } catch { inIframe = true; }
-    if (!inIframe) applyActiveVersionMinimal();
+    // Apply the active version's hide rules (standalone only) — VOC's
+    // iframe load handler runs the full apply pipeline so we don't want
+    // to double-apply when embedded.
+    if (!isInIframe()) applyActiveVersionMinimal();
     if (window.SCM_USER) {
       myRole = window.SCM_USER.role || null;
       refresh();

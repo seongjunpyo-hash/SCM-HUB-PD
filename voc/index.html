@@ -502,6 +502,69 @@
     }
     .toast.is-on { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+    /* Save-version modal */
+    .save-ver-backdrop {
+      position: fixed; inset: 0; z-index: 998;
+      background: rgba(0, 0, 0, 0.36);
+      backdrop-filter: blur(2px);
+    }
+    .save-ver-backdrop[hidden] { display: none !important; }
+    .save-ver-modal {
+      position: fixed; left: 50%; top: 50%; z-index: 999;
+      transform: translate(-50%, -50%);
+      min-width: 420px; max-width: 520px;
+      background: #fff; color: #1A1A1A;
+      border-radius: 12px;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.28);
+      font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .save-ver-modal[hidden] { display: none !important; }
+    .save-ver-modal__head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid #EFF1F4;
+    }
+    .save-ver-modal__head h3 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: -0.2px; }
+    .save-ver-modal__close {
+      background: transparent; border: 0; cursor: pointer;
+      width: 28px; height: 28px; border-radius: 4px;
+      font-size: 18px; line-height: 1; color: #6B7280;
+    }
+    .save-ver-modal__close:hover { background: #F3F4F6; color: #1A1A1A; }
+    .save-ver-modal__body { padding: 16px 20px 8px; }
+    .save-ver-modal__hint { margin: 0 0 12px; font-size: 13px; color: #6B7280; }
+    .save-ver-modal__options { display: flex; flex-direction: column; gap: 6px; }
+    .save-ver-opt {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px;
+      background: #fff; border: 1px solid #E5E7EB; border-radius: 8px;
+      cursor: pointer;
+      transition: border-color 0.12s, background 0.12s;
+    }
+    .save-ver-opt:hover { background: #F9FAFB; border-color: #D1D5DB; }
+    .save-ver-opt input[type="radio"] { accent-color: #4F46E5; cursor: pointer; flex-shrink: 0; }
+    .save-ver-opt:has(input:checked) { background: #EEF2FF; border-color: #4F46E5; }
+    .save-ver-opt__label  { font-size: 13.5px; font-weight: 600; flex: 1; min-width: 0; }
+    .save-ver-opt__sub    { font-size: 11.5px; color: #6B7280; flex-shrink: 0; }
+    .save-ver-modal__foot {
+      display: flex; justify-content: flex-end; gap: 8px;
+      padding: 12px 20px 18px;
+    }
+    .save-ver-modal__btn-ghost,
+    .save-ver-modal__btn-primary {
+      height: 36px; padding: 0 16px; border-radius: 8px;
+      font-family: inherit; font-size: 13px; font-weight: 600;
+      cursor: pointer;
+    }
+    .save-ver-modal__btn-ghost {
+      background: #fff; color: #1A1A1A; border: 1px solid #D1D5DB;
+    }
+    .save-ver-modal__btn-ghost:hover { border-color: #1A1A1A; }
+    .save-ver-modal__btn-primary {
+      background: #4F46E5; color: #fff; border: 0;
+    }
+    .save-ver-modal__btn-primary:hover { background: #4338CA; }
+
     /* ============================================================
      * Light theme — only the GNB topbar + the right comment sidebar
      * flip to white. The browser-frame stage stays dark.
@@ -1085,6 +1148,25 @@
         </footer>
       </div>
     </aside>
+  </div>
+
+  <!-- Save-version modal — opens when user clicks 저장 in the edit tab.
+       Lets them choose whether to fork into a new version or merge into
+       any of the existing saved versions. -->
+  <div class="save-ver-backdrop" id="saveVerBackdrop" hidden></div>
+  <div class="save-ver-modal" id="saveVerModal" hidden role="dialog" aria-labelledby="saveVerTitle">
+    <header class="save-ver-modal__head">
+      <h3 id="saveVerTitle">버전 저장</h3>
+      <button type="button" class="save-ver-modal__close" data-save-ver-act="close" aria-label="닫기">×</button>
+    </header>
+    <div class="save-ver-modal__body">
+      <p class="save-ver-modal__hint">편집한 내용을 어떻게 저장할까요?</p>
+      <div class="save-ver-modal__options" id="saveVerOptions"></div>
+    </div>
+    <footer class="save-ver-modal__foot">
+      <button type="button" class="save-ver-modal__btn-ghost"   data-save-ver-act="cancel">취소</button>
+      <button type="button" class="save-ver-modal__btn-primary" data-save-ver-act="save">저장</button>
+    </footer>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -2266,56 +2348,123 @@
     }
     function isFilterDirty() { return _filterSlice(pageDraft()) !== _previewedFilterSlice(); }
     function isColumnDirty() { return _columnSlice(pageDraft()) !== _previewedColumnSlice(); }
-    function commitDraft() {
+    // Render the save-version modal and return a Promise that resolves with
+    // { mode: 'new' | 'merge', mergeId?: string } or null when cancelled.
+    function openSaveVersionModal(ver) {
+      return new Promise((resolve) => {
+        const modal     = document.getElementById('saveVerModal');
+        const backdrop  = document.getElementById('saveVerBackdrop');
+        const optsHost  = document.getElementById('saveVerOptions');
+        if (!modal || !backdrop || !optsHost) { resolve(null); return; }
+        // v1 is implicit origin → cannot be a merge target. Saved versions
+        // (v2+) are merge targets.
+        const nextLabel = 'v' + (ver.list.length + 2);
+        const fmt = (ts) => {
+          if (!ts) return '';
+          const d = new Date(ts);
+          const pad = (n) => String(n).padStart(2, '0');
+          return `${String(d.getFullYear()).slice(2)}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        };
+        const items = [
+          {
+            value: 'new',
+            label: `새 버전으로 저장 (${nextLabel} 생성)`,
+            sub: '편집 내용이 새 스냅샷으로 추가됩니다',
+          },
+        ];
+        ver.list.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).forEach((v) => {
+          items.push({
+            value: 'merge:' + v.id,
+            label: `${v.label || v.id} 에 머지(덮어쓰기)`,
+            sub: fmt(v.createdAt) + (v.id === ver.activeId ? ' · 활성' : ''),
+          });
+        });
+        optsHost.innerHTML = items.map((it, i) => (
+          `<label class="save-ver-opt">`
+          + `<input type="radio" name="save-ver-opt" value="${it.value}" ${i === 0 ? 'checked' : ''}/>`
+          + `<span class="save-ver-opt__label">${escapeHtml(it.label)}</span>`
+          + `<span class="save-ver-opt__sub">${escapeHtml(it.sub || '')}</span>`
+          + `</label>`
+        )).join('');
+        const close = (val) => {
+          modal.hidden = true;
+          backdrop.hidden = true;
+          modal.removeEventListener('click', onClick);
+          backdrop.removeEventListener('click', onBackdrop);
+          document.removeEventListener('keydown', onKey);
+          resolve(val);
+        };
+        const onClick = (e) => {
+          const act = e.target.closest && e.target.closest('[data-save-ver-act]');
+          if (!act) return;
+          const a = act.dataset.saveVerAct;
+          if (a === 'close' || a === 'cancel') return close(null);
+          if (a === 'save') {
+            const picked = optsHost.querySelector('input[name="save-ver-opt"]:checked');
+            const v = picked && picked.value;
+            if (!v) return close(null);
+            if (v === 'new') return close({ mode: 'new' });
+            if (v.startsWith('merge:')) return close({ mode: 'merge', mergeId: v.slice('merge:'.length) });
+          }
+        };
+        const onBackdrop = () => close(null);
+        const onKey = (e) => { if (e.key === 'Escape') close(null); };
+        modal.addEventListener('click', onClick);
+        backdrop.addEventListener('click', onBackdrop);
+        document.addEventListener('keydown', onKey);
+        backdrop.hidden = false;
+        modal.hidden = false;
+      });
+    }
+
+    async function commitDraft() {
       // Save also pushes to iframe (in case user hadn't clicked the
       // section apply buttons yet) so the new baseline is visible.
       applyAllToIframe();
       const page = state.currentPage;
       const draftClone = deepClone(pageDraft());
       const ver = state.versions[page] = state.versions[page] || { list: [], activeId: null };
-      let mode;
+      let mode, mergeId;
+      // v1 is the demo's implicit origin (empty applied). User saves start
+      // at v2 to keep numbering aligned with what the selector shows.
       if (!ver.list.length) {
-        // First save for this page → implicitly creates v1.
+        // First save for this page — only option is to create v2; skip
+        // the modal since there's nothing to merge into.
         mode = 'first';
       } else {
-        // Subsequent saves prompt: 새 버전 vs 머지(현재 버전 덮어쓰기).
-        const active = ver.list.find((v) => v.id === ver.activeId);
-        const activeLabel = (active && active.label) || ver.activeId || '활성 버전';
-        const newVer = confirm(
-          '편집 내용을 저장합니다.\n\n' +
-          '[확인] = 새 버전으로 저장 (버전 ' + (ver.list.length + 1) + ' 생성)\n' +
-          '[취소] = ' + activeLabel + ' 에 머지(덮어쓰기)'
-        );
-        mode = newVer ? 'new' : 'merge';
+        // Subsequent saves: open the modal to pick new / merge target.
+        const choice = await openSaveVersionModal(ver);
+        if (!choice) return;                       // cancelled
+        mode = choice.mode;
+        mergeId = choice.mergeId;
       }
       const now = Date.now();
+      const nextLabel = () => 'v' + (ver.list.length + 2);
       if (mode === 'first' || mode === 'new') {
         const id = 'v' + now.toString(36) + Math.random().toString(36).slice(2, 5);
-        const label = 'v' + (ver.list.length + 1);
+        const label = nextLabel();
         ver.list.push({ id, label, createdAt: now, applied: draftClone });
         ver.activeId = id;
-      } else { // merge
-        const active = ver.list.find((v) => v.id === ver.activeId);
-        if (active) {
-          active.applied = draftClone;
-          active.updatedAt = now;
+      } else if (mode === 'merge') {
+        const target = ver.list.find((v) => v.id === mergeId) || ver.list.find((v) => v.id === ver.activeId);
+        if (target) {
+          target.applied = draftClone;
+          target.updatedAt = now;
+          ver.activeId = target.id;
         } else {
-          // active id missing — fall back to creating a new version.
           const id = 'v' + now.toString(36) + Math.random().toString(36).slice(2, 5);
-          ver.list.push({ id, label: 'v' + (ver.list.length + 1), createdAt: now, applied: draftClone });
+          ver.list.push({ id, label: nextLabel(), createdAt: now, applied: draftClone });
           ver.activeId = id;
         }
       }
       state.applied[page] = draftClone;
       persistApplied();
       persistVersions();
-      // After save: applied == draft, so previewed snapshots fall back to
-      // the (now-current) applied state and both apply buttons turn off.
       _clearPreviewed();
       refreshSaveBtn();
       const toast = mode === 'first'
-        ? '저장 완료 (버전 1 생성)'
-        : (mode === 'new' ? '새 버전 저장 완료' : '활성 버전에 머지됨');
+        ? '저장 완료 (v2 생성)'
+        : (mode === 'new' ? '새 버전 저장 완료' : '버전에 머지됨');
       showToast(toast);
     }
 
