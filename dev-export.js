@@ -323,6 +323,358 @@ ${jsxBody}
     return lines.join('\n');
   }
 
+  // ============================================================
+  // Handoff package — delta-focused builders
+  // ------------------------------------------------------------
+  // The shipped React component (`<Page>.jsx`) + spec are built from
+  // the demo's full markup, but for live screens what the dev team
+  // actually needs is the DELTA: which columns/filters were hidden,
+  // reordered, retyped, what was added, and the comment thread that
+  // explains why. The builders below produce that delta from
+  // `state.versions[page].activeId.applied` (the snapshot saved by
+  // the VOC editor) plus `scm:voc:comments:v1` for the thread.
+  // ============================================================
+  const VOC_COMMENTS_KEY = 'scm:voc:comments:v1';
+  function _loadComments() {
+    try { const raw = localStorage.getItem(VOC_COMMENTS_KEY); return raw ? (JSON.parse(raw) || []) : []; }
+    catch { return []; }
+  }
+  // Resolve a voc-key based selector to the human-readable label of
+  // the cell it points to. Falls back to the raw selector if the
+  // cell isn't in the live DOM (e.g. the user hid + saved it before
+  // we ran the standalone stamp pass).
+  function _resolveSelectorLabel(sel) {
+    try {
+      const el = document.querySelector(sel);
+      if (!el) return sel;
+      const t = (el.textContent || '').trim().replace(/\s+/g, ' ');
+      return t || sel;
+    } catch { return sel; }
+  }
+  function _activeVersionForExport() {
+    const versions = _loadVersions();
+    const ver = _verEntryFor(versions, location.pathname);
+    if (!ver || !ver.activeId) return { ver: null, active: null };
+    const active = (ver.list || []).find((v) => v.id === ver.activeId) || null;
+    return { ver, active };
+  }
+  // Display label like the VOC editor's selector: position-based
+  // DEMO_V<N> based on createdAt-asc order. Independent of stored
+  // labels so the numbering survives deletes.
+  function _displayLabelMap(ver) {
+    const out = {};
+    if (!ver || !ver.list) return out;
+    const sorted = ver.list.slice().sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    sorted.forEach((v, i) => { out[v.id] = 'DEMO_V' + (i + 1); });
+    return out;
+  }
+  function _isFilterSel(s)    { return /^\[data-voc-key="flt-/.test(s) || /^#voc-added-filter-/.test(s); }
+  function _isColSel(s)       { return /^\[data-voc-key="(col|grp)-/.test(s) || /^#voc-added-col-/.test(s); }
+  function _isComponentSel(s) { return !_isFilterSel(s) && !_isColSel(s); }
+  function _camelLabel(s) {
+    const parts = String(s || '').replace(/[^A-Za-z0-9가-힣]/g, ' ').trim().split(/\s+/);
+    if (!parts.length) return 'item';
+    return parts.map((w, i) => i === 0 ? w.toLowerCase() : w[0].toUpperCase() + w.slice(1).toLowerCase()).join('');
+  }
+
+  // ----- changes.json -----
+  function generateChangesJson() {
+    const { ver, active } = _activeVersionForExport();
+    const meta = confirmed[pageKey()] || {};
+    const labelMap = _displayLabelMap(ver);
+    const out = {
+      _description: '협업(VOC) 도구가 운영 코드에 적용할 변경 사항 명세. 이 페이지는 신규가 아닐 수 있으며 운영 코드의 컬럼/필터 식별자는 본 셀렉터와 다를 수 있다는 점에 유의하세요. column-map.template.json 으로 매핑을 채우면 자동화에 사용할 수 있습니다.',
+      page: {
+        path: location.pathname,
+        normalizedKey: _normalizePageKey(location.pathname),
+        title: pageTitle(),
+        slug: pageSlug(),
+      },
+      version: active ? {
+        id: active.id,
+        displayLabel: labelMap[active.id] || active.label || null,
+        createdAt: active.createdAt || null,
+        updatedAt: active.updatedAt || null,
+      } : null,
+      confirmed: meta.confirmed === true ? {
+        by: meta.by || null,
+        at: meta.at || null,
+      } : null,
+      applied: (active && active.applied) || {},
+      exportedAt: new Date().toISOString(),
+    };
+    return JSON.stringify(out, null, 2);
+  }
+
+  // ----- changes.md -----
+  function generateChangesMd() {
+    const { ver, active } = _activeVersionForExport();
+    const a = (active && active.applied) || {};
+    const labelMap = _displayLabelMap(ver);
+    const lines = [];
+    lines.push('# 변경 사항 — ' + pageTitle());
+    lines.push('');
+    lines.push('이 문서는 협업(VOC) 도구에서 확정한 변경 사항을 **운영 중인 화면에 적용**하기 위한 변경 명세입니다. 데모 코드 자체를 그대로 가져가는 게 아니라, 아래 항목들을 운영 코드의 동등한 위치에 반영해주세요.');
+    lines.push('');
+    lines.push('- 페이지: `' + location.pathname + '`');
+    if (active) {
+      lines.push('- 버전: ' + (labelMap[active.id] || active.id));
+      if (active.createdAt) lines.push('- 작성: ' + new Date(active.createdAt).toISOString());
+    } else {
+      lines.push('- 버전: (저장된 활성 버전 없음 — 변경 사항이 비어있을 수 있음)');
+    }
+    lines.push('- 추출: ' + new Date().toISOString());
+    lines.push('');
+
+    const hidden = a.hidden || [];
+    const hiddenCols = hidden.filter(_isColSel);
+    const hiddenFilters = hidden.filter(_isFilterSel);
+    const hiddenComponents = hidden.filter(_isComponentSel);
+
+    let hasAny = false;
+    if (hiddenCols.length) {
+      hasAny = true;
+      lines.push('## 숨김 컬럼');
+      hiddenCols.forEach((s) => lines.push('- ' + _resolveSelectorLabel(s) + '  `' + s + '`'));
+      lines.push('');
+    }
+    if (hiddenFilters.length) {
+      hasAny = true;
+      lines.push('## 숨김 필터');
+      hiddenFilters.forEach((s) => lines.push('- ' + _resolveSelectorLabel(s) + '  `' + s + '`'));
+      lines.push('');
+    }
+    if (hiddenComponents.length) {
+      hasAny = true;
+      lines.push('## 숨김 컴포넌트');
+      hiddenComponents.forEach((s) => lines.push('- `' + s + '`'));
+      lines.push('');
+    }
+    if (Array.isArray(a.columnOrder) && a.columnOrder.length) {
+      hasAny = true;
+      lines.push('## 컬럼 순서 (좌→우)');
+      a.columnOrder.forEach((s, i) => lines.push((i + 1) + '. ' + _resolveSelectorLabel(s) + '  `' + s + '`'));
+      lines.push('');
+    }
+    if (a.columnLeafOrder && Object.keys(a.columnLeafOrder).length) {
+      hasAny = true;
+      lines.push('## 그룹 내 leaf 순서 (2단 thead)');
+      Object.entries(a.columnLeafOrder).forEach(([groupSel, leaves]) => {
+        if (!Array.isArray(leaves) || !leaves.length) return;
+        lines.push('- 그룹 ' + _resolveSelectorLabel(groupSel) + '  `' + groupSel + '`');
+        leaves.forEach((ls, i) => lines.push('  ' + (i + 1) + '. ' + _resolveSelectorLabel(ls) + '  `' + ls + '`'));
+      });
+      lines.push('');
+    }
+    if (Array.isArray(a.filterOrder) && a.filterOrder.length) {
+      hasAny = true;
+      lines.push('## 필터 순서 (좌→우)');
+      a.filterOrder.forEach((s, i) => lines.push((i + 1) + '. ' + _resolveSelectorLabel(s) + '  `' + s + '`'));
+      lines.push('');
+    }
+    if (a.frozenCount != null) {
+      hasAny = true;
+      lines.push('## 마지막 고정 컬럼');
+      lines.push('- 고정 leaf 수 (cb 포함, 1-based 경계값): **' + a.frozenCount + '**');
+      lines.push('');
+    }
+    if (a.filterTypes && Object.keys(a.filterTypes).length) {
+      hasAny = true;
+      lines.push('## 필터 입력 타입 변경');
+      Object.entries(a.filterTypes).forEach(([sel, type]) => {
+        lines.push('- ' + _resolveSelectorLabel(sel) + ' → **' + type + '**  `' + sel + '`');
+      });
+      lines.push('');
+    }
+    const addedFilters = (a.added && a.added.filters) || [];
+    const addedCols    = (a.added && a.added.columns) || [];
+    if (addedFilters.length) {
+      hasAny = true;
+      lines.push('## 추가 필터');
+      addedFilters.forEach((f) => lines.push('- **' + f.label + '** (' + (f.type || 'single') + ')  `#voc-added-filter-' + f.id + '`'));
+      lines.push('');
+    }
+    if (addedCols.length) {
+      hasAny = true;
+      lines.push('## 추가 컬럼');
+      addedCols.forEach((c) => lines.push('- **' + c.label + '**  `#voc-added-col-' + c.id + '`'));
+      lines.push('');
+    }
+    const showSort = a.showSort || [];
+    const showFilter = a.showFilter || [];
+    if (showSort.length || showFilter.length) {
+      hasAny = true;
+      lines.push('## 헤더 아이콘 (정렬/필터)');
+      if (showSort.length) {
+        lines.push('정렬 활성:');
+        showSort.forEach((s) => lines.push('- ' + _resolveSelectorLabel(s) + '  `' + s + '`'));
+      }
+      if (showFilter.length) {
+        lines.push('필터 활성:');
+        showFilter.forEach((s) => lines.push('- ' + _resolveSelectorLabel(s) + '  `' + s + '`'));
+      }
+      lines.push('');
+    }
+    if (!hasAny) {
+      lines.push('> 이번 핸드오프에 반영할 변경 사항이 없습니다.');
+      lines.push('');
+    }
+
+    lines.push('---');
+    lines.push('');
+    lines.push('## 식별자 매핑 안내');
+    lines.push('');
+    lines.push('이 문서의 셀렉터(`[data-voc-key="col-N"]`, `[data-voc-key="grp-N"]`)는 협업 도구가 페이지를 스캔할 때 자동으로 부여한 **위치 기반 키**입니다. 운영 코드의 컬럼 식별자(필드명, key 등)와는 다를 가능성이 높습니다.');
+    lines.push('');
+    lines.push('- 옵션으로 함께 다운로드한 `column-map.template.json` 에서 `voc-key → 운영 컬럼 식별자` 매핑을 채우면 자동화 스크립트에 활용할 수 있습니다.');
+    lines.push('- 신규로 추가된 컬럼/필터(`#voc-added-*`)는 운영 코드에는 존재하지 않으므로 직접 추가해야 합니다. `added-snippet.tsx`(옵션) 참고.');
+    lines.push('');
+    return lines.join('\n');
+  }
+
+  // ----- acceptance.md -----
+  function generateAcceptanceMd() {
+    const { active } = _activeVersionForExport();
+    const a = (active && active.applied) || {};
+    const lines = [];
+    lines.push('# 수용 기준 — ' + pageTitle());
+    lines.push('');
+    lines.push('운영 코드에 변경을 반영한 후, 아래 모든 항목이 만족되어야 합니다. PR 본문/리뷰 체크리스트로 그대로 사용하세요.');
+    lines.push('');
+    const items = [];
+    (a.hidden || []).filter(_isColSel).forEach((s) => items.push((_resolveSelectorLabel(s) || '컬럼') + ' 컬럼이 화면에 노출되지 않는다'));
+    (a.hidden || []).filter(_isFilterSel).forEach((s) => items.push((_resolveSelectorLabel(s) || '필터') + ' 필터가 화면에 노출되지 않는다'));
+    (a.hidden || []).filter(_isComponentSel).forEach((s) => items.push('컴포넌트 `' + s + '` 가 화면에 노출되지 않는다'));
+    ((a.added && a.added.filters) || []).forEach((f) => items.push('"' + f.label + '" 필터가 ' + (f.type || 'single') + ' 타입으로 노출된다'));
+    ((a.added && a.added.columns) || []).forEach((c) => items.push('"' + c.label + '" 컬럼이 테이블에 추가된다'));
+    if (Array.isArray(a.columnOrder) && a.columnOrder.length) items.push('테이블 컬럼 순서가 changes.md 의 명시 순서와 일치한다');
+    if (Array.isArray(a.filterOrder) && a.filterOrder.length) items.push('필터 순서가 changes.md 의 명시 순서와 일치한다');
+    if (a.frozenCount != null) items.push('마지막 고정 컬럼 boundary 가 leaf ' + a.frozenCount + ' 위치에 있다 (cb 포함, 1-based)');
+    Object.entries(a.filterTypes || {}).forEach(([sel, type]) => items.push((_resolveSelectorLabel(sel) || '필터') + ' 필터의 입력 타입이 ' + type + ' 이다'));
+    (a.showSort || []).forEach((s) => items.push((_resolveSelectorLabel(s) || '컬럼') + ' 헤더의 정렬 아이콘이 노출된다'));
+    (a.showFilter || []).forEach((s) => items.push((_resolveSelectorLabel(s) || '컬럼') + ' 헤더의 필터 아이콘이 노출된다'));
+    if (!items.length) {
+      lines.push('> 수용 기준 없음 (이번 핸드오프에 변경 사항이 없습니다).');
+    } else {
+      items.forEach((t) => lines.push('- [ ] ' + t));
+    }
+    lines.push('');
+    return lines.join('\n');
+  }
+
+  // ----- voc-thread.md -----
+  function generateVocThreadMd() {
+    const all = _loadComments();
+    const path = location.pathname;
+    const np = _normalizePageKey(path);
+    // Match comments saved under any of the path variants (VOC iframe vs
+    // standalone differs in trailing-slash / .html — see _verEntryFor).
+    const candidates = new Set([path, np, path + '.html', path + 'index', path + 'index.html']);
+    const onPage = (all || []).filter((c) => candidates.has(c.page));
+    const lines = [];
+    lines.push('# VOC 코멘트 이력 — ' + pageTitle());
+    lines.push('');
+    lines.push('이 페이지에서 협업 중 남겨진 코멘트입니다. 각 변경 결정의 근거를 추적할 수 있습니다.');
+    lines.push('');
+    if (!onPage.length) {
+      lines.push('> 등록된 코멘트가 없습니다.');
+      return lines.join('\n');
+    }
+    onPage.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    onPage.forEach((c, i) => {
+      const head = (c.title || (c.body || '코멘트').slice(0, 40)).replace(/\s+/g, ' ').trim();
+      const status = c.status === 'resolved' ? ' (해결됨)' : '';
+      lines.push('## ' + (i + 1) + '. ' + head + status);
+      lines.push('');
+      const author = (c.author && (c.author.name || c.author.email)) || '익명';
+      const role = c.author && c.author.role ? ' · ' + c.author.role : '';
+      lines.push('- 작성: ' + author + role);
+      lines.push('- 시간: ' + (c.createdAt ? new Date(c.createdAt).toISOString() : '-'));
+      if (c.versionId) lines.push('- 버전: ' + c.versionId);
+      if (c.target)    lines.push('- 위치: `' + c.target + '`');
+      lines.push('');
+      lines.push((c.body || '(내용 없음)'));
+      lines.push('');
+      if (Array.isArray(c.replies) && c.replies.length) {
+        c.replies.forEach((r) => {
+          const ra = (r.author && (r.author.name || r.author.email)) || '익명';
+          const rt = r.createdAt ? new Date(r.createdAt).toISOString() : '-';
+          lines.push('> **' + ra + '** — ' + rt);
+          lines.push('>');
+          (r.body || '').split('\n').forEach((ln) => lines.push('> ' + ln));
+          lines.push('');
+        });
+      }
+    });
+    return lines.join('\n');
+  }
+
+  // ----- column-map.template.json -----
+  function generateColumnMapTemplate() {
+    // Walk the live thead and emit a scaffold mapping voc-key → real
+    // operational field. The dev fills `fieldName` per their codebase.
+    // _stampVocKeysOnTable should have run by now (init's apply pass).
+    const cells = document.querySelectorAll('.mp-table thead th[data-voc-key]');
+    const map = {};
+    cells.forEach((cell) => {
+      const k = cell.dataset.vocKey;
+      const label = (cell.textContent || '').trim().replace(/\s+/g, ' ');
+      if (!map[k]) map[k] = { label, fieldName: '', notes: '' };
+    });
+    return JSON.stringify({
+      _description: 'voc-key 기반 셀렉터를 운영 코드의 컬럼 식별자(필드명/key)로 매핑합니다. 각 항목의 fieldName 을 채우면 changes.json 을 자동 변환에 사용할 수 있습니다.',
+      page: location.pathname,
+      generatedAt: new Date().toISOString(),
+      columns: map,
+    }, null, 2);
+  }
+
+  // ----- added-snippet.tsx -----
+  function generateAddedSnippet() {
+    const { active } = _activeVersionForExport();
+    const a = (active && active.applied) || {};
+    const addedFilters = (a.added && a.added.filters) || [];
+    const addedCols    = (a.added && a.added.columns) || [];
+    const lines = [];
+    lines.push('// Auto-generated narrow snippet — only ADDED items.');
+    lines.push('// 운영 코드에 새로 추가해야 하는 필터/컬럼만 React 친화 형태로 변환합니다.');
+    lines.push('// 기존 컬럼/필터의 숨김·순서·타입 변경은 changes.md 를 보고 직접 수정하세요.');
+    lines.push('');
+    if (!addedFilters.length && !addedCols.length) {
+      lines.push('// 이번 핸드오프에는 신규 추가된 필터/컬럼이 없습니다.');
+      return lines.join('\n');
+    }
+    if (addedFilters.length) {
+      lines.push('// === 신규 필터 정의 ===');
+      lines.push('export const addedFilters = [');
+      addedFilters.forEach((f) => {
+        lines.push('  {');
+        lines.push('    id: ' + JSON.stringify(f.id) + ',');
+        lines.push('    label: ' + JSON.stringify(f.label) + ',');
+        lines.push('    type: ' + JSON.stringify(f.type || 'single') + ',  // single | multi | code');
+        lines.push('    // TODO: 옵션 목록 / 데이터 소스 연결');
+        lines.push('  },');
+      });
+      lines.push('];');
+      lines.push('');
+    }
+    if (addedCols.length) {
+      lines.push('// === 신규 컬럼 정의 ===');
+      lines.push('export const addedColumns = [');
+      addedCols.forEach((c) => {
+        lines.push('  {');
+        lines.push('    id: ' + JSON.stringify(c.id) + ',');
+        lines.push('    accessor: ' + JSON.stringify(_camelLabel(c.label)) + ',  // TODO: 실제 데이터 키로 교체');
+        lines.push('    header: ' + JSON.stringify(c.label) + ',');
+        lines.push('    // TODO: cell renderer / sort / width');
+        lines.push('  },');
+      });
+      lines.push('];');
+      lines.push('');
+    }
+    return lines.join('\n');
+  }
+
   function triggerDownload(name, content, mime) {
     const blob = new Blob([content], { type: mime || 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -334,14 +686,41 @@ ${jsxBody}
       URL.revokeObjectURL(url);
     }, 200);
   }
-  function doDownload() {
-    if (!isConfirmed()) return;
+  // Ordered file catalog used by the modal + downloader. `kind` groups
+  // the files visually; `defaultChecked` controls the initial selection.
+  function _handoffFileCatalog() {
     const slug = pageSlug();
     const Comp = pascal(slug) + 'Page';
-    triggerDownload(`${Comp}.jsx`,       generateJsx(),  'text/jsx;charset=utf-8');
-    setTimeout(() => {
-      triggerDownload(`${slug}.spec.md`, generateSpec(), 'text/markdown;charset=utf-8');
-    }, 250);
+    return [
+      // --- delta (default checked) ---
+      { id: 'changes-json', kind: 'delta',  name: 'changes.json',     mime: 'application/json',         label: '변경 명세 (JSON)',     desc: '기계 판독 가능한 applied 스냅샷 — 자동화/검증용', defaultChecked: true,  build: generateChangesJson },
+      { id: 'changes-md',   kind: 'delta',  name: 'changes.md',       mime: 'text/markdown',            label: '변경 요약 (MD)',       desc: '사람이 읽는 변경 내역 — PR 본문에 그대로 사용 가능',  defaultChecked: true,  build: generateChangesMd },
+      { id: 'acceptance',   kind: 'delta',  name: 'acceptance.md',    mime: 'text/markdown',            label: '수용 기준',           desc: '적용 후 확인 체크리스트',                              defaultChecked: true,  build: generateAcceptanceMd },
+      { id: 'voc-thread',   kind: 'delta',  name: 'voc-thread.md',    mime: 'text/markdown',            label: 'VOC 코멘트 이력',      desc: '결정 근거 추적 — 작성자/시간/답글 포함',                defaultChecked: true,  build: generateVocThreadMd },
+      // --- helpers (optional) ---
+      { id: 'column-map',   kind: 'helper', name: 'column-map.template.json', mime: 'application/json', label: '컬럼 매핑 템플릿',     desc: 'voc-key ↔ 운영 코드 필드명 매핑 스캐폴드',                defaultChecked: false, build: generateColumnMapTemplate },
+      { id: 'added-snippet',kind: 'helper', name: 'added-snippet.tsx', mime: 'text/plain',              label: '추가 항목 스니펫',     desc: '신규 필터/컬럼만 좁은 범위로 React 형태 변환',           defaultChecked: false, build: generateAddedSnippet },
+      // --- legacy (full demo conversion, reference only) ---
+      { id: 'legacy-jsx',   kind: 'legacy', name: Comp + '.jsx',       mime: 'text/jsx',                label: '데모 전체 React 변환', desc: '데모 main 영역 전체 (참조용 — 운영 코드와 구조 다를 수 있음)', defaultChecked: false, build: generateJsx },
+      { id: 'legacy-spec',  kind: 'legacy', name: slug + '.spec.md',   mime: 'text/markdown',           label: '데모 스펙',           desc: '의존성 / 컴포넌트 / TODO 체크리스트 (참조용)',          defaultChecked: false, build: generateSpec },
+    ];
+  }
+  function doDownload(selectedIds) {
+    if (!isConfirmed()) return;
+    const catalog = _handoffFileCatalog();
+    const picked = selectedIds && selectedIds.length
+      ? catalog.filter((f) => selectedIds.includes(f.id))
+      : catalog.filter((f) => f.defaultChecked);
+    if (!picked.length) return;
+    // Stagger the download triggers — Chrome / Firefox throttle clustered
+    // a.click() calls; 250ms gap is the minimum that consistently lets
+    // every file land in the user's downloads folder.
+    picked.forEach((f, i) => {
+      setTimeout(() => {
+        try { triggerDownload(f.name, f.build(), f.mime + ';charset=utf-8'); }
+        catch (e) { console.warn('[scm-handoff]', f.id, 'failed', e); }
+      }, i * 250);
+    });
   }
 
   // ---------- modal (download confirm) ----------
@@ -349,12 +728,38 @@ ${jsxBody}
     if (!isConfirmed()) return;
     if (document.querySelector('.scm-dev-export-backdrop')) return;
     const slug = pageSlug();
-    const Comp = pascal(slug) + 'Page';
     const title = pageTitle();
-    const assets = listExternalAssets();
-    const root = findContentRoot();
-    const components = inventoryScmComponents(root);
     const meta = confirmed[pageKey()] || {};
+    const catalog = _handoffFileCatalog();
+    const groupHeads = {
+      delta:  { label: '변경 적용 (운영 코드 반영용)',     hint: '이번 핸드오프의 핵심 — 기본 선택' },
+      helper: { label: '보조 도구',                         hint: '필요 시 함께 받기' },
+      legacy: { label: '데모 참조 (전체 변환)',             hint: '데모 코드 자체가 필요할 때만' },
+    };
+    const renderGroup = (kind) => {
+      const items = catalog.filter((f) => f.kind === kind);
+      if (!items.length) return '';
+      const head = groupHeads[kind];
+      return `
+        <div class="scm-dev-export-modal__group" data-group="${kind}">
+          <div class="scm-dev-export-modal__group-head">
+            <span class="scm-dev-export-modal__group-title">${escapeHtml(head.label)}</span>
+            <span class="scm-dev-export-modal__group-hint">${escapeHtml(head.hint)}</span>
+          </div>
+          ${items.map((f) => `
+            <label class="scm-dev-export-modal__pick">
+              <input type="checkbox" data-pick="${f.id}" ${f.defaultChecked ? 'checked' : ''} />
+              <div class="scm-dev-export-modal__pick-body">
+                <div class="scm-dev-export-modal__pick-row">
+                  <span class="scm-dev-export-modal__pick-label">${escapeHtml(f.label)}</span>
+                  <code class="scm-dev-export-modal__pick-name">${escapeHtml(f.name)}</code>
+                </div>
+                <div class="scm-dev-export-modal__pick-desc">${escapeHtml(f.desc)}</div>
+              </div>
+            </label>
+          `).join('')}
+        </div>`;
+    };
 
     const bd = document.createElement('div');
     bd.className = 'scm-dev-export-backdrop';
@@ -363,7 +768,7 @@ ${jsxBody}
         <header class="scm-dev-export-modal__head">
           <span class="scm-dev-export-modal__icon">📥</span>
           <div class="scm-dev-export-modal__titles">
-            <strong>개발자 다운로드</strong>
+            <strong>개발자 핸드오프 다운로드</strong>
             <small>${escapeHtml(title)} · /demo/${escapeHtml(slug)}.html</small>
           </div>
           <button class="scm-dev-export-modal__close" type="button" aria-label="닫기">×</button>
@@ -373,27 +778,19 @@ ${jsxBody}
             ✓ 화면 확정${meta.by ? ' · ' + escapeHtml(meta.by) : ''}
           </div>
           <p class="scm-dev-export-modal__lede">
-            현재 화면의 <b>main 영역만</b> (GNB / LNB 제외) 추출해 두 파일을 다운로드합니다.
+            <b>운영 중인 화면에 변경분을 적용</b>하기 위한 핸드오프 패키지입니다. 기본 4종은 변경 사항을 정확히 전달하고, 나머지는 필요할 때만 체크해서 받으세요.
           </p>
-          <div class="scm-dev-export-modal__files">
-            <div class="scm-dev-export-modal__file">
-              <code>${escapeHtml(Comp)}.jsx</code>
-              <span>React 컴포넌트 — HTML→JSX 기본 변환, 인라인 핸들러는 제거됨</span>
-            </div>
-            <div class="scm-dev-export-modal__file">
-              <code>${escapeHtml(slug)}.spec.md</code>
-              <span>스펙 문서 — 의존성 (${assets.css.length} CSS / ${assets.js.length} JS) · 컴포넌트 ${components.length}종 · TODO 체크리스트</span>
-            </div>
-          </div>
-          <ul class="scm-dev-export-modal__todo">
-            <li>데이터 fetch / 상태 관리 / 이벤트 핸들러는 자동 추출에서 제외 — 직접 연결</li>
-            <li>권한 검사 (super / admin / biz / pm / dev / pd) 와이어업 필요</li>
-            <li>디자인 시스템 CSS 의 React 프로젝트 이전 방식 결정</li>
-          </ul>
+          ${renderGroup('delta')}
+          ${renderGroup('helper')}
+          ${renderGroup('legacy')}
+          <p class="scm-dev-export-modal__warn">
+            ⚠ 셀렉터(<code>data-voc-key</code>)는 데모 위치 기반 키이며, 운영 코드의 컬럼 식별자(필드명/key)와 다를 수 있습니다. <code>column-map.template.json</code> 으로 매핑을 채우면 자동화 적용이 가능합니다.
+          </p>
         </div>
         <footer class="scm-dev-export-modal__foot">
           <button class="scm-dev-export-btn-ghost"   type="button" data-act="cancel">취소</button>
-          <button class="scm-dev-export-btn-primary" type="button" data-act="download">📥 두 파일 다운로드</button>
+          <span class="scm-dev-export-modal__count" id="scm-dev-export-count">0개 선택</span>
+          <button class="scm-dev-export-btn-primary" type="button" data-act="download">📥 선택 파일 다운로드</button>
         </footer>
       </div>
     `;
@@ -402,7 +799,26 @@ ${jsxBody}
     bd.addEventListener('click', (e) => { if (e.target === bd) close(); });
     bd.querySelector('.scm-dev-export-modal__close').addEventListener('click', close);
     bd.querySelector('[data-act="cancel"]').addEventListener('click', close);
-    bd.querySelector('[data-act="download"]').addEventListener('click', () => { doDownload(); close(); });
+
+    // Selected count + button enable state
+    const countEl = bd.querySelector('#scm-dev-export-count');
+    const dlBtn   = bd.querySelector('[data-act="download"]');
+    const refresh = () => {
+      const checked = bd.querySelectorAll('[data-pick]:checked');
+      countEl.textContent = checked.length + '개 선택';
+      dlBtn.disabled = checked.length === 0;
+    };
+    bd.addEventListener('change', (e) => {
+      if (e.target && e.target.matches('[data-pick]')) refresh();
+    });
+    refresh();
+
+    dlBtn.addEventListener('click', () => {
+      const ids = [...bd.querySelectorAll('[data-pick]:checked')].map((el) => el.dataset.pick);
+      if (!ids.length) return;
+      doDownload(ids);
+      close();
+    });
     document.addEventListener('keydown', function escClose(e) {
       if (e.key === 'Escape') { close(); document.removeEventListener('keydown', escClose); }
     });
@@ -550,6 +966,78 @@ ${jsxBody}
       .scm-dev-export-modal__todo {
         margin: 8px 0 4px; padding-left: 18px;
         font-size: 12px; color: #6B7280; line-height: 1.7;
+      }
+      /* ----- File-picker groups ----- */
+      .scm-dev-export-modal__group {
+        margin-bottom: 14px;
+        background: #F8F9FB; border: 1px solid #EBEEF2; border-radius: 8px;
+        overflow: hidden;
+      }
+      .scm-dev-export-modal__group[data-group="legacy"] {
+        background: #FAFAFA; border-color: #E5E7EB;
+      }
+      .scm-dev-export-modal__group-head {
+        display: flex; align-items: baseline; gap: 8px;
+        padding: 10px 14px;
+        background: #fff;
+        border-bottom: 1px solid #EBEEF2;
+      }
+      .scm-dev-export-modal__group-title {
+        font-size: 12.5px; font-weight: 700; color: #1A1A1A;
+      }
+      .scm-dev-export-modal__group-hint {
+        font-size: 11.5px; color: #9CA3AF;
+      }
+      .scm-dev-export-modal__pick {
+        display: flex; gap: 10px; align-items: flex-start;
+        padding: 10px 14px;
+        border-top: 1px solid #EBEEF2;
+        cursor: pointer;
+        transition: background 0.12s ease;
+      }
+      .scm-dev-export-modal__pick:first-of-type { border-top: 0; }
+      .scm-dev-export-modal__pick:hover { background: #fff; }
+      .scm-dev-export-modal__pick input[type="checkbox"] {
+        margin-top: 2px;
+        width: 15px; height: 15px;
+        accent-color: #4F46E5;
+        cursor: pointer; flex-shrink: 0;
+      }
+      .scm-dev-export-modal__pick-body { flex: 1; min-width: 0; }
+      .scm-dev-export-modal__pick-row {
+        display: flex; align-items: baseline; gap: 8px;
+        margin-bottom: 2px;
+      }
+      .scm-dev-export-modal__pick-label {
+        font-size: 13px; font-weight: 600; color: #1A1A1A;
+      }
+      .scm-dev-export-modal__pick-name {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 11.5px; color: #6B7280;
+        background: #fff; border: 1px solid #E5E7EB; border-radius: 4px;
+        padding: 1px 6px;
+      }
+      .scm-dev-export-modal__pick-desc {
+        font-size: 12px; color: #6B7280; line-height: 1.55;
+      }
+      .scm-dev-export-modal__warn {
+        margin: 4px 0 0;
+        padding: 10px 12px;
+        background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px;
+        font-size: 11.5px; line-height: 1.6; color: #92400E;
+      }
+      .scm-dev-export-modal__warn code {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 11px;
+        background: #fff; border: 1px solid #FDE68A; border-radius: 3px;
+        padding: 0 4px; color: #92400E;
+      }
+      .scm-dev-export-modal__count {
+        flex: 1; align-self: center;
+        font-size: 12px; color: #6B7280; font-weight: 500;
+      }
+      .scm-dev-export-btn-primary:disabled {
+        opacity: 0.4; cursor: not-allowed;
       }
       .scm-dev-export-modal__foot {
         display: flex; justify-content: flex-end; gap: 8px;
