@@ -219,6 +219,81 @@
         || document.body;
   }
 
+  // Static HTML snippet of the demo's main area — `outerHTML` of the
+  // content root with a small wrapper that lists the external CSS/JS
+  // imports needed to make the markup render. Useful when the dev
+  // team is starting a NEW page (no existing operational code) and
+  // wants the demo's layout as a structural starting point.
+  function generateHtml() {
+    const root = findContentRoot();
+    const slug = pageSlug();
+    const title = pageTitle();
+    const assets = listExternalAssets();
+    const date = new Date().toISOString().slice(0, 10);
+    const cssLinks = assets.css.map((p) => `  <link rel="stylesheet" href="${p}" />`).join('\n');
+    const jsScripts = assets.js.map((p) => `  <script src="${p}"></script>`).join('\n');
+    const inner = root ? root.outerHTML : '<!-- content root not found -->';
+    return `<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>${title}</title>
+  <!-- Auto-exported on ${date} from /demo/${slug}.html (main 영역만 — GNB/LNB 제외).
+       신규 페이지 작업 시 이 마크업을 구조 참조로 사용하세요. 의존하는 디자인
+       시스템 CSS/JS 도 아래 link/script 로 같이 표기되어 있습니다. -->
+${cssLinks || '  <!-- (외부 CSS 의존성 없음) -->'}
+</head>
+<body>
+${inner}
+${jsScripts || '  <!-- (외부 JS 의존성 없음) -->'}
+</body>
+</html>
+`;
+  }
+
+  // Concatenated page-scoped CSS — collects every <style> block inside
+  // the page (head + body) into one file, prefixed with a header listing
+  // the external CSS imports. The dev team can paste page-specific
+  // styles into their stylesheet and follow the import list to wire up
+  // the design-system files. External link[rel=stylesheet] contents are
+  // NOT inlined — they live in the design system and should be imported
+  // there directly.
+  function generateCss() {
+    const slug = pageSlug();
+    const title = pageTitle();
+    const assets = listExternalAssets();
+    const date = new Date().toISOString().slice(0, 10);
+    const lines = [];
+    lines.push('/* ============================================================');
+    lines.push(' * ' + title + ' — page-scoped styles');
+    lines.push(' * Auto-exported on ' + date + ' from /demo/' + slug + '.html');
+    lines.push(' * ------------------------------------------------------------');
+    lines.push(' * 신규 페이지를 만들 때 이 파일의 인라인 스타일을 그대로 가져가고,');
+    lines.push(' * 아래 외부 CSS 의존성도 프로젝트 빌드에 포함시켜야 데모와 같은');
+    lines.push(' * 시각 결과가 나옵니다. (운영 페이지에 변경분만 적용하는');
+    lines.push(' * 시나리오에서는 보통 외부 CSS 는 이미 로드되어 있어 import 만');
+    lines.push(' * 신경 쓰면 됩니다.)');
+    lines.push(' * ');
+    lines.push(' * Required external CSS imports:');
+    if (assets.css.length) assets.css.forEach((p) => lines.push(' *   - ' + p));
+    else lines.push(' *   (none)');
+    lines.push(' * ============================================================ */');
+    lines.push('');
+    const styles = [...document.querySelectorAll('style')];
+    if (!styles.length) {
+      lines.push('/* 이 페이지에 인라인 <style> 블록이 없습니다. */');
+    } else {
+      styles.forEach((s, i) => {
+        // Skip styles that we ourselves injected (dev-export, voc, version-hide).
+        if (s.id && /scm-(voc|dev-export)/.test(s.id)) return;
+        lines.push('/* ----- inline <style> block #' + (i + 1) + (s.id ? ' (id=' + s.id + ')' : '') + ' ----- */');
+        lines.push(s.textContent.trim());
+        lines.push('');
+      });
+    }
+    return lines.join('\n');
+  }
+
   // ---------- file generation ----------
   function generateJsx() {
     const root = findContentRoot();
@@ -703,6 +778,8 @@ ${jsxBody}
       // --- legacy (full demo conversion, reference only) ---
       { id: 'legacy-jsx',   kind: 'legacy', name: Comp + '.jsx',       mime: 'text/jsx',                label: '데모 전체 React 변환', desc: '데모 main 영역 전체 (참조용 — 운영 코드와 구조 다를 수 있음)', defaultChecked: false, build: generateJsx },
       { id: 'legacy-spec',  kind: 'legacy', name: slug + '.spec.md',   mime: 'text/markdown',           label: '데모 스펙',           desc: '의존성 / 컴포넌트 / TODO 체크리스트 (참조용)',          defaultChecked: false, build: generateSpec },
+      { id: 'legacy-html',  kind: 'legacy', name: slug + '.html',      mime: 'text/html',               label: '데모 HTML',           desc: '데모 main 영역 마크업 + CSS/JS 의존성 (신규 페이지 시작 시)',     defaultChecked: false, build: generateHtml },
+      { id: 'legacy-css',   kind: 'legacy', name: slug + '.css',       mime: 'text/css',                label: '데모 페이지 스타일',  desc: '페이지 인라인 <style> 블록 + 외부 CSS import 목록',          defaultChecked: false, build: generateCss },
     ];
   }
   function doDownload(selectedIds) {
