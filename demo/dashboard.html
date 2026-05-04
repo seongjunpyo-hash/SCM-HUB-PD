@@ -125,6 +125,241 @@
     .db-store-row__pct {
       font-size: 13px; font-weight: 600; color: #000; text-align: right;
     }
+
+    /* ============================================================
+     * Operations dashboard (image-2 style) — restructured layout
+     * ============================================================ */
+    .db-greet { display: flex; align-items: center; justify-content: space-between; padding: 4px 0 18px; }
+    .db-greet__title { font-size: 22px; font-weight: 700; color: #1A1A1A; margin: 0; }
+    .db-greet__time { font-size: 12.5px; color: #6B7280; display: inline-flex; align-items: center; gap: 8px; }
+    .db-greet__refresh {
+      width: 28px; height: 28px; border-radius: 50%; border: 1px solid #E5E7EB;
+      background: #fff; cursor: pointer; color: #6B7280;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .db-greet__refresh:hover { color: #1A1A1A; border-color: #1A1A1A; }
+    .db-greet__refresh svg { width: 14px; height: 14px; }
+
+    /* 4-row × 3-col operations grid using template-areas */
+    .db-ops-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      grid-template-areas:
+        "alert    outgoing    incoming"
+        "cost     inventory   inventory"
+        "cost     quality     health"
+        "guide    fulfillment fulfillment";
+    }
+    .db-ops--alert       { grid-area: alert; }
+    .db-ops--outgoing    { grid-area: outgoing; }
+    .db-ops--incoming    { grid-area: incoming; }
+    .db-ops--cost        { grid-area: cost; }
+    .db-ops--inventory   { grid-area: inventory; }
+    .db-ops--quality     { grid-area: quality; }
+    .db-ops--health      { grid-area: health; }
+    .db-ops--guide       { grid-area: guide; }
+    .db-ops--fulfillment { grid-area: fulfillment; }
+
+    .db-card2 {
+      background: #fff; border: 1px solid #EDEEF0; border-radius: 12px;
+      padding: 22px 24px;
+      display: flex; flex-direction: column;
+    }
+    .db-card2__head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 12px; margin-bottom: 16px;
+    }
+    .db-card2__title { font-size: 15px; font-weight: 700; color: #1A1A1A; margin: 0; display: inline-flex; align-items: center; gap: 6px; }
+    .db-card2__title-icon { width: 14px; height: 14px; color: #9CA3AF; cursor: help; }
+    .db-card2__sub { font-size: 11.5px; color: #9CA3AF; }
+    .db-card2__sub--row { display: flex; gap: 6px; align-items: center; }
+    .db-card2__sub--row::before { content: ''; width: 1px; height: 10px; background: #E5E7EB; }
+    .db-card2__sub--row:first-child::before { display: none; }
+    .db-card2__sub-wrap { display: inline-flex; gap: 8px; align-items: center; }
+
+    /* Alert pills row */
+    .db-alert-list { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .db-alert {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px;
+      background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px;
+    }
+    .db-alert--muted { background: #F8F9FB; border-color: #EDEEF0; }
+    .db-alert__label { font-size: 13px; font-weight: 600; color: #DC2626; }
+    .db-alert--muted .db-alert__label { color: #6B7280; }
+    .db-alert__value { font-size: 14px; font-weight: 700; color: #DC2626; }
+    .db-alert__value-unit { font-size: 11px; font-weight: 600; color: #DC2626; margin-left: 4px; }
+    .db-alert--muted .db-alert__value { color: #9CA3AF; font-weight: 600; }
+    .db-alert--muted .db-alert__value-unit { color: #9CA3AF; }
+
+    /* Big stat block */
+    .db-stat2 { display: flex; align-items: baseline; gap: 8px; }
+    .db-stat2__num { font-size: 30px; font-weight: 800; color: #1A1A1A; letter-spacing: -0.6px; line-height: 1.1; }
+    .db-stat2__unit { font-size: 13px; color: #6B7280; font-weight: 600; }
+    .db-stat2__delta {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 10px; border-radius: 4px;
+      font-size: 11.5px; font-weight: 600;
+      margin-top: 8px;
+    }
+    .db-stat2__delta--down { background: #FEF2F2; color: #DC2626; }
+    .db-stat2__delta--up   { background: #EFF6FF; color: #2563EB; }
+    .db-stat2-row { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+
+    /* Pipeline flow steps */
+    .db-flow {
+      display: flex; align-items: stretch; gap: 0;
+      background: #F8F9FB; border: 1px solid #EDEEF0; border-radius: 8px;
+      padding: 12px 14px;
+      margin-top: 14px;
+    }
+    .db-flow__step { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    .db-flow__step-label { font-size: 11.5px; color: #6B7280; }
+    .db-flow__step-value { font-size: 16px; font-weight: 700; color: #1A1A1A; }
+    .db-flow__arrow { color: #D1D5DB; flex-shrink: 0; align-self: center; padding: 0 8px; }
+    .db-flow__arrow svg { width: 12px; height: 12px; display: block; }
+
+    .db-flow-foot {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-top: 14px; margin-top: 14px;
+      border-top: 1px solid #F3F4F6;
+    }
+    .db-flow-foot__label { font-size: 12.5px; color: #6B7280; }
+    .db-flow-foot__value { font-size: 12.5px; font-weight: 600; color: #9CA3AF; }
+    .db-flow-foot__value--alert { color: #DC2626; font-weight: 700; font-size: 14px; }
+
+    /* Inventory split */
+    .db-inv-split { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 16px; flex: 1; }
+    .db-inv-main {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .db-breakdown { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+    .db-breakdown__row { display: flex; align-items: baseline; gap: 12px; font-size: 12.5px; }
+    .db-breakdown__label { width: 64px; color: #6B7280; }
+    .db-breakdown__num { color: #1A1A1A; font-weight: 600; }
+    .db-breakdown__num + .db-breakdown__num { margin-left: 8px; }
+    .db-breakdown__num-unit { color: #9CA3AF; font-weight: 500; font-size: 11px; margin-left: 3px; }
+
+    .db-side-card {
+      background: #F8F9FB; border-radius: 8px; padding: 14px 14px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .db-side-card__title { font-size: 12.5px; font-weight: 700; color: #1A1A1A; }
+    .db-side-card__row {
+      display: flex; align-items: baseline; justify-content: space-between;
+      gap: 8px; font-size: 12px;
+    }
+    .db-side-card__row + .db-side-card__row { padding-top: 8px; border-top: 1px dashed #E5E7EB; }
+    .db-side-card__k { color: #6B7280; }
+    .db-side-card__v { color: #1A1A1A; font-weight: 600; }
+    .db-side-card__v-unit { color: #9CA3AF; font-weight: 500; font-size: 11px; margin-left: 3px; }
+    .db-side-card__placeholder { font-size: 12px; color: #9CA3AF; padding: 28px 0; text-align: center; }
+
+    /* Mini tab pills (최근 7일 / 최근 30일) */
+    .db-tab-mini { display: inline-flex; background: #F3F4F6; border-radius: 6px; padding: 2px; font-size: 12px; }
+    .db-tab-mini__btn {
+      padding: 4px 12px; background: transparent; border: 0; cursor: pointer;
+      color: #6B7280; font-weight: 500; border-radius: 4px;
+      font-family: inherit;
+    }
+    .db-tab-mini__btn.is-active { background: #fff; color: #1A1A1A; box-shadow: 0 1px 2px rgba(0,0,0,0.06); font-weight: 600; }
+
+    /* Mini line / area chart */
+    .db-mini-chart { width: 100%; height: 130px; margin-top: 14px; flex: 1; min-height: 110px; }
+    .db-mini-chart svg { width: 100%; height: 100%; display: block; overflow: visible; }
+    .db-line { stroke: #2563EB; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .db-line--dim { stroke: #D1D5DB; }
+    .db-line__dot { fill: #fff; stroke: #2563EB; stroke-width: 2; }
+    .db-line__dot--dim { fill: #fff; stroke: #D1D5DB; }
+    .db-axis-label { font-size: 10px; fill: #9CA3AF; font-family: inherit; }
+    .db-axis-grid { stroke: #F3F4F6; stroke-width: 1; }
+
+    .db-foot-note { font-size: 11px; color: #9CA3AF; margin-top: 14px; }
+
+    /* 출고 품질 모니터링 */
+    .db-quality-row {
+      display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center;
+      flex: 1; min-height: 96px;
+    }
+    .db-quality__deltas { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+    .db-quality__delta-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 8px; border-radius: 999px;
+      background: #F3F4F6; color: #6B7280;
+      font-size: 11px; font-weight: 600; white-space: nowrap;
+      align-self: flex-start;
+    }
+    .db-quality__chart { height: 80px; }
+    .db-quality__chart svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+    /* 재고 건전성 */
+    .db-health-list { display: flex; flex-direction: column; flex: 1; }
+    .db-health-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 0;
+    }
+    .db-health-row + .db-health-row { border-top: 1px solid #F3F4F6; }
+    .db-health-row__label { font-size: 13.5px; color: #1A1A1A; }
+    .db-health-row__value { font-size: 18px; font-weight: 800; color: #1A1A1A; letter-spacing: -0.3px; }
+    .db-health-row__value-unit { font-size: 12px; font-weight: 500; color: #9CA3AF; margin-left: 4px; }
+
+    /* GUIDE banner */
+    .db-guide {
+      background: #EFF6FF; border: 1px solid #DBEAFE;
+      border-radius: 12px;
+      padding: 26px 24px;
+      display: flex; flex-direction: column; gap: 16px;
+      position: relative; overflow: hidden;
+      min-height: 220px;
+    }
+    .db-guide__eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 1.4px; color: #6B7280; }
+    .db-guide__title { font-size: 22px; font-weight: 700; color: #1A1A1A; line-height: 1.45; margin: 0; }
+    .db-guide__brand { color: #2563EB; }
+    .db-guide__btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #2563EB; color: #fff; border: 0;
+      padding: 10px 18px; border-radius: 999px;
+      font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+      align-self: flex-start;
+      text-decoration: none;
+    }
+    .db-guide__btn:hover { background: #1D4ED8; }
+    .db-guide__btn svg { width: 12px; height: 12px; }
+    .db-guide__deco {
+      position: absolute; right: -8px; bottom: -8px;
+      width: 120px; height: 120px;
+      opacity: 0.14;
+      pointer-events: none;
+    }
+    .db-guide__deco svg { width: 100%; height: 100%; color: #2563EB; }
+
+    /* Combined bar+line chart for 풀필먼트 현황 */
+    .db-fulfill-chart { width: 100%; height: 260px; margin-top: 14px; flex: 1; }
+    .db-fulfill-chart svg { width: 100%; height: 100%; display: block; overflow: visible; }
+    .db-fulfill-bar { fill: #E5E7EB; }
+    .db-fulfill-line { stroke: #2563EB; stroke-width: 2; fill: none; stroke-linecap: round; }
+    .db-fulfill-dot { fill: #fff; stroke: #2563EB; stroke-width: 2; }
+    .db-fulfill-legend {
+      display: flex; gap: 18px; justify-content: center; margin-top: 12px;
+      font-size: 11.5px; color: #6B7280;
+    }
+    .db-fulfill-legend__item { display: inline-flex; align-items: center; gap: 6px; }
+    .db-fulfill-legend__dot {
+      display: inline-block; width: 10px; height: 10px;
+      border-radius: 2px; background: #E5E7EB;
+    }
+    .db-fulfill-legend__line {
+      display: inline-block; width: 14px; height: 0;
+      border-top: 2px solid #2563EB;
+      position: relative;
+    }
+    .db-fulfill-legend__line::after {
+      content: ''; position: absolute;
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #fff; border: 2px solid #2563EB;
+      left: 50%; top: -4px; transform: translateX(-50%);
+    }
   </style>
 
   <script>
@@ -348,23 +583,349 @@
 </nav>
 
   <main>
-    <!-- Page head (--dashboard) -->
-    <div class="scm-page-head scm-page-head--dashboard">
-      <div class="scm-page-head__titles">
-        <h1 class="scm-page-head__title">대시보드</h1>
-        <p class="scm-page-head__sub">홍길동님, 오늘의 SCM 현황입니다.</p>
-      </div>
-      <div class="scm-page-head__actions">
-        <div class="scm-tabs scm-tabs--pill" id="period-tabs" role="tablist">
-          <button class="scm-tab is-active" type="button" data-key="7d" role="tab" aria-selected="true">7일</button>
-          <button class="scm-tab" type="button" data-key="14d" role="tab" aria-selected="false">14일</button>
-          <button class="scm-tab" type="button" data-key="30d" role="tab" aria-selected="false">30일</button>
-        </div>
-      </div>
+    <!-- Greeting + timestamp (image-2 style) -->
+    <div class="db-greet">
+      <h1 class="db-greet__title">무신사 스탠다드님 안녕하세요!</h1>
+      <span class="db-greet__time">
+        <span id="db-now">25-01-16 17:38</span>
+        <button type="button" class="db-greet__refresh" aria-label="새로고침">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 8a6 6 0 1 1-1.76-4.24M14 3v3h-3"/>
+          </svg>
+        </button>
+      </span>
     </div>
 
-    <!-- KPI Grid (4 cards) -->
-    <div class="db-kpi-grid" style="margin-top:16px;">
+    <!-- Operations grid (image-2 style) -->
+    <div class="db-ops-grid">
+
+      <!-- ROW 1 / col 1 — 빠른처리 필요 (SCM Hub 도메인) -->
+      <article class="db-card2 db-ops--alert">
+        <div class="db-card2__head">
+          <h3 class="db-card2__title">빠른처리 필요</h3>
+          <span class="db-card2__sub">17:38 기준</span>
+        </div>
+        <div class="db-alert-list">
+          <div class="db-alert">
+            <span class="db-alert__label">미매핑 SKU</span>
+            <span><span class="db-alert__value">128</span><span class="db-alert__value-unit">SKU</span></span>
+          </div>
+          <div class="db-alert">
+            <span class="db-alert__label">보충 요청 검토 대기</span>
+            <span><span class="db-alert__value">42</span><span class="db-alert__value-unit">건</span></span>
+          </div>
+          <div class="db-alert">
+            <span class="db-alert__label">위탁 입고 승인 대기</span>
+            <span><span class="db-alert__value">8</span><span class="db-alert__value-unit">건</span></span>
+          </div>
+          <div class="db-alert db-alert--muted">
+            <span class="db-alert__label">신규 등록 SKU 검수</span>
+            <span><span class="db-alert__value">15</span><span class="db-alert__value-unit">건</span></span>
+          </div>
+        </div>
+      </article>
+
+      <!-- ROW 1 / col 2 — 오늘 보충 처리 (편집샵 재고 보충) -->
+      <article class="db-card2 db-ops--outgoing">
+        <div class="db-card2__head">
+          <h3 class="db-card2__title">오늘 보충 처리</h3>
+          <div class="db-card2__sub-wrap">
+            <span class="db-card2__sub">편집샵 재고 보충</span>
+            <span class="db-card2__sub">|</span>
+            <span class="db-card2__sub">17:38 기준</span>
+          </div>
+        </div>
+        <div class="db-stat2-row">
+          <div class="db-stat2"><span class="db-stat2__num">1,284</span><span class="db-stat2__unit">건</span></div>
+        </div>
+        <span class="db-stat2__delta db-stat2__delta--up" style="align-self:flex-start;">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10l4-4 4 4"/></svg>
+          8% 어제 대비
+        </span>
+        <div class="db-flow">
+          <div class="db-flow__step"><span class="db-flow__step-label">요청</span><span class="db-flow__step-value">821</span></div>
+          <span class="db-flow__arrow"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2l5 4-5 4"/></svg></span>
+          <div class="db-flow__step"><span class="db-flow__step-label">승인</span><span class="db-flow__step-value">412</span></div>
+          <span class="db-flow__arrow"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2l5 4-5 4"/></svg></span>
+          <div class="db-flow__step"><span class="db-flow__step-label">출고완료</span><span class="db-flow__step-value">51</span></div>
+        </div>
+        <div class="db-flow-foot">
+          <span class="db-flow-foot__label">처리 지연 (24h 초과)</span>
+          <span class="db-flow-foot__value db-flow-foot__value--alert">7</span>
+        </div>
+      </article>
+
+      <!-- ROW 1 / col 3 — 오늘 위탁 입고 -->
+      <article class="db-card2 db-ops--incoming">
+        <div class="db-card2__head">
+          <h3 class="db-card2__title">오늘 위탁 입고</h3>
+          <span class="db-card2__sub">17:38 기준</span>
+        </div>
+        <div class="db-stat2-row">
+          <div class="db-stat2"><span class="db-stat2__num">348</span><span class="db-stat2__unit">PCS</span></div>
+          <div class="db-stat2"><span class="db-stat2__num">12</span><span class="db-stat2__unit">SKU</span></div>
+        </div>
+        <div class="db-flow" style="margin-top:18px;">
+          <div class="db-flow__step"><span class="db-flow__step-label">예정</span><span class="db-flow__step-value">3</span></div>
+          <span class="db-flow__arrow"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2l5 4-5 4"/></svg></span>
+          <div class="db-flow__step"><span class="db-flow__step-label">검수중</span><span class="db-flow__step-value">1</span></div>
+          <span class="db-flow__arrow"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2l5 4-5 4"/></svg></span>
+          <div class="db-flow__step"><span class="db-flow__step-label">완료</span><span class="db-flow__step-value">2</span></div>
+        </div>
+        <div class="db-flow-foot">
+          <span class="db-flow-foot__label">검수 이슈</span>
+          <span class="db-flow-foot__value db-flow-foot__value--alert">2</span>
+        </div>
+      </article>
+
+      <!-- ROW 2-3 / col 1 — 보충 요청 추이 (spans 2 rows) -->
+      <article class="db-card2 db-ops--cost">
+        <div class="db-card2__head">
+          <h3 class="db-card2__title">보충 요청 추이</h3>
+          <span class="db-card2__sub">어제 기준</span>
+        </div>
+        <div class="db-card2__sub" style="font-size:12.5px;color:#6B7280;margin-bottom:6px;">이번 주 누적 요청 건수</div>
+        <div class="db-stat2"><span class="db-stat2__num">5,842</span><span class="db-stat2__unit">건</span></div>
+        <span class="db-stat2__delta db-stat2__delta--up" style="align-self:flex-start;">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10l4-4 4 4"/></svg>
+          12.4% 전주 대비
+        </span>
+        <div style="display:flex;justify-content:flex-end;margin-top:14px;">
+          <div class="db-tab-mini">
+            <button type="button" class="db-tab-mini__btn is-active">최근 7일</button>
+            <button type="button" class="db-tab-mini__btn">최근 30일</button>
+          </div>
+        </div>
+        <div class="db-mini-chart" aria-hidden="true">
+          <svg viewBox="0 0 320 130" preserveAspectRatio="none">
+            <line class="db-axis-grid" x1="0" y1="30"  x2="320" y2="30"/>
+            <line class="db-axis-grid" x1="0" y1="65"  x2="320" y2="65"/>
+            <line class="db-axis-grid" x1="0" y1="100" x2="320" y2="100"/>
+            <polyline class="db-line" points="20,75 65,55 110,90 155,38 200,68 245,80 290,22"/>
+            <circle class="db-line__dot" cx="20"  cy="75" r="3"/>
+            <circle class="db-line__dot" cx="65"  cy="55" r="3"/>
+            <circle class="db-line__dot" cx="110" cy="90" r="3"/>
+            <circle class="db-line__dot" cx="155" cy="38" r="3"/>
+            <circle class="db-line__dot" cx="200" cy="68" r="3"/>
+            <circle class="db-line__dot" cx="245" cy="80" r="3"/>
+            <circle class="db-line__dot" cx="290" cy="22" r="3"/>
+            <text class="db-axis-label" x="20"  y="125" text-anchor="middle">01.15</text>
+            <text class="db-axis-label" x="65"  y="125" text-anchor="middle">01.16</text>
+            <text class="db-axis-label" x="110" y="125" text-anchor="middle">01.17</text>
+            <text class="db-axis-label" x="155" y="125" text-anchor="middle">01.18</text>
+            <text class="db-axis-label" x="200" y="125" text-anchor="middle">01.19</text>
+            <text class="db-axis-label" x="245" y="125" text-anchor="middle">01.20</text>
+            <text class="db-axis-label" x="290" y="125" text-anchor="middle">어제</text>
+          </svg>
+        </div>
+        <p class="db-foot-note">* 누적 물류비는 예정 데이터로 실제 정산액과 차이가 있을 수 있습니다.</p>
+      </article>
+
+      <!-- ROW 2 / col 2-3 — 전개상품 현황 -->
+      <article class="db-card2 db-ops--inventory">
+        <div class="db-card2__head">
+          <h3 class="db-card2__title">전개상품 현황</h3>
+          <span class="db-card2__sub">17:38 기준</span>
+        </div>
+        <div class="db-inv-split">
+          <div class="db-inv-main">
+            <div class="db-card2__sub" style="font-size:12.5px;color:#6B7280;">전체 SKU</div>
+            <div class="db-stat2-row">
+              <div class="db-stat2"><span class="db-stat2__num">12,486</span><span class="db-stat2__unit">SKU</span></div>
+            </div>
+            <span class="db-stat2__delta db-stat2__delta--up" style="align-self:flex-start;">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10l4-4 4 4"/></svg>
+              5% 지난 주 대비
+            </span>
+            <div class="db-breakdown">
+              <div class="db-breakdown__row">
+                <span class="db-breakdown__label">전개중</span>
+                <span class="db-breakdown__num">10,842<span class="db-breakdown__num-unit">SKU</span></span>
+                <span class="db-breakdown__num">86.8<span class="db-breakdown__num-unit">%</span></span>
+              </div>
+              <div class="db-breakdown__row">
+                <span class="db-breakdown__label">미전개</span>
+                <span class="db-breakdown__num">1,328<span class="db-breakdown__num-unit">SKU</span></span>
+                <span class="db-breakdown__num">10.6<span class="db-breakdown__num-unit">%</span></span>
+              </div>
+              <div class="db-breakdown__row">
+                <span class="db-breakdown__label">매핑 대기</span>
+                <span class="db-breakdown__num">316<span class="db-breakdown__num-unit">SKU</span></span>
+                <span class="db-breakdown__num">2.6<span class="db-breakdown__num-unit">%</span></span>
+              </div>
+            </div>
+          </div>
+          <div class="db-side-card">
+            <div class="db-side-card__title">무신사 스탠다드</div>
+            <div class="db-side-card__row">
+              <span class="db-side-card__k">전개중</span>
+              <span class="db-side-card__v">8,230<span class="db-side-card__v-unit">SKU</span></span>
+            </div>
+            <div class="db-side-card__row">
+              <span class="db-side-card__k">미전개</span>
+              <span class="db-side-card__v">412<span class="db-side-card__v-unit">SKU</span></span>
+            </div>
+            <div class="db-side-card__row">
+              <span class="db-side-card__k">신규 등록</span>
+              <span class="db-side-card__v">28<span class="db-side-card__v-unit">SKU</span></span>
+            </div>
+          </div>
+          <div class="db-side-card">
+            <div class="db-side-card__title">29CM · 편집샵</div>
+            <div class="db-side-card__row">
+              <span class="db-side-card__k">전개중</span>
+              <span class="db-side-card__v">2,612<span class="db-side-card__v-unit">SKU</span></span>
+            </div>
+            <div class="db-side-card__row">
+              <span class="db-side-card__k">미전개</span>
+              <span class="db-side-card__v">916<span class="db-side-card__v-unit">SKU</span></span>
+            </div>
+            <div class="db-side-card__row">
+              <span class="db-side-card__k">위탁 입고 SKU</span>
+              <span class="db-side-card__v">42<span class="db-side-card__v-unit">SKU</span></span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- ROW 3 / col 2 — 보충 처리 적시성 -->
+      <article class="db-card2 db-ops--quality">
+        <div class="db-card2__head">
+          <h3 class="db-card2__title">
+            보충 처리 적시성
+            <svg class="db-card2__title-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/></svg>
+          </h3>
+          <span class="db-card2__sub">최근 7일</span>
+        </div>
+        <div class="db-card2__sub" style="font-size:12.5px;color:#6B7280;margin-bottom:6px;">24시간 이내 처리율</div>
+        <div class="db-quality-row">
+          <div>
+            <div class="db-stat2"><span class="db-stat2__num">99.8</span><span class="db-stat2__unit">%</span></div>
+            <div class="db-quality__deltas">
+              <span class="db-quality__delta-pill">
+                <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8l3-4 3 4"/></svg>
+                2.1% 지난주 대비
+              </span>
+              <span class="db-quality__delta-pill">
+                <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8l3-4 3 4"/></svg>
+                목표 대비 +5.4%p
+              </span>
+            </div>
+          </div>
+          <div class="db-quality__chart" aria-hidden="true">
+            <svg viewBox="0 0 200 80" preserveAspectRatio="none">
+              <polyline class="db-line db-line--dim" points="10,55 40,40 70,50 100,30 130,42 160,28 190,36"/>
+              <polyline class="db-line" points="10,42 40,30 70,38 100,22 130,34 160,18 190,28"/>
+              <circle class="db-line__dot" cx="190" cy="28" r="3"/>
+            </svg>
+          </div>
+        </div>
+      </article>
+
+      <!-- ROW 3 / col 3 — 전개 건전성 -->
+      <article class="db-card2 db-ops--health">
+        <div class="db-card2__head">
+          <h3 class="db-card2__title">
+            전개 건전성
+            <svg class="db-card2__title-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/></svg>
+          </h3>
+          <span class="db-card2__sub">17:38 기준</span>
+        </div>
+        <div class="db-health-list">
+          <div class="db-health-row">
+            <span class="db-health-row__label">전개중 · 재고 0 SKU</span>
+            <span class="db-health-row__value">28<span class="db-health-row__value-unit">SKU</span></span>
+          </div>
+          <div class="db-health-row">
+            <span class="db-health-row__label">30일 무판매 SKU</span>
+            <span class="db-health-row__value">142<span class="db-health-row__value-unit">SKU</span></span>
+          </div>
+          <div class="db-health-row">
+            <span class="db-health-row__label">미매핑 7일 초과</span>
+            <span class="db-health-row__value">12<span class="db-health-row__value-unit">SKU</span></span>
+          </div>
+        </div>
+      </article>
+
+      <!-- ROW 4 / col 1 — GUIDE banner -->
+      <a class="db-guide db-ops--guide" href="#">
+        <span class="db-guide__eyebrow">GUIDE</span>
+        <h3 class="db-guide__title">매장 운영을 위한<br/><span class="db-guide__brand">SCM HUB</span><br/>이용 가이드</h3>
+        <span class="db-guide__btn">
+          가이드 보기
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 9l6-6M5 3h4v4"/></svg>
+        </span>
+        <span class="db-guide__deco" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+            <path d="M4 4h11a3 3 0 0 1 3 3v13l-3-2-3 2-3-2-3 2-2-1.5V4z"/>
+            <path d="M8 8h7M8 11h5"/>
+          </svg>
+        </span>
+      </a>
+
+      <!-- ROW 4 / col 2-3 — 보충 처리 추이 (bar + line) -->
+      <article class="db-card2 db-ops--fulfillment">
+        <div class="db-card2__head">
+          <h3 class="db-card2__title">보충 처리 추이</h3>
+          <div class="db-tab-mini">
+            <button type="button" class="db-tab-mini__btn is-active">최근 7일</button>
+            <button type="button" class="db-tab-mini__btn">최근 30일</button>
+          </div>
+        </div>
+        <div class="db-fulfill-chart" aria-hidden="true">
+          <svg viewBox="0 0 700 260" preserveAspectRatio="none">
+            <!-- y-axis labels -->
+            <text class="db-axis-label" x="0" y="20"  text-anchor="start">10,000</text>
+            <text class="db-axis-label" x="0" y="60"  text-anchor="start">9,000</text>
+            <text class="db-axis-label" x="0" y="100" text-anchor="start">8,000</text>
+            <text class="db-axis-label" x="0" y="140" text-anchor="start">7,000</text>
+            <text class="db-axis-label" x="0" y="180" text-anchor="start">6,000</text>
+            <text class="db-axis-label" x="0" y="220" text-anchor="start">5,000</text>
+            <text class="db-axis-label" x="0" y="240" text-anchor="start">0</text>
+            <!-- gridlines -->
+            <line class="db-axis-grid" x1="40" y1="20"  x2="700" y2="20"/>
+            <line class="db-axis-grid" x1="40" y1="60"  x2="700" y2="60"/>
+            <line class="db-axis-grid" x1="40" y1="100" x2="700" y2="100"/>
+            <line class="db-axis-grid" x1="40" y1="140" x2="700" y2="140"/>
+            <line class="db-axis-grid" x1="40" y1="180" x2="700" y2="180"/>
+            <line class="db-axis-grid" x1="40" y1="220" x2="700" y2="220"/>
+            <!-- bars (재고) -->
+            <rect class="db-fulfill-bar" x="60"  y="80"  width="48" height="160"/>
+            <rect class="db-fulfill-bar" x="148" y="100" width="48" height="140"/>
+            <rect class="db-fulfill-bar" x="236" y="116" width="48" height="124"/>
+            <rect class="db-fulfill-bar" x="324" y="124" width="48" height="116"/>
+            <rect class="db-fulfill-bar" x="412" y="92"  width="48" height="148"/>
+            <rect class="db-fulfill-bar" x="500" y="68"  width="48" height="172"/>
+            <rect class="db-fulfill-bar" x="588" y="84"  width="48" height="156"/>
+            <!-- line (출고/판매) -->
+            <polyline class="db-fulfill-line" points="84,170 172,144 260,184 348,160 436,128 524,164 612,124"/>
+            <circle class="db-fulfill-dot" cx="84"  cy="170" r="4"/>
+            <circle class="db-fulfill-dot" cx="172" cy="144" r="4"/>
+            <circle class="db-fulfill-dot" cx="260" cy="184" r="4"/>
+            <circle class="db-fulfill-dot" cx="348" cy="160" r="4"/>
+            <circle class="db-fulfill-dot" cx="436" cy="128" r="4"/>
+            <circle class="db-fulfill-dot" cx="524" cy="164" r="4"/>
+            <circle class="db-fulfill-dot" cx="612" cy="124" r="4"/>
+            <!-- x-axis labels -->
+            <text class="db-axis-label" x="84"  y="256" text-anchor="middle">01.15</text>
+            <text class="db-axis-label" x="172" y="256" text-anchor="middle">01.16</text>
+            <text class="db-axis-label" x="260" y="256" text-anchor="middle">01.17</text>
+            <text class="db-axis-label" x="348" y="256" text-anchor="middle">01.18</text>
+            <text class="db-axis-label" x="436" y="256" text-anchor="middle">01.19</text>
+            <text class="db-axis-label" x="524" y="256" text-anchor="middle">01.20</text>
+            <text class="db-axis-label" x="612" y="256" text-anchor="middle">어제</text>
+          </svg>
+        </div>
+        <div class="db-fulfill-legend">
+          <span class="db-fulfill-legend__item"><span class="db-fulfill-legend__dot"></span>신규 보충 요청</span>
+          <span class="db-fulfill-legend__item"><span class="db-fulfill-legend__line"></span>처리 완료</span>
+        </div>
+      </article>
+
+    </div>
+
+    <!-- (legacy KPI grid removed — replaced by the operations grid above) -->
+    <div style="display:none;">
       <div class="scm-kpi-card">
         <div class="scm-kpi-card__head">
           <span class="scm-kpi-card__label">진행중인 보충 요청</span>
@@ -428,7 +989,6 @@
           </div>
         </div>
       </div>
-    </div>
 
     <!-- 처리 대기 알림 + 입고 예정 일정 (2-col) -->
     <section class="scm-page-section">
@@ -677,6 +1237,7 @@
         </a>
       </div>
     </section>
+    </div><!-- /legacy display:none wrapper -->
   </main>
 </div>
 
