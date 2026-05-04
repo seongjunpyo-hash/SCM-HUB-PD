@@ -3208,10 +3208,15 @@
             ? [...validSavedLeaves, ...naturalLeaves.filter((s) => !validSet.has(s))]
             : naturalLeaves;
           const collapsed = isGroupCollapsed(sel);
+          // Count leaves NOT hidden — surfaces a "selected / total" badge
+          // on the group header so the user can see at a glance how many
+          // of the group's columns are still visible.
+          const visibleCount = naturalLeaves.reduce((n, ls) => n + (hidden.has(ls) ? 0 : 1), 0);
           columnRows.push({
             kind: 'column', isGroup: true, depth: 0,
             label: grp.label, selector: sel,
             childCount: naturalLeaves.length,
+            visibleCount,
             parent: null, draggable: true,
             collapsed,
           });
@@ -3271,7 +3276,7 @@
               <button type="button" class="edit-row__icon-toggle ${filterOn ? 'is-on' : ''}" data-toggle-icon="filter" data-selector="${sel}" title="컬럼 필터 아이콘 표시/숨김">필터</button>`;
           } else if (it.isGroup) {
             // group header — show the leaf-count badge for orientation
-            middle = `<span class="edit-row__group-count" title="이 그룹의 컬럼 수">${it.childCount}</span>`;
+            middle = `<span class="edit-row__group-count" title="선택된 컬럼 수 / 전체 컬럼 수">${it.visibleCount}/${it.childCount}</span>`;
           } else if (it.kind === 'filter') {
             // EVERY filter row (native + added) gets the type select
             const currentType = it.added ? (it.type || 'single') : (d.filterTypes[it.selector] || 'single');
