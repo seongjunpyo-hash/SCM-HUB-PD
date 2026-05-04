@@ -844,12 +844,32 @@ ${jsxBody}
   function switchActiveVersion(versionId) {
     const versions = _loadVersions();
     const page = location.pathname;
-    const ver = versions[page];
-    if (!ver || !ver.list) return;
+    const ver = versions[page] || { list: [], activeId: null };
+    // Clicking v1 ORIGIN: clear the active version so we fall back to
+    // the demo's natural state (no edits applied). The origin row uses
+    // the synthetic id `__origin__` and is NOT in ver.list.
+    if (versionId === '__origin__') {
+      if (!ver.activeId) {
+        // already on origin — just close the menu
+        if (elVersionWrap) elVersionWrap.classList.remove('is-open');
+        return;
+      }
+      ver.activeId = null;
+      versions[page] = ver;
+      _saveVersions(versions);
+      // Strip applied state for this page so the demo loads its native baseline.
+      const applied = _loadAppliedMap();
+      delete applied[page];
+      _saveAppliedMap(applied);
+      location.reload();
+      return;
+    }
+    // Saved version: needs an entry in ver.list.
+    if (!ver.list || !ver.list.length) return;
     const v = ver.list.find((x) => x.id === versionId);
     if (!v) return;
     if (ver.activeId === versionId) {
-      elVersionWrap.classList.remove('is-open');
+      if (elVersionWrap) elVersionWrap.classList.remove('is-open');
       return;
     }
     ver.activeId = versionId;
