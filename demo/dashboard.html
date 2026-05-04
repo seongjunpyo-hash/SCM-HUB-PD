@@ -304,35 +304,34 @@
     .db-health-row__value { font-size: 18px; font-weight: 800; color: #1A1A1A; letter-spacing: -0.3px; }
     .db-health-row__value-unit { font-size: 12px; font-weight: 500; color: #9CA3AF; margin-left: 4px; }
 
-    /* GUIDE banner */
-    .db-guide {
-      background: #EFF6FF; border: 1px solid #DBEAFE;
-      border-radius: 12px;
-      padding: 26px 24px;
-      display: flex; flex-direction: column; gap: 16px;
-      position: relative; overflow: hidden;
-      min-height: 220px;
+    /* 위탁 입고 일정 — schedule list */
+    .db-schedule { display: flex; flex-direction: column; flex: 1; }
+    .db-schedule__row {
+      display: grid; grid-template-columns: 56px 1fr auto;
+      align-items: center; gap: 12px;
+      padding: 14px 0;
     }
-    .db-guide__eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 1.4px; color: #6B7280; }
-    .db-guide__title { font-size: 22px; font-weight: 700; color: #1A1A1A; line-height: 1.45; margin: 0; }
-    .db-guide__brand { color: #2563EB; }
-    .db-guide__btn {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: #2563EB; color: #fff; border: 0;
-      padding: 10px 18px; border-radius: 999px;
-      font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
-      align-self: flex-start;
-      text-decoration: none;
+    .db-schedule__row + .db-schedule__row { border-top: 1px solid #F3F4F6; }
+    .db-schedule__date {
+      display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
     }
-    .db-guide__btn:hover { background: #1D4ED8; }
-    .db-guide__btn svg { width: 12px; height: 12px; }
-    .db-guide__deco {
-      position: absolute; right: -8px; bottom: -8px;
-      width: 120px; height: 120px;
-      opacity: 0.14;
-      pointer-events: none;
+    .db-schedule__day {
+      font-size: 11px; font-weight: 600; color: #6B7280;
+      padding: 2px 6px; border-radius: 4px;
+      background: #F3F4F6;
     }
-    .db-guide__deco svg { width: 100%; height: 100%; color: #2563EB; }
+    .db-schedule__day--today { background: #DBEAFE; color: #1D4ED8; }
+    .db-schedule__num { font-size: 13px; font-weight: 700; color: #1A1A1A; }
+    .db-schedule__main { min-width: 0; }
+    .db-schedule__title {
+      font-size: 13.5px; font-weight: 600; color: #1A1A1A;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .db-schedule__meta { font-size: 11.5px; color: #6B7280; margin-top: 2px; }
+    .db-schedule__count {
+      font-size: 14px; font-weight: 700; color: #1A1A1A;
+      font-variant-numeric: tabular-nums;
+    }
 
     /* Combined bar+line chart for 풀필먼트 현황 */
     .db-fulfill-chart { width: 100%; height: 260px; margin-top: 14px; flex: 1; }
@@ -847,21 +846,59 @@
         </div>
       </article>
 
-      <!-- ROW 4 / col 1 — GUIDE banner -->
-      <a class="db-guide db-ops--guide" href="#">
-        <span class="db-guide__eyebrow">GUIDE</span>
-        <h3 class="db-guide__title">매장 운영을 위한<br/><span class="db-guide__brand">SCM HUB</span><br/>이용 가이드</h3>
-        <span class="db-guide__btn">
-          가이드 보기
-          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 9l6-6M5 3h4v4"/></svg>
-        </span>
-        <span class="db-guide__deco" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
-            <path d="M4 4h11a3 3 0 0 1 3 3v13l-3-2-3 2-3-2-3 2-2-1.5V4z"/>
-            <path d="M8 8h7M8 11h5"/>
-          </svg>
-        </span>
-      </a>
+      <!-- ROW 4 / col 1 — 위탁 입고 일정 -->
+      <article class="db-card2 db-ops--guide">
+        <div class="db-card2__head">
+          <h3 class="db-card2__title">위탁 입고 일정</h3>
+          <a class="db-card2__sub" href="#" style="color:#2563EB;text-decoration:none;font-weight:600;">전체 보기 →</a>
+        </div>
+        <div class="db-schedule">
+          <div class="db-schedule__row">
+            <div class="db-schedule__date">
+              <span class="db-schedule__day db-schedule__day--today">오늘</span>
+              <span class="db-schedule__num">02</span>
+            </div>
+            <div class="db-schedule__main">
+              <div class="db-schedule__title">아크테릭스 26-SS 입고</div>
+              <div class="db-schedule__meta">12 SKU · 348개</div>
+            </div>
+            <span class="db-schedule__count">348</span>
+          </div>
+          <div class="db-schedule__row">
+            <div class="db-schedule__date">
+              <span class="db-schedule__day">내일</span>
+              <span class="db-schedule__num">03</span>
+            </div>
+            <div class="db-schedule__main">
+              <div class="db-schedule__title">YEEZY 350 V2 시즌 입고</div>
+              <div class="db-schedule__meta">8 SKU · 1,240개</div>
+            </div>
+            <span class="db-schedule__count">1,240</span>
+          </div>
+          <div class="db-schedule__row">
+            <div class="db-schedule__date">
+              <span class="db-schedule__day">월</span>
+              <span class="db-schedule__num">05</span>
+            </div>
+            <div class="db-schedule__main">
+              <div class="db-schedule__title">MUSINSA STANDARD 26-SS</div>
+              <div class="db-schedule__meta">34 SKU · 2,180개</div>
+            </div>
+            <span class="db-schedule__count">2,180</span>
+          </div>
+          <div class="db-schedule__row">
+            <div class="db-schedule__date">
+              <span class="db-schedule__day">화</span>
+              <span class="db-schedule__num">06</span>
+            </div>
+            <div class="db-schedule__main">
+              <div class="db-schedule__title">NIKE 봄 신상</div>
+              <div class="db-schedule__meta">22 SKU · 880개</div>
+            </div>
+            <span class="db-schedule__count">880</span>
+          </div>
+        </div>
+      </article>
 
       <!-- ROW 4 / col 2-3 — 보충 처리 추이 (bar + line) -->
       <article class="db-card2 db-ops--fulfillment">
