@@ -107,7 +107,7 @@
     }
     .field input:focus, .field select:focus { outline: none; border-color: var(--accent); }
     .modal-row { display: flex; gap: 8px; margin-top: 24px; justify-content: flex-end; }
-    .msg { margin-top: 12px; padding: 10px 12px; border-radius: 8px; font-size: 12px; line-height: 1.5; display: none; }
+    .msg { margin-top: 12px; padding: 10px 12px; border-radius: 8px; font-size: 12px; line-height: 1.5; display: none; white-space: pre-line; word-break: break-word; }
     .msg--error { background: rgba(255,107,107,0.12); color: var(--error); }
     .msg--success { background: rgba(16,185,129,0.12); color: var(--success); }
     .msg.show { display: block; }
@@ -530,10 +530,16 @@
       const res = await api('/api/users', { method: 'POST', body: JSON.stringify(body) });
       submit.disabled = false; submit.textContent = '등록';
       if (!res.ok) {
-        const m = res.data?.error === 'email_exists' ? '이미 등록된 이메일입니다.' :
-                  res.data?.error === 'forbidden' ? '해당 역할로 등록할 권한이 없습니다.' :
-                  '등록 실패: ' + (res.data?.error || res.status);
-        $('invErr').textContent = m; $('invErr').classList.add('show');
+        // Show server-provided detail (res.data.message) on top of the
+        // friendly tag — makes server_error / unknown errors diagnosable
+        // (e.g., CHECK constraint, duplicate key, etc.) without poking
+        // network panel.
+        const tag = res.data?.error === 'email_exists' ? '이미 등록된 이메일입니다.' :
+                    res.data?.error === 'forbidden' ? '해당 역할로 등록할 권한이 없습니다.' :
+                    '등록 실패: ' + (res.data?.error || res.status);
+        const detail = res.data?.message ? `\n${res.data.message}` : '';
+        $('invErr').textContent = tag + detail;
+        $('invErr').classList.add('show');
         return;
       }
       // Show password result
