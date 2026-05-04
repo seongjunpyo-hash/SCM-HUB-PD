@@ -164,6 +164,18 @@
       body.scm-voc-mode-active .scm-topbar__demo-tag {
         background: #DC2626 !important;
       }
+      /* 코멘트 모드 진입 시 토픽바의 버전 셀렉트 / 핸드오프 다운로드 /
+         최종확정 버튼들은 모두 비활성. 클릭 자체를 막고(pointer-events)
+         시각적으로도 흐리게 처리해 작업 흐름이 코멘트 작성에만 집중되게.
+         opacity 만 낮추면 클릭은 통하므로 pointer-events:none 도 같이.
+         (코멘트 모드 해제 시 자동 복원 — 일반 클래스 토글이라 영속 영향 X) */
+      body.scm-voc-mode-active .scm-dev-version-wrap,
+      body.scm-voc-mode-active .scm-dev-export-btn,
+      body.scm-voc-mode-active .scm-dev-export-action-btn {
+        pointer-events: none !important;
+        opacity: 0.4 !important;
+        cursor: not-allowed !important;
+      }
       body.scm-voc-mode-active, body.scm-voc-mode-active * { cursor: crosshair !important; }
       body.scm-voc-mode-active .scm-voc-pin,
       body.scm-voc-mode-active .scm-voc-pin *,
