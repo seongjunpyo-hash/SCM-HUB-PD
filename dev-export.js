@@ -735,12 +735,13 @@ ${jsxBody}
     const versions = _loadVersions();
     const ver = versions[location.pathname];
     const lbl = elVersionWrap.querySelector('.lbl');
+    elVersionWrap.style.display = '';
     if (!ver || !ver.list || !ver.list.length) {
-      if (lbl) lbl.textContent = '버전 —';
-      elVersionWrap.style.display = 'none';
+      // No saved versions yet — keep the selector visible so the user can
+      // discover the feature; menu shows an empty-state message.
+      if (lbl) lbl.textContent = '원본';
       return;
     }
-    elVersionWrap.style.display = '';
     const active = ver.list.find((v) => v.id === ver.activeId) || ver.list[ver.list.length - 1];
     if (lbl) lbl.textContent = '버전 ' + (active.label || '?');
   }
