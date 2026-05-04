@@ -634,17 +634,16 @@ ${jsxBody}
         margin-right: 0;
         margin-left: 80px;
       }
-      /* Read-only version badge (VOC iframe context) */
-      .scm-dev-version-wrap.is-readonly { margin-right: 8px; }
-      .scm-dev-version-wrap.is-readonly.is-leftaligned { margin-right: 0; }
-      .scm-dev-version-badge {
-        display: inline-flex; align-items: center;
-        height: 24px; padding: 0 10px;
-        background: #EEF2FF; color: #4F46E5;
-        border: 1px solid #C7D2FE; border-radius: 999px;
-        font-family: inherit; font-size: 11px; font-weight: 700;
-        letter-spacing: 0.3px;
-        white-space: nowrap;
+      /* DEMO tag repurposed for VOC iframe — shows the current version
+         label (e.g. demo_v1) instead of the literal "DEMO". The class
+         flips the colors to the indigo accent so the version reads as
+         a chip rather than a label. */
+      .scm-topbar__demo-tag.scm-topbar__demo-tag--version {
+        background: #EEF2FF !important;
+        color: #4F46E5 !important;
+        border: 1px solid #C7D2FE;
+        height: auto;
+        padding: 2px 8px;
       }
     `;
     document.head.appendChild(s);
@@ -733,35 +732,34 @@ ${jsxBody}
   function injectVersionSelector(rightEl) {
     if (document.querySelector('.scm-dev-version-wrap')) return;
     const inIframe = isInIframe();
+    if (inIframe) {
+      // Inside VOC iframe (협업), don't add a separate version badge.
+      // Instead, repurpose the existing `.scm-topbar__demo-tag` to show
+      // the current version label (e.g. DEMO → demo_v1). Cheap + matches
+      // the user's preferred layout for the embedded view.
+      refreshVersionLabel();   // reads localStorage and updates the demo tag
+      return;
+    }
     elVersionWrap = document.createElement('div');
     // `is-leftaligned` puts the selector on the LEFT side of the topbar,
     // 80px after the logo/DEMO tag — matches the user's preferred layout.
-    elVersionWrap.className = 'scm-dev-version-wrap is-leftaligned' + (inIframe ? ' is-readonly' : '');
-    if (inIframe) {
-      // Read-only badge inside VOC iframe — just shows the current version
-      // label; switching/deleting only available on the standalone demo.
-      const badge = document.createElement('span');
-      badge.className = 'scm-dev-version-badge';
-      badge.innerHTML = '<span class="lbl">demo_v1</span>';
-      elVersionWrap.appendChild(badge);
-    } else {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'scm-dev-version-btn';
-      btn.innerHTML = '<span class="lbl">demo_v1</span><svg class="chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l3 3 3-3"/></svg>';
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        elVersionWrap.classList.toggle('is-open');
-        if (elVersionWrap.classList.contains('is-open')) renderVersionMenu();
-      });
-      elVersionWrap.appendChild(btn);
-      const menu = document.createElement('div');
-      menu.className = 'scm-dev-version-menu';
-      elVersionWrap.appendChild(menu);
-      document.addEventListener('click', (e) => {
-        if (!elVersionWrap.contains(e.target)) elVersionWrap.classList.remove('is-open');
-      });
-    }
+    elVersionWrap.className = 'scm-dev-version-wrap is-leftaligned';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'scm-dev-version-btn';
+    btn.innerHTML = '<span class="lbl">demo_v1</span><svg class="chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l3 3 3-3"/></svg>';
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      elVersionWrap.classList.toggle('is-open');
+      if (elVersionWrap.classList.contains('is-open')) renderVersionMenu();
+    });
+    elVersionWrap.appendChild(btn);
+    const menu = document.createElement('div');
+    menu.className = 'scm-dev-version-menu';
+    elVersionWrap.appendChild(menu);
+    document.addEventListener('click', (e) => {
+      if (!elVersionWrap.contains(e.target)) elVersionWrap.classList.remove('is-open');
+    });
     // Sit on the LEFT side of the topbar, 80px after the logo/DEMO tag.
     // Falls back to the right side (before .scm-topbar__right) if the
     // left container isn't found.
@@ -787,22 +785,33 @@ ${jsxBody}
     return /^demo_/.test(raw) ? raw : 'demo_' + raw;
   }
   function refreshVersionLabel() {
-    if (!elVersionWrap) return;
     const versions = _loadVersions();
     const ver = versions[location.pathname];
-    // Both the standalone button (.scm-dev-version-btn) and the iframe
-    // badge (.scm-dev-version-badge) carry a `.lbl` text node — same query
-    // works for either layout.
-    const lbl = elVersionWrap.querySelector('.lbl');
-    elVersionWrap.style.display = '';
     const activeId = _activeIdOrOrigin(ver);
+    let label;
     if (!activeId) {
-      // implicit v1 = the demo's original / unedited state
-      if (lbl) lbl.textContent = _displayLabel('v1');
-      return;
+      label = _displayLabel('v1');               // implicit origin
+    } else {
+      const active = ver.list.find((v) => v.id === activeId);
+      label = _displayLabel((active && active.label) || '?');
     }
-    const active = ver.list.find((v) => v.id === activeId);
-    if (lbl) lbl.textContent = _displayLabel((active && active.label) || '?');
+    // Standalone: update the dropdown button label.
+    if (elVersionWrap) {
+      elVersionWrap.style.display = '';
+      const lbl = elVersionWrap.querySelector('.lbl');
+      if (lbl) lbl.textContent = label;
+    }
+    // VOC iframe: no separate badge — repurpose the existing DEMO tag in
+    // the topbar so it shows the version instead (e.g. DEMO → demo_v1).
+    // Standalone keeps the original "DEMO" text.
+    if (isInIframe()) {
+      const demoTag = document.querySelector('.scm-topbar__demo-tag');
+      if (demoTag) {
+        demoTag.textContent = label;
+        demoTag.classList.add('scm-topbar__demo-tag--version');
+        demoTag.setAttribute('aria-label', '활성 버전: ' + label);
+      }
+    }
   }
   function renderVersionMenu() {
     const menu = elVersionWrap.querySelector('.scm-dev-version-menu');
