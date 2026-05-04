@@ -58,41 +58,44 @@
     .hero__title { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.4px; line-height: 1.25; }
     .hero__sub { margin: 8px 0 0; font-size: 14px; color: var(--fg-mute); max-width: 720px; line-height: 1.55; }
 
-    /* ───────── Stepper — flat row ───────── */
+    /* ───────── Stepper ───────── */
     .stepper {
       display: grid; grid-template-columns: repeat(4, 1fr);
       align-items: center;
-      padding: 0;
-      margin-bottom: 20px;
+      background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+      padding: 18px 16px;
+      margin-bottom: 24px;
     }
     .step {
-      display: flex; align-items: center; gap: 10px;
+      display: flex; align-items: center; gap: 12px;
       padding: 0 14px;
       position: relative;
       cursor: default;
     }
     .step + .step::before {
       content: '';
-      position: absolute; left: -8px; top: 50%; transform: translateY(-50%);
-      width: 16px; height: 1px; background: var(--line);
+      position: absolute; left: -10px; top: 50%; transform: translateY(-50%);
+      width: 20px; height: 1px; background: var(--line);
     }
     .step__dot {
-      width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+      width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
       background: var(--soft); color: var(--fg-dim);
       border: 1px solid var(--line);
-      font-size: 12px; font-weight: 700;
+      font-size: 14px; font-weight: 700;
       transition: all 0.18s ease;
     }
-    .step__dot svg { width: 12px; height: 12px; }
-    .step__meta { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
-    .step__no { display: none; }
-    .step__label { font-size: 13px; font-weight: 600; color: var(--fg-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .step__dot svg { width: 14px; height: 14px; }
+    .step__meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .step__no { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--fg-dim); }
+    .step__label { font-size: 14px; font-weight: 600; color: var(--fg-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    .step.is-active .step__dot { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-bg); }
+    .step.is-active .step__dot { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-bg); }
+    .step.is-active .step__no { color: var(--accent); }
     .step.is-active .step__label { color: var(--fg); }
     .step.is-done { cursor: pointer; }
     .step.is-done .step__dot { background: var(--ok); color: #fff; border-color: var(--ok); }
+    .step.is-done .step__no { color: var(--ok); }
     .step.is-done .step__label { color: var(--fg); }
 
     /* ============================================================
@@ -121,9 +124,12 @@
     .step-pane.is-active { display: block; }
 
     /* Form fields */
-    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field { display: flex; flex-direction: column; gap: 6px; max-width: 480px; }
     .field + .field { margin-top: 18px; }
     .row-2 + .field, .field + .row-2 { margin-top: 18px; }
+    .field--mid { max-width: 360px; }
+    .field--narrow { max-width: 280px; }
+    .field--full { max-width: none; }
     .field__label {
       font-size: 13px; font-weight: 600; color: #1A1A1A;
       display: inline-flex; align-items: center; gap: 4px;
@@ -131,9 +137,6 @@
     .field__label .req { color: #DC2626; font-weight: 700; }
     .field__hint { font-size: 12.5px; color: #6B7280; line-height: 1.55; }
 
-    .field--inline { flex-direction: row; align-items: center; gap: 16px; flex-wrap: wrap; row-gap: 6px; }
-    .field--inline > .field__label { flex-shrink: 0; }
-    .field--inline > .field__hint { flex-basis: 100%; }
     .field--inline > .field__hint { flex-basis: 100%; }
 
     /* scm-input + scm-select tokens */
@@ -164,26 +167,41 @@
     }
     .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 
-    /* Segment (작업 유형) — compact pill */
+    /* 작업 유형 — radio list (button-as-radio) */
     .segment {
-      display: grid; grid-template-columns: repeat(3, auto);
-      gap: 4px; padding: 4px;
-      background: #F3F4F6; border-radius: 4px;
-      width: fit-content;
+      display: flex; flex-direction: column;
+      gap: 8px;
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+      max-width: 360px;
     }
     .seg {
-      height: 32px; padding: 0 14px; border: 0; background: transparent; color: #6B7280;
-      font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
-      border-radius: 4px;
-      display: inline-flex; align-items: center; justify-content: center;
-      transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+      height: auto; padding: 12px 14px;
+      border: 1px solid var(--line); border-radius: 8px;
+      background: #fff; color: #1A1A1A;
+      font-family: inherit; font-size: 14px; font-weight: 500;
+      text-align: left; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 10px;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .seg::before {
+      content: ''; flex-shrink: 0;
+      width: 16px; height: 16px; border-radius: 50%;
+      border: 1.5px solid #BFBFBF;
+      background: #fff;
+      transition: all 0.15s ease;
     }
     .seg__tag { display: none; }
     .seg.is-active {
-      background: #fff; color: #1A1A1A;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+      border-color: var(--accent); background: var(--accent-bg);
+      color: var(--fg);
     }
-    .seg:not(.is-active):hover { color: #1A1A1A; }
+    .seg.is-active::before {
+      border-color: var(--accent);
+      background: radial-gradient(circle, var(--accent) 38%, transparent 42%);
+    }
+    .seg:not(.is-active):hover { border-color: #1A1A1A; }
 
     /* Tabs — Hub tab-pill */
     .tabs { display: flex; gap: 4px; padding: 4px; background: #F3F4F6; border-radius: 4px; margin-bottom: 16px; }
@@ -509,12 +527,12 @@
         <p class="panel-card__sub">페이지 이름, 슬러그, LNB 카테고리, 주 사용자 — PRD 메타 4개</p>
       </div>
 
-      <div class="field field--inline">
+      <div class="field">
         <label class="field__label">작업 유형 <span class="req">*</span></label>
         <div class="segment" role="radiogroup" id="seg-work">
-          <button type="button" class="seg is-active" data-work="new">신규<span class="seg__tag">NEW</span></button>
-          <button type="button" class="seg" data-work="feature">기능 추가<span class="seg__tag">+</span></button>
-          <button type="button" class="seg" data-work="improve">개선<span class="seg__tag">↻</span></button>
+          <button type="button" class="seg is-active" data-work="new">신규</button>
+          <button type="button" class="seg" data-work="feature">기능 추가</button>
+          <button type="button" class="seg" data-work="improve">개선</button>
         </div>
         <span class="field__hint" id="work-hint">신규 페이지를 새로 만듭니다.</span>
       </div>
@@ -525,29 +543,28 @@
         <span class="field__hint">2~30자 · ID 는 자동 생성됩니다</span>
       </div>
 
-      <div class="row-2">
-        <div class="field">
-          <label class="field__label" for="f-cat">LNB 1뎁스 카테고리 <span class="req">*</span></label>
-          <select class="select" id="f-cat">
-            <option value="">선택…</option>
-            <option value="dashboard">대시보드</option>
-            <option value="store">스토어</option>
-            <option value="hanger">상품 관리</option>
-            <option value="order">발주/입고 관리</option>
-            <option value="stock">재고 관리</option>
-            <option value="control">운영 설정</option>
-            <option value="setting">관리자</option>
-          </select>
-        </div>
-        <div class="field">
-          <label class="field__label" for="f-menu">2뎁스 메뉴 위치 <span class="req">*</span></label>
-          <input class="input" id="f-menu" type="text" list="menu-suggest" placeholder="1뎁스 선택 후 입력" />
-          <datalist id="menu-suggest"></datalist>
-          <span class="field__hint" id="menu-hint">기존 메뉴를 선택하거나 새 메뉴명을 입력</span>
-        </div>
+      <div class="field field--narrow">
+        <label class="field__label" for="f-cat">LNB 1뎁스 카테고리 <span class="req">*</span></label>
+        <select class="select" id="f-cat">
+          <option value="">선택…</option>
+          <option value="dashboard">대시보드</option>
+          <option value="store">스토어</option>
+          <option value="hanger">상품 관리</option>
+          <option value="order">발주/입고 관리</option>
+          <option value="stock">재고 관리</option>
+          <option value="control">운영 설정</option>
+          <option value="setting">관리자</option>
+        </select>
       </div>
 
-      <div class="field">
+      <div class="field field--mid">
+        <label class="field__label" for="f-menu">2뎁스 메뉴 위치 <span class="req">*</span></label>
+        <input class="input" id="f-menu" type="text" list="menu-suggest" placeholder="1뎁스 선택 후 입력" />
+        <datalist id="menu-suggest"></datalist>
+        <span class="field__hint" id="menu-hint">기존 메뉴를 선택하거나 새 메뉴명을 입력</span>
+      </div>
+
+      <div class="field field--mid">
         <label class="field__label" for="f-user">주 사용자 <span class="req">*</span></label>
         <input class="input" id="f-user" type="text" placeholder="예: MD, 운영자, 외부 브랜드 담당자" />
       </div>
