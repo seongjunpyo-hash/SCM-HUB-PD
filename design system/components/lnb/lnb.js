@@ -128,7 +128,13 @@
       var prev = a.querySelector('.scm-lnb-tag.is-dynamic');
       if (prev) prev.parentNode.removeChild(prev);
       var href = a.getAttribute('href');
-      if (!href) continue;
+      // Skip disabled / placeholder menus. These come in two flavours:
+      // - href="" / no href           → no destination yet
+      // - href="#"                    → explicit "not built yet" anchor
+      // Both should NOT show NEW / MODIFIED tags. The PRD validation
+      // tool can later mint a real demo path + add it to scm:prd:newPages
+      // to surface NEW.
+      if (!href || href === '#' || href.charAt(0) === '#') continue;
       var pagePath;
       try { pagePath = new URL(href, document.baseURI).pathname; } catch (_) { continue; }
       // confirmed wins over both NEW and MODIFIED → no tag
