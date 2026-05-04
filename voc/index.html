@@ -2397,14 +2397,15 @@
         const backdrop  = document.getElementById('saveVerBackdrop');
         const optsHost  = document.getElementById('saveVerOptions');
         if (!modal || !backdrop || !optsHost) { resolve(null); return; }
-        // v1 is implicit origin → cannot be a merge target. Saved versions
-        // (v2+) are merge targets.
-        const nextLabel = 'v' + (ver.list.length + 2);
-        const display = (raw) => {
-          if (!raw) return '';
-          const prefixed = /^demo_/i.test(raw) ? raw : 'demo_' + raw;
-          return prefixed.toUpperCase();
-        };
+        // v1 is the FIRST saved version (no synthetic origin). Saved
+        // versions are all merge targets. Display labels are recomputed
+        // from ascending createdAt position so they stay stable in the
+        // selector dropdown.
+        const oldestFirst = ver.list.slice().sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+        const labelMap = {};
+        oldestFirst.forEach((v, i) => { labelMap[v.id] = 'DEMO_V' + (i + 1); });
+        const nextLabelText = 'DEMO_V' + (ver.list.length + 1);
+        const display = (id) => labelMap[id] || 'DEMO_V?';
         const fmt = (ts) => {
           if (!ts) return '';
           const d = new Date(ts);
@@ -2414,14 +2415,14 @@
         const items = [
           {
             value: 'new',
-            label: `새 버전으로 저장 (${display(nextLabel)} 생성)`,
+            label: `새 버전으로 저장 (${nextLabelText} 생성)`,
             sub: '편집 내용이 새 스냅샷으로 추가됩니다',
           },
         ];
         ver.list.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).forEach((v) => {
           items.push({
             value: 'merge:' + v.id,
-            label: `${display(v.label || v.id)} 에 머지(덮어쓰기)`,
+            label: `${display(v.id)} 에 머지(덮어쓰기)`,
             sub: fmt(v.createdAt) + (v.id === ver.activeId ? ' · 활성' : ''),
           });
         });
@@ -2485,7 +2486,10 @@
         mergeId = choice.mergeId;
       }
       const now = Date.now();
-      const nextLabel = () => 'v' + (ver.list.length + 2);
+      // First save creates v1, then v2, v3, … (positional). Stored label
+      // is 'v<N>' raw; the selector recomputes display labels from
+      // createdAt order so deletes don't leave gaps.
+      const nextLabel = () => 'v' + (ver.list.length + 1);
       if (mode === 'first' || mode === 'new') {
         const id = 'v' + now.toString(36) + Math.random().toString(36).slice(2, 5);
         const label = nextLabel();
@@ -2509,7 +2513,7 @@
       _clearPreviewed();
       refreshSaveBtn();
       const toast = mode === 'first'
-        ? '저장 완료 (DEMO_V2 생성)'
+        ? '저장 완료 (DEMO_V1 생성)'
         : (mode === 'new' ? '새 버전 저장 완료' : '버전에 머지됨');
       showToast(toast);
     }

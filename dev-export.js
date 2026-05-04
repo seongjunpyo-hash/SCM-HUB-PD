@@ -763,29 +763,36 @@ ${jsxBody}
   }
   // Active resolution: when versions[page].activeId is null OR doesn't match
   // any saved snapshot, "원본" (the demo's natural state) is the active row.
-  function _activeIdOrOrigin(ver) {
+  function _activeIdResolved(ver) {
     if (!ver || !ver.list || !ver.list.length) return null;
     if (!ver.activeId) return null;
     return ver.list.some((v) => v.id === ver.activeId) ? ver.activeId : null;
   }
-  // Prefix raw version labels (stored as 'v1', 'v2'…) with 'DEMO_' for
-  // display, uppercased. Idempotent — labels already prefixed pass
-  // through unchanged but get upper-cased.
-  function _displayLabel(raw) {
-    if (!raw) return '';
-    const prefixed = /^demo_/i.test(raw) ? raw : 'demo_' + raw;
-    return prefixed.toUpperCase();
+  // Position-based display label. ver.list sorted ASCENDING by createdAt
+  // gives v1 (oldest) … vN (newest). Label re-derived on every render so
+  // labels stay stable in the dropdown after a delete (no gaps).
+  function _displayLabelMap(ver) {
+    const map = {};
+    if (!ver || !ver.list) return map;
+    const oldestFirst = ver.list.slice().sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    oldestFirst.forEach((v, i) => { map[v.id] = 'DEMO_V' + (i + 1); });
+    return map;
   }
   function refreshVersionLabel() {
     const versions = _loadVersions();
     const ver = versions[location.pathname];
-    const activeId = _activeIdOrOrigin(ver);
+    const labelMap = _displayLabelMap(ver);
+    const activeId = _activeIdResolved(ver);
     let label;
-    if (!activeId) {
-      label = _displayLabel('v1');               // implicit origin
+    if (activeId && labelMap[activeId]) {
+      label = labelMap[activeId];
+    } else if (ver && ver.list && ver.list.length) {
+      // active points at a deleted snapshot — fall back to the newest
+      const newest = ver.list.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0];
+      label = labelMap[newest.id] || 'DEMO_V?';
     } else {
-      const active = ver.list.find((v) => v.id === activeId);
-      label = _displayLabel((active && active.label) || '?');
+      // no saved versions yet — first save creates DEMO_V1
+      label = 'DEMO_V1';
     }
     if (elVersionWrap) {
       elVersionWrap.style.display = '';
@@ -797,27 +804,27 @@ ${jsxBody}
     const menu = elVersionWrap.querySelector('.scm-dev-version-menu');
     const versions = _loadVersions();
     const ver = versions[location.pathname];
-    const activeId = _activeIdOrOrigin(ver);
-    // 관리자(super OR admin) can delete any non-active saved version.
+    const activeId = _activeIdResolved(ver);
+    const labelMap = _displayLabelMap(ver);
+    // 관리자(super OR admin) can delete any non-active version (including v1).
     const isAdmin = (myRole === 'super' || myRole === 'admin');
-    // Saved versions FIRST (newest → oldest), then v1 origin at the bottom.
-    const items = [];
-    if (ver && ver.list && ver.list.length) {
-      ver.list.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
-        .forEach((v) => items.push(v));
-    }
-    items.push({ id: '__origin__', label: 'v1', isOrigin: true });
     const title = '<div class="scm-dev-version-title">데모 버전 선택</div>';
-    const rows = items.map((v) => {
-      const isActive = v.isOrigin ? !activeId : (v.id === activeId);
-      const date = v.isOrigin ? '데모 기본 (편집 없음)' : _formatDate(v.createdAt);
-      const label = _displayLabel(v.label || v.id || '').replace(/[<>&]/g, '');
+    if (!ver || !ver.list || !ver.list.length) {
+      menu.innerHTML = title + '<div class="scm-dev-version-empty">저장된 버전이 없습니다 — 협업 화면에서 저장하면 DEMO_V1 이 생성됩니다</div>';
+      return;
+    }
+    // newest → oldest in the dropdown
+    const sorted = ver.list.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    const rows = sorted.map((v) => {
+      const isActive = v.id === activeId;
+      const date = _formatDate(v.createdAt);
+      const label = (labelMap[v.id] || '').replace(/[<>&]/g, '');
       const tag = isActive ? '<span class="scm-dev-version-item__active-tag">활성</span>' : '';
-      // v1 (원본) cannot be deleted; only user-saved versions, only when not active.
-      const del = (isAdmin && !v.isOrigin && !isActive)
+      // active version is locked from delete; everything else is fair game for admins.
+      const del = (isAdmin && !isActive)
         ? `<button type="button" class="scm-dev-version-item__del" data-del-version="${v.id}" title="삭제">×</button>`
         : '';
-      const dataId = v.isOrigin ? '__origin__' : v.id;
+      const dataId = v.id;
       return `<div class="scm-dev-version-item ${isActive ? 'is-active' : ''}" data-version-id="${dataId}">`
         + `<span class="scm-dev-version-item__label">${label}</span>`
         + `<span class="scm-dev-version-item__date">${date}</span>`
@@ -844,28 +851,8 @@ ${jsxBody}
   function switchActiveVersion(versionId) {
     const versions = _loadVersions();
     const page = location.pathname;
-    const ver = versions[page] || { list: [], activeId: null };
-    // Clicking v1 ORIGIN: clear the active version so we fall back to
-    // the demo's natural state (no edits applied). The origin row uses
-    // the synthetic id `__origin__` and is NOT in ver.list.
-    if (versionId === '__origin__') {
-      if (!ver.activeId) {
-        // already on origin — just close the menu
-        if (elVersionWrap) elVersionWrap.classList.remove('is-open');
-        return;
-      }
-      ver.activeId = null;
-      versions[page] = ver;
-      _saveVersions(versions);
-      // Strip applied state for this page so the demo loads its native baseline.
-      const applied = _loadAppliedMap();
-      delete applied[page];
-      _saveAppliedMap(applied);
-      location.reload();
-      return;
-    }
-    // Saved version: needs an entry in ver.list.
-    if (!ver.list || !ver.list.length) return;
+    const ver = versions[page];
+    if (!ver || !ver.list || !ver.list.length) return;
     const v = ver.list.find((x) => x.id === versionId);
     if (!v) return;
     if (ver.activeId === versionId) {
