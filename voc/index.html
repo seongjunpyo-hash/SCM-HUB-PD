@@ -1036,7 +1036,7 @@
       <!-- LIST VIEW -->
       <div class="sidebar__view" id="listView">
         <div class="side__head">
-          <h3 class="side__title">코멘트 <span class="count" id="cmtCount">0</span></h3>
+          <h3 class="side__title">코멘트</h3>
           <div class="side__filters" id="filters">
             <button class="chip is-active" data-filter="page">이 페이지 <span class="num" id="cntPage">0</span></button>
             <button class="chip" data-filter="open">미해결 <span class="num" id="cntOpen">0</span></button>
@@ -1413,7 +1413,6 @@
     const urlOpen = $('#urlOpen');
     const browserLoading = $('#browserLoading');
     const cmtList = $('#cmtList');
-    const cmtCount = $('#cmtCount');
     const filters = $('#filters');
     const listView = $('#listView');
     const detailView = $('#detailView');
@@ -3801,8 +3800,6 @@
         if (ap !== bp) return ap - bp;
         return b.createdAt - a.createdAt;
       });
-
-      cmtCount.textContent = list.length;
 
       if (list.length === 0) {
         cmtList.innerHTML = `
