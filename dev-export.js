@@ -798,13 +798,15 @@ ${jsxBody}
     const versions = _loadVersions();
     const ver = versions[location.pathname];
     const activeId = _activeIdOrOrigin(ver);
-    const isSuper = (myRole === 'super');
-    // Implicit v1 = original demo state. User saves append as v2, v3, …
-    const items = [{ id: '__origin__', label: 'v1', isOrigin: true }];
+    // 관리자(super OR admin) can delete any non-active saved version.
+    const isAdmin = (myRole === 'super' || myRole === 'admin');
+    // Saved versions FIRST (newest → oldest), then v1 origin at the bottom.
+    const items = [];
     if (ver && ver.list && ver.list.length) {
       ver.list.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
         .forEach((v) => items.push(v));
     }
+    items.push({ id: '__origin__', label: 'v1', isOrigin: true });
     const title = '<div class="scm-dev-version-title">데모 버전 선택</div>';
     const rows = items.map((v) => {
       const isActive = v.isOrigin ? !activeId : (v.id === activeId);
@@ -812,7 +814,7 @@ ${jsxBody}
       const label = _displayLabel(v.label || v.id || '').replace(/[<>&]/g, '');
       const tag = isActive ? '<span class="scm-dev-version-item__active-tag">활성</span>' : '';
       // v1 (원본) cannot be deleted; only user-saved versions, only when not active.
-      const del = (isSuper && !v.isOrigin && !isActive)
+      const del = (isAdmin && !v.isOrigin && !isActive)
         ? `<button type="button" class="scm-dev-version-item__del" data-del-version="${v.id}" title="삭제">×</button>`
         : '';
       const dataId = v.isOrigin ? '__origin__' : v.id;
@@ -861,7 +863,8 @@ ${jsxBody}
     location.reload();
   }
   function deleteVersion(versionId) {
-    if (myRole !== 'super') return;
+    // 관리자(super OR admin) can delete; member-tier roles cannot.
+    if (myRole !== 'super' && myRole !== 'admin') return;
     const versions = _loadVersions();
     const page = location.pathname;
     const ver = versions[page];
