@@ -947,7 +947,12 @@ ${jsxBody}
         </div>
         <footer class="scm-dev-export-modal__foot">
           <button class="scm-dev-export-btn-ghost"   type="button" data-act="cancel">취소</button>
-          <button class="scm-dev-export-btn-primary" type="button" data-act="download">📥 선택 파일 다운로드</button>
+          <button class="scm-dev-export-btn-primary" type="button" data-act="download">
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M3 16.5H17M10 13.5V3.5M10 13.5L14 9.5M10 13.5L6 9.5" stroke="currentColor" stroke-width="1.4" stroke-miterlimit="10"/>
+            </svg>
+            선택 파일 다운로드
+          </button>
         </footer>
       </div>
     `;
@@ -1204,16 +1209,18 @@ ${jsxBody}
       .scm-dev-export-btn-ghost {
         height: 36px; padding: 0 16px;
         background: #fff; color: #6B7280;
-        border: 1px solid #E5E7EB; border-radius: 6px;
+        border: 1px solid #E5E7EB; border-radius: 4px;
         font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
       }
       .scm-dev-export-btn-ghost:hover { color: #1A1A1A; background: #F3F4F6; }
       .scm-dev-export-btn-primary {
+        display: inline-flex; align-items: center; gap: 8px;
         height: 36px; padding: 0 18px;
         background: #1A1A1A; color: #fff; border: 0;
-        border-radius: 6px;
+        border-radius: 4px;
         font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
       }
+      .scm-dev-export-btn-primary svg { width: 14px; height: 14px; flex-shrink: 0; }
       .scm-dev-export-btn-primary:hover { background: #000; }
       /* ---------- Version selector (left of handoff button) ---------- */
       .scm-dev-version-wrap {
