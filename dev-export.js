@@ -628,8 +628,15 @@ ${jsxBody}
         font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
         color: #6B7280; text-transform: uppercase;
       }
+      /* Left-aligned variant — sits inside .scm-topbar__left, 80px after
+         the DEMO tag / logo. Overrides the default selector wrap margins. */
+      .scm-dev-version-wrap.is-leftaligned {
+        margin-right: 0;
+        margin-left: 80px;
+      }
       /* Read-only version badge (VOC iframe context) */
       .scm-dev-version-wrap.is-readonly { margin-right: 8px; }
+      .scm-dev-version-wrap.is-readonly.is-leftaligned { margin-right: 0; }
       .scm-dev-version-badge {
         display: inline-flex; align-items: center;
         height: 24px; padding: 0 10px;
@@ -727,7 +734,9 @@ ${jsxBody}
     if (document.querySelector('.scm-dev-version-wrap')) return;
     const inIframe = isInIframe();
     elVersionWrap = document.createElement('div');
-    elVersionWrap.className = 'scm-dev-version-wrap' + (inIframe ? ' is-readonly' : '');
+    // `is-leftaligned` puts the selector on the LEFT side of the topbar,
+    // 80px after the logo/DEMO tag — matches the user's preferred layout.
+    elVersionWrap.className = 'scm-dev-version-wrap is-leftaligned' + (inIframe ? ' is-readonly' : '');
     if (inIframe) {
       // Read-only badge inside VOC iframe — just shows the current version
       // label; switching/deleting only available on the standalone demo.
@@ -753,11 +762,15 @@ ${jsxBody}
         if (!elVersionWrap.contains(e.target)) elVersionWrap.classList.remove('is-open');
       });
     }
-    // Sit immediately to the LEFT of the profile/right block. In standalone
-    // the handoff group will be inserted between the version wrap and
-    // .scm-topbar__right by injectButtons (it inserts BEFORE rightEl too,
-    // so DOM order ends up: [version][handoff-group][right]).
-    rightEl.parentNode.insertBefore(elVersionWrap, rightEl);
+    // Sit on the LEFT side of the topbar, 80px after the logo/DEMO tag.
+    // Falls back to the right side (before .scm-topbar__right) if the
+    // left container isn't found.
+    const leftEl = document.querySelector('.scm-topbar__left');
+    if (leftEl) {
+      leftEl.appendChild(elVersionWrap);
+    } else {
+      rightEl.parentNode.insertBefore(elVersionWrap, rightEl);
+    }
     refreshVersionLabel();
   }
   // Active resolution: when versions[page].activeId is null OR doesn't match
