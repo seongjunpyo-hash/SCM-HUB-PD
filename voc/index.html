@@ -2377,6 +2377,7 @@
         // v1 is implicit origin → cannot be a merge target. Saved versions
         // (v2+) are merge targets.
         const nextLabel = 'v' + (ver.list.length + 2);
+        const display = (raw) => raw && /^demo_/.test(raw) ? raw : 'demo_' + raw;
         const fmt = (ts) => {
           if (!ts) return '';
           const d = new Date(ts);
@@ -2386,14 +2387,14 @@
         const items = [
           {
             value: 'new',
-            label: `새 버전으로 저장 (${nextLabel} 생성)`,
+            label: `새 버전으로 저장 (${display(nextLabel)} 생성)`,
             sub: '편집 내용이 새 스냅샷으로 추가됩니다',
           },
         ];
         ver.list.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).forEach((v) => {
           items.push({
             value: 'merge:' + v.id,
-            label: `${v.label || v.id} 에 머지(덮어쓰기)`,
+            label: `${display(v.label || v.id)} 에 머지(덮어쓰기)`,
             sub: fmt(v.createdAt) + (v.id === ver.activeId ? ' · 활성' : ''),
           });
         });
@@ -2481,7 +2482,7 @@
       _clearPreviewed();
       refreshSaveBtn();
       const toast = mode === 'first'
-        ? '저장 완료 (v2 생성)'
+        ? '저장 완료 (demo_v2 생성)'
         : (mode === 'new' ? '새 버전 저장 완료' : '버전에 머지됨');
       showToast(toast);
     }

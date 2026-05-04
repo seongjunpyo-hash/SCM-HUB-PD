@@ -261,6 +261,22 @@
       }
     });
     document.getElementById('topLogout').addEventListener('click', () => SCM.logout());
+
+    // Tab reuse: card links carry target="scm-prd|demo|voc" so a click
+    // navigates the named tab (creating it if it doesn't exist yet).
+    // We additionally hook click → window.open(href, target) and call
+    // .focus() on the returned window so an already-open named tab is
+    // pulled forward instead of staying behind the current tab.
+    document.querySelectorAll('a.card[target^="scm-"]').forEach((a) => {
+      a.addEventListener('click', (e) => {
+        // honor the locked card guard — pointer-events:none should block this,
+        // but be safe in case CSS hasn't applied yet.
+        if (a.classList.contains('card--locked')) return;
+        e.preventDefault();
+        const win = window.open(a.href, a.target);
+        if (win) { try { win.focus(); } catch (_) {} }
+      });
+    });
   </script>
 </body>
 </html>

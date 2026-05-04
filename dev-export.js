@@ -651,42 +651,42 @@ ${jsxBody}
   function injectButtons() {
     const right = document.querySelector('.scm-topbar__right');
     if (!right) return;
-    // Always inject the version selector — VOC's iframe view (협업) wants
-    // the current version label visible too. It renders read-only inside
-    // an iframe (no dropdown / no actions).
+    // Order in the GNB (left → right): handoff group, version selector,
+    // profile (.scm-topbar__right). Insert handoff FIRST so the version
+    // selector — inserted before `right` afterwards — lands between
+    // the handoff group and the profile.
+    if (!isInIframe() && !document.querySelector('.scm-dev-export-group')) {
+      const group = document.createElement('div');
+      group.className = 'scm-dev-export-group';
+
+      elDownload = document.createElement('button');
+      elDownload.className = 'scm-dev-export-btn';
+      elDownload.type = 'button';
+      elDownload.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 17v2a2 2 0 002 2h10a2 2 0 002-2v-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="label">Handoff 파일 다운로드</span>
+      `;
+      elDownload.addEventListener('click', openModal);
+      group.appendChild(elDownload);
+
+      elAction = document.createElement('button');
+      elAction.className = 'scm-dev-export-action-btn';
+      elAction.type = 'button';
+      elAction.style.display = 'none';
+      elAction.addEventListener('click', onActionClick);
+      group.appendChild(elAction);
+
+      right.parentNode.insertBefore(group, right);
+      // Cancel the profile's own margin-left:auto so only the group +
+      // version selector absorb the leftover horizontal space.
+      right.style.marginLeft = '0';
+    }
+    // Version selector — always injected (read-only badge inside VOC
+    // iframe, full dropdown standalone). Goes immediately to the LEFT
+    // of the profile, RIGHT of the handoff group.
     injectVersionSelector(right);
-    // Handoff group only in standalone — it triggers downloads, not useful
-    // inside VOC.
-    if (isInIframe()) return;
-    if (document.querySelector('.scm-dev-export-group')) return;
-
-    const group = document.createElement('div');
-    group.className = 'scm-dev-export-group';
-
-    elDownload = document.createElement('button');
-    elDownload.className = 'scm-dev-export-btn';
-    elDownload.type = 'button';
-    elDownload.innerHTML = `
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 17v2a2 2 0 002 2h10a2 2 0 002-2v-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <span class="label">Handoff 파일 다운로드</span>
-    `;
-    elDownload.addEventListener('click', openModal);
-    group.appendChild(elDownload);
-
-    elAction = document.createElement('button');
-    elAction.className = 'scm-dev-export-action-btn';
-    elAction.type = 'button';
-    elAction.style.display = 'none';
-    elAction.addEventListener('click', onActionClick);
-    group.appendChild(elAction);
-
-    right.parentNode.insertBefore(group, right);
-    // Cancel the profile's own margin-left:auto so only the group absorbs
-    // the leftover horizontal space — keeps group flush against profile
-    // on the right edge instead of flexbox splitting the gap.
-    right.style.marginLeft = '0';
     refresh();
   }
 
@@ -733,13 +733,13 @@ ${jsxBody}
       // label; switching/deleting only available on the standalone demo.
       const badge = document.createElement('span');
       badge.className = 'scm-dev-version-badge';
-      badge.innerHTML = '<span class="lbl">v1</span>';
+      badge.innerHTML = '<span class="lbl">demo_v1</span>';
       elVersionWrap.appendChild(badge);
     } else {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'scm-dev-version-btn';
-      btn.innerHTML = '<span class="lbl">v1</span><svg class="chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l3 3 3-3"/></svg>';
+      btn.innerHTML = '<span class="lbl">demo_v1</span><svg class="chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l3 3 3-3"/></svg>';
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         elVersionWrap.classList.toggle('is-open');
@@ -767,6 +767,12 @@ ${jsxBody}
     if (!ver.activeId) return null;
     return ver.list.some((v) => v.id === ver.activeId) ? ver.activeId : null;
   }
+  // Prefix raw version labels (stored as 'v1', 'v2'…) with 'demo_' for
+  // display. Idempotent — labels already prefixed pass through unchanged.
+  function _displayLabel(raw) {
+    if (!raw) return '';
+    return /^demo_/.test(raw) ? raw : 'demo_' + raw;
+  }
   function refreshVersionLabel() {
     if (!elVersionWrap) return;
     const versions = _loadVersions();
@@ -779,11 +785,11 @@ ${jsxBody}
     const activeId = _activeIdOrOrigin(ver);
     if (!activeId) {
       // implicit v1 = the demo's original / unedited state
-      if (lbl) lbl.textContent = 'v1';
+      if (lbl) lbl.textContent = _displayLabel('v1');
       return;
     }
     const active = ver.list.find((v) => v.id === activeId);
-    if (lbl) lbl.textContent = (active && active.label) || '?';
+    if (lbl) lbl.textContent = _displayLabel((active && active.label) || '?');
   }
   function renderVersionMenu() {
     const menu = elVersionWrap.querySelector('.scm-dev-version-menu');
@@ -801,7 +807,7 @@ ${jsxBody}
     const rows = items.map((v) => {
       const isActive = v.isOrigin ? !activeId : (v.id === activeId);
       const date = v.isOrigin ? '데모 기본 (편집 없음)' : _formatDate(v.createdAt);
-      const label = (v.label || v.id || '').replace(/[<>&]/g, '');
+      const label = _displayLabel(v.label || v.id || '').replace(/[<>&]/g, '');
       const tag = isActive ? '<span class="scm-dev-version-item__active-tag">활성</span>' : '';
       // v1 (원본) cannot be deleted; only user-saved versions, only when not active.
       const del = (isSuper && !v.isOrigin && !isActive)
