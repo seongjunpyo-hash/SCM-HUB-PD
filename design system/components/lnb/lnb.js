@@ -93,6 +93,57 @@
     });
   }
 
+  // ---------- per-page status tags ----------
+  // NEW       — page is in scm:prd:newPages:v1 (PRD validation marked it as a brand-new menu)
+  // MODIFIED  — page has at least one saved snapshot in scm:voc:versions:v1
+  // confirmed — page is in scm:dev-export:confirmed:v1 (super admin pressed 작업완료);
+  //             when confirmed, BOTH tags are suppressed.
+  var NEW_PAGES_KEY  = 'scm:prd:newPages:v1';
+  var VERSIONS_KEY   = 'scm:voc:versions:v1';
+  var CONFIRMED_KEY  = 'scm:dev-export:confirmed:v1';
+  function _readJsonLs(key) {
+    try { var raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : null; } catch (_) { return null; }
+  }
+  function _isNewPage(pagePath) {
+    var arr = _readJsonLs(NEW_PAGES_KEY);
+    return Array.isArray(arr) && arr.indexOf(pagePath) >= 0;
+  }
+  function _isModifiedPage(pagePath) {
+    var map = _readJsonLs(VERSIONS_KEY);
+    if (!map || !map[pagePath]) return false;
+    var ver = map[pagePath];
+    return Array.isArray(ver.list) && ver.list.length > 0;
+  }
+  function _isConfirmedPage(pagePath) {
+    var map = _readJsonLs(CONFIRMED_KEY);
+    if (!map || !map[pagePath]) return false;
+    return map[pagePath] === true || (map[pagePath] && map[pagePath].confirmed === true);
+  }
+  function applyStatusTags(el) {
+    if (!el || typeof URL === 'undefined') return;
+    var l2s = el.querySelectorAll('.scm-lnb-l2');
+    for (var i = 0; i < l2s.length; i++) {
+      var a = l2s[i];
+      // strip existing dynamic tag (idempotent — re-runs on storage change)
+      var prev = a.querySelector('.scm-lnb-tag.is-dynamic');
+      if (prev) prev.parentNode.removeChild(prev);
+      var href = a.getAttribute('href');
+      if (!href) continue;
+      var pagePath;
+      try { pagePath = new URL(href, document.baseURI).pathname; } catch (_) { continue; }
+      // confirmed wins over both NEW and MODIFIED → no tag
+      if (_isConfirmedPage(pagePath)) continue;
+      var tagText = null, tagCls = null;
+      if (_isNewPage(pagePath))           { tagText = 'NEW';      tagCls = 'scm-lnb-tag--new'; }
+      else if (_isModifiedPage(pagePath)) { tagText = 'MODIFIED'; tagCls = 'scm-lnb-tag--modified'; }
+      if (!tagText) continue;
+      var tag = document.createElement('span');
+      tag.className = 'scm-lnb-tag is-dynamic ' + tagCls;
+      tag.textContent = tagText;
+      a.appendChild(tag);
+    }
+  }
+
   function mount(el, opts) {
     if (!el) return null;
     var options = opts || {};
@@ -100,6 +151,18 @@
     if (active) setActive(el, active);
 
     wireNavToggle(el);
+    applyStatusTags(el);
+    // re-apply when versions / confirmed state changes from another tab
+    if (!root.__scmLnbStorageWired) {
+      window.addEventListener('storage', function (e) {
+        if (!e || !e.key) return;
+        if (e.key === NEW_PAGES_KEY || e.key === VERSIONS_KEY || e.key === CONFIRMED_KEY) {
+          var nodes = document.querySelectorAll('.scm-lnb');
+          for (var i = 0; i < nodes.length; i++) applyStatusTags(nodes[i]);
+        }
+      });
+      root.__scmLnbStorageWired = true;
+    }
     if (!root.__scmLnbEscapeWired) {
       wireEscape();
       root.__scmLnbEscapeWired = true;

@@ -1212,6 +1212,21 @@
       }
       return null;
     }
+    // Returns " (NEW)" / " (MODIFIED)" / "" depending on the page's status.
+    // Confirmed pages (작업완료) always return ""; otherwise NEW (PRD-marked)
+    // wins over MODIFIED (any saved version).
+    function _menuStatusSuffix(path) {
+      try {
+        const conf = JSON.parse(localStorage.getItem('scm:dev-export:confirmed:v1') || '{}');
+        if (conf && (conf[path] === true || (conf[path] && conf[path].confirmed === true))) return '';
+        const newPages = JSON.parse(localStorage.getItem('scm:prd:newPages:v1') || '[]');
+        if (Array.isArray(newPages) && newPages.indexOf(path) >= 0) return ' (NEW)';
+        const versions = JSON.parse(localStorage.getItem('scm:voc:versions:v1') || '{}');
+        const ver = versions && versions[path];
+        if (ver && Array.isArray(ver.list) && ver.list.length > 0) return ' (MODIFIED)';
+      } catch (_) {}
+      return '';
+    }
 
     const state = {
       comments: load(),
@@ -1538,7 +1553,10 @@
         b.classList.toggle('is-active', b.dataset.l1 === item.l1);
       });
       l2Select.innerHTML = item.children
-        .map((c) => `<option value="${c.path}">${escapeHtml(c.label)}</option>`).join('');
+        .map((c) => {
+          const suffix = _menuStatusSuffix(c.path);
+          return `<option value="${c.path}">${escapeHtml(c.label + suffix)}</option>`;
+        }).join('');
       l2Select.disabled = item.children.length <= 1;
       let target;
       if (preferL2Path && item.children.some((c) => c.path === preferL2Path)) target = preferL2Path;
