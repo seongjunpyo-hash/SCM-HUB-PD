@@ -841,6 +841,10 @@
     .edit-add-row {
       display: flex; gap: 6px; align-items: stretch;
     }
+    /* Sections without an "+ 추가" button (e.g. 컴포넌트) only show the
+       apply button; right-align it to match the trailing position the
+       button takes in the 필터 / 컬럼 sections. */
+    .edit-add-row--apply-only { justify-content: flex-end; }
     .edit-add-btn {
       flex: 1; padding: 9px;
       background: #fff; border: 1px dashed #D1D5DB; border-radius: 8px;
@@ -1166,6 +1170,11 @@
               <span class="edit-sec__count" id="editComponentCount">0</span>
             </header>
             <div class="edit-list" id="editComponentList"></div>
+            <div class="edit-add">
+              <div class="edit-add-row edit-add-row--apply-only">
+                <button type="button" class="edit-apply-btn" data-apply="component" title="현재 편집 사항을 좌측 데모 화면에 반영">적용</button>
+              </div>
+            </div>
           </section>
         </div>
         <footer class="edit-foot">
@@ -1820,6 +1829,14 @@
       applyEditCss();
       _setPreviewedColumn();
     }
+    // Components only support show/hide — no order, no add/remove. The
+    // hide rules ride along in `applyEditCss` (universal `a.hidden` →
+    // `display: none` pass), so this just re-renders that style block
+    // and snapshots the slice for dirty tracking.
+    function applyComponentSectionToIframe() {
+      applyEditCss();
+      _setPreviewedComponent();
+    }
 
     function setHidden(selector, hide) {
       const d = pageDraft();
@@ -2462,6 +2479,15 @@
         frozenCount:       (p.frozenCount == null ? null : p.frozenCount),
       });
     }
+    // Component slice — anything in p.hidden that's NOT a filter chip and
+    // NOT a table column is treated as a top-level page component
+    // (.scm-card / .scm-page-section / etc.). The component section
+    // only supports show/hide, so the slice is just that subset.
+    function _componentSlice(p) {
+      return JSON.stringify({
+        hidden: (p.hidden || []).filter((s) => !_isFilterSel(s) && !_isColumnSel(s)),
+      });
+    }
     // Per-section [적용] dirty uses a "previewed" snapshot — the slice of
     // draft taken at the moment the user clicked [적용]. If draft hasn't
     // changed since, the [적용] button stays disabled.
@@ -2477,6 +2503,11 @@
       if (e && e.columnSlice != null) return e.columnSlice;
       return _columnSlice(pageApplied());
     }
+    function _previewedComponentSlice() {
+      const e = state.previewed && state.previewed[state.currentPage];
+      if (e && e.componentSlice != null) return e.componentSlice;
+      return _componentSlice(pageApplied());
+    }
     function _setPreviewedFilter() {
       state.previewed = state.previewed || {};
       const e = state.previewed[state.currentPage] = state.previewed[state.currentPage] || {};
@@ -2487,11 +2518,17 @@
       const e = state.previewed[state.currentPage] = state.previewed[state.currentPage] || {};
       e.columnSlice = _columnSlice(pageDraft());
     }
+    function _setPreviewedComponent() {
+      state.previewed = state.previewed || {};
+      const e = state.previewed[state.currentPage] = state.previewed[state.currentPage] || {};
+      e.componentSlice = _componentSlice(pageDraft());
+    }
     function _clearPreviewed() {
       if (state.previewed) delete state.previewed[state.currentPage];
     }
-    function isFilterDirty() { return _filterSlice(pageDraft()) !== _previewedFilterSlice(); }
-    function isColumnDirty() { return _columnSlice(pageDraft()) !== _previewedColumnSlice(); }
+    function isFilterDirty()    { return _filterSlice(pageDraft())    !== _previewedFilterSlice(); }
+    function isColumnDirty()    { return _columnSlice(pageDraft())    !== _previewedColumnSlice(); }
+    function isComponentDirty() { return _componentSlice(pageDraft()) !== _previewedComponentSlice(); }
     // Render the save-version modal and return a Promise that resolves with
     // { mode: 'new' | 'merge', mergeId?: string } or null when cancelled.
     function openSaveVersionModal(ver) {
@@ -2942,9 +2979,10 @@
       showToast('초기화됨');
     }
     function refreshSaveBtn() {
-      const dirty       = isDirty();
-      const filterDirty = isFilterDirty();
-      const columnDirty = isColumnDirty();
+      const dirty          = isDirty();
+      const filterDirty    = isFilterDirty();
+      const columnDirty    = isColumnDirty();
+      const componentDirty = isComponentDirty();
       const saveBtn   = document.getElementById('editSaveBtn');
       const revertBtn = document.getElementById('editRevertBtn');
       const status    = document.getElementById('editStatus');
@@ -2960,7 +2998,9 @@
       // pending edits — filter changes don't enable the column apply etc.
       document.querySelectorAll('.edit-apply-btn').forEach((b) => {
         const which = b.dataset.apply;
-        b.disabled = which === 'filter' ? !filterDirty : !columnDirty;
+        if (which === 'filter')         b.disabled = !filterDirty;
+        else if (which === 'component') b.disabled = !componentDirty;
+        else                            b.disabled = !columnDirty;
       });
     }
 
@@ -3569,6 +3609,7 @@
         const which = applyBtn.dataset.apply;
         if (which === 'filter') applyFilterSectionToIframe();
         else if (which === 'column') applyColumnSectionToIframe();
+        else if (which === 'component') applyComponentSectionToIframe();
         else applyAllToIframe();
         showToast('편집 내용이 좌측 데모에 반영됐습니다');
         return;
