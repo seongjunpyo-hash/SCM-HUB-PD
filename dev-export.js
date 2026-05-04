@@ -766,7 +766,6 @@ ${jsxBody}
     bd.innerHTML = `
       <div class="scm-dev-export-modal" role="dialog" aria-label="개발자 다운로드">
         <header class="scm-dev-export-modal__head">
-          <span class="scm-dev-export-modal__icon">📥</span>
           <div class="scm-dev-export-modal__titles">
             <strong>개발자 핸드오프 다운로드</strong>
             <small>${escapeHtml(title)} · /demo/${escapeHtml(slug)}.html</small>
@@ -909,12 +908,6 @@ ${jsxBody}
         display: flex; align-items: flex-start; gap: 12px;
         padding: 18px 20px 14px;
         border-bottom: 1px solid #F0F0F0;
-      }
-      .scm-dev-export-modal__icon {
-        width: 36px; height: 36px; flex-shrink: 0;
-        display: inline-flex; align-items: center; justify-content: center;
-        background: #F5F7FA; border-radius: 8px;
-        font-size: 18px;
       }
       .scm-dev-export-modal__titles { flex: 1; min-width: 0; }
       .scm-dev-export-modal__titles strong { display: block; font-size: 15px; font-weight: 700; }
