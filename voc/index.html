@@ -1080,7 +1080,7 @@
             </svg>
             데모 바로가기
           </a>
-          <button type="button" class="edit-foot__btn-revert" id="editRevertBtn" disabled>되돌리기</button>
+          <button type="button" class="edit-foot__btn-revert" id="editRevertBtn" title="편집 사항 되돌리기 / 초기화">되돌리기</button>
           <button type="button" class="edit-foot__btn-save"   id="editSaveBtn"   disabled>저장됨</button>
         </footer>
       </div>
@@ -2515,18 +2515,48 @@
       });
     }
     function revertDraft() {
-      // throw away draft for this page; copy applied → draft. Iframe was
-      // showing the (now-discarded) draft state, so re-apply.
-      state.draft[state.currentPage] = state.applied[state.currentPage]
-        ? deepClone(state.applied[state.currentPage]) : {};
+      const page = state.currentPage;
+      const dirty = isDirty();
+      if (dirty) {
+        // Standard revert: discard unsaved draft → applied (saved baseline)
+        state.draft[page] = state.applied[page]
+          ? deepClone(state.applied[page]) : {};
+        persistDraft();
+        applyAllToIframe();
+        _clearPreviewed();
+        renderEditPane();
+        refreshSaveBtn();
+        showToast('변경 사항 되돌림');
+        return;
+      }
+      // Nothing to revert against the saved baseline → user is asking for
+      // a full INITIALIZE (clear baseline + draft + UI prefs for this page).
+      // Iframe also gets reloaded so the demo's natural column / filter
+      // layout reappears.
+      const applied = state.applied[page];
+      const hasApplied = applied && Object.keys(applied).some((k) => {
+        const v = applied[k];
+        if (Array.isArray(v)) return v.length > 0;
+        if (v && typeof v === 'object') return Object.keys(v).length > 0;
+        return v != null;
+      });
+      const hasUiPrefs = state.ui.collapsedGroups[page] != null;
+      if (!hasApplied && !hasUiPrefs) {
+        showToast('이미 초기 상태입니다');
+        return;
+      }
+      if (!confirm('이 페이지의 모든 편집 내용을 초기화 합니다. 진행할까요?')) return;
+      delete state.applied[page];
+      delete state.draft[page];
+      if (state.ui.collapsedGroups) delete state.ui.collapsedGroups[page];
+      persistApplied();
       persistDraft();
-      applyAllToIframe();
-      // After revert, draft == applied. previewed snapshots fall back to
-      // applied so both apply buttons + save read clean.
+      persistUi();
       _clearPreviewed();
-      renderEditPane();
-      refreshSaveBtn();
-      showToast('변경 사항 되돌림');
+      // Reload iframe so the demo's untouched layout returns; the load
+      // handler will re-run renderEditPane afterwards with clean state.
+      try { iframe.contentWindow.location.reload(); } catch { iframe.src = page; }
+      showToast('초기화됨');
     }
     function refreshSaveBtn() {
       const dirty       = isDirty();
@@ -2536,7 +2566,9 @@
       const revertBtn = document.getElementById('editRevertBtn');
       const status    = document.getElementById('editStatus');
       if (saveBtn)   { saveBtn.disabled   = !dirty; saveBtn.textContent = dirty ? '저장 (데모에 적용)' : '저장됨'; }
-      if (revertBtn)   revertBtn.disabled = !dirty;
+      // 되돌리기 stays enabled even when there's nothing to revert — used as
+      // a manual "초기화" trigger by the user (full reset to baseline).
+      if (revertBtn)   revertBtn.disabled = false;
       if (status)    {
         status.classList.toggle('is-dirty', dirty);
         status.textContent = dirty ? '저장하지 않은 변경 사항' : '저장됨 · 데모와 동기화';
