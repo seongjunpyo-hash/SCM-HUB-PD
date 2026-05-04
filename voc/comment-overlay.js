@@ -91,9 +91,15 @@
       const map = JSON.parse(raw);
       // Same path normalization as voc/index.html + dev-export.js — VOC
       // may have stored the version under '/demo/foo' while the demo
-      // standalone reports '/demo/foo.html' (or vice versa).
-      const np = page ? page.replace(/\.html?$/i, '') : page;
-      const ver = map && (map[np] || map[page] || map[page + '.html']);
+      // standalone reports '/demo/foo.html' (or vice versa). `/demo/`
+      // (clean URL) and `/demo/index.html` collapse to `/demo/index`.
+      let np = page ? page.replace(/\.html?$/i, '') : page;
+      if (np && np.endsWith('/')) np = np + 'index';
+      const ver = map && (map[np]
+        || map[page]
+        || map[page + '.html']
+        || map[page + 'index']
+        || map[page + 'index.html']);
       if (!ver || !ver.list || !ver.list.length) return null;
       if (!ver.activeId) return null;
       return ver.list.some((v) => v.id === ver.activeId) ? ver.activeId : null;

@@ -1237,12 +1237,22 @@
     // in either context is findable from the other.
     function _normalizePageKey(p) {
       if (!p) return p;
-      return p.replace(/\.html?$/i, '');
+      let n = p.replace(/\.html?$/i, '');
+      // `/demo/` (clean URL) and `/demo/index.html` (VOC menu) point to
+      // the same page — collapse trailing-slash paths to `/demo/index`
+      // so both forms produce the same key.
+      if (n.endsWith('/')) n = n + 'index';
+      return n;
     }
     function _verEntryFor(map, path) {
       if (!map || !path) return null;
       const n = _normalizePageKey(path);
-      return map[n] || map[path] || map[path + '.html'] || null;
+      return map[n]
+          || map[path]
+          || map[path + '.html']
+          || map[path + 'index']
+          || map[path + 'index.html']
+          || null;
     }
     // Two-depth menu mirroring the demo's LNB structure.
     const MENU = [
@@ -1490,11 +1500,18 @@
         renderList();
         // edit pane: replay user-added items, reorder, types, then CSS, then re-scan
         applyAddedDom();
+        // Stamp voc-keys onto iframe thead cells BEFORE the apply chain
+        // runs. The apply functions resolve cells via voc-key selectors
+        // (`[data-voc-key="col-N"]`); without stamping first, the selector
+        // matches nothing on the freshly-loaded iframe and the column hide
+        // marks tbody td + colgroup col never get applied — the user sees
+        // the header collapse but the data rows stay visible. renderEditPane
+        // is what does the stamping (via scanEditTargets), so move it up.
+        renderEditPane();
         applyFilterOrderToIframe();
         applyColumnOrderToIframe();
         applyFilterTypesToIframe();
         applyEditCss();
-        renderEditPane();
         renderVersionSelect();
       });
 
@@ -3262,9 +3279,29 @@
       ensureDefaultCollapsed(targets.groups || []);
       // Effective frozen-column boundary. User override (d.frozenCount) wins;
       // null/undefined falls back to whatever scm-table inited the table with.
-      const effectiveFrozenCount = (d.frozenCount != null)
+      const rawFrozenCount = (d.frozenCount != null)
         ? d.frozenCount
         : (targets.naturalFrozenCount | 0);
+      // If the leaf at the boundary (or any trailing leaves before it) is
+      // hidden, snap the displayed boundary back to the LAST VISIBLE leaf.
+      // The saved frozenCount stays intact so un-hiding a column restores
+      // its frozen extent — only the displayed value + visual badge use
+      // the snapped count.
+      const _leafBySelector = (() => {
+        const m = {};
+        (targets.columns || []).forEach((c) => { if (c.selector) m[c.selector] = c; });
+        return m;
+      })();
+      function _isLeafAtBoundaryHidden(n) {
+        if (n <= 0) return false;
+        const target = (targets.columns || []).find((c) => c.leafIdx === n - 1);
+        if (!target) return false;
+        return hidden.has(target.selector);
+      }
+      let effectiveFrozenCount = rawFrozenCount;
+      while (effectiveFrozenCount > 0 && _isLeafAtBoundaryHidden(effectiveFrozenCount)) {
+        effectiveFrozenCount--;
+      }
 
       // merge native + user-added items, then sort by saved order
       const filterRowsRaw = [
@@ -3444,23 +3481,27 @@
       renderList('editFilterList',    'editFilterCount',    filterRows);
       renderList('editColumnList',    'editColumnCount',    columnRows);
       renderList('editComponentList', 'editComponentCount', componentRows);
-      renderFrozenSelect(targets, effectiveFrozenCount);
+      renderFrozenSelect(targets, effectiveFrozenCount, hidden);
       refreshSaveBtn();
     }
     // Populate "마지막 고정 컬럼" select with the current leaves (in leaf-idx
     // order). Selecting an option calls setFrozenCount(value). Hidden when
     // there are no leaves with a known leafIdx (1-row tables w/o scm-table).
-    function renderFrozenSelect(targets, effectiveFrozenCount) {
+    function renderFrozenSelect(targets, effectiveFrozenCount, hiddenSet) {
       const sel = document.getElementById('editFrozenSelect');
       const row = document.getElementById('editFrozenRow');
       if (!sel || !row) return;
+      const hidden = hiddenSet || new Set();
       const leaves = (targets.columns || [])
         .filter((c) => typeof c.leafIdx === 'number' && c.leafIdx >= 0)
+        // Skip hidden leaves — they can't sensibly be the "last frozen
+        // column" since they're not visible in the table at all.
+        .filter((c) => !hidden.has(c.selector))
         .slice()
         .sort((a, b) => a.leafIdx - b.leafIdx);
       if (!leaves.length) { row.style.display = 'none'; return; }
       row.style.display = '';
-      // Build options: "고정 없음" (value=0) + each leaf (value = leafIdx + 1).
+      // Build options: "고정 없음" (value=0) + each visible leaf (value = leafIdx + 1).
       const opts = ['<option value="0">고정 영역 없음</option>'];
       leaves.forEach((c) => {
         const v = c.leafIdx + 1;

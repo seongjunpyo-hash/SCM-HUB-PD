@@ -709,12 +709,23 @@ ${jsxBody}
   // key on both sides so saved versions are findable regardless.
   function _normalizePageKey(p) {
     if (!p) return p;
-    return p.replace(/\.html?$/i, '');
+    // Strip the `.html` suffix (Cloudflare Pages serves clean URLs).
+    let n = p.replace(/\.html?$/i, '');
+    // `/demo/` (clean URL for index) and `/demo/index.html` (VOC menu)
+    // resolve to the same page — append `index` to trailing-slash paths
+    // so both forms collapse to `/demo/index`.
+    if (n.endsWith('/')) n = n + 'index';
+    return n;
   }
   function _verEntryFor(versions, path) {
     if (!versions || !path) return null;
     const normalized = _normalizePageKey(path);
-    return versions[normalized] || versions[path] || versions[path + '.html'] || null;
+    return versions[normalized]
+        || versions[path]
+        || versions[path + '.html']
+        || versions[path + 'index']
+        || versions[path + 'index.html']
+        || null;
   }
   function _saveVersions(map) {
     try { localStorage.setItem(VOC_VERSIONS_KEY, JSON.stringify(map)); } catch {}
