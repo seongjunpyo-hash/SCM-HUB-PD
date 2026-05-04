@@ -590,7 +590,10 @@ ${jsxBody}
       .scm-dev-version-btn .chev { width: 10px; height: 10px; opacity: 0.6; }
       .scm-dev-version-menu {
         display: none;
-        position: absolute; top: calc(100% + 4px); right: 0;
+        /* anchor LEFT of the button — selector lives on the left side of
+           the topbar, so the dropdown should drop to the right (i.e. its
+           own LEFT edge aligned with the button's left edge). */
+        position: absolute; top: calc(100% + 4px); left: 0;
         min-width: 280px; max-width: 380px;
         background: #fff; border: 1px solid #E0E0E0; border-radius: 8px;
         box-shadow: 0 8px 24px rgba(0,0,0,0.12);
