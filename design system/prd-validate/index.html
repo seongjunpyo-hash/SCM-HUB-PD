@@ -169,14 +169,15 @@
 
     /* 작업 유형 — radio list (button-as-radio) */
     .segment {
-      display: flex; flex-direction: column;
+      display: flex; flex-direction: row;
       gap: 8px;
       background: transparent;
       padding: 0;
       border-radius: 0;
-      max-width: 360px;
+      max-width: none;
     }
     .seg {
+      flex: 1;
       height: auto; padding: 12px 14px;
       border: 1px solid var(--line); border-radius: 8px;
       background: #fff; color: #1A1A1A;
