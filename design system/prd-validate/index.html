@@ -130,6 +130,10 @@
     .field--mid { max-width: 360px; }
     .field--narrow { max-width: 280px; }
     .field--full { max-width: none; }
+
+    .field-row { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+    .field-row + .field, .field + .field-row { margin-top: 18px; }
+    .field-row > .field + .field { margin-top: 0; }
     .field__label {
       font-size: 13px; font-weight: 600; color: #1A1A1A;
       display: inline-flex; align-items: center; gap: 4px;
@@ -544,25 +548,27 @@
         <span class="field__hint">2~30자 · ID 는 자동 생성됩니다</span>
       </div>
 
-      <div class="field field--narrow">
-        <label class="field__label" for="f-cat">LNB 1뎁스 카테고리 <span class="req">*</span></label>
-        <select class="select" id="f-cat">
-          <option value="">선택…</option>
-          <option value="dashboard">대시보드</option>
-          <option value="store">스토어</option>
-          <option value="hanger">상품 관리</option>
-          <option value="order">발주/입고 관리</option>
-          <option value="stock">재고 관리</option>
-          <option value="control">운영 설정</option>
-          <option value="setting">관리자</option>
-        </select>
-      </div>
+      <div class="field-row">
+        <div class="field field--narrow">
+          <label class="field__label" for="f-cat">LNB 1뎁스 카테고리 <span class="req">*</span></label>
+          <select class="select" id="f-cat">
+            <option value="">선택…</option>
+            <option value="dashboard">대시보드</option>
+            <option value="store">스토어</option>
+            <option value="hanger">상품 관리</option>
+            <option value="order">발주/입고 관리</option>
+            <option value="stock">재고 관리</option>
+            <option value="control">운영 설정</option>
+            <option value="setting">관리자</option>
+          </select>
+        </div>
 
-      <div class="field field--mid">
-        <label class="field__label" for="f-menu">2뎁스 메뉴 위치 <span class="req">*</span></label>
-        <input class="input" id="f-menu" type="text" list="menu-suggest" placeholder="1뎁스 선택 후 입력" />
-        <datalist id="menu-suggest"></datalist>
-        <span class="field__hint" id="menu-hint">기존 메뉴를 선택하거나 새 메뉴명을 입력</span>
+        <div class="field field--mid">
+          <label class="field__label" for="f-menu">2뎁스 메뉴 위치 <span class="req">*</span></label>
+          <input class="input" id="f-menu" type="text" list="menu-suggest" placeholder="1뎁스 선택 후 입력" />
+          <datalist id="menu-suggest"></datalist>
+          <span class="field__hint" id="menu-hint">기존 메뉴를 선택하거나 새 메뉴명을 입력</span>
+        </div>
       </div>
 
       <div class="field field--mid">
