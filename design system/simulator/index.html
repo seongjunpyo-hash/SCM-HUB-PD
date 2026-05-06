@@ -264,6 +264,27 @@
   function loadSupp()   { try { return JSON.parse(localStorage.getItem(STORAGE_SUPP) || 'null'); } catch (_) { return null; } }
   function loadCachedHtml() { try { return localStorage.getItem(STORAGE_HTML) || ''; } catch (_) { return ''; } }
   function saveCachedHtml(h){ try { localStorage.setItem(STORAGE_HTML, h || ''); } catch (_) {} }
+  function captureWireframeHtml(ifr) {
+    try {
+      var doc = ifr.contentDocument || (ifr.contentWindow && ifr.contentWindow.document);
+      if (!doc || !doc.documentElement) return '';
+      var baseHref = (ifr.contentWindow && ifr.contentWindow.location && ifr.contentWindow.location.href) || ifr.src;
+      var clone = doc.documentElement.cloneNode(true);
+      var head = clone.querySelector('head');
+      if (head) {
+        var baseTag = head.querySelector('base');
+        if (!baseTag) {
+          baseTag = doc.createElement('base');
+          head.insertBefore(baseTag, head.firstChild);
+        }
+        baseTag.setAttribute('href', baseHref);
+      }
+      return '<!DOCTYPE html>\n' + clone.outerHTML;
+    } catch (e) {
+      console.warn('[SCM Sim] captureWireframeHtml 실패', e);
+      return '';
+    }
+  }
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
   function showToast(msg, variant) {
@@ -320,6 +341,7 @@
               'AI 와이어프레임 생성' +
             '</button>' +
             '<button class="btn btn--ghost" id="btn-copy" disabled>HTML 복사</button>' +
+            '<button class="btn btn--ghost" id="btn-apply-demo" disabled>데모로 적용</button>' +
           '</div>' +
 
           '<div class="panel__hint"><strong>💡 작동 방식</strong><br/>AI 가 PRD 본문 + 도메인 표준 (SAP/Coupa/이커머스 SCM) 으로 컬럼·필터·dummy데이터 추출 → 데모 페이지에 직접 주입.</div>' +
@@ -434,6 +456,12 @@
       navigator.clipboard.writeText(html).then(function () {
         showToast('HTML ' + html.length.toLocaleString() + ' chars 복사 완료', 'ok');
       }, function () { showToast('복사 실패', 'err'); });
+    });
+    document.getElementById('btn-apply-demo').addEventListener('click', function () {
+      var html = currentHtml || loadCachedHtml();
+      if (!html) { showToast('먼저 와이어프레임 생성', 'err'); return; }
+      saveCachedHtml(html);
+      window.open('../../demo/wireframe.html', '_blank');
     });
 
     // 자동 흐름:
@@ -582,6 +610,7 @@
   function clearError() { document.getElementById('preview-error').classList.add('is-hide'); }
   function enableActions() {
     document.getElementById('btn-copy').disabled = false;
+    document.getElementById('btn-apply-demo').disabled = false;
     document.getElementById('btn-rebuild').disabled = false;
     document.getElementById('btn-fullscreen').disabled = false;
   }
@@ -805,7 +834,15 @@
       console.log('[SCM Sim] injectPrd 결과:', ok);
       if (!ok) {
         showToast('주입 실패 — F12 콘솔 확인', 'err');
+        return;
       }
+      setTimeout(function () {
+        var snapshot = captureWireframeHtml(ifr);
+        if (snapshot) {
+          currentHtml = snapshot;
+          saveCachedHtml(snapshot);
+        }
+      }, 60);
     });
     frame.appendChild(ifr);
     document.getElementById('preview-empty').classList.add('is-hide');
