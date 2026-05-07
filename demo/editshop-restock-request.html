@@ -128,8 +128,10 @@
     /* 이동 가능 재고 = 0 → 요청 불가 — INPUT 셀도 흰색 + 입력창 disabled 톤 */
     .mp-table tbody td.er-input-cell.is-disabled,
     .mp-table tbody tr:hover td.er-input-cell.is-disabled { background: #fff; }
+    /* input disabled — 옆 '최대' 버튼 disabled 와 동일 톤 (bg gray, no border) 으로 통일 */
     .scm-input-cell__input:disabled {
-      background: #fff;
+      background: rgba(138, 138, 138, 0.05);
+      border-color: transparent;
       color: rgba(0, 0, 0, 0.30);
       cursor: not-allowed;
     }
