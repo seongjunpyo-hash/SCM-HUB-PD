@@ -1031,7 +1031,7 @@
       <span id="userName">—</span>
       <span class="topbar__role" id="userRole" style="display:none;">—</span>
     </span>
-    <a class="topbar__back" href="/index.html">← Workspace</a>
+    <a class="topbar__back" id="topbarGoDemo" href="/demo/dashboard.html" target="_blank" rel="noopener" title="현재 편집 중인 데모 페이지를 새 탭에서 열기">데모로 가기 ↗</a>
   </header>
 
   <div class="layout">
@@ -1234,12 +1234,6 @@
         </div>
         <footer class="edit-foot">
           <span class="edit-foot__status" id="editStatus">저장됨 · 데모와 동기화</span>
-          <a class="edit-foot__btn-open-demo" id="editOpenDemoBtn" href="#" target="_blank" rel="noopener" title="현재 데모 페이지를 새 창에서 열기">
-            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 3h4v4M13 3L7 9M11 9v4H3V5h4"/>
-            </svg>
-            데모 바로가기
-          </a>
           <button type="button" class="edit-foot__btn-revert" id="editRevertBtn" title="편집 사항 되돌리기 / 초기화">되돌리기</button>
           <button type="button" class="edit-foot__btn-save"   id="editSaveBtn"   disabled>저장됨</button>
         </footer>
@@ -1545,8 +1539,8 @@
             state.currentPage = path;
             urlText.textContent = path;
             urlOpen.href = path;
-            const editOpenDemoBtn = document.getElementById('editOpenDemoBtn');
-            if (editOpenDemoBtn) editOpenDemoBtn.href = path;
+            const topbarGoDemo = document.getElementById('topbarGoDemo');
+            if (topbarGoDemo) topbarGoDemo.href = path;
             syncMenuFromPath(path);
           }
         } catch {}
@@ -1682,8 +1676,8 @@
       state.currentPage = path;
       urlText.textContent = path;
       urlOpen.href = path;
-      const editOpenDemoBtn = document.getElementById('editOpenDemoBtn');
-      if (editOpenDemoBtn) editOpenDemoBtn.href = path;
+      const topbarGoDemo = document.getElementById('topbarGoDemo');
+      if (topbarGoDemo) topbarGoDemo.href = path;
       syncMenuFromPath(path);
       state.iframeReady = false;
       showLoading(true);
@@ -3927,7 +3921,6 @@
               ${state.simActive.has(c.id) ? '<span class="cmt__sim">SIM</span>' : ''}
               <span class="cmt__status">${c.status === 'resolved' ? '해결됨' : '미해결'}</span>
             </div>
-            <div class="cmt__page">📄 ${escapeHtml(pageLabel(c.page))}</div>
             <div class="cmt__body">${escapeHtml(last ? last.text : '')}</div>
             <div class="cmt__meta">
               ${c.authorRole ? `<span class="cmt__role-tag" data-role="${escapeHtml(c.authorRole)}">${escapeHtml(ROLE_LABEL_KO[c.authorRole] || c.authorRole)}</span>` : ''}
