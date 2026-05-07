@@ -1362,7 +1362,8 @@
       applied: {},
       draft: {},
       filter: 'page',
-      currentPage: PAGES[0].path,
+      // default page → SKU 관리 (PAGES 에 있으면 그 path, 없으면 첫번째 fallback)
+      currentPage: (PAGES.find(function (p) { return p.path === '/demo/sku-management.html'; }) || PAGES[0]).path,
       iframeReady: false,
       view: 'list',            // 'list' | 'detail'
       selectedId: null,
