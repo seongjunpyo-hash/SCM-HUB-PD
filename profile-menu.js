@@ -36,12 +36,13 @@
     avatarEl.textContent = firstChar;
     nameEl.textContent   = displayName;
 
-    // 클릭 시 프로필 모달
+    // 클릭 시 프로필 dropdown 토글
     rightEl.style.cursor = 'pointer';
     rightEl.addEventListener('click', function (e) {
       e.preventDefault();
       e.stopPropagation();
-      openProfileModal(user);
+      if (modalEl) closeModal();
+      else openProfileModal(user, rightEl);
     });
 
     // 2) 모달 마크업 + 스타일 한 번만 inject ------------------------
@@ -53,64 +54,80 @@
     }
   }
 
-  // -------- modal API --------
+  // -------- dropdown popover API (no backdrop, anchored to profile) --------
   var modalEl = null;
-  function openProfileModal(user) {
+  var anchorEl = null;
+  function openProfileModal(user, anchor) {
     closeModal();
+    anchorEl = anchor;
     var displayName = (user.name || user.email || '사용자').trim();
     var firstChar   = displayName ? displayName.charAt(0) : '?';
     var roleLabel   = ROLE_LABEL_KO[user.role] || user.role || '';
     var roleClass   = user.role ? ('scm-profile__role--' + user.role) : '';
 
     modalEl = document.createElement('div');
-    modalEl.className = 'scm-profile-backdrop';
+    modalEl.className = 'scm-profile-popover';
     modalEl.innerHTML =
-      '<div class="scm-profile-modal" role="dialog" aria-label="프로필">' +
-        '<header class="scm-profile-modal__head">' +
-          '<strong>프로필</strong>' +
-          '<button type="button" class="scm-profile-modal__close" aria-label="닫기">×</button>' +
-        '</header>' +
-        '<div class="scm-profile-modal__body">' +
-          '<div class="scm-profile-card">' +
-            '<span class="scm-profile-avatar">' + escapeHtml(firstChar) + '</span>' +
-            '<div class="scm-profile-card__meta">' +
-              '<div class="scm-profile-card__name">' + escapeHtml(displayName) +
-                (roleLabel ? ' <span class="scm-profile__role ' + roleClass + '">' + escapeHtml(roleLabel) + '</span>' : '') +
-              '</div>' +
-              '<div class="scm-profile-card__email">' + escapeHtml(user.email || '') + '</div>' +
-            '</div>' +
+      '<div class="scm-profile-card">' +
+        '<span class="scm-profile-avatar">' + escapeHtml(firstChar) + '</span>' +
+        '<div class="scm-profile-card__meta">' +
+          '<div class="scm-profile-card__name">' + escapeHtml(displayName) +
+            (roleLabel ? ' <span class="scm-profile__role ' + roleClass + '">' + escapeHtml(roleLabel) + '</span>' : '') +
           '</div>' +
-          '<div class="scm-profile-actions">' +
-            '<button type="button" class="scm-profile-btn" data-act="change-pw">' +
-              '<svg viewBox="0 0 20 20" fill="none"><path d="M10 11.5v3M6.5 8V6a3.5 3.5 0 0 1 7 0v2M5 8h10v8H5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>' +
-              '<span>비밀번호 재설정</span>' +
-              '<svg class="scm-profile-btn__chev" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
-            '</button>' +
-            '<button type="button" class="scm-profile-btn scm-profile-btn--danger" data-act="logout">' +
-              '<svg viewBox="0 0 20 20" fill="none"><path d="M11 14v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v2M9 10h8m0 0l-3-3m3 3l-3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
-              '<span>로그아웃</span>' +
-            '</button>' +
-          '</div>' +
+          '<div class="scm-profile-card__email">' + escapeHtml(user.email || '') + '</div>' +
         '</div>' +
+      '</div>' +
+      '<div class="scm-profile-actions">' +
+        '<button type="button" class="scm-profile-btn" data-act="change-pw">' +
+          '<svg viewBox="0 0 20 20" fill="none"><path d="M10 11.5v3M6.5 8V6a3.5 3.5 0 0 1 7 0v2M5 8h10v8H5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>' +
+          '<span>비밀번호 재설정</span>' +
+        '</button>' +
+        '<button type="button" class="scm-profile-btn scm-profile-btn--danger" data-act="logout">' +
+          '<svg viewBox="0 0 20 20" fill="none"><path d="M11 14v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v2M9 10h8m0 0l-3-3m3 3l-3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+          '<span>로그아웃</span>' +
+        '</button>' +
       '</div>';
     document.body.appendChild(modalEl);
+    positionPopover();
+    if (anchor) anchor.classList.add('is-open');
 
-    // 이벤트 wiring
     modalEl.addEventListener('click', function (e) {
-      if (e.target === modalEl) { closeModal(); return; }
       var btn = e.target.closest('[data-act]');
-      if (btn) {
-        var act = btn.getAttribute('data-act');
-        if (act === 'change-pw') openPasswordModal();
-        else if (act === 'logout') doLogout();
-      }
-      if (e.target.closest('.scm-profile-modal__close')) closeModal();
+      if (!btn) return;
+      var act = btn.getAttribute('data-act');
+      if (act === 'change-pw') openPasswordModal();
+      else if (act === 'logout') doLogout();
     });
+    setTimeout(function () {
+      document.addEventListener('click', onOutsideClick, true);
+    }, 0);
     document.addEventListener('keydown', onEsc);
+    window.addEventListener('resize', positionPopover);
+    window.addEventListener('scroll', positionPopover, true);
+  }
+  function positionPopover() {
+    if (!modalEl || !anchorEl) return;
+    var r = anchorEl.getBoundingClientRect();
+    var w = modalEl.offsetWidth || 320;
+    var top  = r.bottom + 6;
+    var left = Math.max(8, r.right - w);   // 오른쪽 정렬 (anchor 의 우측 가장자리 기준)
+    if (left + w > window.innerWidth - 8) left = window.innerWidth - w - 8;
+    modalEl.style.top  = top  + 'px';
+    modalEl.style.left = left + 'px';
+  }
+  function onOutsideClick(e) {
+    if (!modalEl) return;
+    if (modalEl.contains(e.target)) return;
+    if (anchorEl && anchorEl.contains(e.target)) return;
+    closeModal();
   }
   function closeModal() {
     if (modalEl) { modalEl.remove(); modalEl = null; }
+    if (anchorEl) { anchorEl.classList.remove('is-open'); anchorEl = null; }
+    document.removeEventListener('click', onOutsideClick, true);
     document.removeEventListener('keydown', onEsc);
+    window.removeEventListener('resize', positionPopover);
+    window.removeEventListener('scroll', positionPopover, true);
     closePasswordModal();
   }
   function onEsc(e) { if (e.key === 'Escape') closeModal(); }
@@ -237,8 +254,22 @@
 
   // -------- styles --------
   var STYLE_CSS = '\n' +
+    /* popover (드롭다운 — 딤드 없음, 토픽바 우측 프로필 아래 위치) */
+    '.scm-profile-popover {\n' +
+    '  position: fixed; z-index: ' + Z + ';\n' +
+    '  width: 320px; max-width: calc(100vw - 16px);\n' +
+    '  background: #fff; color: #1A1A1A;\n' +
+    '  border: 1px solid #E5E7EB; border-radius: 12px;\n' +
+    '  box-shadow: 0 12px 28px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.06);\n' +
+    '  padding: 14px;\n' +
+    '  font-family: Pretendard, notokr, -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;\n' +
+    '}\n' +
+    /* anchor (.scm-topbar__right) 의 chevron 회전 (open 시) */
+    '.scm-topbar__right.is-open .scm-topbar__chev svg { transform: rotate(180deg); transition: transform 0.15s ease; }\n' +
+    '.scm-topbar__chev svg { transition: transform 0.15s ease; }\n' +
+    /* 비밀번호 변경 모달 (서브 모달 — 중앙 + dim 그대로) */
     '.scm-profile-backdrop {\n' +
-    '  position: fixed; inset: 0; z-index: ' + Z + ';\n' +
+    '  position: fixed; inset: 0; z-index: ' + (Z + 1) + ';\n' +
     '  background: rgba(15, 17, 22, 0.5); backdrop-filter: blur(2px);\n' +
     '  display: flex; align-items: center; justify-content: center;\n' +
     '}\n' +
@@ -265,12 +296,12 @@
     '}\n' +
     '.scm-profile-modal__close:hover { background: #F3F4F6; color: #1A1A1A; }\n' +
     '.scm-profile-modal__body { padding: 20px; }\n' +
-    /* card */
+    /* card (popover + modal 공용) */
     '.scm-profile-card {\n' +
-    '  display: flex; align-items: center; gap: 14px;\n' +
-    '  padding: 14px 16px; background: #F8F9FB;\n' +
+    '  display: flex; align-items: center; gap: 12px;\n' +
+    '  padding: 10px 12px; background: #F8F9FB;\n' +
     '  border: 1px solid #E5E7EB; border-radius: 10px;\n' +
-    '  margin-bottom: 14px;\n' +
+    '  margin-bottom: 10px;\n' +
     '}\n' +
     '.scm-profile-avatar {\n' +
     '  width: 40px; height: 40px; flex-shrink: 0;\n' +
@@ -289,18 +320,18 @@
     '.scm-profile__role--super { background: #FEF3C7; color: #B45309; }\n' +
     '.scm-profile__role--admin { background: rgba(110,107,255,0.14); color: #4F46E5; }\n' +
     '.scm-profile__role--biz   { background: #D1FAE5; color: #047857; }\n' +
-    /* actions */
-    '.scm-profile-actions { display: flex; flex-direction: column; gap: 6px; }\n' +
+    /* actions — 한 줄 (가로) */
+    '.scm-profile-actions { display: flex; flex-direction: row; gap: 6px; }\n' +
     '.scm-profile-btn {\n' +
-    '  display: flex; align-items: center; gap: 10px;\n' +
-    '  width: 100%; padding: 12px 14px; text-align: left;\n' +
+    '  display: flex; align-items: center; justify-content: center; gap: 6px;\n' +
+    '  flex: 1; min-width: 0; padding: 10px 12px;\n' +
     '  background: #fff; color: #1A1A1A; border: 1px solid #E5E7EB; border-radius: 8px;\n' +
-    '  font-family: inherit; font-size: 13.5px; font-weight: 500; cursor: pointer;\n' +
+    '  font-family: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer;\n' +
+    '  white-space: nowrap;\n' +
     '  transition: background 0.12s, border-color 0.12s;\n' +
     '}\n' +
     '.scm-profile-btn:hover { background: #F8F9FB; border-color: #D1D5DB; }\n' +
-    '.scm-profile-btn svg { width: 18px; height: 18px; flex-shrink: 0; color: #6B7280; }\n' +
-    '.scm-profile-btn__chev { margin-left: auto; width: 14px; height: 14px; }\n' +
+    '.scm-profile-btn svg { width: 16px; height: 16px; flex-shrink: 0; color: #6B7280; }\n' +
     '.scm-profile-btn--danger { color: #DC2626; }\n' +
     '.scm-profile-btn--danger:hover { background: #FEF2F2; border-color: #FCA5A5; }\n' +
     '.scm-profile-btn--danger svg { color: #DC2626; }\n' +
