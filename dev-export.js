@@ -1088,11 +1088,13 @@ ${jsxBody}
         overflow: hidden;
       }
       .scm-dev-export-modal__head {
-        display: flex; align-items: flex-start; gap: 12px;
-        padding: 18px 20px 14px;
+        position: relative;
+        display: flex; align-items: center; justify-content: center;
+        gap: 12px;
+        padding: 18px 56px;             /* 위/아래 동일, 좌우 close 버튼 자리 확보 */
         border-bottom: 1px solid #F0F0F0;
       }
-      .scm-dev-export-modal__titles { flex: 1; min-width: 0; }
+      .scm-dev-export-modal__titles { text-align: center; }
       .scm-dev-export-modal__titles strong { display: block; font-size: 15px; font-weight: 700; }
       .scm-dev-export-modal__titles small {
         display: block; margin-top: 4px;
@@ -1101,6 +1103,7 @@ ${jsxBody}
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       }
       .scm-dev-export-modal__close {
+        position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
         background: transparent; border: 0; cursor: pointer;
         font-size: 22px; line-height: 1; color: #9CA3AF;
         width: 28px; height: 28px; border-radius: 6px;
