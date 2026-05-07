@@ -633,7 +633,79 @@
     if (s !== -1 && e !== -1 && e > s) {
       try { return JSON.parse(text.substring(s, e + 1)); } catch (_) {}
     }
+    // 4) 끊긴 JSON 복구 — max_tokens 한도 초과로 응답 truncated 된 경우.
+    //    open 된 string/array/object 를 자동으로 닫아서 partial spec 이라도 살림.
+    if (s !== -1) {
+      var repaired = repairTruncatedJson(text.substring(s));
+      if (repaired) {
+        try {
+          var obj = JSON.parse(repaired);
+          console.warn('[SCM Sim] 응답이 truncated 되어 JSON 복구로 partial spec 살림 (alternatives 일부 누락 가능)');
+          return obj;
+        } catch (_) {}
+      }
+    }
     return null;
+  }
+
+  // 끊긴 JSON 문자열을 복구. 미닫힘 string/array/object 를 자동으로 닫음.
+  // 마지막 valid 경계까지 자르고 닫음 — 보수적으로 동작.
+  function repairTruncatedJson(s) {
+    if (!s) return null;
+    // 마지막 콤마/콜론 뒤 조각을 자름 (불완전한 key/value 제거)
+    var i = s.length;
+    while (i > 0 && /[,:\s]/.test(s[i - 1])) i--;
+    s = s.substring(0, i);
+
+    // string / object / array 깊이 추적
+    var stack = [];   // '"' | '{' | '['
+    var inStr = false;
+    var esc = false;
+    for (var j = 0; j < s.length; j++) {
+      var c = s[j];
+      if (inStr) {
+        if (esc) { esc = false; continue; }
+        if (c === '\\') { esc = true; continue; }
+        if (c === '"') { inStr = false; stack.pop(); }
+        continue;
+      }
+      if (c === '"') { inStr = true; stack.push('"'); continue; }
+      if (c === '{') { stack.push('{'); continue; }
+      if (c === '[') { stack.push('['); continue; }
+      if (c === '}') { if (stack[stack.length - 1] === '{') stack.pop(); continue; }
+      if (c === ']') { if (stack[stack.length - 1] === '[') stack.pop(); continue; }
+    }
+
+    // 마지막 비완료 조각 (예: '"key"' 가 있는데 콜론도 값도 없음) 잘라냄
+    // 간단 휴리스틱: 마지막 '"' 이후가 '}' 이나 ']' 으로 닫혀있지 않으면 그 '"' 부터 잘라냄
+    if (inStr) {
+      // 미닫힘 string — 가장 최근 따옴표 시작 직전까지 잘라냄
+      var lastQuote = s.lastIndexOf('"');
+      if (lastQuote !== -1) {
+        // string 시작 따옴표 위치 찾기 — 이전 따옴표
+        var prevQuote = s.lastIndexOf('"', lastQuote - 1);
+        // 미닫힘 string 의 시작 따옴표 직전까지 자르기
+        s = s.substring(0, lastQuote);
+        // 잘렸으니 stack 도 마지막 '"' 제거
+        if (stack[stack.length - 1] === '"') stack.pop();
+      }
+    }
+    // 끝부분 트레일링 콤마/콜론 다시 정리
+    s = s.replace(/[,:\s]+$/, '');
+    // 마지막 토큰이 key 만 있고 value 없는 경우 ("foo": ) 잘라냄
+    s = s.replace(/,\s*"[^"]*"\s*:?\s*$/, '');
+    s = s.replace(/"[^"]*"\s*:\s*$/, '');
+    // 다시 끝 정리
+    s = s.replace(/[,\s]+$/, '');
+
+    // 남은 stack 을 역순으로 닫음
+    while (stack.length) {
+      var top = stack.pop();
+      if (top === '{') s += '}';
+      else if (top === '[') s += ']';
+      else if (top === '"') s += '"';
+    }
+    return s;
   }
 
   function showLoading(on) {
@@ -1973,7 +2045,7 @@
         },
         body: JSON.stringify({
           model: 'claude-sonnet-4-6',
-          max_tokens: 12000,
+          max_tokens: 24000,
           system: '당신은 JSON 만 출력하는 API 입니다. 응답은 반드시 { 로 시작 } 로 끝. markdown 코드블록 / 설명 / 인사말 절대 금지. 셀 데이터는 한국 패션/SCM 도메인의 진짜같은 한국어 (placeholder 금지).',
           messages: [{ role: 'user', content: prompt }],
         }),
@@ -2157,8 +2229,8 @@
       '[★★★ 품질 — 무조건 최우선 ★★★]',
       '와이어프레임이 "진짜 페이지처럼" 보여야 함. 의미 없는 placeholder 절대 금지.',
       '',
-      '· 컬럼 갯수 — table layout 은 최소 6개, 권장 8~10개. 5개 이하는 사용성 나쁨.',
-      '· 행 갯수 — rowSamples 최소 8행 (10행 권장).',
+      '· 컬럼 갯수 — table layout 은 최소 6개, 권장 7~9개. 5개 이하는 사용성 나쁨.',
+      '· 행 갯수 — rowSamples 6행 (행이 너무 길어지면 응답이 잘림 — 6행으로 충분).',
       '· **셀 콘텐츠는 PRD 도메인의 진짜 같은 데이터** — placeholder 텍스트 금지.',
       '  예 (한국 패션 SCM):',
       '    - 상품명: "무탠다드 코튼 옥스포드 셔츠 - 화이트", "29CM 데님 와이드 팬츠", "이지부스트 350 V2 자이브라"',
@@ -2209,14 +2281,14 @@
       '    · 메인=form        → alt: master-detail / table / cards',
       '    · 메인=timeline    → alt: kanban / table / dashboard',
       '',
-      '  **각 alternative 는 layoutData 를 풍부하게**:',
-      '    - table:        filters 4~6개 + columns ≥ 6개 + rowSamples ≥ 8행',
-      '    - cards:        최소 10개 (12개 권장) — 각 카드 title + subtitle + status + meta(2~3개)',
-      '    - kanban:       최소 3개 컬럼 × 컬럼당 카드 3~5개 (총 10~15장)',
-      '    - master-detail: list 최소 8개 + detail 섹션 2~3개 × 섹션당 필드 4~6개',
-      '    - dashboard:    stats 최소 4개 (각각 label/value/delta) + charts 2개',
-      '    - form:         섹션 최소 2개 × 섹션당 필드 4~6개 (text/select/textarea/date/number 다양)',
-      '    - timeline:     최소 8개 이벤트 (각각 time/actor/action/detail)',
+      '  **각 alternative 는 layoutData 를 적정 규모로** (응답이 너무 길면 잘림 — 아래 규모 이상은 X):',
+      '    - table:        filters 4~5개 + columns 6~7개 + rowSamples 6행',
+      '    - cards:        8장 — 각 카드 title + subtitle + status + meta(2개)',
+      '    - kanban:       3개 컬럼 × 컬럼당 카드 3장 (총 9장)',
+      '    - master-detail: list 6개 + detail 섹션 2개 × 섹션당 필드 4개',
+      '    - dashboard:    stats 4개 (label/value/delta) + charts 2개',
+      '    - form:         섹션 2개 × 섹션당 필드 4개',
+      '    - timeline:     6개 이벤트 (time/actor/action/detail)',
       '  layoutData 가 비어있거나 빈약하면 빈 화면 같이 보임 — 절대 비우지 말 것.',
       '  customNotes 필드에 한국어로 2~5줄: **이 layout 이 어떤 사용자 시나리오·작업에 강한지,',
       '  메인 대비 어떤 가치 (탐색성/스캔성/맥락/속도/입력 효율 등) 를 주는지**.',
@@ -2275,8 +2347,8 @@
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 16000,
-        system: '당신은 JSON 만 출력하는 API 입니다. 응답은 반드시 { 로 시작 } 로 끝. markdown 코드블록 / 설명 / 인사말 절대 금지. spec.layout 은 PRD 의 사용자 작업 + 일반 시스템 화면 사용성 원칙으로 7개 (table/cards/master-detail/kanban/dashboard/form/timeline) 중 가장 적합한 1개 선택 — table 을 default 로 두지 말 것. alternatives 는 반드시 3개 — [0] "변형 1" + 메인과 다른 layout, [1] "AI 추천 1 (자유 제안)" + 다른 layout, [2] "AI 추천 2 (자유 제안)" + 또 다른 layout. 메인 + 3 alt = 4개 모두 다른 layout. 모든 variant 가 자체 layoutData 풍부히. customNotes (alt 1~3) 는 사용성 관점 설명. 셀 데이터는 한국 패션 SCM 도메인의 진짜같은 한국어 (placeholder 금지). table 은 컬럼 ≥ 6개 + rowSamples ≥ 8행.',
+        max_tokens: 32000,
+        system: '당신은 JSON 만 출력하는 API 입니다. 응답은 반드시 { 로 시작 } 로 끝. markdown 코드블록 / 설명 / 인사말 절대 금지. spec.layout 은 PRD 의 사용자 작업 + 일반 시스템 화면 사용성 원칙으로 7개 (table/cards/master-detail/kanban/dashboard/form/timeline) 중 가장 적합한 1개 선택 — table 을 default 로 두지 말 것. alternatives 는 반드시 3개 — [0] "변형 1" + 메인과 다른 layout, [1] "AI 추천 1 (자유 제안)" + 다른 layout, [2] "AI 추천 2 (자유 제안)" + 또 다른 layout. 메인 + 3 alt = 4개 모두 다른 layout. 모든 variant 가 자체 layoutData 풍부히. customNotes (alt 1~3) 는 사용성 관점 설명. 셀 데이터는 한국 패션 SCM 도메인의 진짜같은 한국어 (placeholder 금지). table 은 컬럼 ≥ 6개 + rowSamples ≥ 6행.',
         messages: [{ role: 'user', content: prompt }],
       }),
     });
