@@ -1010,8 +1010,6 @@
 <body>
 
   <header class="topbar">
-    <span class="brand">SCM HUB<span class="dot"></span>협업 VOC<span class="role-tag">작업자</span></span>
-    <span class="topbar__sep"></span>
     <span class="menu-label">1뎁스</span>
     <div class="menu-l1" id="menuL1"></div>
     <span class="menu-arrow">›</span>
@@ -1031,7 +1029,8 @@
       <span id="userName">—</span>
       <span class="topbar__role" id="userRole" style="display:none;">—</span>
     </span>
-    <a class="topbar__back" id="topbarGoDemo" href="/demo/dashboard.html" target="_blank" rel="noopener" title="현재 편집 중인 데모 페이지를 새 탭에서 열기">데모로 가기 ↗</a>
+    <a class="topbar__back" id="topbarGoDemo" href="/demo/index.html" target="_blank" rel="noopener" title="현재 편집 중인 데모 페이지를 새 탭에서 열기">데모로 가기 ↗</a>
+    <a class="topbar__back" id="topbarGoWorkspace" href="/index.html" title="워크스페이스로 이동">← 워크스페이스</a>
   </header>
 
   <div class="layout">
@@ -1041,7 +1040,7 @@
           <span class="traffic"><span></span><span></span><span></span></span>
           <span class="urlbar">
             <svg class="lock" width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M6 11V8a6 6 0 0 1 12 0v3M5 11h14v10H5V11z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <span class="url" id="urlText">/demo/dashboard.html</span>
+            <span class="url" id="urlText">/demo/index.html</span>
             <a class="urlbar__open" id="urlOpen" href="#" target="_blank" rel="noopener" title="새 탭에서 열기">↗</a>
           </span>
         </div>
@@ -1315,9 +1314,6 @@
     }
     // Two-depth menu mirroring the demo's LNB structure.
     const MENU = [
-      { l1: 'dashboard', label: '대시보드', children: [
-        { path: '/demo/dashboard.html', label: '대시보드' },
-      ]},
       { l1: 'store', label: '스토어', children: [
         { path: '/demo/index.html',                    label: '무탠 전개상품 관리' },
         { path: '/demo/editshop-restock-request.html', label: '편집샵 보충 요청' },
