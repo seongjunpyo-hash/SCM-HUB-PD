@@ -822,8 +822,9 @@
     const availNum = Number(r.available) || 0;
     const isMaxed = !isEmpty(r.available) && reqNum >= availNum;
     const isUnavailable = !isEmpty(r.available) && availNum === 0;
-    // 요청 수량 > 이동 가능 재고 → 에러 톤 (disabled 와 공존 — 0 재고 + prefill req 케이스)
-    const isError = !isEmpty(r.available) && reqNum > availNum;
+    // 요청 수량 > 이동 가능 재고 → 에러 톤. avail=0 은 입력 자체 불가하므로
+    // disabled 만 적용 (에러 아님). avail>0 인데 req 가 초과한 경우만 error.
+    const isError = !isEmpty(r.available) && availNum > 0 && reqNum > availNum;
     const inputAttrs = [
       isUnavailable ? 'disabled' : '',
       isError ? 'aria-invalid="true"' : '',
