@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1440" />
+  <title>SCM-Hub · SKU 입고·출고 제한일수 관리 (와이어프레임)</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+
+  <style>
+    :root {
+      --fg: #1A1A1A;
+      --fg-mute: #6B7280;
+      --fg-dim: #8A8A8A;
+      --line: #E5E7EB;
+      --line-soft: #F0F0F0;
+      --bg: #FFFFFF;
+      --bg-soft: #FAFBFC;
+      --bg-page: #F5F7FA;
+      --accent: #245EFF;
+      --accent-bg: #E2F1FF;
+      --warn-bg: #FFF4E5;
+      --warn-fg: #C2710C;
+      --success-bg: #E8F5E9;
+      --success-fg: #2E7D32;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+      letter-spacing: -0.01em;
+      color: var(--fg);
+      background: var(--bg-page);
+      min-width: 1440px;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; }
+
+    /* ============== Topbar ============== */
+    .topbar {
+      position: sticky; top: 0; z-index: 30;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px; padding: 0 28px;
+      background: #fff; border-bottom: 1px solid var(--line);
+    }
+    .topbar__left { display: flex; align-items: center; gap: 14px; }
+    .topbar__menu {
+      width: 36px; height: 36px; border: 0; background: transparent; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; border-radius: 6px;
+    }
+    .topbar__menu:hover { background: var(--bg-soft); }
+    .topbar__brand { font-size: 18px; font-weight: 800; letter-spacing: 0.4px; }
+    .topbar__demo {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.6px;
+      padding: 2px 6px; border-radius: 3px;
+      background: rgba(36,94,255,0.10); color: var(--accent);
+    }
+    .topbar__right { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--fg-mute); }
+    .topbar__avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: #1A1A1A; color: #fff;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 600;
+    }
+
+    /* ============== Layout shell ============== */
+    .app { display: grid; grid-template-columns: 240px 1fr; min-height: calc(100vh - 64px); }
+
+    .lnb { background: #fff; border-right: 1px solid var(--line); padding: 16px 12px; font-size: 13px; }
+    .lnb__group { margin-bottom: 18px; }
+    .lnb__title { font-size: 11px; font-weight: 700; letter-spacing: 0.6px; color: var(--fg-dim); padding: 6px 10px; text-transform: uppercase; }
+    .lnb__item {
+      display: flex; align-items: center; padding: 8px 10px; border-radius: 6px;
+      color: var(--fg); cursor: pointer; line-height: 1.4;
+    }
+    .lnb__item:hover { background: var(--bg-soft); }
+    .lnb__item.is-active { background: var(--accent-bg); color: var(--accent); font-weight: 600; }
+    .lnb__sub { padding-left: 14px; }
+
+    main { padding: 24px 32px 64px; min-width: 0; }
+
+    /* ============== Page head ============== */
+    .page-head { padding: 8px 0 16px; }
+    .crumb { font-size: 12px; color: var(--fg-dim); margin-bottom: 6px; }
+    .page-head h1 { margin: 0 0 6px; font-size: 24px; font-weight: 700; letter-spacing: -0.3px; }
+    .page-head p { margin: 0; font-size: 13px; color: var(--fg-mute); line-height: 1.65; max-width: 880px; }
+
+    /* ============== Info banner ============== */
+    .banner {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 12px 16px; border-radius: 8px;
+      background: var(--accent-bg); color: #0F3FB3;
+      font-size: 13px; line-height: 1.65;
+      margin-top: 16px;
+    }
+    .banner__icon {
+      width: 18px; height: 18px; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--accent); color: #fff; border-radius: 50%;
+      font-size: 11px; font-weight: 700;
+    }
+    .banner b { color: #0F3FB3; }
+
+    /* ============== Tabs ============== */
+    .tabs {
+      display: flex; gap: 0; border-bottom: 1px solid var(--line);
+      margin-top: 24px;
+    }
+    .tab {
+      padding: 10px 16px; font-size: 14px; font-weight: 500; color: var(--fg-mute);
+      cursor: pointer; border: 0; background: transparent;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+    .tab.is-active { color: var(--fg); border-bottom-color: var(--fg); font-weight: 700; }
+
+    /* ============== Toolbar ============== */
+    .toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 0;
+    }
+    .filter-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .filter {
+      display: inline-flex; align-items: center; gap: 6px;
+      height: 36px; padding: 0 12px;
+      background: #fff; border: 1px solid var(--line); border-radius: 4px;
+      font-size: 13px; color: var(--fg);
+    }
+    .filter--placeholder { color: var(--fg-dim); }
+    .filter input {
+      border: 0; outline: none; background: transparent;
+      font-family: inherit; font-size: 13px; min-width: 200px;
+    }
+    .filter .chev { width: 14px; height: 14px; opacity: 0.4; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      height: 36px; padding: 0 14px; border-radius: 4px;
+      font-size: 13px; font-weight: 500; cursor: pointer;
+      border: 1px solid transparent; background: transparent;
+    }
+    .btn--primary { background: #1A1A1A; color: #fff; border-color: #1A1A1A; }
+    .btn--primary:hover { background: #333; }
+    .btn--ghost { background: #fff; color: var(--fg); border-color: var(--line); }
+    .btn--ghost:hover { background: var(--bg-soft); }
+    .btn--text { color: var(--accent); padding: 0 4px; height: auto; }
+    .btn--text:hover { text-decoration: underline; }
+
+    /* ============== Card / Table ============== */
+    .card {
+      background: #fff; border: 1px solid var(--line); border-radius: 8px; overflow: hidden;
+    }
+    .card + .card { margin-top: 16px; }
+    .card__head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 18px; border-bottom: 1px solid var(--line-soft);
+    }
+    .card__title { font-size: 15px; font-weight: 700; }
+    .card__sub { font-size: 12px; color: var(--fg-mute); margin-left: 8px; font-weight: 400; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th {
+      background: var(--bg-soft); color: var(--fg-mute);
+      font-weight: 600; font-size: 12px; text-align: left;
+      padding: 10px 14px; border-bottom: 1px solid var(--line);
+      white-space: nowrap;
+    }
+    thead th.num, tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    tbody td {
+      padding: 12px 14px; border-bottom: 1px solid var(--line-soft);
+      vertical-align: middle;
+    }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr:hover { background: var(--bg-soft); }
+
+    .pill {
+      display: inline-flex; align-items: center; height: 22px; padding: 0 8px;
+      border-radius: 4px; font-size: 12px; font-weight: 500;
+    }
+    .pill--in    { background: var(--accent-bg); color: var(--accent); }
+    .pill--out   { background: #FFF4E5;  color: #C2710C; }
+    .pill--pct   { background: #F3F0FF;  color: #5A41E0; }
+    .pill--day   { background: #ECFDF5;  color: #047857; }
+    .pill--def   { background: #F0F0F0;  color: #6B7280; }
+
+    .muted { color: var(--fg-mute); }
+    .strong { font-weight: 600; }
+    .num-cell { font-variant-numeric: tabular-nums; }
+
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+
+    .row-actions { display: inline-flex; gap: 4px; }
+    .icon-btn {
+      width: 28px; height: 28px; border-radius: 4px; border: 0;
+      background: transparent; cursor: pointer; color: var(--fg-mute);
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .icon-btn:hover { background: var(--bg-soft); color: var(--fg); }
+
+    /* ============== Modal mock ============== */
+    .modal-region { margin-top: 32px; }
+    .modal-region__label {
+      font-size: 11px; font-weight: 700; color: var(--fg-dim); letter-spacing: 0.6px;
+      text-transform: uppercase; padding: 0 0 8px;
+    }
+    .modal {
+      background: #fff; border: 1px solid var(--line); border-radius: 12px;
+      width: 540px; padding: 24px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    }
+    .modal__head { font-size: 17px; font-weight: 700; margin: 0 0 4px; }
+    .modal__sub  { font-size: 12px; color: var(--fg-mute); margin: 0 0 18px; }
+    .field { margin-bottom: 14px; }
+    .field__label { display: block; font-size: 12px; font-weight: 600; color: var(--fg-mute); margin-bottom: 6px; }
+    .field__row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .input {
+      width: 100%; height: 38px; padding: 0 12px;
+      border: 1px solid var(--line); border-radius: 6px; background: #fff;
+      font-size: 13px; font-family: inherit; color: var(--fg);
+    }
+    .input--with-suffix {
+      display: flex; align-items: center; gap: 6px; padding-right: 8px;
+    }
+    .input--with-suffix input {
+      flex: 1; border: 0; outline: none; height: 36px; font-size: 13px; font-family: inherit;
+    }
+    .input--with-suffix .suffix { color: var(--fg-mute); font-size: 13px; padding-right: 4px; }
+    .modal__foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+
+    .seg {
+      display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden;
+    }
+    .seg button {
+      padding: 0 14px; height: 36px; border: 0; background: #fff;
+      font-size: 13px; cursor: pointer; color: var(--fg-mute);
+    }
+    .seg button.is-on { background: #1A1A1A; color: #fff; }
+
+    .helper {
+      font-size: 12px; color: var(--fg-mute); margin-top: 4px; line-height: 1.6;
+    }
+    .range-row {
+      display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center;
+    }
+    .range-sep { font-size: 12px; color: var(--fg-dim); }
+
+    /* ============== Sidebar drawer mock (history) ============== */
+    .drawer {
+      background: #fff; border: 1px solid var(--line); border-radius: 12px;
+      width: 420px; padding: 20px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    }
+    .drawer__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .drawer__title { font-size: 15px; font-weight: 700; }
+    .log { display: flex; flex-direction: column; gap: 14px; }
+    .log__item { padding-left: 14px; border-left: 2px solid var(--line); }
+    .log__when { font-size: 11px; color: var(--fg-dim); margin-bottom: 4px; }
+    .log__who  { font-size: 12px; color: var(--fg-mute); margin-bottom: 4px; }
+    .log__what { font-size: 13px; }
+    .log__what s { color: var(--fg-dim); }
+
+    /* ============== Layout grid for modal+drawer ============== */
+    .mock-row { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+
+    /* ============== Footnote ============== */
+    .legend {
+      margin-top: 12px; font-size: 12px; color: var(--fg-mute); line-height: 1.7;
+    }
+    .legend code {
+      background: var(--bg-soft); padding: 1px 6px; border-radius: 3px;
+      font-family: ui-monospace, monospace; font-size: 12px; color: var(--fg);
+    }
+
+  </style>
+</head>
+<body>
+
+<!-- ============== Topbar ============== -->
+<header class="topbar">
+  <div class="topbar__left">
+    <button class="topbar__menu" aria-label="메뉴">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <span class="topbar__brand">SCM HUB</span>
+    <span class="topbar__demo">WIREFRAME</span>
+  </div>
+  <div class="topbar__right">
+    <span class="topbar__avatar">M</span>
+    <span>MD · 김무신</span>
+  </div>
+</header>
+
+<div class="app">
+
+  <!-- ============== LNB ============== -->
+  <nav class="lnb" aria-label="주메뉴">
+    <div class="lnb__group">
+      <div class="lnb__title">SCM HUB</div>
+      <div class="lnb__item">대시보드</div>
+      <div class="lnb__item">스토어</div>
+      <div class="lnb__item">상품 관리</div>
+      <div class="lnb__item">발주/입고 관리</div>
+    </div>
+    <div class="lnb__group">
+      <div class="lnb__title">Admin</div>
+      <div class="lnb__item">계정 관리</div>
+      <div class="lnb__item">카테고리 관리</div>
+      <div class="lnb__item is-active">
+        SKU 입고·출고 제한일수 관리
+      </div>
+      <div class="lnb__item">변경 이력</div>
+    </div>
+  </nav>
+
+  <!-- ============== Main ============== -->
+  <main>
+    <!-- Page head -->
+    <div class="page-head">
+      <div class="crumb">SCM Hub Admin · 정책 관리 · <strong style="color:var(--fg)">SKU 입고·출고 제한일수 관리</strong></div>
+      <h1>SKU 입고·출고 제한일수 관리</h1>
+      <p>
+        SKU별 입고·출고 제한일수를 카테고리·소비기한 구간별 공통 정책으로 일괄 관리합니다.
+        SKU 등록 시 자동 적용되며, 예외가 필요한 SKU에 한해 개별 값을 덮어쓸 수 있습니다.
+        변경 권한은 <b>MD</b>에 한정됩니다.
+      </p>
+
+      <div class="banner">
+        <span class="banner__icon">i</span>
+        <div>
+          <b>적용 우선순위</b> · SKU 개별 설정값 &nbsp;›&nbsp; 카테고리별 공통 정책 &nbsp;›&nbsp; 전체 기본값.
+          매핑된 정책이 없으면 전체 기본값이 적용되며, 신규 SKU는 <b>소비기한 관리여부 Y 전환 시점</b>에 자동 적용됩니다.
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs" role="tablist">
+      <button class="tab is-active" role="tab" aria-selected="true">카테고리별 공통 정책</button>
+      <button class="tab" role="tab">SKU 예외 설정</button>
+      <button class="tab" role="tab">변경 이력</button>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 1 — 카테고리별 공통 정책                    -->
+    <!-- ============================================== -->
+    <section aria-label="카테고리별 공통 정책">
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="filter-group">
+          <span class="filter filter--placeholder">
+            카테고리 전체
+            <svg class="chev" viewBox="0 0 16 16"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>
+          </span>
+          <span class="filter filter--placeholder">
+            타입 (입고/출고)
+            <svg class="chev" viewBox="0 0 16 16"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>
+          </span>
+          <span class="filter filter--placeholder">
+            제한 타입 (% / 일)
+            <svg class="chev" viewBox="0 0 16 16"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>
+          </span>
+          <span class="filter">
+            <input placeholder="카테고리·정책 검색" />
+            <svg class="chev" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5" stroke="currentColor" fill="none"/><path d="M11 11l3 3" stroke="currentColor" stroke-linecap="round"/></svg>
+          </span>
+        </div>
+        <div class="filter-group">
+          <button class="btn btn--ghost">CSV 내보내기</button>
+          <button class="btn btn--ghost">일괄 업로드</button>
+          <button class="btn btn--primary">
+            <svg width="14" height="14" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            정책 추가
+          </button>
+        </div>
+      </div>
+
+      <!-- Table card -->
+      <div class="card">
+        <div class="card__head">
+          <div>
+            <span class="card__title">카테고리별 공통 정책</span>
+            <span class="card__sub">총 7건 · 카테고리 + 타입 + 소비기한 구간 조합으로 정책 1건 관리</span>
+          </div>
+          <div class="filter-group">
+            <button class="btn btn--text">전체 기본값 보기</button>
+          </div>
+        </div>
+        <table>
+          <colgroup>
+            <col style="width:80px"><col><col style="width:170px"><col style="width:170px">
+            <col style="width:120px"><col style="width:120px"><col style="width:140px"><col style="width:90px">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>타입</th>
+              <th>카테고리</th>
+              <th class="num">소비기한 구간 (초과)</th>
+              <th class="num">소비기한 구간 (이하)</th>
+              <th>제한 타입</th>
+              <th class="num">제한 값</th>
+              <th>최근 변경</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="pill pill--in">입고</span></td>
+              <td>뷰티 &gt; 스킨케어 &gt; 에센스</td>
+              <td class="num">0</td>
+              <td class="num">180</td>
+              <td><span class="pill pill--pct">퍼센트</span></td>
+              <td class="num"><span class="strong">50</span> <span class="muted">%</span></td>
+              <td class="muted">2026-04-21 · 김무신</td>
+              <td>
+                <span class="row-actions">
+                  <button class="icon-btn" title="수정">✎</button>
+                  <button class="icon-btn" title="이력">⟲</button>
+                  <button class="icon-btn" title="더보기">⋯</button>
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="pill pill--in">입고</span></td>
+              <td>뷰티 &gt; 스킨케어 &gt; 에센스</td>
+              <td class="num">180</td>
+              <td class="num">365</td>
+              <td><span class="pill pill--pct">퍼센트</span></td>
+              <td class="num"><span class="strong">33</span> <span class="muted">%</span></td>
+              <td class="muted">2026-04-21 · 김무신</td>
+              <td>
+                <span class="row-actions">
+                  <button class="icon-btn" title="수정">✎</button>
+                  <button class="icon-btn" title="이력">⟲</button>
+                  <button class="icon-btn" title="더보기">⋯</button>
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="pill pill--in">입고</span></td>
+              <td>뷰티 &gt; 스킨케어 &gt; 에센스</td>
+              <td class="num">365</td>
+              <td class="num muted">—</td>
+              <td><span class="pill pill--pct">퍼센트</span></td>
+              <td class="num"><span class="strong">20</span> <span class="muted">%</span></td>
+              <td class="muted">2026-04-21 · 김무신</td>
+              <td>
+                <span class="row-actions">
+                  <button class="icon-btn" title="수정">✎</button>
+                  <button class="icon-btn" title="이력">⟲</button>
+                  <button class="icon-btn" title="더보기">⋯</button>
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="pill pill--out">출고</span></td>
+              <td>뷰티 &gt; 스킨케어 &gt; 에센스</td>
+              <td class="num">0</td>
+              <td class="num">730</td>
+              <td><span class="pill pill--day">일</span></td>
+              <td class="num"><span class="strong">120</span> <span class="muted">일</span></td>
+              <td class="muted">2026-04-21 · 김무신</td>
+              <td>
+                <span class="row-actions">
+                  <button class="icon-btn" title="수정">✎</button>
+                  <button class="icon-btn" title="이력">⟲</button>
+                  <button class="icon-btn" title="더보기">⋯</button>
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="pill pill--out">출고</span></td>
+              <td>뷰티 &gt; 스킨케어 &gt; 에센스</td>
+              <td class="num">730</td>
+              <td class="num muted">—</td>
+              <td><span class="pill pill--day">일</span></td>
+              <td class="num"><span class="strong">180</span> <span class="muted">일</span></td>
+              <td class="muted">2026-04-21 · 김무신</td>
+              <td>
+                <span class="row-actions">
+                  <button class="icon-btn" title="수정">✎</button>
+                  <button class="icon-btn" title="이력">⟲</button>
+                  <button class="icon-btn" title="더보기">⋯</button>
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="pill pill--in">입고</span></td>
+              <td>뷰티 &gt; 립 메이크업 &gt; 립스틱</td>
+              <td class="num">0</td>
+              <td class="num">365</td>
+              <td><span class="pill pill--pct">퍼센트</span></td>
+              <td class="num"><span class="strong">50</span> <span class="muted">%</span></td>
+              <td class="muted">2026-03-12 · 박정책</td>
+              <td>
+                <span class="row-actions">
+                  <button class="icon-btn" title="수정">✎</button>
+                  <button class="icon-btn" title="이력">⟲</button>
+                  <button class="icon-btn" title="더보기">⋯</button>
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="pill pill--in">입고</span></td>
+              <td>뷰티 &gt; 립 메이크업 &gt; 립스틱</td>
+              <td class="num">365</td>
+              <td class="num muted">—</td>
+              <td><span class="pill pill--pct">퍼센트</span></td>
+              <td class="num"><span class="strong">33</span> <span class="muted">%</span></td>
+              <td class="muted">2026-03-12 · 박정책</td>
+              <td>
+                <span class="row-actions">
+                  <button class="icon-btn" title="수정">✎</button>
+                  <button class="icon-btn" title="이력">⟲</button>
+                  <button class="icon-btn" title="더보기">⋯</button>
+                </span>
+              </td>
+            </tr>
+            <!-- Default fallback row -->
+            <tr style="background: var(--bg-soft)">
+              <td colspan="6">
+                <span class="pill pill--def">전체 기본값</span>
+                <span class="muted" style="margin-left: 10px">매칭된 정책이 없는 SKU에 적용됩니다 (입고 30% · 출고 60일).</span>
+              </td>
+              <td class="muted">2026-01-02 · 김무신</td>
+              <td>
+                <span class="row-actions">
+                  <button class="icon-btn" title="수정">✎</button>
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="legend">
+        ※ <code>카테고리 + 타입 + 소비기한 구간</code> 조합당 정책 1건만 등록 가능합니다.
+        구간이 겹치는 정책 등록 시도 시 저장이 차단됩니다.
+      </p>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- TAB 2 — SKU 예외 설정 (preview, 같은 페이지에 미리보기) -->
+    <!-- ============================================== -->
+    <section aria-label="SKU 예외 설정 미리보기" style="margin-top: 36px;">
+      <h2 style="font-size:16px;margin:0 0 8px;">SKU 예외 설정 (미리보기)</h2>
+      <p class="muted" style="font-size:13px;margin:0 0 12px;line-height:1.6;">
+        공통 정책과 다른 기준이 필요한 SKU에 한해 개별 입고·출고 제한일수를 덮어씁니다.
+        값이 있으면 SKU 값이 우선 적용되며, 비어 있으면 공통 정책이 자동 적용됩니다.
+      </p>
+
+      <div class="toolbar" style="padding: 0 0 12px;">
+        <div class="filter-group">
+          <span class="filter">
+            <input placeholder="SKU 코드 / 상품명 검색" />
+            <svg class="chev" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5" stroke="currentColor" fill="none"/><path d="M11 11l3 3" stroke="currentColor" stroke-linecap="round"/></svg>
+          </span>
+          <span class="filter filter--placeholder">
+            카테고리 전체
+            <svg class="chev" viewBox="0 0 16 16"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>
+          </span>
+          <span class="filter filter--placeholder">
+            예외 설정 여부
+            <svg class="chev" viewBox="0 0 16 16"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>
+          </span>
+        </div>
+        <div class="filter-group">
+          <button class="btn btn--ghost">엑셀 일괄 설정</button>
+          <button class="btn btn--ghost">예외 일괄 해제</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <table>
+          <colgroup>
+            <col style="width:140px"><col><col style="width:200px"><col style="width:160px"><col style="width:160px"><col style="width:90px">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>SKU 코드</th>
+              <th>상품명</th>
+              <th>카테고리</th>
+              <th class="num">입고 제한 일수</th>
+              <th class="num">출고 제한 일수</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono">SKU-1001234</td>
+              <td>무신사 오리지널 에센스 50ml</td>
+              <td class="muted">뷰티 &gt; 스킨케어 &gt; 에센스</td>
+              <td class="num">
+                <span class="strong">90 일</span>
+                <span class="pill pill--def" style="margin-left:6px;">예외</span>
+              </td>
+              <td class="num muted">정책 적용 (120 일)</td>
+              <td>
+                <button class="icon-btn" title="수정">✎</button>
+              </td>
+            </tr>
+            <tr>
+              <td class="mono">SKU-1004821</td>
+              <td>비건 립 글로우 06호</td>
+              <td class="muted">뷰티 &gt; 립 메이크업 &gt; 립스틱</td>
+              <td class="num muted">정책 적용 (50%)</td>
+              <td class="num">
+                <span class="strong">200 일</span>
+                <span class="pill pill--def" style="margin-left:6px;">예외</span>
+              </td>
+              <td>
+                <button class="icon-btn" title="수정">✎</button>
+              </td>
+            </tr>
+            <tr>
+              <td class="mono">SKU-2010772</td>
+              <td>데일리 토너 200ml</td>
+              <td class="muted">뷰티 &gt; 스킨케어 &gt; 토너</td>
+              <td class="num muted">정책 적용 (30%)</td>
+              <td class="num muted">정책 적용 (60 일)</td>
+              <td>
+                <button class="icon-btn" title="수정">✎</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="legend">
+        ※ <code>입고 제한 일수</code> · <code>출고 제한 일수</code> 두 값 중 일부만 입력해도 됩니다 (입력값만 우선, 빈 값은 정책 자동 적용).
+        SKU 변경 권한은 <b>scm hub sku 관리</b>에서 MD 만 가능하며, 모든 변경은 이력으로 보관됩니다.
+      </p>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- 모달 / 드로어 모크업                              -->
+    <!-- ============================================== -->
+    <section class="modal-region" aria-label="모달 / 드로어 미리보기">
+      <div class="modal-region__label">Mockup · 정책 추가/수정 모달 + 변경 이력 드로어</div>
+      <div class="mock-row">
+
+        <!-- Modal: 정책 추가/수정 -->
+        <div class="modal" role="dialog" aria-label="공통 정책 추가">
+          <h3 class="modal__head">공통 정책 추가</h3>
+          <p class="modal__sub">카테고리 + 타입 + 소비기한 구간 조합으로 1건 등록</p>
+
+          <div class="field">
+            <label class="field__label">카테고리 <span style="color:#D33">*</span></label>
+            <div class="filter" style="width:100%; height:38px;">
+              <span class="muted">뷰티 &gt; 스킨케어 &gt; 에센스</span>
+              <svg class="chev" style="margin-left:auto;" viewBox="0 0 16 16"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>
+            </div>
+            <div class="helper">미선택 시 전체 기본값으로 저장됩니다.</div>
+          </div>
+
+          <div class="field">
+            <label class="field__label">타입 <span style="color:#D33">*</span></label>
+            <div class="seg">
+              <button class="is-on">입고</button>
+              <button>출고</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field__label">소비기한 구간 (제조일로부터, 일) <span style="color:#D33">*</span></label>
+            <div class="range-row">
+              <div class="input input--with-suffix">
+                <input type="number" placeholder="0" />
+                <span class="suffix">일 초과</span>
+              </div>
+              <span class="range-sep">~</span>
+              <div class="input input--with-suffix">
+                <input type="number" placeholder="180" />
+                <span class="suffix">일 이하</span>
+              </div>
+            </div>
+            <div class="helper">상한을 비우면 <code>N일~</code> 으로 무제한 처리됩니다.</div>
+          </div>
+
+          <div class="field__row">
+            <div class="field">
+              <label class="field__label">제한 타입 <span style="color:#D33">*</span></label>
+              <div class="seg">
+                <button class="is-on">퍼센트</button>
+                <button>일</button>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field__label">제한 값 <span style="color:#D33">*</span></label>
+              <div class="input input--with-suffix">
+                <input type="number" placeholder="50" />
+                <span class="suffix">%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="field" style="margin-top: 4px;">
+            <label class="field__label">변경 사유 (이력 저장)</label>
+            <input class="input" placeholder="예) 신규 카테고리 정책 추가" />
+          </div>
+
+          <div class="modal__foot">
+            <button class="btn btn--ghost">취소</button>
+            <button class="btn btn--primary">저장</button>
+          </div>
+        </div>
+
+        <!-- Drawer: 변경 이력 -->
+        <div class="drawer" role="dialog" aria-label="변경 이력">
+          <div class="drawer__head">
+            <span class="drawer__title">변경 이력 · 뷰티&gt;스킨케어&gt;에센스 / 입고 / 0~180일</span>
+            <button class="icon-btn" aria-label="닫기">✕</button>
+          </div>
+
+          <div class="log">
+            <div class="log__item">
+              <div class="log__when">2026-04-21 14:22</div>
+              <div class="log__who">MD · 김무신</div>
+              <div class="log__what">
+                제한 값 <s>40 %</s> → <span class="strong">50 %</span><br />
+                <span class="muted">사유 — 카테고리 회수 SLA 강화</span>
+              </div>
+            </div>
+            <div class="log__item">
+              <div class="log__when">2026-02-09 10:08</div>
+              <div class="log__who">MD · 박정책</div>
+              <div class="log__what">
+                제한 타입 <s>일</s> → <span class="strong">퍼센트</span>, 값 <s>120 일</s> → <span class="strong">40 %</span>
+              </div>
+            </div>
+            <div class="log__item">
+              <div class="log__when">2026-01-02 09:00</div>
+              <div class="log__who">시스템 · 초기 생성</div>
+              <div class="log__what">
+                정책 신규 등록 (입고 / 0~180일 / 일 / 120일)
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- 자동 적용 다이어그램                              -->
+    <!-- ============================================== -->
+    <section style="margin-top:36px;">
+      <div class="modal-region__label">SKU 자동 적용 흐름</div>
+      <div class="card" style="padding: 18px 20px;">
+        <div style="display:grid; grid-template-columns: repeat(5, 1fr) ; gap: 12px; align-items: stretch;">
+          <div style="padding:14px;border:1px dashed var(--line); border-radius:8px; text-align:center;">
+            <div style="font-size:11px; color: var(--fg-dim); letter-spacing:0.6px;">STEP 1</div>
+            <div style="font-weight:600; margin-top:4px;">SKU 생성</div>
+            <div class="muted" style="font-size:12px; margin-top:2px;">신규 등록 / 마이그레이션</div>
+          </div>
+          <div style="padding:14px;border:1px dashed var(--line); border-radius:8px; text-align:center;">
+            <div style="font-size:11px; color: var(--fg-dim); letter-spacing:0.6px;">STEP 2</div>
+            <div style="font-weight:600; margin-top:4px;">소비기한 관리여부 Y</div>
+            <div class="muted" style="font-size:12px; margin-top:2px;">전환 시점 트리거</div>
+          </div>
+          <div style="padding:14px;border:1px dashed var(--line); border-radius:8px; text-align:center;">
+            <div style="font-size:11px; color: var(--fg-dim); letter-spacing:0.6px;">STEP 3</div>
+            <div style="font-weight:600; margin-top:4px;">정책 매칭</div>
+            <div class="muted" style="font-size:12px; margin-top:2px;">카테고리 + 타입 + 구간</div>
+          </div>
+          <div style="padding:14px;border:1px dashed var(--line); border-radius:8px; text-align:center;">
+            <div style="font-size:11px; color: var(--fg-dim); letter-spacing:0.6px;">STEP 4</div>
+            <div style="font-weight:600; margin-top:4px;">자동 적용</div>
+            <div class="muted" style="font-size:12px; margin-top:2px;">없으면 전체 기본값</div>
+          </div>
+          <div style="padding:14px;border:1px solid var(--accent); background: var(--accent-bg); border-radius:8px; text-align:center;">
+            <div style="font-size:11px; color: var(--accent); letter-spacing:0.6px;">예외</div>
+            <div style="font-weight:600; margin-top:4px;">SKU 개별 값</div>
+            <div style="font-size:12px; margin-top:2px; color:#0F3FB3;">존재 시 우선 적용</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+</body>
+</html>
