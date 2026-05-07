@@ -20,11 +20,14 @@
 --
 -- Idempotent: subsequent runs no-op because the table already has the
 -- expected CHECK (the IF NOT EXISTS on the temp table guards reruns
--- mid-flight). For full safety run inside a single transaction (the
--- BEGIN/COMMIT below).
+-- mid-flight).
+--
+-- NOTE: D1 (Cloudflare) does NOT accept SQL BEGIN TRANSACTION / COMMIT
+-- in the Console or in `wrangler d1 execute`. When the migration is
+-- submitted as a single multi-statement file, D1 wraps the batch in
+-- its own atomic transaction automatically — so explicit BEGIN/COMMIT
+-- is both unnecessary and rejected.
 -- ============================================================
-
-BEGIN TRANSACTION;
 
 -- 1) New table with the updated CHECK constraint.
 CREATE TABLE IF NOT EXISTS users_new (
@@ -59,5 +62,3 @@ ALTER TABLE users_new RENAME TO users;
 CREATE INDEX IF NOT EXISTS idx_users_email        ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_invite_token ON users(invite_token);
 CREATE INDEX IF NOT EXISTS idx_users_role         ON users(role);
-
-COMMIT;
