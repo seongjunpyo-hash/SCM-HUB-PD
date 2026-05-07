@@ -928,6 +928,17 @@
     return 'cards'; // 기본 fallback
   }
 
+  // 이미 사용된 layout 들을 피해서 가장 적합한 신규 layout 을 선택. usedLayouts 에 들어있는
+  // layout 은 제외. 모든 layout 이 다 쓰였다면 'cards' 로 fallback.
+  function pickFreshLayout(prd, spec, usedLayouts) {
+    var preferred = pickFallbackLayout(prd, spec);
+    var candidates = [preferred, 'cards', 'kanban', 'master-detail', 'dashboard', 'form', 'timeline'];
+    for (var i = 0; i < candidates.length; i++) {
+      if (usedLayouts.indexOf(candidates[i]) === -1) return candidates[i];
+    }
+    return 'cards';
+  }
+
   // table.columns + rowSamples 를 기반으로 layout 별 layoutData 자동 합성
   // (AI 가 layoutData 안 채웠을 때 fallback — 빈 화면 방지)
   function synthesizeLayoutData(kind, spec) {
@@ -1463,26 +1474,25 @@
     // 3-1) 메인 spec + alternatives 를 variant 후보로 묶음
     var allVariants = [{ label: '메인 (PRD 그대로)', spec: spec }];
     if (spec.alternatives && spec.alternatives.length) {
+      var usedLayouts = [spec.layout || 'table']; // 이미 사용된 layout 추적 — 중복 방지
       spec.alternatives.forEach(function (alt, altIdx) {
-        // AI 추천 = 라벨 매칭 또는 마지막 alternative
-        var isAiVariant = /AI\s*추천|자유\s*제안/.test(alt.label || '') ||
-                          altIdx === spec.alternatives.length - 1;
+        var isAiVariant = /AI\s*추천|자유\s*제안/.test(alt.label || '') || altIdx >= 1;
         var altLayout = alt.layout || 'table';
         var altLayoutData = alt.layoutData || null;
 
-        // ★ AI 추천 variant 가 메인과 동일한 layout 으로 왔으면 강제로 다른 layout 으로 전환.
-        //   PRD 키워드 기반 추천 (없으면 'cards' 기본).
-        if (isAiVariant && altLayout === (spec.layout || 'table')) {
-          altLayout = pickFallbackLayout(prd, spec);
+        // ★ AI 추천 variant 가 이미 사용된 layout 과 같으면 강제로 다른 layout 으로 전환.
+        //   메인과도, 다른 AI 추천과도 겹치지 않게.
+        if (isAiVariant && usedLayouts.indexOf(altLayout) !== -1) {
+          altLayout = pickFreshLayout(prd, spec, usedLayouts);
           altLayoutData = altLayoutData || synthesizeLayoutData(altLayout, spec);
           alt.customNotes = alt.customNotes ||
-            'AI 가 메인과 동일한 layout 을 제안해서 PRD 본문 키워드 기반으로 "' + altLayout + '" 로 자동 전환했습니다. ' +
-            '🪄 AI 다듬기 입력창에서 다른 layout (cards/kanban/dashboard/form/timeline/master-detail) 을 직접 요청해보세요.';
+            'AI 가 다른 variant 와 동일한 layout 을 제안해서 PRD 본문 키워드 기반으로 "' + altLayout + '" 로 자동 전환했습니다.';
         }
         // layout != 'table' 인데 layoutData 비어있으면 합성 — 빈 화면 방지
         if (altLayout !== 'table' && (!altLayoutData || Object.keys(altLayoutData).length === 0)) {
           altLayoutData = synthesizeLayoutData(altLayout, spec);
         }
+        usedLayouts.push(altLayout);
 
         var altSpec = {
           pageHead: spec.pageHead,
@@ -2148,7 +2158,7 @@
       '· "관리자/권한" 페이지 → 사용자 이름, 이메일, 부서, 권한 그룹, 마지막 로그인',
       '',
       '[★★★ 변형 제안 (alternatives) — 매우 중요 ★★★]',
-      '메인 spec 외에 **2개의 다른 방향** 을 alternatives 에 반드시 포함. (3개가 아니라 2개)',
+      '메인 spec 외에 **3개의 다른 방향** 을 alternatives 에 반드시 포함.',
       '★ 각 alternative 는 **자체 filters + table.columns + table.rowSamples** 를 반드시 포함.',
       '   (생략하면 메인과 동일하게 렌더돼서 사용자가 차이를 못 느낌 — 절대 금지)',
       '★ 메인과 alternative 들 사이에는 컬럼 ≥ 3개 차이 또는 layout 자체가 달라야 함.',
@@ -2161,11 +2171,20 @@
       '    - "관리자 뷰" — 권한/승인/감사 메타 추가',
       '    - "검색 우선" — 필터 6~8개로 더 많이, 컬럼 4~5개로 단순',
       '',
-      '· 2 번째 alternative — label "AI 추천 (자유 제안)".',
-      '  **무조건 메인과 다른 layout** 을 선택. 메인이 "table" 이면 반드시 cards / master-detail /',
-      '  kanban / dashboard / form / timeline 중 PRD 에 가장 잘 맞는 것 선택 — table 절대 X.',
-      '  메인이 이미 비-table 이면 또 다른 비-table 레이아웃.',
-      '  **layoutData 도 그 layout 에 맞춰 풍부하게 채울 것**:',
+      '· 2 번째 + 3 번째 alternative — 각각 label "AI 추천 1 (자유 제안)" / "AI 추천 2 (자유 제안)".',
+      '  **두 variant 는 무조건 메인과 다르고, 서로도 달라야 함**.',
+      '  메인이 "table" 이면 두 AI 추천은 cards / master-detail / kanban / dashboard / form / timeline 중',
+      '  PRD 에 가장 잘 맞는 **서로 다른** 2개 layout 으로. (예: 첫번째는 cards, 두번째는 timeline)',
+      '  메인이 비-table 이면 메인과도, 서로와도 다른 비-table 레이아웃 2개.',
+      '',
+      '  layout 선택 가이드 — PRD 본문 분석 후 가장 적합한 2개 layout 조합:',
+      '    · 데이터 조회 페이지 → cards (시각) + dashboard (요약)',
+      '    · 처리 워크플로우 페이지 → kanban (상태) + timeline (이력)',
+      '    · 등록/편집 페이지 → form (입력) + master-detail (상세 비교)',
+      '    · 모니터링 페이지 → dashboard (KPI) + cards (개별 항목)',
+      '    · 운영 관리 페이지 → master-detail (1건 깊이) + cards (전체 카탈로그)',
+      '',
+      '  **각 AI 추천은 layoutData 를 풍부하게**:',
       '    - cards: 최소 10개 (12개 권장) — 각 카드 title + subtitle + status + meta(2~3개)',
       '    - kanban: 최소 3개 컬럼 × 컬럼당 카드 3~5개 (총 10~15장)',
       '    - master-detail: list 최소 8개 + detail 섹션 2~3개 × 섹션당 필드 4~6개',
@@ -2173,7 +2192,7 @@
       '    - form: 섹션 최소 2개 × 섹션당 필드 4~6개 (text/select/textarea/date/number 다양)',
       '    - timeline: 최소 8개 이벤트 (각각 time/actor/action/detail)',
       '  layoutData 가 비어있거나 빈약하면 빈 화면 같이 보임 — 절대 비우지 말 것.',
-      '  customNotes 필드에 한국어로 2~5줄 설명 (왜 이 layout 이 PRD 에 적합한지).',
+      '  customNotes 필드에 한국어로 2~5줄 설명 (왜 이 layout 이 PRD 에 적합한지, 어떤 사용자 시나리오에 강점인지).',
       '',
       '[페이지 메타]',
       '- 이름: ' + (prd.name || ''),
@@ -2206,7 +2225,8 @@
       '  "empty": "등록된 항목이 없습니다",',
       '  "alternatives": [',
       '    {"label":"상세 정보 강조","layout":"table","filters":[{"label":"..."}],"table":{"checkable":true,"columns":[...10~12개...],"rowSamples":[...10행 모두 다른 실제같은 데이터...]}},',
-      '    {"label":"AI 추천 (자유 제안)","layout":"kanban","customNotes":"상태 흐름(대기→처리중→완료)이 핵심인 페이지라 칸반이 더 적합. 한 화면에서 진행 상태별 분포를 즉시 파악 가능.","layoutData":{"columns":[{"label":"대기","count":3,"cards":[{"title":"PO-2026-0042 무탠다드 셔츠","meta":["무탠다드","2026-05-01","수량 120"]},{"title":"PO-2026-0043 29CM 데님","meta":["29CM","2026-05-02","수량 85"]},{"title":"PO-2026-0044 아크테릭스","meta":["아크테릭스","2026-05-03","수량 24"]}]},{"label":"처리중","count":4,"cards":[...4장...]},{"label":"완료","count":5,"cards":[...5장...]}]}}',
+      '    {"label":"AI 추천 1 (자유 제안)","layout":"kanban","customNotes":"상태 흐름(대기→처리중→완료)이 핵심인 페이지라 칸반이 더 적합. 한 화면에서 진행 상태별 분포를 즉시 파악 가능.","layoutData":{"columns":[{"label":"대기","count":3,"cards":[{"title":"PO-2026-0042 무탠다드 셔츠","meta":["무탠다드","2026-05-01","수량 120"]},{"title":"PO-2026-0043 29CM 데님","meta":["29CM","2026-05-02","수량 85"]},{"title":"PO-2026-0044 아크테릭스","meta":["아크테릭스","2026-05-03","수량 24"]}]},{"label":"처리중","count":4,"cards":[...4장...]},{"label":"완료","count":5,"cards":[...5장...]}]}},',
+      '    {"label":"AI 추천 2 (자유 제안)","layout":"timeline","customNotes":"이력/감사로그 추적이 운영 핵심이라 타임라인이 더 직관적. 발주→입고→검수→판매 흐름을 시간순으로 한눈에.","layoutData":{"items":[{"time":"2026-05-01 14:23","actor":"김민준 MD","action":"PO-2026-0042 신규 발주","detail":"무탠다드 코튼 셔츠 (120개)"},{"time":"2026-05-02 09:15","actor":"이서연 MD","action":"PO-2026-0043 승인 요청","detail":"29CM 데님 와이드 (85개)"},...총 8개 이상...]}}',
       '  ]',
       '}',
       '',
@@ -2229,7 +2249,7 @@
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 16000,
-        system: '당신은 JSON 만 출력하는 API 입니다. 응답은 반드시 { 로 시작 } 로 끝. markdown 코드블록 / 설명 / 인사말 절대 금지. spec.layout 필수 (table/cards/master-detail/kanban/dashboard/form/timeline 중 PRD 에 가장 적합한 1개). alternatives 는 반드시 2개 포함 — 마지막 1개는 label "AI 추천 (자유 제안)" + 메인과 다른 layout + customNotes + 풍부한 layoutData 필수. 셀 데이터는 한국 패션 SCM 도메인의 진짜같은 한국어 (placeholder 금지). table 은 컬럼 ≥ 6개 + rowSamples ≥ 8행.',
+        system: '당신은 JSON 만 출력하는 API 입니다. 응답은 반드시 { 로 시작 } 로 끝. markdown 코드블록 / 설명 / 인사말 절대 금지. spec.layout 필수 (table/cards/master-detail/kanban/dashboard/form/timeline 중 PRD 에 가장 적합한 1개). alternatives 는 반드시 3개 — [0] 표 기반 다른 방향, [1] "AI 추천 1 (자유 제안)" + 비-table layout + layoutData 풍부 + customNotes, [2] "AI 추천 2 (자유 제안)" + [1] 과 다른 비-table layout + layoutData 풍부 + customNotes. 셀 데이터는 한국 패션 SCM 도메인의 진짜같은 한국어 (placeholder 금지). table 은 컬럼 ≥ 6개 + rowSamples ≥ 8행.',
         messages: [{ role: 'user', content: prompt }],
       }),
     });
