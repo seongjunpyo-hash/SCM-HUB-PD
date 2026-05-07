@@ -194,10 +194,15 @@
       '</div>';
     document.body.appendChild(pwModal);
 
-    var form  = pwModal.querySelector('form');
-    var msgEl = pwModal.querySelector('[data-msg]');
+    var form   = pwModal.querySelector('form');
+    var msgEl  = pwModal.querySelector('[data-msg]');
     var subBtn = pwModal.querySelector('.scm-profile-pw__submit');
     var box    = pwModal.querySelector('.scm-profile-modal');
+
+    // 닫기 / 취소 버튼은 box 내부 — box-level stopPropagation 으로 묻히지
+    // 않도록 직접 등록.
+    pwModal.querySelector('.scm-profile-modal__close').addEventListener('click', closePasswordModal);
+    pwModal.querySelector('.scm-profile-pw__cancel').addEventListener('click', closePasswordModal);
 
     // 모달 박스 내부 클릭/마우스다운/마우스업은 외부로 전파시키지 않음 —
     // 다른 코드의 document-level 리스너가 'outside click' 으로 오해해서
@@ -215,11 +220,6 @@
       var startedOnBackdrop = pwBackdropMouseDown;
       pwBackdropMouseDown = false;
       if (startedOnBackdrop && e.target === pwModal) closePasswordModal();
-    });
-    // 닫기/취소 버튼
-    pwModal.addEventListener('click', function (e) {
-      if (e.target.closest('.scm-profile-modal__close')) return closePasswordModal();
-      if (e.target.closest('.scm-profile-pw__cancel'))   return closePasswordModal();
     });
     document.addEventListener('keydown', onPwEsc);
     form.addEventListener('submit', async function (e) {
@@ -298,9 +298,15 @@
         '</div>' +
       '</div>';
     document.body.appendChild(accountsModal);
+    // 닫기 버튼은 box 내부에 있으므로 box-level stopPropagation 보다 먼저 잡혀야
+    // 함 — 직접 등록.
+    var closeBtn = accountsModal.querySelector('.scm-profile-modal__close');
+    closeBtn.addEventListener('click', closeAccountsModal);
+
     var box = accountsModal.querySelector('.scm-profile-modal');
     box.addEventListener('mousedown', function (e) { e.stopPropagation(); });
     box.addEventListener('click',     function (e) { e.stopPropagation(); });
+
     accountsModal.addEventListener('mousedown', function (e) {
       acctBackdropMouseDown = (e.target === accountsModal);
     });
@@ -308,9 +314,6 @@
       var startedOnBackdrop = acctBackdropMouseDown;
       acctBackdropMouseDown = false;
       if (startedOnBackdrop && e.target === accountsModal) closeAccountsModal();
-    });
-    accountsModal.addEventListener('click', function (e) {
-      if (e.target.closest('.scm-profile-modal__close')) closeAccountsModal();
     });
     document.addEventListener('keydown', onAcctEsc);
   }
