@@ -817,7 +817,6 @@
 
     // 이동 요청 수량 — input cell. 현재 값이 available 이상이면 '최대' 버튼 disabled.
     // 이동 가능 재고가 0 이면 요청 자체 불가 — checkbox / input 모두 disabled.
-    const requestQtyVal = isEmpty(r.requestQty) ? '' : Number(r.requestQty).toLocaleString();
     const reqNum = Number(r.requestQty) || 0;
     const availNum = Number(r.available) || 0;
     const isMaxed = !isEmpty(r.available) && reqNum >= availNum;
@@ -825,6 +824,10 @@
     // 요청 수량 > 이동 가능 재고 → 에러 톤. avail=0 은 입력 자체 불가하므로
     // disabled 만 적용 (에러 아님). avail>0 인데 req 가 초과한 경우만 error.
     const isError = !isEmpty(r.available) && availNum > 0 && reqNum > availNum;
+    // disabled 행은 값을 비우고 placeholder '입력' 노출 — avail=0 인데 req 값이 표시되는 모순 제거.
+    const requestQtyVal = isUnavailable
+      ? ''
+      : (isEmpty(r.requestQty) ? '' : Number(r.requestQty).toLocaleString());
     const inputAttrs = [
       isUnavailable ? 'disabled' : '',
       isError ? 'aria-invalid="true"' : '',
@@ -832,7 +835,7 @@
     const inputCls = isError ? 'scm-input-cell__input is-error' : 'scm-input-cell__input';
     const requestQtyCell = `
       <span class="scm-input-cell">
-        <input type="text" class="${inputCls}" value="${requestQtyVal}" inputmode="numeric" ${inputAttrs}/>
+        <input type="text" class="${inputCls}" value="${requestQtyVal}" placeholder="입력" inputmode="numeric" ${inputAttrs}/>
         <button class="scm-input-cell__max" type="button"${isMaxed ? ' disabled' : ''}>최대</button>
       </span>`;
     const cbCls = isUnavailable ? 'scm-checkbox is-disabled' : 'scm-checkbox';
