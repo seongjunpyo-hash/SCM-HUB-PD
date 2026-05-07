@@ -238,8 +238,8 @@
           <div class="card__path">scm hub/</div>
         </a>
 
-        <a class="card card--locked card--ic-blue" id="cardVoc" href="./voc/index.html" target="scm-voc" rel="noopener">
-          <span class="card__lock-tag" id="cardVocLock">🔒 최고 관리자 전용</span>
+        <a class="card card--ic-blue" id="cardVoc" href="./voc/index.html" target="scm-voc" rel="noopener">
+          <span class="card__lock-tag" id="cardVocLock" style="display:none;">🔒 최고 관리자 전용</span>
           <div class="card__head">
             <span class="card__icon">
               <svg viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4V5z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><path d="M8 9h8M8 12h5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
@@ -285,18 +285,7 @@
           }
         });
       }
-      // 현업 VOC card — only super admins can enter. Others see it locked.
-      const vocCard = document.getElementById('cardVoc');
-      const vocLock = document.getElementById('cardVocLock');
-      if (vocCard) {
-        if (u.role === 'super') {
-          vocCard.classList.remove('card--locked');
-          if (vocLock) vocLock.style.display = 'none';
-        } else {
-          vocCard.classList.add('card--locked');
-          if (vocLock) vocLock.style.display = '';
-        }
-      }
+      // 협업 VOC(데모) — 디폴트 메인 화면. 모든 권한이 진입 가능.
     });
     document.getElementById('topLogout').addEventListener('click', () => SCM.logout());
 

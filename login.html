@@ -73,6 +73,7 @@
       border-radius: 10px;
       font-size: 13px; line-height: 1.5;
       display: none;
+      white-space: pre-line;
     }
     .msg--error   { background: rgba(255,107,107,0.12); color: var(--error); border: 1px solid rgba(255,107,107,0.3); }
     .msg--success { background: rgba(110,107,255,0.12); color: var(--accent); border: 1px solid rgba(110,107,255,0.3); }
@@ -265,13 +266,16 @@
         });
         const data = await r.json().catch(() => ({}));
         if (!r.ok) {
-          const msg =
+          const tag =
             data.error === 'email_exists'      ? '이미 가입된 이메일입니다. 로그인하거나 비밀번호 재설정을 이용하세요.' :
             data.error === 'request_pending'   ? '이 이메일로 처리 대기 중인 요청이 있습니다. 관리자 처리 후 다시 시도해주세요.' :
             data.error === 'invalid_email'     ? '올바른 이메일 형식이 아닙니다.' :
             data.error === 'password_too_short'? '비밀번호는 8자 이상이어야 합니다.' :
             '요청 실패: ' + (data.error || r.status);
-          reqErr.textContent = msg;
+          // server_error / unknown error 는 백엔드 message 까지 함께 노출 —
+          // 'no such table: account_requests' 같은 마이그레이션 미적용 진단 가능.
+          const detail = data.message ? `\n${data.message}` : '';
+          reqErr.textContent = tag + detail;
           reqErr.classList.add('show');
           reqSubmit.disabled = false; reqSubmit.textContent = '요청 보내기';
           return;
