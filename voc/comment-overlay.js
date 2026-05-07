@@ -159,6 +159,28 @@
       }
       .scm-voc-fab.is-active .scm-voc-fab__count { background: rgba(255,255,255,0.25); }
 
+      /* 편집 모드 진입 FAB (super/admin 만 노출) — 코멘트 FAB 좌측에 배치.
+         protocol VOC 화면 (편집 가능) 으로 이동. */
+      .scm-voc-edit-fab {
+        position: fixed; right: 162px; bottom: 24px; z-index: ${Z + 1};
+        display: none;  /* role 체크 후 inline-flex */
+        align-items: center; gap: 8px;
+        height: 48px; padding: 0 18px 0 16px;
+        background: #1F1F26; color: #fff;
+        border: 0; border-radius: 999px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Pretendard Variable', Pretendard, sans-serif;
+        font-size: 13px; font-weight: 600; letter-spacing: -0.01em;
+        cursor: pointer;
+        box-shadow: 0 12px 28px rgba(31, 31, 38, 0.35), 0 4px 8px rgba(0,0,0,0.12);
+        transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+        user-select: none;
+      }
+      .scm-voc-edit-fab.is-visible { display: inline-flex; }
+      .scm-voc-edit-fab:hover { transform: translateY(-2px); background: #000; box-shadow: 0 16px 32px rgba(31, 31, 38, 0.45), 0 6px 10px rgba(0,0,0,0.18); }
+      .scm-voc-edit-fab__icon { width: 16px; height: 16px; }
+      /* worker 모드 (VOC iframe 안) 에선 자체 편집 UI 가 이미 있으므로 숨김 */
+      html.scm-voc-worker .scm-voc-edit-fab { display: none !important; }
+
       /* 코멘트 모드일 때 좌측 'DEMO' 태그를 레드로 — FAB(#DC2626) 와
          동일 톤. 사용자가 모드 토글 상태를 한눈에 알도록 시각 단서.
          단 협업 화면(worker 모드)은 항상 코멘트 모드라 항시 레드가
@@ -479,6 +501,31 @@
     document.body.appendChild(elFab);
     elFabCount = elFab.querySelector('#scm-voc-fab-count');
     elFab.addEventListener('click', toggleMode);
+
+    // 편집 FAB — super / admin 만 노출. 클릭 시 협업 VOC 화면으로 이동.
+    const elEditFab = document.createElement('button');
+    elEditFab.className = 'scm-voc-edit-fab';
+    elEditFab.type = 'button';
+    elEditFab.title = '협업 VOC 편집 화면으로 이동 (어드민 전용)';
+    elEditFab.innerHTML = `
+      <svg class="scm-voc-edit-fab__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 20h9"/>
+        <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+      </svg>
+      <span>편집</span>
+    `;
+    document.body.appendChild(elEditFab);
+    if (state.user && (state.user.role === 'super' || state.user.role === 'admin')) {
+      elEditFab.classList.add('is-visible');
+    }
+    elEditFab.addEventListener('click', () => {
+      // 협업 VOC 화면으로 이동. VOC 가 currentPage 를 자동으로 인식하도록
+      // hash 에 demo path 를 실어보냄 (선택 사항). 기본 동작은 단순 이동.
+      try {
+        const target = '/voc/index.html';
+        window.location.href = target;
+      } catch (e) { console.warn('[voc] 편집 이동 실패', e); }
+    });
 
     // Pin layer
     elPinLayer = document.createElement('div');
