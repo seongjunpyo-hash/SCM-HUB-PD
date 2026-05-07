@@ -5,13 +5,13 @@
  * stats bar 등에서 사용.
  *
  * Variants:
- *   기본 = outlined           border 1px #000, bg #fff, color #000
- *   .scm-button--primary      bg #000, color #fff, border #000
- *   .scm-button--ghost        bg transparent, border 0, color #000
+ *   기본 = outlined           border 1px #000, bg #fff, color #242424
+ *   .scm-button--primary      bg #242424, color #fff, border #242424 (실제 SCM Hub 매칭)
+ *   .scm-button--ghost        bg transparent, border 0, color #242424
  *
  * Sizes:
  *   .scm-button--sm           h36, min-width 64, padding 8 12, font 14
- *   기본 = md                 h44, min-width 80, padding 12, font 15
+ *   기본 = md                 h44, min-width 80, padding 10 16, font 15 (실제 매칭)
  *   .scm-button--lg           h52, min-width 120, padding 14 20, font 16
  *
  * Special:
@@ -28,12 +28,12 @@
   gap: 6px;
   height: 44px;
   min-width: 80px;
-  padding: 12px;
+  padding: 10px 16px;
   font-family: inherit;
   font-size: 15px;
   font-weight: 500;
   line-height: 20.4px;
-  color: #000;
+  color: #242424;
   background: #fff;
   border: 1px solid #000;
   border-radius: 4px;
@@ -50,19 +50,19 @@
 
 /* Variants */
 .scm-button--primary {
-  background: #000;
+  background: #242424;
   color: #fff;
-  border-color: #000;
+  border-color: #242424;
 }
 .scm-button--primary:hover:not(:disabled):not([disabled]) {
-  background: #333;       /* #1A1A1A → #333 (호버 가독성 향상) */
-  border-color: #333;
+  background: #000;
+  border-color: #000;
 }
 
 .scm-button--ghost {
   background: transparent;
   border: 0;
-  color: #000;
+  color: #242424;
 }
 .scm-button--ghost:hover:not(:disabled):not([disabled]) {
   background: var(--ld-bg-low, #FAFBFC);
