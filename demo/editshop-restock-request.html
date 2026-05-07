@@ -125,9 +125,12 @@
     .mp-table tbody tr:hover td.er-input-cell {
       background: rgba(36,94,255,0.12);
     }
-    /* 이동 가능 재고 = 0 → 요청 불가 — INPUT 셀 bg 흰색 (input/max disabled 톤은 디자인 시스템 input-cell.css 가 처리) */
+    /* 이동 가능 재고 = 0 → 요청 불가 — INPUT 셀 bg 도 disabled 토큰 (#88888810) 적용
+       (input/max disabled 톤은 디자인 시스템 input-cell.css 가 처리) */
     .mp-table tbody td.er-input-cell.is-disabled,
-    .mp-table tbody tr:hover td.er-input-cell.is-disabled { background: #fff; }
+    .mp-table tbody tr:hover td.er-input-cell.is-disabled {
+      background: rgba(138, 138, 138, 0.10);
+    }
 
     /* Date cards (legacy er-date-row) */
     .er-date-row {
@@ -1220,7 +1223,7 @@
     if (input) e.stopPropagation();
   }, true);
 
-  // 이동 요청 수량 input 변경 시 — 현재 값과 available 비교해서 '최대' 버튼 disabled 토글
+  // 이동 요청 수량 input 변경 시 — 값/available 비교 → '최대' 버튼 disabled 토글 + 초과 시 input error 톤
   document.getElementById('data-tbody').addEventListener('input', (e) => {
     const input = e.target.closest('.scm-input-cell__input');
     if (!input) return;
@@ -1236,6 +1239,14 @@
     const avail = Number(r.available) || 0;
     if (avail > 0 && inputVal >= avail) max.setAttribute('disabled', '');
     else max.removeAttribute('disabled');
+    // 이동 가능 재고 초과 입력 → 에러 톤
+    if (inputVal > avail) {
+      input.classList.add('is-error');
+      input.setAttribute('aria-invalid', 'true');
+    } else {
+      input.classList.remove('is-error');
+      input.removeAttribute('aria-invalid');
+    }
   });
 
   // 최대 버튼 클릭 → 이동 가능 재고만큼 input 채우고 버튼 disabled
