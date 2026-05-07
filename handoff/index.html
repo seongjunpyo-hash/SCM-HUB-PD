@@ -17,21 +17,70 @@
     .top__back { color:var(--fg-mute); font-size:12px; padding:6px 12px; border:1px solid var(--line); border-radius:999px; }
     .top__back:hover { color:var(--fg); border-color:var(--line-2); }
 
-    .hero { padding:8px 0 48px; }
+    .hero { padding:8px 0 32px; }
     .hero__eyebrow { font-size:11px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--accent); }
     .hero__title { margin:12px 0 0; font-size:36px; font-weight:700; letter-spacing:-0.5px; }
     .hero__sub { margin:14px 0 0; font-size:15px; color:var(--fg-mute); max-width:720px; line-height:1.7; }
 
+    .section { margin-top:48px; }
+    .section__head { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid var(--line); }
+    .section__title { font-size:22px; font-weight:700; margin:0; }
+    .section__hint { font-size:12.5px; color:var(--fg-mute); }
+
+    /* prod-ready 카드 */
+    .prod-card {
+      display:block; padding:24px 24px 22px; background:var(--surface); border:1px solid var(--line);
+      border-radius:14px; margin-bottom:14px; transition:border-color 0.15s ease, background 0.15s ease;
+    }
+    .prod-card:hover { border-color:var(--line-2); background:var(--surface-h); }
+    .prod-card__head { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; margin-bottom:8px; }
+    .prod-card__title { display:inline-flex; align-items:center; gap:10px; font-size:16px; font-weight:700; color:var(--fg); }
+    .prod-card__tag {
+      display:inline-flex; align-items:center; height:22px; padding:0 8px; font-size:10.5px; font-weight:700;
+      letter-spacing:0.4px; background:var(--accent-bg); color:var(--accent); border-radius:999px;
+    }
+    .prod-card__tag--neutral { background:rgba(255,255,255,0.08); color:var(--fg-mute); }
+    .prod-card__desc { margin:8px 0 0; font-size:13.5px; color:var(--fg-mute); line-height:1.6; }
+    .prod-card__meta { margin-top:12px; display:flex; flex-wrap:wrap; gap:6px; font-size:11.5px; color:var(--fg-dim); font-family:ui-monospace, SFMono-Regular, monospace; }
+    .prod-card__meta span { display:inline-flex; align-items:center; height:22px; padding:0 8px; background:rgba(255,255,255,0.04); border:1px solid var(--line); border-radius:4px; }
+    .prod-card__actions { margin-top:14px; display:flex; flex-wrap:wrap; gap:8px; }
+    .prod-card__btn {
+      display:inline-flex; align-items:center; gap:6px; height:32px; padding:0 14px;
+      font-size:12.5px; font-weight:600; background:transparent; color:var(--fg); border:1px solid var(--line);
+      border-radius:6px; cursor:pointer; font-family:inherit;
+    }
+    .prod-card__btn:hover { border-color:var(--line-2); }
+    .prod-card__btn--primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .prod-card__btn--primary:hover { background:#5e5be0; border-color:#5e5be0; }
+
+    .quickstart {
+      margin-top:24px; padding:24px 28px; background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    }
+    .quickstart__title { font-size:14px; font-weight:700; margin:0 0 12px; display:flex; align-items:center; gap:8px; }
+    .quickstart pre {
+      margin:0; padding:14px 16px; background:#0A0A12; border:1px solid var(--line); border-radius:8px;
+      font-family:ui-monospace, SFMono-Regular, monospace; font-size:12.5px; color:#D4D4DC; line-height:1.65; overflow-x:auto;
+    }
+    .quickstart__steps { margin:14px 0 0; padding:0; list-style:none; counter-reset:step; font-size:13px; color:var(--fg-mute); line-height:1.7; }
+    .quickstart__steps li { counter-increment:step; padding:6px 0 6px 32px; position:relative; }
+    .quickstart__steps li::before {
+      content:counter(step); position:absolute; left:0; top:6px; width:22px; height:22px; display:flex;
+      align-items:center; justify-content:center; background:var(--accent); color:#fff; border-radius:50%; font-size:11px; font-weight:700;
+    }
+    .quickstart__steps strong { color:var(--fg); }
+
     .empty {
-      margin-top:32px; padding:48px 32px; text-align:center;
+      margin-top:32px; padding:40px 32px; text-align:center;
       background:var(--surface); border:1px dashed var(--line-2); border-radius:14px;
       color:var(--fg-mute);
     }
-    .empty__icon { font-size:48px; margin-bottom:16px; opacity:0.6; }
-    .empty__title { font-size:18px; font-weight:600; color:var(--fg); margin-bottom:8px; }
-    .empty__text { font-size:14px; line-height:1.6; }
+    .empty__icon { font-size:36px; margin-bottom:12px; opacity:0.6; }
+    .empty__title { font-size:15px; font-weight:600; color:var(--fg); margin-bottom:6px; }
+    .empty__text { font-size:13px; line-height:1.6; }
 
     .footer { margin-top:64px; padding:18px 4px 0; border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; font-size:11.5px; color:var(--fg-dim); }
+
+    code { font-family:ui-monospace, SFMono-Regular, monospace; font-size:12.5px; background:rgba(255,255,255,0.05); padding:2px 6px; border-radius:4px; color:#E0E0EA; }
   </style>
 </head>
 <body>
@@ -44,19 +93,129 @@
     <section class="hero">
       <span class="hero__eyebrow">Documents</span>
       <h1 class="hero__title">핸드오프 (Handoff)</h1>
-      <p class="hero__sub">디자이너 ↔ 개발자 인계 산출물. Figma export, 명세서, 가이드 등 공유 폴더.</p>
+      <p class="hero__sub">디자이너 ↔ 개발자 인계 산출물. Production 적용용 토큰·CSS·가이드 + 작업별 spec/Figma export 모음.</p>
     </section>
 
-    <div class="empty">
-      <div class="empty__icon">📦</div>
-      <div class="empty__title">아직 준비 중입니다</div>
-      <div class="empty__text">핸드오프 산출물이 등록되면 이곳에 표시됩니다.<br/>현재 폴더 내 파일은 <code>README.md</code> 참고.</div>
-    </div>
+    <!-- ============================================================
+       Prod-ready · production 적용용 최소셋
+       ============================================================ -->
+    <section class="section">
+      <header class="section__head">
+        <h2 class="section__title">⚡ Production 적용용 (prod-ready)</h2>
+        <span class="section__hint">개발자가 그대로 다운로드해서 적용</span>
+      </header>
+
+      <a class="prod-card" href="../prod-ready/scm-tokens.css" target="_blank" rel="noopener" download>
+        <div class="prod-card__head">
+          <div class="prod-card__title">🎨 scm-tokens.css <span class="prod-card__tag">CSS Variables</span></div>
+        </div>
+        <p class="prod-card__desc">디자인 토큰 (color · font · sizing) 을 <code>--scm-*</code> CSS 변수로 정리. Production 의 styled-component 안에서 <code>var(--scm-fg-default)</code> 같이 참조해서 사용. F12 검증된 production 매칭 값.</p>
+        <div class="prod-card__meta">
+          <span>color · 12 tokens</span>
+          <span>typography · 11 tokens</span>
+          <span>sizing · 8 tokens</span>
+          <span>radius · 5 tokens</span>
+        </div>
+        <div class="prod-card__actions">
+          <button class="prod-card__btn prod-card__btn--primary" onclick="event.preventDefault(); window.open('../prod-ready/scm-tokens.css', '_blank');">⬇ 파일 열기</button>
+          <button class="prod-card__btn" onclick="event.preventDefault(); copyRaw('scm-tokens.css', this);">복사</button>
+        </div>
+      </a>
+
+      <a class="prod-card" href="../prod-ready/ag-grid-balham-overrides.css" target="_blank" rel="noopener" download>
+        <div class="prod-card__head">
+          <div class="prod-card__title">📊 ag-grid-balham-overrides.css <span class="prod-card__tag">AG Grid Theme</span></div>
+        </div>
+        <p class="prod-card__desc">Production 의 AG Grid 테이블을 SCM Hub 톤으로. Sky blue 액센트 → 모노톤, 헤더 배경 → 흰색 + 검은 1.5px 보더, 행 28px → 44px, 폰트 system → Pretendard. AG Grid base CSS 다음에 import 1줄로 적용.</p>
+        <div class="prod-card__meta">
+          <span>--ag-* override · 30+</span>
+          <span>balham theme</span>
+          <span>1줄 적용</span>
+        </div>
+        <div class="prod-card__actions">
+          <button class="prod-card__btn prod-card__btn--primary" onclick="event.preventDefault(); window.open('../prod-ready/ag-grid-balham-overrides.css', '_blank');">⬇ 파일 열기</button>
+          <button class="prod-card__btn" onclick="event.preventDefault(); copyRaw('ag-grid-balham-overrides.css', this);">복사</button>
+        </div>
+      </a>
+
+      <a class="prod-card" href="../prod-ready/component-styles.md" target="_blank" rel="noopener">
+        <div class="prod-card__head">
+          <div class="prod-card__title">🧩 component-styles.md <span class="prod-card__tag prod-card__tag--neutral">Reference</span></div>
+        </div>
+        <p class="prod-card__desc">버튼 (default/primary/ghost/mini), 링크, 페이지 헤더, 입력/드롭다운, 상태 칩, 필터 칩, 정보 banner 의 styled-component 레시피. 그대로 복사해서 production Emotion 코드에 붙여넣기 가능.</p>
+        <div class="prod-card__meta">
+          <span>10+ recipes</span>
+          <span>copy &amp; paste</span>
+          <span>Emotion / styled-components</span>
+        </div>
+        <div class="prod-card__actions">
+          <button class="prod-card__btn prod-card__btn--primary" onclick="event.preventDefault(); window.open('../prod-ready/component-styles.md', '_blank');">📖 보기</button>
+        </div>
+      </a>
+
+      <a class="prod-card" href="../prod-ready/README.md" target="_blank" rel="noopener">
+        <div class="prod-card__head">
+          <div class="prod-card__title">📘 README.md <span class="prod-card__tag prod-card__tag--neutral">Setup Guide</span></div>
+        </div>
+        <p class="prod-card__desc">5분 적용 가이드 · FAQ · 진행 체크리스트. Production 개발자가 처음 받았을 때 가장 먼저 읽을 문서.</p>
+        <div class="prod-card__actions">
+          <button class="prod-card__btn prod-card__btn--primary" onclick="event.preventDefault(); window.open('../prod-ready/README.md', '_blank');">📖 가이드 보기</button>
+        </div>
+      </a>
+
+      <!-- 한 번에 다 받기 -->
+      <div class="quickstart">
+        <h3 class="quickstart__title">📦 한 번에 받기</h3>
+        <p class="prod-card__desc" style="margin:0 0 12px;">GitHub repo 에서 <code>prod-ready/</code> 폴더 통째로 다운로드 (zip):</p>
+        <pre>git clone --depth 1 https://github.com/seongjunpyo-hash/SCM-HUB-PD.git
+cp -r SCM-HUB-PD/prod-ready ./your-production-repo/src/styles/scm-hub-design</pre>
+        <ol class="quickstart__steps">
+          <li><strong>두 CSS 파일</strong> (scm-tokens.css + ag-grid-balham-overrides.css) 을 production repo 의 <code>src/styles/</code> 로 복사</li>
+          <li><strong>entry 파일 (main.tsx) 에 import 2줄 추가</strong> — AG Grid base CSS 다음에</li>
+          <li>AG Grid 테이블 즉시 SCM Hub 톤 적용 ✅ (1분 작업)</li>
+          <li>(선택) 기존 styled-component 의 hardcoded 값을 <code>var(--scm-*)</code> 로 점진 교체</li>
+          <li>(선택) 새 컴포넌트는 <strong>component-styles.md</strong> 레시피 그대로 복사</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ============================================================
+       작업별 spec / figma export
+       ============================================================ -->
+    <section class="section">
+      <header class="section__head">
+        <h2 class="section__title">📂 작업별 산출물</h2>
+        <span class="section__hint">spec · figma export · screenshots · notes</span>
+      </header>
+
+      <div class="empty">
+        <div class="empty__icon">📦</div>
+        <div class="empty__title">아직 등록된 작업 없음</div>
+        <div class="empty__text">작업 단위로 <code>handoff/2026-XX-task-name/</code> 폴더 만들어서 산출물 정리 권장.<br/>구조 예시는 <a href="./README.md" style="color:var(--accent); text-decoration:underline;">README.md</a> 참고.</div>
+      </div>
+    </section>
 
     <footer class="footer">
       <span>SCM HUB · Internal</span>
-      <span><a href="./README.md">README.md</a></span>
+      <span><a href="./README.md" style="color:var(--fg-mute);">handoff/README.md</a> · <a href="../prod-ready/README.md" style="color:var(--fg-mute);">prod-ready/README.md</a></span>
     </footer>
   </div>
+
+  <script>
+    async function copyRaw(filename, btn) {
+      try {
+        var res = await fetch('../prod-ready/' + filename);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        var text = await res.text();
+        await navigator.clipboard.writeText(text);
+        var orig = btn.textContent;
+        btn.textContent = '✓ 복사됨';
+        btn.style.color = '#28A745';
+        setTimeout(function () { btn.textContent = orig; btn.style.color = ''; }, 1600);
+      } catch (e) {
+        alert('복사 실패: ' + (e && e.message || e));
+      }
+    }
+  </script>
 </body>
 </html>
