@@ -146,11 +146,11 @@
         transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
         user-select: none;
       }
-      /* 편집 FAB 가 보일 때만 코멘트가 그 옆 (right: 120) 으로 이동.
+      /* 편집 FAB 가 보일 때만 코멘트가 그 옆 (right: 112 — 편집 좌측 약 8px gap) 으로.
          편집 미노출 (role 없음 또는 코멘트 모드) 일 땐 코멘트가 우측 끝 (right: 24).
          코멘트 모드 ON 시 라벨이 길어지면 right 고정이라 자동으로 좌측 확장. */
       body:has(.scm-voc-edit-fab.is-visible):not(.scm-voc-mode-active) .scm-voc-fab {
-        right: 120px;
+        right: 112px;
       }
       .scm-voc-fab:hover { transform: translateY(-2px); box-shadow: 0 16px 32px rgba(110, 107, 255, 0.5), 0 6px 10px rgba(0,0,0,0.15); }
       .scm-voc-fab.is-active { background: #DC2626; box-shadow: 0 12px 28px rgba(220, 38, 38, 0.4), 0 4px 8px rgba(0,0,0,0.12); }

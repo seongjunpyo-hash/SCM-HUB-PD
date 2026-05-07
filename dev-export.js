@@ -74,14 +74,29 @@
       try { renderVersionMenu(); } catch (_) {}
     }
   }
-  // 작업완료 토글의 '확정 해제' 분기는 제거됨 — 한번 최종확정되면 같은 버전에서는
-  // 버튼이 비활성. 다른 버전을 보면서 '최종확정' 누르면 finalId 가 그쪽으로 옮겨감.
-  // revertPage 는 호환을 위해 함수만 남겨둠 (외부에서 호출하지 않는 한 영향 없음).
-  function revertPage() {
+  // 최종확정 해제 — super/admin 이 finalId 를 제거해서 '작업중' 상태로 되돌림.
+  // 다운로드 버튼이 다시 비활성화되고, super 가 '최종확정' 버튼을 다시 누를 수 있음.
+  function unfinalize() {
     delete confirmed[pageKey()];
     saveConfirmed();
+    if (typeof _loadVersions !== 'function' || typeof _saveVersions !== 'function') return;
+    if (typeof _verEntryFor !== 'function' || typeof _normalizePageKey !== 'function') return;
+    const versions = _loadVersions();
+    const page = _normalizePageKey(location.pathname);
+    const ver = _verEntryFor(versions, location.pathname);
+    if (!ver) return;
+    delete ver.finalId;
+    (ver.list || []).forEach((v) => {
+      delete v.finalizedBy;
+      delete v.finalizedAt;
+    });
+    versions[page] = ver;
+    _saveVersions(versions);
     refresh();
+    if (typeof refreshVersionLabel === 'function') refreshVersionLabel();
   }
+  // 호환용 별칭
+  function revertPage() { unfinalize(); }
   function _finalizeActiveAsFinal(by) {
     if (typeof _loadVersions !== 'function' || typeof _saveVersions !== 'function') return;
     if (typeof _verEntryFor !== 'function' || typeof _normalizePageKey !== 'function') return;
@@ -1062,6 +1077,15 @@ ${jsxBody}
         cursor: not-allowed;
         font-weight: 600;
       }
+      /* '확정 해제' (super/admin viewing finalized) — destructive look so user
+         understands clicking will revert to working state */
+      .scm-dev-export-action-btn.is-revert {
+        background: #FEF2F2; color: #DC2626; border-color: #FCA5A5;
+        font-weight: 600;
+      }
+      .scm-dev-export-action-btn.is-revert:hover:not(:disabled) {
+        background: #FEE2E2; border-color: #DC2626;
+      }
       /* 작업중 (non-super, no final yet) — yellow pending state */
       .scm-dev-export-action-btn.is-status:not(.is-final) {
         background: #FFF4E5; color: #C2710C; border-color: #F8DDB1;
@@ -1094,7 +1118,6 @@ ${jsxBody}
         display: flex; align-items: center;
         gap: 12px;
         padding: 18px 56px 18px 20px;   /* 위/아래 동일, 우측 close 버튼 자리 확보 */
-        border-bottom: 1px solid #F0F0F0;
       }
       .scm-dev-export-modal__titles { flex: 1; min-width: 0; text-align: left; }
       .scm-dev-export-modal__titles strong { display: block; font-size: 15px; font-weight: 700; }
@@ -1204,7 +1227,6 @@ ${jsxBody}
       .scm-dev-export-modal__foot {
         display: flex; justify-content: flex-end; gap: 8px;
         padding: 12px 20px 16px;
-        border-top: 1px solid #F0F0F0;
         background: #FFFFFF;
       }
       .scm-dev-export-btn-ghost {
@@ -1850,10 +1872,19 @@ ${jsxBody}
   }
 
   function onActionClick() {
-    if (myRole !== 'super') return;
-    // 토글 해제 분기는 없음 — 보고 있는 버전이 이미 최종이면 버튼 자체가
-    // disabled 라 여기 도달하지 않는다. 그 외엔 항상 '최종확정' 진행.
-    confirmPage((window.SCM_USER && window.SCM_USER.email) || null);
+    if (myRole !== 'super' && myRole !== 'admin') return;
+    var finalId = _finalIdForPage();
+    var versions = (typeof _loadVersions === 'function') ? _loadVersions() : null;
+    var ver = versions && _verEntryFor ? _verEntryFor(versions, location.pathname) : null;
+    var viewingId = ver && ver.activeId && (ver.list || []).some((v) => v.id === ver.activeId) ? ver.activeId : null;
+    var viewingFinal = !!finalId && viewingId === finalId;
+    // 이미 최종 확정된 버전을 보고 있으면 → 해제. 그 외엔 → 확정.
+    if (viewingFinal) {
+      if (typeof confirm === 'function' && !confirm('최종 확정을 해제하시겠습니까?\n다운로드 버튼이 비활성화되고 작업중 상태로 돌아갑니다.')) return;
+      unfinalize();
+    } else {
+      confirmPage((window.SCM_USER && window.SCM_USER.email) || null);
+    }
   }
 
   // ---------- refresh button states ----------
@@ -1874,18 +1905,18 @@ ${jsxBody}
       ? `이 화면의 핸드오프 파일 다운로드 (${meta.by || '확정자 미상'})`
       : '최고 관리자가 최종확정해야 다운로드 가능합니다';
 
-    // action button — '최종확정'. 다른 버전을 보면서 누르면 그 버전이 새 final 이 됨.
-    // 같은 final 버전 위에 있으면 비활성. 개발자(dev) / 비-super 권한도 비활성.
+    // action button — '최종확정' / '✕ 확정 해제'.
+    // super/admin: 어느 상태든 클릭 가능 (확정 OR 해제). 그 외 권한은 비활성.
     elAction.style.display = '';
-    elAction.classList.remove('is-revert');
-    elAction.classList.toggle('is-status', myRole !== 'super');
+    var isAdmin = (myRole === 'super' || myRole === 'admin');
+    elAction.classList.toggle('is-revert', isAdmin && !!viewingFinal);
+    elAction.classList.toggle('is-status', !isAdmin);
     elAction.classList.toggle('is-final', !!finalId && viewingFinal);
-    if (myRole === 'super') {
-      // viewingFinal 일 때만 비활성 — 그 외엔 항상 누를 수 있음.
-      elAction.disabled = !!viewingFinal;
+    if (isAdmin) {
+      elAction.disabled = false;
       if (viewingFinal) {
-        elAction.textContent = '✓ 최종 확정됨';
-        elAction.title = `이 버전이 현재 최종 확정 상태입니다${meta.by ? ' (' + meta.by + ')' : ''}`;
+        elAction.textContent = '✕ 확정 해제';
+        elAction.title = `현재 최종 확정된 버전입니다${meta.by ? ' (' + meta.by + ')' : ''}\n클릭하면 작업중 상태로 되돌립니다.`;
       } else {
         elAction.textContent = '✓ 최종확정';
         elAction.title = finalId
@@ -1893,7 +1924,7 @@ ${jsxBody}
           : '이 화면을 최종확정해 개발자가 다운로드할 수 있도록 합니다';
       }
     } else {
-      // 개발자 포함 비-super 권한 — 항상 비활성, 상태만 표시
+      // 개발자/PM/biz/pd — 항상 비활성, 상태만 표시
       elAction.disabled = true;
       if (finalId) {
         elAction.textContent = '✓ 최종 확정됨';
