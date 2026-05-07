@@ -930,7 +930,6 @@ ${jsxBody}
         <header class="scm-dev-export-modal__head">
           <div class="scm-dev-export-modal__titles">
             <strong>개발자 핸드오프 다운로드</strong>
-            <small>${escapeHtml(title)} · /demo/${escapeHtml(slug)}.html</small>
           </div>
           <button class="scm-dev-export-modal__close" type="button" aria-label="닫기">×</button>
         </header>
@@ -938,9 +937,6 @@ ${jsxBody}
           <div class="scm-dev-export-modal__pill scm-dev-export-modal__pill--ok">
             ✓ 최종 확정${meta.by ? ' · ' + escapeHtml(meta.by) : ''}
           </div>
-          <p class="scm-dev-export-modal__lede">
-            <b>운영 중인 화면에 변경분을 적용</b>하기 위한 핸드오프 패키지입니다. 기본 4종은 변경 사항을 정확히 전달하고, 나머지는 필요할 때만 체크해서 받으세요.
-          </p>
           ${renderGroup('delta')}
           ${renderGroup('helper')}
           ${renderGroup('legacy')}
@@ -1204,7 +1200,7 @@ ${jsxBody}
         display: flex; justify-content: flex-end; gap: 8px;
         padding: 12px 20px 16px;
         border-top: 1px solid #F0F0F0;
-        background: #FAFBFC;
+        background: #FFFFFF;
       }
       .scm-dev-export-btn-ghost {
         height: 36px; padding: 0 16px;
