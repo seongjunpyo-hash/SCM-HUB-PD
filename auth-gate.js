@@ -16,12 +16,25 @@
   var SKIP = ['/login.html', '/invite-accept.html'];
   if (SKIP.indexOf(location.pathname) !== -1) return;
 
+  // 역할 기반 접근 제어 — 매칭되는 규칙의 allow 외 역할은 DEFAULT_LANDING 으로 리다이렉트.
+  var DEFAULT_LANDING = '/demo/sku-management';
+  var ROLE_RULES = [
+    // VOC 는 편집 모드 — super/admin 만 접근 가능
+    { test: function (p) { return p === '/voc/' || p.indexOf('/voc/') === 0; }, allow: ['super', 'admin'] },
+  ];
+
   fetch('/api/auth/me', { credentials: 'same-origin', cache: 'no-store' })
     .then(function (r) { return r.json().catch(function () { return {}; }); })
     .then(function (data) {
       if (!data || !data.user) {
         location.replace('/login.html?next=' + encodeURIComponent(location.pathname + location.search));
         return;
+      }
+      for (var i = 0; i < ROLE_RULES.length; i++) {
+        if (ROLE_RULES[i].test(location.pathname) && ROLE_RULES[i].allow.indexOf(data.user.role) === -1) {
+          location.replace(DEFAULT_LANDING);
+          return;
+        }
       }
       window.SCM_USER = data.user;
       document.dispatchEvent(new CustomEvent('scm:auth-ready', { detail: { user: data.user } }));
