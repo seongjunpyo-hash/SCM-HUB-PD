@@ -352,7 +352,7 @@
           '<div class="panel__hint"><strong>💡 작동 방식</strong><br/>' +
             'PRD 본문 기준으로 정보 구조 + 작업 흐름이 한눈에 보이는 <strong>low-fidelity 와이어프레임</strong> 을 생성합니다 ' +
             '(흑백 + bracket 표기 + monospace 톤). 색·꾸밈 없이 페이지 골격만. ' +
-            '이후 ✨ <strong>「데모화」</strong> 버튼으로 SCM Hub 디자인시스템을 입힙니다 (Stage 2 예정).' +
+            '결과가 만족스러우면 우측 상단 ✨ <strong>「데모화」</strong> 버튼으로 SCM Hub 디자인시스템을 입힙니다 (실제 컴포넌트 + 토큰).' +
           '</div>' +
 
           '<div class="panel__spec" id="panel-spec" style="display:none;">' +
@@ -391,7 +391,7 @@
               '<span class="preview__variants" id="preview-variants"></span>' +
             '</span>' +
             '<span class="actions">' +
-              '<button id="btn-demoify" title="자유 와이어프레임을 SCM Hub 디자인시스템으로 변환 (Stage 2 — 곧 출시)" disabled>✨ 데모화</button>' +
+              '<button id="btn-demoify" title="low-fi 와이어프레임을 SCM Hub 디자인시스템으로 변환" disabled>✨ 데모화</button>' +
               '<button id="btn-rebuild" disabled>재생성</button>' +
               '<button id="btn-fullscreen" disabled>전체화면</button>' +
             '</span>' +
@@ -469,9 +469,7 @@
 
     document.getElementById('btn-build').addEventListener('click', function () { buildLowFiWireframe(prd, prdText); });
     var btnDemoify = document.getElementById('btn-demoify');
-    if (btnDemoify) btnDemoify.addEventListener('click', function () {
-      showToast('데모화 기능은 Stage 2 — low-fi 품질 확인 후 추가 예정', 'info');
-    });
+    if (btnDemoify) btnDemoify.addEventListener('click', function () { applyDesignSystem(prd); });
     document.getElementById('btn-rebuild').addEventListener('click', function () { buildLowFiWireframe(prd, prdText); });
     document.getElementById('btn-error-retry').addEventListener('click', function () { buildLowFiWireframe(prd, prdText); });
     document.getElementById('btn-fullscreen').addEventListener('click', function () {
@@ -2000,6 +1998,270 @@
     // 캐시 — 「HTML 복사」/「데모로 적용」 등 다른 액션에서 재활용
     currentHtml = html;
     saveCachedHtml(html);
+  }
+
+  /* ============================================================
+   * Stage 2 — 데모화 (low-fi → SCM Hub 디자인시스템 변환)
+   * ============================================================ */
+  var STORAGE_DEMO_HTML = 'scm-prd-demo-html';
+  var currentDemoMain = '';
+  try { currentDemoMain = localStorage.getItem(STORAGE_DEMO_HTML) || ''; } catch (_) {}
+
+  // SCM Hub 디자인시스템 컴포넌트 카탈로그 — AI prompt 에 주입
+  var DS_CATALOG = [
+    '## 페이지 헤더',
+    '<div class="scm-page-head">',
+    '  <div class="scm-page-head__titles">',
+    '    <h1 class="scm-page-head__title">페이지 제목</h1>',
+    '    <p class="scm-page-head__sub">서브타이틀 (선택)</p>',
+    '  </div>',
+    '  <div class="scm-page-head__actions">',
+    '    <button class="scm-button scm-button--primary" type="button">저장</button>',
+    '    <button class="scm-button" type="button">취소</button>',
+    '  </div>',
+    '</div>',
+    '',
+    '## 버튼',
+    '<button class="scm-button scm-button--primary" type="button">primary</button>',
+    '<button class="scm-button" type="button">default</button>',
+    '<button class="scm-button scm-button--ghost" type="button">ghost</button>',
+    '<button class="scm-button scm-button--danger" type="button">danger</button>',
+    '<button class="scm-mini-action" type="button">mini-action</button>',
+    '<button class="scm-mini-action scm-mini-action--primary" type="button">mini primary</button>',
+    '<button class="scm-search-btn" type="button">검색</button>',
+    '<button class="scm-download-btn" type="button"><svg viewBox="0 0 20 20"><path d="M3 16.5H17M10 13.5V3.5" stroke="currentColor" fill="none"/></svg><span>전체 엑셀 다운로드</span></button>',
+    '',
+    '## 필터 바 (다건 조회 페이지에만)',
+    '<div class="scm-filter-bar">',
+    '  <button class="scm-filter-chip" type="button">전체 필터</button>',
+    '  <div class="scm-filter-overflow"><div class="scm-filter-overflow__track">',
+    '    <button class="scm-filter-select" data-state="placeholder" type="button">',
+    '      <span class="scm-filter-select__label">필터명</span>',
+    '      <span class="scm-filter-select__value">필터명</span>',
+    '    </button>',
+    '    <!-- data-state="filled" 면 값 채워진 상태 -->',
+    '  </div></div>',
+    '  <div class="scm-filter-actions">',
+    '    <button class="scm-search-btn" type="button">검색</button>',
+    '    <button class="scm-filter-reset-btn" type="button"><span>초기화</span></button>',
+    '  </div>',
+    '</div>',
+    '',
+    '## 통계 바 (필터 아래)',
+    '<div class="scm-stats-bar">',
+    '  <div class="scm-stats-bar__left">',
+    '    <div class="scm-stats-bar__counts">',
+    '      <span class="scm-stat scm-stat--all"><span class="scm-stat__label">전체</span> <span class="scm-stat__num">12</span></span>',
+    '    </div>',
+    '    <div class="scm-stats-bar__mini-actions">',
+    '      <button class="scm-mini-action" type="button">선택 액션</button>',
+    '    </div>',
+    '  </div>',
+    '  <div class="scm-stats-bar__right">',
+    '    <button class="scm-download-btn" type="button">엑셀 다운로드</button>',
+    '  </div>',
+    '</div>',
+    '',
+    '## 테이블 (다건 데이터)',
+    '<div class="mp-table-host"><div class="mp-table-scroll">',
+    '  <table class="mp-table is-cell-selectable">',
+    '    <thead><tr>',
+    '      <th class="cb-col col-frozen-1"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0"></span></th>',
+    '      <th class="col-auto col-no col-frozen-2">No</th>',
+    '      <th class="col-medium">컬럼명</th>',
+    '      <th class="col-spacer" data-empty="true"></th>',
+    '    </tr></thead>',
+    '    <tbody>',
+    '      <tr>',
+    '        <td class="cb-col col-frozen-1"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0"></span></td>',
+    '        <td class="col-auto col-no col-frozen-2">1</td>',
+    '        <td class="col-medium">셀 콘텐츠</td>',
+    '        <td class="col-spacer"></td>',
+    '      </tr>',
+    '    </tbody>',
+    '  </table>',
+    '</div></div>',
+    '',
+    '## 셀 컴포넌트',
+    '<a class="scm-code-link">SKU-2026-001</a>      <!-- code/SKU/PO 번호 -->',
+    '<span class="scm-status-chip scm-status-chip--ok">활성</span>',
+    '<span class="scm-status-chip scm-status-chip--warn">대기</span>',
+    '<span class="scm-status-chip scm-status-chip--info">처리중</span>',
+    '<span class="scm-status-chip scm-status-chip--err">오류</span>',
+    '<span class="scm-kind-chip">분류명</span>',
+    '<span class="scm-platform-tag">29CM</span>',
+    '<span class="scm-product-name"><span class="scm-product-name__thumb"></span><span class="scm-product-name__text">상품명</span></span>',
+    '<span class="scm-tag">태그</span>',
+    '',
+    '## 정보 banner',
+    '<div class="scm-info-banner">⚠ 안내 메시지</div>',
+    '',
+    '## 빈 상태',
+    '<div class="scm-empty-state"><h3>등록된 항목이 없습니다</h3><p>설명</p></div>',
+    '',
+    '## 페이지 종류 별 권장 구조',
+    '· 다건 조회/관리: page-head + filter-bar + stats-bar + mp-table',
+    '· 단건 등록/편집: page-head + 폼 영역 (label + input/select/textarea) + 하단 button 묶음',
+    '· 대시보드: page-head + 통계 stat 그리드 + 차트 자리 + (옵션) 표',
+    '· 상세 보기: page-head + 메타 정보 + 탭/섹션',
+    '· 다이얼로그/모달: 자체 박스 + 헤더 + 내용 + 푸터',
+  ].join('\n');
+
+  async function applyDesignSystem(prd) {
+    if (!currentFreeHtml) {
+      showToast('먼저 「AI 와이어프레임 생성 (low-fi)」 클릭해서 low-fi 결과 만들기', 'err');
+      return;
+    }
+    clearError();
+
+    var byokKey = '';
+    try { byokKey = (localStorage.getItem(STORAGE_KEY) || '').trim(); } catch (_) {}
+    if (!byokKey || !/^sk-ant-/.test(byokKey)) {
+      showError('Anthropic 키 미설정.');
+      return;
+    }
+
+    showLoading(true, '✨ 데모화 진행 중', 'low-fi 구조를 SCM Hub 디자인시스템으로 변환 (15~25초)');
+
+    // low-fi HTML 의 body 부분만 추출 — head/style 은 의미 없으므로 token 절약
+    var lowFiBody = currentFreeHtml;
+    var bodyMatch = currentFreeHtml.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+    if (bodyMatch) lowFiBody = bodyMatch[1];
+    if (lowFiBody.length > 8000) lowFiBody = lowFiBody.substring(0, 8000);
+
+    var prompt = [
+      '당신은 SCM Hub 디자인시스템 전문가. 아래 [low-fi 와이어프레임 body] 를',
+      '실제 SCM Hub 컴포넌트로 변환해서 `<main>...</main>` 마크업을 출력하세요.',
+      '',
+      '[★ 변환 규칙]',
+      '1. **구조와 흐름은 low-fi 그대로 유지**. 영역 배치/순서/계층 변경 X.',
+      '2. low-fi 의 bracket 표기 `[라벨]` → 실제 SCM Hub 컴포넌트로 교체.',
+      '3. 데이터 (한국어 셀 콘텐츠) 도 그대로 유지. 새 데이터 만들지 말 것.',
+      '4. low-fi 의 흑백 monospace 톤·dashed 보더 제거 — DS 토큰만 사용.',
+      '5. PRD 가 다건 조회 아니면 filter-bar/mp-table 강제 추가 X.',
+      '   PRD 가 폼이면 폼 그대로 (input/select/textarea + 하단 button).',
+      '   PRD 가 다이얼로그면 자체 박스만.',
+      '',
+      '[★ 가용 SCM Hub 컴포넌트 + 권장 구조]',
+      DS_CATALOG,
+      '',
+      '[★ 출력]',
+      '· `<main>` 으로 시작 `</main>` 으로 끝나는 마크업만.',
+      '· `<html>`/`<head>`/`<body>` 절대 X (외부 shell 이 감쌈).',
+      '· `<style>` 인라인은 최소화 — DS 클래스로 해결되는건 모두 클래스로.',
+      '· markdown / 설명 / 인사말 / `<script>` 절대 X.',
+      '',
+      '[low-fi 와이어프레임 body — 변환 대상]',
+      lowFiBody,
+      '',
+      '[출력 — <main> 으로 시작 </main> 으로 끝, 다른 텍스트 절대 X]',
+    ].join('\n');
+
+    try {
+      var res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-api-key': byokKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 6000,
+          system: '당신은 SCM Hub 디자인시스템 변환 전문가. 응답은 <main> 으로 시작 </main> 으로 끝나는 마크업만. <html>/<head>/<body> 절대 X. markdown / 설명 / 인사말 / <script> 절대 X. low-fi 와이어프레임의 구조·흐름·데이터는 유지하되 bracket 표기를 SCM Hub 컴포넌트로 1:1 교체.',
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+      if (!res.ok) {
+        var t = await res.text();
+        throw new Error(res.status + ': ' + t.substring(0, 200));
+      }
+      var data = await res.json();
+      var raw = (data.content && data.content[0] && data.content[0].text) || '';
+      if (!raw) throw new Error('빈 응답');
+
+      // markdown 코드블록 제거 + <main> 영역 추출
+      var mainHtml = raw;
+      var cb = raw.match(/```(?:html)?\s*([\s\S]*?)```/i);
+      if (cb) mainHtml = cb[1];
+      var mainStart = mainHtml.search(/<main\b/i);
+      if (mainStart > 0) mainHtml = mainHtml.substring(mainStart);
+      var mainEnd = mainHtml.search(/<\/main>/i);
+      if (mainEnd >= 0) mainHtml = mainHtml.substring(0, mainEnd + 7);
+      else mainHtml = repairTruncatedHtml(mainHtml);
+
+      currentDemoMain = mainHtml;
+      try { localStorage.setItem(STORAGE_DEMO_HTML, mainHtml); } catch (_) {}
+      console.log('[SCM Sim] 데모화 완료 — main: ' + mainHtml.length.toLocaleString() + ' chars');
+
+      showLoading(false);
+      renderDemoIframe(prd, mainHtml);
+      showToast('✨ 데모화 완료 — SCM Hub 디자인시스템 적용', 'ok');
+    } catch (e) {
+      showLoading(false);
+      showError(friendlyApiError((e && e.message) || String(e)));
+      showToast('데모화 실패', 'err');
+    }
+  }
+
+  // wireframe-template.html 을 iframe 으로 로드 후 main 영역을 demo 마크업으로 교체.
+  function renderDemoIframe(prd, mainHtml) {
+    var frame = document.getElementById('preview-frame');
+    var existing = document.getElementById('preview-iframe');
+    if (existing) existing.remove();
+    var ifr = document.createElement('iframe');
+    ifr.id = 'preview-iframe';
+    ifr.src = 'wireframe-template.html?ts=' + Date.now();
+    ifr.addEventListener('load', function () {
+      try {
+        var doc = ifr.contentDocument || (ifr.contentWindow && ifr.contentWindow.document);
+        if (!doc) return;
+
+        // === 1. <title> + LNB 갱신 ===
+        if (prd && prd.name) doc.title = prd.name + ' — SCM Hub';
+        if (prd) {
+          var l1Key = prd.category || 'dashboard';
+          var l1Label = CAT_LABEL[l1Key] || l1Key;
+          var l1IconHtml = L1_ICONS[l1Key] || L1_ICONS.dashboard;
+          var lnbIcon = doc.querySelector('[data-wf-lnb-icon]');
+          if (lnbIcon) lnbIcon.innerHTML = l1IconHtml;
+          var lnbLabel = doc.querySelector('[data-wf-lnb-label]') || doc.querySelector('.scm-lnb-item.is-active .scm-lnb-label');
+          if (lnbLabel) lnbLabel.textContent = l1Label;
+          var l2text = doc.querySelector('.scm-lnb-l2.is-active .scm-lnb-l2-text');
+          if (l2text && prd.menu) l2text.textContent = prd.menu;
+        }
+
+        // === 2. main 영역 교체 ===
+        var oldMain = doc.querySelector('main');
+        if (oldMain) {
+          // Parse and inject — DOMParser 로 main 만 추출
+          var parser = new DOMParser();
+          var fragDoc = parser.parseFromString('<!DOCTYPE html><html><body>' + mainHtml + '</body></html>', 'text/html');
+          var newMain = fragDoc.querySelector('main');
+          if (newMain) {
+            oldMain.replaceWith(newMain.cloneNode(true));
+          } else {
+            // <main> 없으면 그냥 innerHTML 로
+            oldMain.innerHTML = mainHtml.replace(/^<main[^>]*>/i, '').replace(/<\/main>$/i, '');
+          }
+        }
+
+        // 캐시 — HTML 복사 / 데모로 적용 액션용
+        var snapshot = '<!DOCTYPE html>' + doc.documentElement.outerHTML;
+        currentHtml = snapshot;
+        saveCachedHtml(snapshot);
+
+        // 변형 chip 라벨 갱신
+        var variantsEl = document.getElementById('preview-variants');
+        if (variantsEl) variantsEl.innerHTML = '<span class="preview__variant preview__variant--ai is-active" style="cursor:default;">✨ 데모화 (DS 적용)</span>';
+      } catch (e) {
+        console.warn('[SCM Sim] renderDemoIframe 실패:', e);
+        showToast('데모화 렌더 실패 — F12 콘솔 확인', 'err');
+      }
+    });
+    frame.appendChild(ifr);
+    document.getElementById('preview-empty').classList.add('is-hide');
   }
 
   // 필터 라벨 → 컬럼 type 자동 추론
