@@ -279,11 +279,11 @@
   border-radius: 4px;
   background: #fff;
   overflow: hidden;
+  max-height: 300px;
 }
 .scm-filter-drawer__multi-2col .col {
   flex: 1 1 50%;
   min-width: 0;
-  max-height: 320px;
   display: flex;
   flex-direction: column;
 }
