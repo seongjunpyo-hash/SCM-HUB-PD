@@ -220,6 +220,8 @@ export async function onRequest(context) {
       const { email, password } = await readBody();
       if (!email || !password) return json({ error: 'invalid' }, 400);
       const emailLower = String(email).toLowerCase();
+      // TEMP DIAGNOSTIC — 운영에서 invalid_credentials 원인 분리용. 머지 전 제거.
+      const debug = url.searchParams.get('debug') === '1';
 
       const user = await env.DB.prepare(
         `SELECT id, email, name, role, password_hash, is_active FROM users WHERE email = ? COLLATE NOCASE`
@@ -227,15 +229,31 @@ export async function onRequest(context) {
         .bind(emailLower)
         .first();
 
-      if (!user || !user.password_hash || !user.is_active) {
-        await audit(env, request, null, user?.id || null, 'login_failed', { email: emailLower, reason: 'no_user_or_inactive' });
-        return json({ error: 'invalid_credentials' }, 401);
+      let failReason = null;
+      if (!user) failReason = 'no_user';
+      else if (!user.password_hash) failReason = 'no_password_hash';
+      else if (!user.is_active) failReason = 'inactive';
+
+      if (failReason) {
+        await audit(env, request, null, user?.id || null, 'login_failed', { email: emailLower, reason: failReason });
+        return json({
+          error: 'invalid_credentials',
+          ...(debug ? {
+            reason: failReason,
+            is_active: user ? user.is_active : null,
+            is_active_type: user ? typeof user.is_active : null,
+            has_hash: user ? !!user.password_hash : null,
+          } : {}),
+        }, 401);
       }
 
       const ok = await verifyPassword(password, user.password_hash);
       if (!ok) {
         await audit(env, request, null, user.id, 'login_failed', { email: emailLower, reason: 'bad_password' });
-        return json({ error: 'invalid_credentials' }, 401);
+        return json({
+          error: 'invalid_credentials',
+          ...(debug ? { reason: 'bad_password' } : {}),
+        }, 401);
       }
 
       const sid = randomHex(32);
