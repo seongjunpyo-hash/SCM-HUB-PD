@@ -656,7 +656,7 @@ SCM-MD-Read 이상"></textarea>
           </svg>
           <div>
             <div class="dropzone__title">PRD 캡처 이미지를 드래그하거나 클릭하세요</div>
-            <div class="dropzone__hint">PNG · JPG · 분석에 AI Vision 필요 (Step 3 에서 BYOK 키 입력)</div>
+            <div class="dropzone__hint">PNG · JPG · 업로드 즉시 Claude Vision 으로 텍스트 추출 (Step 3 에서 BYOK 키 미리 입력 권장)</div>
           </div>
           <input type="file" id="file-img" accept="image/*" />
         </label>
@@ -1022,21 +1022,102 @@ window.__pdfjs = pdfjsLib;
   }
   setupPdfDz();
 
-  // [3] 이미지
+  // [3] 이미지 — 업로드 즉시 Claude Vision 으로 PRD 텍스트 추출 → prdText 자동 채움
   var imageDataUrl = null;
   function setupImgDz() {
     var dz = document.getElementById('dz-img');
     var input = document.getElementById('file-img');
     var preview = document.getElementById('img-preview');
+    var ext = document.getElementById('ext-img');
+    var body = document.getElementById('ext-img-body');
+    var meta = document.getElementById('ext-img-meta');
 
     function handleFile(f) {
       if (!f) return;
       var reader = new FileReader();
-      reader.onload = function () {
+      reader.onload = async function () {
         imageDataUrl = reader.result;
         preview.src = reader.result;
         preview.classList.add('is-show');
-        showToast('이미지 로드 완료 — Step 3 의 AI 의미 검증으로 분석', 'ok');
+
+        // API 키 체크 — 없으면 추출 못 함
+        var byokKey = '';
+        try { byokKey = (localStorage.getItem(STORAGE_KEY) || '').trim(); } catch (_) {}
+        if (!byokKey || !/^sk-ant-/.test(byokKey)) {
+          ext.classList.add('is-show');
+          meta.textContent = '';
+          body.innerHTML = '<span style="color:var(--err);">⚠ Anthropic API 키 미설정 — Step 3 의 「BYOK 키 입력」 으로 sk-ant-... 키부터 등록하세요. 이미지 업로드만으론 텍스트 추출 불가.</span>';
+          showToast('이미지 로드 완료 — 텍스트 추출은 키 등록 후 가능', 'warn');
+          return;
+        }
+
+        // base64 분리
+        var m = imageDataUrl.match(/^data:(image\/[a-z]+);base64,(.+)$/);
+        if (!m) { showToast('이미지 포맷 오류', 'err'); return; }
+
+        ext.classList.add('is-show');
+        meta.textContent = '⏱ AI Vision 분석 중…';
+        body.textContent = '';
+        showToast('Claude Vision 으로 PRD 텍스트 추출 중… (10~20초)', 'info');
+
+        try {
+          var res = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'content-type': 'application/json',
+              'x-api-key': byokKey,
+              'anthropic-version': '2023-06-01',
+              'anthropic-dangerous-direct-browser-access': 'true',
+            },
+            body: JSON.stringify({
+              model: 'claude-sonnet-4-6',
+              max_tokens: 4000,
+              system: '당신은 PRD 캡처 이미지를 정확히 텍스트로 옮기는 OCR + 구조화 전문가입니다. 응답은 PRD 본문만 — 인사말, 요약, 코드블록, markdown 절대 금지. 이미지에 없는 내용은 추가하지 말 것.',
+              messages: [{
+                role: 'user',
+                content: [
+                  { type: 'image', source: { type: 'base64', media_type: m[1], data: m[2] } },
+                  { type: 'text', text:
+                    '이 이미지에 적힌 PRD 내용을 그대로 텍스트로 옮겨주세요.\n' +
+                    '· 섹션 제목 ([페이지 목적], [컬럼], [필터], [액션] 등) 보이면 [...] 형태로 유지.\n' +
+                    '· 표/리스트 형태도 알아보기 쉽게 줄바꿈 + " · " 로 구분.\n' +
+                    '· 이미지가 흐리거나 일부 안 보이면 [흐림] 으로 표기.\n' +
+                    '· 이미지 외 정보는 추가하지 말 것.\n' +
+                    '· markdown 코드블록 금지. plain text 만.'
+                  },
+                ],
+              }],
+            }),
+          });
+          if (!res.ok) {
+            var t = await res.text();
+            throw new Error(res.status + ': ' + t.substring(0, 300));
+          }
+          var data = await res.json();
+          var extracted = ((data.content && data.content[0] && data.content[0].text) || '').trim();
+          if (!extracted) throw new Error('빈 응답');
+
+          // prdText 에 자동 반영 — Step 2 통과 가능하게
+          setPrdText(extracted, 'image-ocr');
+
+          meta.textContent = extracted.length.toLocaleString() + '자 추출됨' + (extracted.length >= 200 ? ' · ✓ 충분' : ' · 200자 이상 권장');
+          body.textContent = extracted;
+          showToast('PRD 텍스트 추출 완료 (' + extracted.length.toLocaleString() + '자)', 'ok');
+        } catch (e) {
+          var em = (e && e.message) || String(e);
+          var hint = '';
+          if (/credit\s*balance|billing|insufficient/i.test(em)) {
+            hint = '\n💳 Anthropic API 크레딧 잔액 부족. https://console.anthropic.com/settings/billing 에서 충전 후 재업로드.';
+          } else if (/rate.?limit|429/i.test(em)) {
+            hint = '\n⏱ Rate limit — 1분 후 재업로드.';
+          } else if (/401|invalid.*api.?key/i.test(em)) {
+            hint = '\n🔑 API 키 무효 — Step 3 의 「BYOK 키 입력」 으로 새 키 등록.';
+          }
+          meta.textContent = '⚠ 추출 실패';
+          body.innerHTML = '<span style="color:var(--err);white-space:pre-wrap;">' +
+            em + (hint ? '\n' + hint : '') + '</span>';
+          showToast('이미지 텍스트 추출 실패', 'err');
+        }
       };
       reader.readAsDataURL(f);
     }
