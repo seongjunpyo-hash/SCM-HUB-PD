@@ -131,6 +131,11 @@
     .mp-table tbody tr:hover td.er-input-cell.is-disabled {
       background: rgba(138, 138, 138, 0.10);
     }
+    /* 요청 수량 > 이동 가능 재고 → 에러 톤 — INPUT 셀 wrapper bg-critical-low (faded red) */
+    .mp-table tbody td.er-input-cell.is-error,
+    .mp-table tbody tr:hover td.er-input-cell.is-error {
+      background: rgba(243, 17, 16, 0.10);
+    }
 
     /* Date cards (legacy er-date-row) */
     .er-date-row {
@@ -817,8 +822,9 @@
     const availNum = Number(r.available) || 0;
     const isMaxed = !isEmpty(r.available) && reqNum >= availNum;
     const isUnavailable = !isEmpty(r.available) && availNum === 0;
-    // 요청 수량 > 이동 가능 재고 → 에러 톤 (disabled 와 공존 — 0 재고 + prefill req 케이스)
-    const isError = !isEmpty(r.available) && reqNum > availNum;
+    // 요청 수량 > 이동 가능 재고 → 에러 톤. avail=0 은 입력 자체 불가하므로
+    // disabled 만 적용 (에러 아님). avail>0 인데 req 가 초과한 경우만 error.
+    const isError = !isEmpty(r.available) && availNum > 0 && reqNum > availNum;
     const inputAttrs = [
       isUnavailable ? 'disabled' : '',
       isError ? 'aria-invalid="true"' : '',
@@ -852,7 +858,7 @@
         <td class="col-auto cell-numeric">${fmtNum(r.stock)}</td>
         <td class="col-auto cell-numeric">${incomingHtml}</td>
         <td class="col-auto cell-numeric">${fmtNum(r.prevReq)}</td>
-        <td class="col-auto er-input-cell${isUnavailable ? ' is-disabled' : ''}">${requestQtyCell}</td>
+        <td class="col-auto er-input-cell${isError ? ' is-error' : (isUnavailable ? ' is-disabled' : '')}">${requestQtyCell}</td>
         <td class="col-auto cell-numeric ${availableCls}">${fmtNum(r.available)}</td>
         <td class="col-auto">${introChip}</td>
         <td class="col-auto">${promoHtml}</td>
@@ -1246,13 +1252,16 @@
     const avail = Number(r.available) || 0;
     if (avail > 0 && inputVal >= avail) max.setAttribute('disabled', '');
     else max.removeAttribute('disabled');
-    // 이동 가능 재고 초과 입력 → 에러 톤
+    // 이동 가능 재고 초과 입력 → 에러 톤 (input + td wrapper 둘 다)
+    const td = input.closest('td.er-input-cell');
     if (inputVal > avail) {
       input.classList.add('is-error');
       input.setAttribute('aria-invalid', 'true');
+      if (td) { td.classList.add('is-error'); td.classList.remove('is-disabled'); }
     } else {
       input.classList.remove('is-error');
       input.removeAttribute('aria-invalid');
+      if (td) td.classList.remove('is-error');
     }
   });
 
