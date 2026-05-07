@@ -817,9 +817,16 @@
     const availNum = Number(r.available) || 0;
     const isMaxed = !isEmpty(r.available) && reqNum >= availNum;
     const isUnavailable = !isEmpty(r.available) && availNum === 0;
+    // 요청 수량 > 이동 가능 재고 → 에러 톤 (disabled 와 공존 — 0 재고 + prefill req 케이스)
+    const isError = !isEmpty(r.available) && reqNum > availNum;
+    const inputAttrs = [
+      isUnavailable ? 'disabled' : '',
+      isError ? 'aria-invalid="true"' : '',
+    ].filter(Boolean).join(' ');
+    const inputCls = isError ? 'scm-input-cell__input is-error' : 'scm-input-cell__input';
     const requestQtyCell = `
       <span class="scm-input-cell">
-        <input type="text" class="scm-input-cell__input" value="${requestQtyVal}" inputmode="numeric"${isUnavailable ? ' disabled' : ''}/>
+        <input type="text" class="${inputCls}" value="${requestQtyVal}" inputmode="numeric" ${inputAttrs}/>
         <button class="scm-input-cell__max" type="button"${isMaxed ? ' disabled' : ''}>최대</button>
       </span>`;
     const cbCls = isUnavailable ? 'scm-checkbox is-disabled' : 'scm-checkbox';
