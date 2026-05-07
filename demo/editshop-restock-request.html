@@ -856,8 +856,10 @@
         <input type="text" class="${inputCls}" value="${requestQtyVal}" placeholder="입력" inputmode="numeric" ${inputAttrs}/>
         <button class="scm-input-cell__max" type="button"${isMaxed ? ' disabled' : ''}>최대</button>
       </span>`;
-    const cbCls = isUnavailable ? 'scm-checkbox is-disabled' : 'scm-checkbox';
-    const cbAttrs = isUnavailable
+    // 체크박스 비활성 — 요청 불가 (avail=0) 또는 에러 (req > avail) 양쪽 다.
+    const cbDisabled = isUnavailable || isError;
+    const cbCls = cbDisabled ? 'scm-checkbox is-disabled' : 'scm-checkbox';
+    const cbAttrs = cbDisabled
       ? 'role="checkbox" aria-checked="false" aria-disabled="true" tabindex="-1"'
       : 'role="checkbox" aria-checked="false" tabindex="0"';
 
@@ -1273,16 +1275,30 @@
     const avail = Number(r.available) || 0;
     if (avail > 0 && inputVal >= avail) max.setAttribute('disabled', '');
     else max.removeAttribute('disabled');
-    // 이동 가능 재고 초과 입력 → 에러 톤 (input + td wrapper 둘 다)
+    // 이동 가능 재고 초과 입력 → 에러 톤 (input + td wrapper + 체크박스 비활성)
     const td = input.closest('td.er-input-cell');
+    const tr2 = input.closest('tr');
+    const cb = tr2 ? tr2.querySelector('td.cb-col .scm-checkbox') : null;
     if (inputVal > avail) {
       input.classList.add('is-error');
       input.setAttribute('aria-invalid', 'true');
       if (td) { td.classList.add('is-error'); td.classList.remove('is-disabled'); }
+      if (cb) {
+        cb.classList.add('is-disabled');
+        cb.setAttribute('aria-disabled', 'true');
+        cb.setAttribute('aria-checked', 'false');
+        cb.setAttribute('tabindex', '-1');
+      }
     } else {
       input.classList.remove('is-error');
       input.removeAttribute('aria-invalid');
       if (td) td.classList.remove('is-error');
+      // avail=0 (isUnavailable) 인 행은 항상 disabled. 그 외엔 활성 복귀.
+      if (cb && avail > 0) {
+        cb.classList.remove('is-disabled');
+        cb.removeAttribute('aria-disabled');
+        cb.setAttribute('tabindex', '0');
+      }
     }
   });
 
