@@ -202,6 +202,9 @@
     }
     .preview__variant:hover { color: var(--fg); border-color: var(--line-2); }
     .preview__variant.is-active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .preview__variant--ai { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+    .preview__variant--ai::before { content: '✨'; margin-right: 2px; }
+    .preview__variant--ai.is-active { background: var(--accent); color: #fff; }
 
     .preview__frame { flex: 1; background: #FFFFFF; position: relative; min-height: calc(100vh - 220px); }
     .preview__frame iframe { width: 100%; height: 100%; border: 0; display: block; min-height: calc(100vh - 220px); }
@@ -348,11 +351,26 @@
 
           '<div class="panel__spec" id="panel-spec" style="display:none;">' +
             '<div class="panel__spec-title">AI 가 PRD 에서 추출한 구조</div>' +
+            '<div class="panel__row" id="spec-notes-row" style="display:none;"><span class="k">💡 AI 메모 (자유 제안)</span><div class="v" id="spec-notes"></div></div>' +
             '<div class="panel__row"><span class="k">서브타이틀</span><span class="v" id="spec-sub">-</span></div>' +
             '<div class="panel__row"><span class="k">컬럼 (<span id="spec-cols-count">0</span>)</span><div class="panel__chips" id="spec-cols"></div></div>' +
             '<div class="panel__row"><span class="k">필터 (<span id="spec-filters-count">0</span>)</span><div class="panel__chips" id="spec-filters"></div></div>' +
             '<div class="panel__row"><span class="k">액션 (<span id="spec-actions-count">0</span>)</span><div class="panel__chips" id="spec-actions"></div></div>' +
             '<div class="panel__row"><span class="k">샘플 데이터 (<span id="spec-rows-count">0</span>행)</span><div class="panel__spec-rows" id="spec-rows"></div></div>' +
+          '</div>' +
+
+          '<div class="panel__ai" id="panel-refine" style="display:none;">' +
+            '<div class="panel__ai-title">🪄 AI 로 다듬기 <span class="panel__ai-tag">REFINE</span></div>' +
+            '<p class="panel__ai-hint">현재 와이어프레임에 추가 요구사항·변경 사항을 자연어로 입력하면 AI 가 spec 을 다시 생성합니다. 여러 번 반복 가능.</p>' +
+            '<label class="panel__ai-label" for="refine-input">변경 요청</label>' +
+            '<textarea id="refine-input" class="input" rows="3" placeholder="예: 필터에 \'담당자\' 추가, 컬럼 5개로 줄이기, 일괄 처리 액션 강화..."></textarea>' +
+            '<div class="panel__actions" style="margin-top:10px;">' +
+              '<button class="btn btn--primary" id="btn-refine" type="button" disabled>' +
+                '<svg viewBox="0 0 16 16"><path d="M2 8h12M9 3l5 5-5 5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+                '변경 적용' +
+              '</button>' +
+            '</div>' +
+            '<div class="panel__ai-status" id="refine-status" style="display:none;"></div>' +
           '</div>' +
 
           '<div class="panel__keystatus" id="key-status"></div>' +
@@ -457,6 +475,25 @@
         showToast('HTML ' + html.length.toLocaleString() + ' chars 복사 완료', 'ok');
       }, function () { showToast('복사 실패', 'err'); });
     });
+    // refine: 텍스트 입력 ↔ 버튼 활성화 동기화 + 클릭 시 refineSpec 호출
+    var refineInput = document.getElementById('refine-input');
+    var refineBtn = document.getElementById('btn-refine');
+    if (refineInput && refineBtn) {
+      refineInput.addEventListener('input', function () {
+        refineBtn.disabled = !refineInput.value.trim();
+      });
+      refineInput.addEventListener('keydown', function (e) {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !refineBtn.disabled) {
+          refineSpec(refineInput.value.trim());
+        }
+      });
+      refineBtn.addEventListener('click', function () {
+        var v = (refineInput.value || '').trim();
+        if (!v) return;
+        refineSpec(v);
+      });
+    }
+
     document.getElementById('btn-apply-demo').addEventListener('click', function () {
       var html = currentHtml || loadCachedHtml();
       if (!html) { showToast('먼저 와이어프레임 생성', 'err'); return; }
@@ -897,6 +934,7 @@
           filters: alt.filters || spec.filters,
           table: alt.table || spec.table,
           empty: spec.empty,
+          customNotes: alt.customNotes || '',
         };
         allVariants.push({ label: alt.label || '변형', spec: altSpec });
       });
@@ -1051,7 +1089,9 @@
 
     container.innerHTML = variants.map(function (v, i) {
       var isActive = (i === currentIdx);
-      return '<button class="preview__variant' + (isActive ? ' is-active' : '') + '" type="button" data-idx="' + i + '">' + esc(v.label) + '</button>';
+      var isAI = /AI\s*추천|자유\s*제안/.test(v.label || '') || (v.spec && v.spec.customNotes);
+      var cls = 'preview__variant' + (isActive ? ' is-active' : '') + (isAI ? ' preview__variant--ai' : '');
+      return '<button class="' + cls + '" type="button" data-idx="' + i + '" title="' + esc(v.label) + (isAI ? ' — 신규 컴포넌트/레이아웃 제안 포함' : '') + '">' + esc(v.label) + '</button>';
     }).join('');
 
     container.querySelectorAll('.preview__variant').forEach(function (btn) {
@@ -1088,6 +1128,20 @@
 
     var pageSub = (spec.pageHead && spec.pageHead.sub) || '-';
     document.getElementById('spec-sub').textContent = pageSub;
+
+    // customNotes — 'AI 추천 (자유 제안)' variant 의 자유 형식 제안 메모
+    var notesRow = document.getElementById('spec-notes-row');
+    var notesEl = document.getElementById('spec-notes');
+    if (spec.customNotes && String(spec.customNotes).trim()) {
+      notesRow.style.display = '';
+      notesEl.textContent = String(spec.customNotes).trim();
+      notesEl.style.fontSize = '12.5px';
+      notesEl.style.lineHeight = '1.55';
+      notesEl.style.color = 'var(--fg)';
+      notesEl.style.whiteSpace = 'pre-wrap';
+    } else {
+      notesRow.style.display = 'none';
+    }
 
     // 컬럼 — 편집 가능 chip + ＋ 추가 버튼
     var cols = (spec.table && spec.table.columns) || [];
@@ -1135,6 +1189,10 @@
       : '(없음)';
 
     bindSpecPanelEdits();
+
+    // refine 패널 노출 + 버튼 활성화 동기화
+    var refineBox = document.getElementById('panel-refine');
+    if (refineBox) refineBox.style.display = '';
   }
 
   // 편집 / 삭제 / 추가 핸들러 — chip 클릭 시 spec 갱신 → 즉시 iframe 재 inject + history 저장
@@ -1270,6 +1328,103 @@
     }
   }
 
+  // AI 다듬기 — 현재 spec + 사용자 변경 요청 → AI 가 spec 재생성
+  async function refineSpec(userPrompt) {
+    if (!currentSpec || !currentPrd) {
+      showToast('먼저 와이어프레임 생성', 'err');
+      return;
+    }
+    var byokKey = '';
+    try { byokKey = (localStorage.getItem(STORAGE_KEY) || '').trim(); } catch (_) {}
+    if (!byokKey || !/^sk-ant-/.test(byokKey)) {
+      showToast('Anthropic 키 미설정 — 좌측 「키 입력」', 'err');
+      return;
+    }
+
+    var statusEl = document.getElementById('refine-status');
+    var btn = document.getElementById('btn-refine');
+    var input = document.getElementById('refine-input');
+    function setStatus(msg, kind) {
+      if (!statusEl) return;
+      statusEl.style.display = msg ? '' : 'none';
+      statusEl.textContent = msg || '';
+      statusEl.classList.remove('panel__ai-status--ok', 'panel__ai-status--warn');
+      if (kind === 'ok')   statusEl.classList.add('panel__ai-status--ok');
+      if (kind === 'warn') statusEl.classList.add('panel__ai-status--warn');
+    }
+    if (btn) btn.disabled = true;
+    setStatus('AI 가 변경 사항 적용 중… (5~15초)', '');
+
+    var specForAi = JSON.parse(JSON.stringify(currentSpec));
+    delete specForAi.alternatives;  // refinement 는 메인 spec 만
+
+    var prompt = [
+      '당신은 SCM Hub 디자인시스템 와이어프레임 전문가입니다.',
+      '아래 [현재 spec] 을 [사용자 변경 요청] 에 맞춰 수정해서 새로운 spec 을 출력하세요.',
+      '',
+      '[규칙]',
+      '· 사용자 요청과 무관한 부분은 그대로 유지 — 함부로 다른 곳까지 바꾸지 말 것.',
+      '· 필터·컬럼·액션·rowSamples 모두 일관성 유지 (필터 ↔ 컬럼 1:1 매칭).',
+      '· customNotes 는 사용자가 신규 컴포넌트/레이아웃을 요청한 경우에만 한국어로 짧게 작성.',
+      '· alternatives 는 출력하지 말 것 — 메인 spec 만.',
+      '',
+      '[현재 spec]',
+      JSON.stringify(specForAi, null, 2),
+      '',
+      '[사용자 변경 요청]',
+      String(userPrompt || '').substring(0, 2000),
+      '',
+      '[출력 — JSON only, { 로 시작 } 로 끝, 다른 텍스트 절대 금지]',
+    ].join('\n');
+
+    try {
+      var res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-api-key': byokKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 6000,
+          system: '당신은 JSON 만 출력하는 API 입니다. 응답은 반드시 { 로 시작 } 로 끝. markdown 코드블록 / 설명 / 인사말 절대 금지.',
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+      if (!res.ok) {
+        var t = await res.text();
+        throw new Error(res.status + ': ' + t.substring(0, 200));
+      }
+      var data = await res.json();
+      var raw = (data.content && data.content[0] && data.content[0].text) || '';
+      var refined = extractJson(raw);
+      if (!refined) throw new Error('JSON 파싱 실패: ' + raw.substring(0, 200));
+
+      reconcileSpec(refined);
+      currentSpec = refined;
+      var ifr = document.getElementById('preview-iframe');
+      if (ifr) injectPrd(ifr, currentPrd, currentSpec);
+      fillSpecPanel(currentSpec);
+      try { localStorage.setItem(STORAGE_SPEC, JSON.stringify(currentSpec)); } catch (_) {}
+      saveHistoryEntry(currentPrd, currentSpec, 'AI 다듬기 — ' + (userPrompt || '').substring(0, 30));
+
+      setStatus('변경 완료 — 다시 입력하면 추가 수정 가능', 'ok');
+      if (input) input.value = '';
+      showToast('AI 변경 적용 완료', 'ok');
+    } catch (e) {
+      var em = (e && e.message) || String(e);
+      if (/401|invalid.*api.?key|authentication/i.test(em)) {
+        em = 'API 키 무효 — 좌측 「변경」 버튼으로 재입력';
+      }
+      setStatus('실패: ' + em, 'warn');
+      showToast('AI 변경 실패', 'err');
+    } finally {
+      if (btn) btn.disabled = !(input && input.value.trim());
+    }
+  }
+
   // 데모 후보 chip 렌더 + 클릭 시 iframe 전환
   function renderVariantChips(prd, candidates, currentUrl, spec) {
     var container = document.getElementById('preview-variants');
@@ -1358,14 +1513,28 @@
       '- checkable: 일괄 처리/일괄 액션 필요 시 true',
       '',
       '[★★★ 변형 제안 (alternatives) — 매우 중요 ★★★]',
-      '메인 spec 외에 **2개의 다른 방향** 을 alternatives 에 반드시 포함.',
-      '예시 방향 (서로 다른 2개 선택):',
-      '  · "상세 정보 강조" — 컬럼 더 많이, 메모/설명/이력/감사로그 포함',
-      '  · "운영 효율 강조" — 일괄 액션 풍부, 통계 컬럼, 빠른 필터',
-      '  · "관리자 뷰" — 권한/승인/감사 메타 추가',
-      '  · "검색 우선" — 필터 더 많이, 컬럼 단순',
-      '  · "모바일 친화" — 컬럼 적게, 핵심 정보만',
-      '메인과 다른 컬럼/필터 조합으로 구성.',
+      '메인 spec 외에 **3개의 다른 방향** 을 alternatives 에 반드시 포함.',
+      '',
+      '· 1·2 번째 alternative — 디자인시스템 표준 컴포넌트 조합 안에서의 다른 방향.',
+      '  예시 (서로 다른 2개 선택):',
+      '    - "상세 정보 강조" — 컬럼 더 많이, 메모/설명/이력/감사로그 포함',
+      '    - "운영 효율 강조" — 일괄 액션 풍부, 통계 컬럼, 빠른 필터',
+      '    - "관리자 뷰" — 권한/승인/감사 메타 추가',
+      '    - "검색 우선" — 필터 더 많이, 컬럼 단순',
+      '    - "모바일 친화" — 컬럼 적게, 핵심 정보만',
+      '',
+      '· 3 번째 alternative — label "AI 추천 (자유 제안)".',
+      '  PRD 본문이 일반 CRUD 테이블 패턴에 잘 맞지 않거나, 더 효과적인 구조가 있다면',
+      '  **디자인시스템에 현재 없는 컴포넌트/레이아웃이라도** 자유롭게 제안.',
+      '  예: 카드 그리드, 칸반 보드, 마스터-디테일, 타임라인, 캘린더, 스플릿 뷰,',
+      '       2단 wizard, 차트+테이블 대시보드, 트리뷰, 상세 사이드 drawer 등.',
+      '  이 variant 는 **반드시 customNotes 필드** 에 한국어로 2~5줄 설명 포함:',
+      '    - 어떤 레이아웃/패턴인지 (예: "좌측 칸반 + 우측 상세 drawer")',
+      '    - 왜 이 PRD 에 더 적합한지 (PRD 본문 근거 1~2문장 인용)',
+      '    - 어떤 신규 컴포넌트가 필요한지 (예: "kanban-column, drawer-detail")',
+      '  filters/table 은 그래도 채워서 — fallback 으로 표 렌더링은 가능하게.',
+      '',
+      '메인 + 1·2 번째 alternative 와 3 번째는 분명히 다른 컬럼/필터 조합으로 구성.',
       '',
       '[페이지 메타]',
       '- 이름: ' + (prd.name || ''),
@@ -1397,7 +1566,8 @@
       '  "empty": "등록된 항목이 없습니다",',
       '  "alternatives": [',
       '    {"label":"상세 정보 강조","filters":[{"label":"..."}],"table":{"checkable":true,"columns":[...],"rowSamples":[...]}},',
-      '    {"label":"운영 효율 강조","filters":[{"label":"..."}],"table":{"checkable":true,"columns":[...],"rowSamples":[...]}}',
+      '    {"label":"운영 효율 강조","filters":[{"label":"..."}],"table":{"checkable":true,"columns":[...],"rowSamples":[...]}},',
+      '    {"label":"AI 추천 (자유 제안)","customNotes":"좌측 칸반(상태별 컬럼) + 우측 상세 drawer 조합. PRD 의 \\"상태 흐름이 핵심\\" 부분을 시각화하기 위함. 신규 컴포넌트: kanban-column, drawer-detail.","filters":[{"label":"..."}],"table":{"checkable":true,"columns":[...],"rowSamples":[...]}}',
       '  ]',
       '}',
     ].filter(Boolean).join('\n');
@@ -1413,7 +1583,7 @@
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 8000,
-        system: '당신은 JSON 만 출력하는 API 입니다. 응답은 반드시 { 로 시작 } 로 끝. markdown 코드블록 / 설명 / 인사말 절대 금지. alternatives 는 반드시 2개 포함.',
+        system: '당신은 JSON 만 출력하는 API 입니다. 응답은 반드시 { 로 시작 } 로 끝. markdown 코드블록 / 설명 / 인사말 절대 금지. alternatives 는 반드시 3개 포함 — 마지막 1개는 label "AI 추천 (자유 제안)" 이며 customNotes 필수.',
         messages: [{ role: 'user', content: prompt }],
       }),
     });
