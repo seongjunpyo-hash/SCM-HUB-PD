@@ -194,7 +194,7 @@
       <span class="top__right" id="topRight">
         <span class="top__user" id="topUser">—</span>
         <span class="top__role" id="topRole" style="display:none;">—</span>
-        <a class="top__link" id="topAdmin" href="/admin/accounts.html" style="display:none;">계정 관리</a>
+        <a class="top__link" id="topAdmin" href="#" style="display:none;">계정 관리</a>
         <button class="top__logout" id="topLogout">로그아웃</button>
       </span>
     </header>
@@ -263,6 +263,7 @@
   </div>
 
   <script src="/auth-gate.js"></script>
+  <script src="/profile-menu.js" defer></script>
   <script>
     const ROLE_LABEL = { super: '최고 어드민', admin: '어드민', biz: '현업', pm: 'PM', dev: '개발팀', pd: 'PD' };
     document.addEventListener('scm:auth-ready', (e) => {
@@ -273,7 +274,16 @@
       roleEl.dataset.role = u.role;
       roleEl.style.display = '';
       if (u.role === 'super' || u.role === 'admin') {
-        document.getElementById('topAdmin').style.display = '';
+        const adminLink = document.getElementById('topAdmin');
+        adminLink.style.display = '';
+        adminLink.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          if (window.SCM && typeof window.SCM.openAccountsModal === 'function') {
+            window.SCM.openAccountsModal();
+          } else {
+            location.href = '/admin/accounts.html';
+          }
+        });
       }
       // 현업 VOC card — only super admins can enter. Others see it locked.
       const vocCard = document.getElementById('cardVoc');
