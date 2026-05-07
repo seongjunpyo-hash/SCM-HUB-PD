@@ -617,6 +617,7 @@
   // 편집용 — 현재 적용된 spec / prd 참조
   var currentSpec = null;
   var currentPrd = null;
+  var currentDemoUrl = 'wireframe-template.html';
 
   // 응답에서 JSON 추출 (markdown / 앞뒤 텍스트 / prefill 케이스 모두 대응)
   function extractJson(text) {
@@ -826,6 +827,120 @@
     if (/대기|보류|warn|예정/.test(s)) return 'wf-chip wf-chip--warn';
     if (/처리중|진행|info|검토/.test(s)) return 'wf-chip wf-chip--info';
     return 'wf-chip';
+  }
+
+  // PRD 본문 키워드 기반으로 적합한 비-table layout 추천 (메인이 table 일 때 AI 추천 fallback 용)
+  function pickFallbackLayout(prd, spec) {
+    var hay = ((prd && prd.name) || '') + ' ' + ((prd && prd.menu) || '') + ' ' +
+              ((spec && spec.pageHead && spec.pageHead.title) || '') + ' ' +
+              ((spec && spec.pageHead && spec.pageHead.sub) || '');
+    hay = hay.toLowerCase();
+    if (/등록|신규|작성|입력|편집|수정|register|create|new|edit|form/.test(hay)) return 'form';
+    if (/상태|흐름|진행|승인|반려|단계|process|status|workflow|kanban/.test(hay)) return 'kanban';
+    if (/이력|히스토리|로그|감사|활동|타임라인|history|log|audit|timeline|activity/.test(hay)) return 'timeline';
+    if (/현황|대시보드|요약|통계|kpi|summary|dashboard|overview/.test(hay)) return 'dashboard';
+    if (/상세|detail|편집/.test(hay)) return 'master-detail';
+    return 'cards'; // 기본 fallback
+  }
+
+  // table.columns + rowSamples 를 기반으로 layout 별 layoutData 자동 합성
+  // (AI 가 layoutData 안 채웠을 때 fallback — 빈 화면 방지)
+  function synthesizeLayoutData(kind, spec) {
+    var cols = (spec.table && spec.table.columns) || [];
+    var rows = (spec.table && spec.table.rowSamples) || [];
+    var labelCol = cols.findIndex(function (c) { return /상품|name|title|이름|제목|sku|code|코드|번호/i.test(c.label || ''); });
+    var subCol   = cols.findIndex(function (c) { return /설명|sub|브랜드|brand|매장|store|카테고리|category/i.test(c.label || ''); });
+    var statusCol = cols.findIndex(function (c) { return /상태|status/i.test(c.label || '') || c.type === 'status-chip'; });
+    if (labelCol < 0) labelCol = 0;
+
+    if (kind === 'cards') {
+      var cards = rows.slice(0, 12).map(function (r, i) {
+        var meta = [];
+        for (var j = 0; j < Math.min(cols.length, 4); j++) {
+          if (j === labelCol || j === subCol || j === statusCol) continue;
+          if (r[j]) meta.push(r[j]);
+        }
+        return {
+          title: r[labelCol] || ('항목 ' + (i + 1)),
+          subtitle: subCol >= 0 ? r[subCol] : '',
+          status: statusCol >= 0 ? r[statusCol] : '',
+          meta: meta,
+        };
+      });
+      while (cards.length < 8) cards.push({ title: '항목 ' + (cards.length + 1), subtitle: '서브 정보', status: '활성', meta: ['메타1', '메타2'] });
+      return { cards: cards };
+    }
+    if (kind === 'master-detail') {
+      var list = rows.slice(0, 10).map(function (r, i) {
+        return {
+          title: r[labelCol] || ('항목 ' + (i + 1)),
+          subtitle: subCol >= 0 ? r[subCol] : '',
+          status: statusCol >= 0 ? r[statusCol] : '',
+        };
+      });
+      while (list.length < 6) list.push({ title: '항목 ' + (list.length + 1), subtitle: '서브 정보' });
+      var firstRow = rows[0] || [];
+      var fields = cols.slice(0, 8).map(function (c, i) {
+        return { label: c.label || '필드 ' + (i + 1), value: firstRow[i] || '-' };
+      });
+      return { list: list, detail: { sections: [{ title: '기본 정보', fields: fields.slice(0, 4) }, { title: '추가 정보', fields: fields.slice(4) }] } };
+    }
+    if (kind === 'kanban') {
+      // 상태 컬럼 값으로 그룹화 — 없으면 균등 분배
+      var statusValues = statusCol >= 0
+        ? Array.from(new Set(rows.map(function (r) { return r[statusCol]; }).filter(Boolean)))
+        : ['대기', '처리중', '완료'];
+      if (!statusValues.length) statusValues = ['대기', '처리중', '완료'];
+      var grouped = statusValues.map(function (sv) {
+        var groupRows = statusCol >= 0
+          ? rows.filter(function (r) { return r[statusCol] === sv; })
+          : rows.slice(0, 3);
+        var cards = groupRows.map(function (r, i) {
+          var meta = [];
+          for (var j = 0; j < cols.length && meta.length < 2; j++) {
+            if (j === labelCol || j === statusCol) continue;
+            if (r[j]) meta.push(r[j]);
+          }
+          return { title: r[labelCol] || ('항목 ' + (i + 1)), meta: meta };
+        });
+        if (!cards.length) cards = [{ title: sv + ' 항목 1', meta: ['샘플'] }];
+        return { label: sv, count: cards.length, cards: cards };
+      });
+      return { columns: grouped };
+    }
+    if (kind === 'dashboard') {
+      var stats = [
+        { label: '전체', value: String(rows.length || 0), delta: '+12' },
+        { label: '활성', value: String(Math.max(1, Math.floor((rows.length || 5) * 0.7))) },
+        { label: '대기', value: String(Math.max(0, Math.floor((rows.length || 5) * 0.2))) },
+        { label: '오류', value: String(Math.max(0, Math.floor((rows.length || 5) * 0.1))), delta: '-2' },
+      ];
+      return { stats: stats, charts: [{ title: '추이 (예시)', hint: 'line chart' }, { title: '비율 (예시)', hint: 'pie chart' }] };
+    }
+    if (kind === 'form') {
+      var formFields = cols.slice(0, 8).map(function (c) {
+        var t = 'text';
+        if (c.type === 'date') t = 'date';
+        else if (c.type === 'number') t = 'number';
+        else if (/설명|메모|notes/i.test(c.label || '')) t = 'textarea';
+        else if (c.type === 'kind-chip' || c.type === 'status-chip' || c.type === 'platform-tag') t = 'select';
+        return { label: c.label || '필드', type: t, placeholder: c.label ? (c.label + ' 입력') : '' };
+      });
+      return { sections: [{ title: '기본 정보', fields: formFields.slice(0, 4) }, { title: '추가 정보', fields: formFields.slice(4) }] };
+    }
+    if (kind === 'timeline') {
+      var items = rows.slice(0, 8).map(function (r, i) {
+        return {
+          time: '2026-05-' + String(i + 1).padStart(2, '0') + ' ' + (10 + i) + ':' + (i * 7 % 60).toString().padStart(2, '0'),
+          actor: '시스템',
+          action: r[labelCol] || ('이벤트 ' + (i + 1)),
+          detail: subCol >= 0 ? r[subCol] : '',
+        };
+      });
+      while (items.length < 6) items.push({ time: '2026-05-0' + (items.length + 1), actor: '홍길동', action: '항목 변경', detail: '필드 A 변경' });
+      return { items: items };
+    }
+    return {};
   }
 
   function renderLayoutByKind(kind, spec, prd) {
@@ -1195,16 +1310,33 @@
     // 3-1) 메인 spec + alternatives 를 variant 후보로 묶음
     var allVariants = [{ label: '메인 (PRD 그대로)', spec: spec }];
     if (spec.alternatives && spec.alternatives.length) {
-      spec.alternatives.forEach(function (alt) {
-        // alt 는 메인의 pageHead/empty 를 공유하되 filters/table/layout 만 alt 자체
+      spec.alternatives.forEach(function (alt, altIdx) {
+        var isAiVariant = /AI\s*추천|자유\s*제안/.test(alt.label || '') || altIdx === 2;
+        var altLayout = alt.layout || 'table';
+        var altLayoutData = alt.layoutData || null;
+
+        // ★ AI 추천 variant 가 메인과 동일한 layout 으로 왔으면 강제로 다른 layout 으로 전환.
+        //   PRD 키워드 기반 추천 (없으면 'cards' 기본).
+        if (isAiVariant && altLayout === (spec.layout || 'table')) {
+          altLayout = pickFallbackLayout(prd, spec);
+          altLayoutData = altLayoutData || synthesizeLayoutData(altLayout, spec);
+          alt.customNotes = alt.customNotes ||
+            'AI 가 메인과 동일한 layout 을 제안해서 PRD 본문 키워드 기반으로 "' + altLayout + '" 로 자동 전환했습니다. ' +
+            '🪄 AI 다듬기 입력창에서 다른 layout (cards/kanban/dashboard/form/timeline/master-detail) 을 직접 요청해보세요.';
+        }
+        // layout != 'table' 인데 layoutData 비어있으면 합성 — 빈 화면 방지
+        if (altLayout !== 'table' && (!altLayoutData || Object.keys(altLayoutData).length === 0)) {
+          altLayoutData = synthesizeLayoutData(altLayout, spec);
+        }
+
         var altSpec = {
           pageHead: spec.pageHead,
           filters: alt.filters || spec.filters,
           table: alt.table || spec.table,
           empty: spec.empty,
           customNotes: alt.customNotes || '',
-          layout: alt.layout || 'table',
-          layoutData: alt.layoutData || null,
+          layout: altLayout,
+          layoutData: altLayoutData,
         };
         allVariants.push({ label: alt.label || '변형', spec: altSpec });
       });
@@ -1214,6 +1346,7 @@
     showLoading(false);
     currentSpec = spec;
     currentPrd = prd;
+    currentDemoUrl = demoUrl;
     renderIframe(prd, demoUrl, spec);
     renderVariantChipsForSpec(prd, allVariants, 0);
     fillSpecPanel(spec);
@@ -1381,18 +1514,15 @@
         container.querySelectorAll('.preview__variant').forEach(function (x) {
           x.classList.toggle('is-active', x === btn);
         });
-        // iframe 변형 (그대로 src 유지, contentDocument 만 다시 변형)
-        var ifr = document.getElementById('preview-iframe');
-        if (ifr) {
-          var ok = injectPrd(ifr, prd, v.spec);
-          if (ok) {
-            currentSpec = v.spec;
-            currentPrd = prd;
-            fillSpecPanel(v.spec);
-            saveHistoryEntry(prd, v.spec, v.label);
-            showToast('"' + v.label + '" 적용', 'ok');
-          }
-        }
+        // iframe 통째로 새로 로드 — 이전 variant 가 비-table layout 이었다면 main 의
+        // filter-bar/stats-bar/table 이 모두 교체된 상태라 in-place mutation 으로는
+        // table layout 으로 돌아갈 수 없음. 깨끗한 template 위에서 다시 inject.
+        currentSpec = v.spec;
+        currentPrd = prd;
+        renderIframe(prd, currentDemoUrl, v.spec);
+        fillSpecPanel(v.spec);
+        saveHistoryEntry(prd, v.spec, v.label);
+        showToast('"' + v.label + '" 적용', 'ok');
       });
     });
   }
@@ -1603,11 +1733,11 @@
     applyEditedSpec('추가');
   }
 
-  // spec 변경 후 iframe 재 inject + 좌측 패널 갱신 + history 저장
+  // spec 변경 후 iframe 재 로드 + 좌측 패널 갱신 + history 저장
+  // (in-place mutation 대신 iframe 새로 로드 — layout 전환 시 stale DOM 방지)
   function applyEditedSpec(actionLabel) {
-    var ifr = document.getElementById('preview-iframe');
-    if (ifr && currentPrd && currentSpec) {
-      injectPrd(ifr, currentPrd, currentSpec);
+    if (currentPrd && currentSpec) {
+      renderIframe(currentPrd, currentDemoUrl, currentSpec);
       fillSpecPanel(currentSpec);
       try { localStorage.setItem(STORAGE_SPEC, JSON.stringify(currentSpec)); } catch (_) {}
       saveHistoryEntry(currentPrd, currentSpec, '사용자 편집 — ' + actionLabel);
@@ -1694,8 +1824,8 @@
 
       reconcileSpec(refined);
       currentSpec = refined;
-      var ifr = document.getElementById('preview-iframe');
-      if (ifr) injectPrd(ifr, currentPrd, currentSpec);
+      // iframe 새로 로드 — layout 변경 가능성 때문에 in-place mutation 으로는 불충분
+      renderIframe(currentPrd, currentDemoUrl, currentSpec);
       fillSpecPanel(currentSpec);
       try { localStorage.setItem(STORAGE_SPEC, JSON.stringify(currentSpec)); } catch (_) {}
       saveHistoryEntry(currentPrd, currentSpec, 'AI 다듬기 — ' + (userPrompt || '').substring(0, 30));
@@ -1836,23 +1966,26 @@
       '',
       '[★★★ 변형 제안 (alternatives) — 매우 중요 ★★★]',
       '메인 spec 외에 **3개의 다른 방향** 을 alternatives 에 반드시 포함.',
+      '★ 각 alternative 는 **자체 filters + table.columns + table.rowSamples** 를 반드시 포함.',
+      '   (생략하면 메인과 동일하게 렌더돼서 사용자가 차이를 못 느낌 — 절대 금지)',
+      '★ 메인과 alternative 들 사이에는 컬럼 ≥ 2개 차이 또는 layout 자체가 달라야 함.',
       '',
-      '· 1·2 번째 alternative — 디자인시스템 표준 컴포넌트 조합 안에서의 다른 방향.',
+      '· 1·2 번째 alternative — 디자인시스템 표준 (layout="table") 안에서의 다른 방향.',
+      '  filters 와 table.columns 가 메인과 분명히 달라야 함 (최소 2개 이상 변경/추가/제거).',
       '  예시 (서로 다른 2개 선택):',
-      '    - "상세 정보 강조" — 컬럼 더 많이, 메모/설명/이력/감사로그 포함',
+      '    - "상세 정보 강조" — 컬럼 더 많이 (8~10개), 메모/설명/이력/감사로그 포함',
       '    - "운영 효율 강조" — 일괄 액션 풍부, 통계 컬럼, 빠른 필터',
       '    - "관리자 뷰" — 권한/승인/감사 메타 추가',
-      '    - "검색 우선" — 필터 더 많이, 컬럼 단순',
-      '    - "모바일 친화" — 컬럼 적게, 핵심 정보만',
+      '    - "검색 우선" — 필터 6~8개로 더 많이, 컬럼 4~5개로 단순',
+      '    - "모바일 친화" — 컬럼 3~4개로 적게, 핵심 정보만',
       '',
       '· 3 번째 alternative — label "AI 추천 (자유 제안)".',
-      '  PRD 본문 기반으로 **메인과 다른 layout** 을 선택해서 layoutData 까지 채우세요.',
-      '  메인이 "table" 이면 cards / master-detail / kanban / dashboard / form / timeline 중 적합한 것.',
+      '  **무조건 메인과 다른 layout** 을 선택. 메인이 "table" 이면 반드시 cards / master-detail /',
+      '  kanban / dashboard / form / timeline 중 PRD 에 가장 잘 맞는 것 선택 — table 절대 X.',
       '  메인이 이미 비-table 이면 또 다른 비-table 레이아웃.',
-      '  이 variant 는 **반드시 customNotes 필드** 에 한국어로 2~5줄 설명 포함:',
-      '    - 어떤 레이아웃/패턴인지 (예: "좌측 칸반(상태별 컬럼) + 우측 상세 drawer")',
-      '    - 왜 이 PRD 에 더 적합한지 (PRD 본문 근거 1~2문장 인용)',
-      '    - 어떤 사용자 시나리오에 강점인지',
+      '  **layoutData 도 그 layout 에 맞춰 반드시 채울 것** (cards/columns/sections/items/list+detail/stats+charts).',
+      '  layoutData 가 비어있으면 빈 화면이 나옴 — 절대 비우지 말 것.',
+      '  customNotes 필드에 한국어로 2~5줄 설명 (왜 이 layout 이 PRD 에 적합한지).',
       '',
       '메인 + 1·2 번째 alternative 와 3 번째는 분명히 다른 layout/컬럼/필터 조합으로 구성.',
       '',
