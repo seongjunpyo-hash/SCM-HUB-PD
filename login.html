@@ -63,19 +63,51 @@
     }
     .btn:hover { background: #8784ff; }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn--secondary {
+      background: transparent; border: 1px solid var(--line);
+      color: var(--fg-mute);
+    }
+    .btn--secondary:hover { background: rgba(255,255,255,0.04); border-color: var(--line-2); color: var(--fg); }
     .msg {
       margin-top: 16px; padding: 12px 14px;
       border-radius: 10px;
       font-size: 13px; line-height: 1.5;
       display: none;
     }
-    .msg--error { background: rgba(255,107,107,0.12); color: var(--error); border: 1px solid rgba(255,107,107,0.3); }
+    .msg--error   { background: rgba(255,107,107,0.12); color: var(--error); border: 1px solid rgba(255,107,107,0.3); }
+    .msg--success { background: rgba(110,107,255,0.12); color: var(--accent); border: 1px solid rgba(110,107,255,0.3); }
     .msg.show { display: block; }
     .footer {
       margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--line);
       text-align: center;
       font-size: 11px; color: var(--fg-dim);
     }
+
+    /* ----- 계정 생성 요청 모달 ----- */
+    .req-back {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(2px);
+      display: none; align-items: center; justify-content: center;
+    }
+    .req-back.show { display: flex; }
+    .req-modal {
+      background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+      width: 440px; max-width: calc(100vw - 32px);
+      padding: 28px;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+      max-height: calc(100vh - 64px); overflow-y: auto;
+    }
+    .req-modal__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .req-modal__head h2 { margin: 0; font-size: 18px; font-weight: 700; }
+    .req-modal__close {
+      background: transparent; border: 0; color: var(--fg-dim); cursor: pointer;
+      font-size: 22px; line-height: 1; width: 32px; height: 32px; border-radius: 6px;
+    }
+    .req-modal__close:hover { background: rgba(255,255,255,0.06); color: var(--fg); }
+    .req-modal__sub { font-size: 12.5px; color: var(--fg-mute); line-height: 1.6; margin: 0 0 18px; }
+    .req-modal .field { margin-bottom: 14px; }
+    .req-modal__row { display: flex; gap: 8px; margin-top: 6px; }
+    .req-modal__row .btn { margin-top: 0; }
   </style>
 </head>
 <body>
@@ -93,10 +125,46 @@
         <input id="password" name="password" type="password" required autocomplete="current-password" placeholder="••••••••" />
       </div>
       <button class="btn" type="submit" id="submit">로그인</button>
-      <div class="msg msg--error" id="errMsg"></div>
+      <button class="btn btn--secondary" type="button" id="requestAccountBtn">관리자에게 계정 생성 요청</button>
+      <div class="msg msg--error"   id="errMsg"></div>
+      <div class="msg msg--success" id="okMsg"></div>
     </form>
     <div class="footer">SCM HUB Workspace · Internal</div>
   </main>
+
+  <!-- 계정 생성 요청 모달 -->
+  <div class="req-back" id="reqBack">
+    <div class="req-modal" role="dialog" aria-label="계정 생성 요청">
+      <header class="req-modal__head">
+        <h2>계정 생성 요청</h2>
+        <button class="req-modal__close" id="reqClose" aria-label="닫기">×</button>
+      </header>
+      <p class="req-modal__sub">관리자 승인 후 입력하신 비밀번호로 로그인할 수 있습니다.</p>
+      <form id="reqForm" autocomplete="off">
+        <div class="field">
+          <label for="reqName">이름</label>
+          <input id="reqName" type="text" required placeholder="홍길동" />
+        </div>
+        <div class="field">
+          <label for="reqEmail">이메일</label>
+          <input id="reqEmail" type="email" required placeholder="you@musinsa.com" />
+        </div>
+        <div class="field">
+          <label for="reqPw1">비밀번호</label>
+          <input id="reqPw1" type="password" required minlength="8" placeholder="8자 이상" />
+        </div>
+        <div class="field">
+          <label for="reqPw2">비밀번호 확인</label>
+          <input id="reqPw2" type="password" required minlength="8" />
+        </div>
+        <div class="msg msg--error" id="reqErr"></div>
+        <div class="req-modal__row">
+          <button type="button" class="btn btn--secondary" id="reqCancel">취소</button>
+          <button type="submit" class="btn" id="reqSubmit">요청 보내기</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <script>
     const form = document.getElementById('form');
@@ -145,6 +213,77 @@
         errMsg.classList.add('show');
         submit.disabled = false;
         submit.textContent = '로그인';
+      }
+    });
+
+    // ----- 계정 생성 요청 모달 -----
+    const reqBack   = document.getElementById('reqBack');
+    const reqForm   = document.getElementById('reqForm');
+    const reqErr    = document.getElementById('reqErr');
+    const reqSubmit = document.getElementById('reqSubmit');
+    const okMsg     = document.getElementById('okMsg');
+
+    function openReqModal() {
+      reqErr.classList.remove('show');
+      reqForm.reset();
+      reqBack.classList.add('show');
+      setTimeout(() => document.getElementById('reqName').focus(), 50);
+    }
+    function closeReqModal() { reqBack.classList.remove('show'); }
+
+    document.getElementById('requestAccountBtn').addEventListener('click', openReqModal);
+    document.getElementById('reqClose').addEventListener('click', closeReqModal);
+    document.getElementById('reqCancel').addEventListener('click', closeReqModal);
+    reqBack.addEventListener('click', (e) => { if (e.target === reqBack) closeReqModal(); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && reqBack.classList.contains('show')) closeReqModal();
+    });
+
+    reqForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      reqErr.classList.remove('show');
+      const name  = document.getElementById('reqName').value.trim();
+      const email = document.getElementById('reqEmail').value.trim();
+      const pw1   = document.getElementById('reqPw1').value;
+      const pw2   = document.getElementById('reqPw2').value;
+
+      if (pw1.length < 8) {
+        reqErr.textContent = '비밀번호는 8자 이상이어야 합니다.';
+        reqErr.classList.add('show'); return;
+      }
+      if (pw1 !== pw2) {
+        reqErr.textContent = '비밀번호가 일치하지 않습니다.';
+        reqErr.classList.add('show'); return;
+      }
+
+      reqSubmit.disabled = true; reqSubmit.textContent = '요청 중...';
+      try {
+        const r = await fetch('/api/account-requests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password: pw1 }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          const msg =
+            data.error === 'email_exists'      ? '이미 가입된 이메일입니다. 로그인하거나 비밀번호 재설정을 이용하세요.' :
+            data.error === 'request_pending'   ? '이 이메일로 처리 대기 중인 요청이 있습니다. 관리자 처리 후 다시 시도해주세요.' :
+            data.error === 'invalid_email'     ? '올바른 이메일 형식이 아닙니다.' :
+            data.error === 'password_too_short'? '비밀번호는 8자 이상이어야 합니다.' :
+            '요청 실패: ' + (data.error || r.status);
+          reqErr.textContent = msg;
+          reqErr.classList.add('show');
+          reqSubmit.disabled = false; reqSubmit.textContent = '요청 보내기';
+          return;
+        }
+        closeReqModal();
+        okMsg.textContent = '계정 생성 요청을 보냈습니다. 관리자 승인 후 로그인 가능합니다.';
+        okMsg.classList.add('show');
+        reqSubmit.disabled = false; reqSubmit.textContent = '요청 보내기';
+      } catch (err) {
+        reqErr.textContent = '네트워크 오류: ' + (err.message || err);
+        reqErr.classList.add('show');
+        reqSubmit.disabled = false; reqSubmit.textContent = '요청 보내기';
       }
     });
   </script>
