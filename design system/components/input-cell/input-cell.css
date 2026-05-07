@@ -31,17 +31,26 @@
   color: inherit;
 }
 .scm-input-cell__input:focus { border-color: #000; }
-/* input disabled — bg #88888810, border #EBEBEB, fg #00000020 */
+/* placeholder — subtle. disabled 시 더 흐리게 */
+.scm-input-cell__input::placeholder {
+  color: rgba(0, 0, 0, 0.30);
+  opacity: 1;
+}
+.scm-input-cell__input:disabled::placeholder {
+  color: rgba(0, 0, 0, 0.20);
+  opacity: 1;
+}
+/* input disabled — bg #88888810, fg #00000020. border 는 기본 #E0E0E0 유지 (라인 보이도록) */
 .scm-input-cell__input:disabled {
   background: rgba(138, 138, 138, 0.10);
-  border-color: #EBEBEB;
   color: rgba(0, 0, 0, 0.20);
   cursor: not-allowed;
 }
-/* input error — bg #F311101A (faded red), border #F31110, fg #F31110 */
+/* input error — input 자체는 bg 흰색, border #F31110, fg #F31110.
+   wrapper td 가 faded red bg 를 담당. */
 .scm-input-cell__input.is-error,
 .scm-input-cell__input[aria-invalid="true"] {
-  background: rgba(243, 17, 16, 0.10);
+  background: #fff;
   border-color: #F31110;
   color: #F31110;
 }
