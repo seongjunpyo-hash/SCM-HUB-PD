@@ -1441,14 +1441,40 @@
 
       // === 4-1. layout 디스패치 — table 이 아니면 main 의 filter-bar 이하 영역을
       //          layout 별 마크업으로 교체하고 종료 (table 분기 5~9 스킵).
-      var layoutKind = spec.layout || 'table';
+      var layoutKind = String(spec.layout || 'table').toLowerCase().trim();
+      console.log('[SCM Sim] injectPrd — layout:', layoutKind, '| spec keys:', Object.keys(spec || {}), '| layoutData keys:', Object.keys(spec.layoutData || {}));
+      var KNOWN_LAYOUTS = ['table', 'cards', 'master-detail', 'kanban', 'dashboard', 'form', 'timeline'];
+      if (KNOWN_LAYOUTS.indexOf(layoutKind) === -1) {
+        console.warn('[SCM Sim] 알 수 없는 layout — table 로 fallback:', layoutKind);
+        layoutKind = 'table';
+      }
       if (layoutKind !== 'table') {
         ensureLayoutCss(doc);
         var mainEl = doc.querySelector('main');
         if (mainEl) {
           var pageHeadEl = mainEl.querySelector('.scm-page-head');
-          mainEl.innerHTML = (pageHeadEl ? pageHeadEl.outerHTML : '') +
-            renderLayoutByKind(layoutKind, spec, prd);
+          var layoutHtml = '';
+          try {
+            layoutHtml = renderLayoutByKind(layoutKind, spec, prd) || '';
+          } catch (renderErr) {
+            console.error('[SCM Sim] layout 렌더 실패:', layoutKind, renderErr);
+            layoutHtml = '<div style="padding:48px;text-align:center;color:#888;font-family:Pretendard,sans-serif;">' +
+              '<h3 style="font-size:16px;color:#1F1F26;">⚠ ' + escH(layoutKind) + ' 레이아웃 렌더 실패</h3>' +
+              '<p style="font-size:13px;">' + escH(String(renderErr && renderErr.message || renderErr)) + '</p>' +
+              '<p style="font-size:12px;color:#aaa;margin-top:16px;">F12 콘솔에서 자세한 에러 확인 가능. 「재생성」 또는 「자유 와이어프레임」 으로 다시 시도해보세요.</p>' +
+              '</div>';
+          }
+          // layoutHtml 이 빈약하면 (공백/태그 없음) fallback 안내 표시
+          if (layoutHtml.replace(/<[^>]+>/g, '').trim().length < 20) {
+            console.warn('[SCM Sim] ' + layoutKind + ' 렌더 결과가 비어있음 — fallback 표시');
+            layoutHtml = '<div style="padding:48px;text-align:center;color:#888;font-family:Pretendard,sans-serif;">' +
+              '<h3 style="font-size:16px;color:#1F1F26;">⚠ AI 응답에 ' + escH(layoutKind) + ' layoutData 가 부족합니다</h3>' +
+              '<p style="font-size:13px;">PRD 본문이 짧거나 모호하면 AI 가 풍부한 데이터를 만들지 못합니다.</p>' +
+              '<p style="font-size:12px;color:#aaa;margin-top:16px;">「재생성」 / 「자유 와이어프레임」 / 🪄 다듬기 입력창으로 다시 시도하세요.</p>' +
+              '</div>';
+          }
+          mainEl.innerHTML = (pageHeadEl ? pageHeadEl.outerHTML : '') + layoutHtml;
+          console.log('[SCM Sim] main 갱신 완료 — content length:', mainEl.innerHTML.length);
         }
         return true;
       }
@@ -1478,6 +1504,38 @@
       // === 7. 테이블 — cb-col + col-no + 데이터 컬럼 + col-spacer 구조 유지 ===
       var thead = doc.querySelector('.mp-table thead tr');
       var tbody = doc.querySelector('.mp-table tbody');
+      var hasCols = spec.table && Array.isArray(spec.table.columns) && spec.table.columns.length > 0;
+      console.log('[SCM Sim] 테이블 렌더 — columns:', hasCols ? spec.table.columns.length : 0, '| filters:', (spec.filters || []).length);
+      if (!hasCols) {
+        // 컬럼이 비어있으면 filters 라벨로 컬럼 합성. 그것도 없으면 안내 메시지.
+        spec.table = spec.table || {};
+        if ((spec.filters || []).length > 0) {
+          console.warn('[SCM Sim] AI 가 columns 없이 응답 — filters 로 합성');
+          spec.table.columns = (spec.filters || []).map(function (f) {
+            var label = (f && f.label) || f || '필드';
+            return { label: label, type: inferColumnTypeFromLabel(label), width: 'auto' };
+          });
+          spec.table.rowSamples = spec.table.rowSamples || [];
+          for (var ri = 0; ri < 5; ri++) {
+            spec.table.rowSamples[ri] = spec.table.rowSamples[ri] || spec.table.columns.map(function (c, ci) {
+              return inferDummyValue(c.label, ri);
+            });
+          }
+        } else if (thead && tbody) {
+          // 컬럼도 필터도 없으면 안내 메시지로 main 영역 갱신
+          var mainEl2 = doc.querySelector('main');
+          if (mainEl2) {
+            var phEl = mainEl2.querySelector('.scm-page-head');
+            mainEl2.innerHTML = (phEl ? phEl.outerHTML : '') +
+              '<div style="padding:48px;text-align:center;color:#888;font-family:Pretendard,sans-serif;">' +
+                '<h3 style="font-size:16px;color:#1F1F26;">⚠ AI 응답에 table 컬럼/필터가 없습니다</h3>' +
+                '<p style="font-size:13px;">PRD 본문이 짧거나 모호하면 AI 가 구조를 파악 못합니다.</p>' +
+                '<p style="font-size:12px;color:#aaa;margin-top:16px;">「재생성」 / 「자유 와이어프레임」 / 🪄 다듬기 입력창으로 다시 시도하세요.</p>' +
+              '</div>';
+          }
+          return true;
+        }
+      }
       if (thead && tbody && spec.table && spec.table.columns) {
         var newCols = spec.table.columns;
         var rowSamples = spec.table.rowSamples || [];
