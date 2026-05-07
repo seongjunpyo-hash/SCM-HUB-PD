@@ -4,6 +4,8 @@
 
 이 폴더의 파일을 production repo 에 그대로 복사 + import 만 추가하면 SCM Hub 디자인시스템 시각이 적용됩니다. Demo 폴더 (디자이너의 vision) 와 분리돼 있어서 production 작업에 필요한 것만 골라 가져갈 수 있어요.
 
+> **다운로드 페이지**: [`handoff/index.html`](../handoff/index.html) 에 카드 UI 로 노출됨. 각 파일 「파일 열기」/「복사」 버튼으로 바로 가져가기 가능.
+
 ---
 
 ## 📦 포함 파일
