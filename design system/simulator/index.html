@@ -620,6 +620,28 @@
   var currentDemoUrl = 'wireframe-template.html';
 
   // 응답에서 JSON 추출 (markdown / 앞뒤 텍스트 / prefill 케이스 모두 대응)
+  // Anthropic API 에러 메시지를 사용자 친화적으로 변환 (BYOK 환경 — 사용자 본인 키)
+  function friendlyApiError(em) {
+    var s = String(em || '');
+    if (/credit\s*balance|billing|insufficient|insufficient_quota/i.test(s)) {
+      return '💳 Anthropic API 크레딧 잔액 부족\n\n' +
+             '입력하신 API 키의 크레딧이 부족해서 호출이 거부됐습니다.\n' +
+             '아래 링크에서 크레딧을 충전하시면 바로 정상 작동합니다:\n\n' +
+             '👉 https://console.anthropic.com/settings/billing\n\n' +
+             '원본: ' + s.substring(0, 200);
+    }
+    if (/rate.?limit|429|too\s*many\s*requests/i.test(s)) {
+      return '⏱ Anthropic API rate limit — 잠시 후 다시 시도하세요.\n\n' + s.substring(0, 200);
+    }
+    if (/overloaded|529/i.test(s)) {
+      return '🔥 Anthropic API 일시 과부하 — 1분 정도 후 다시 시도하세요.\n\n' + s.substring(0, 200);
+    }
+    if (/401|invalid.*api.?key|authentication/i.test(s)) {
+      return '🔑 API 키가 유효하지 않습니다. 좌측 「변경」 버튼으로 새 sk-ant-... 키 입력하세요.\n\n' + s;
+    }
+    return s;
+  }
+
   function extractJson(text) {
     if (!text) return null;
     // 1) markdown code block
@@ -716,7 +738,25 @@
     document.getElementById('preview-empty').classList.add('is-hide');
     document.getElementById('preview-loading').classList.add('is-hide');
     document.getElementById('preview-error').classList.remove('is-hide');
-    document.getElementById('preview-error-msg').textContent = msg || '알 수 없는 오류';
+    var msgEl = document.getElementById('preview-error-msg');
+    var text = msg || '알 수 없는 오류';
+    // URL 자동 링크화 — billing 안내 등 클릭 가능하게
+    msgEl.innerHTML = '';
+    var parts = String(text).split(/(https?:\/\/[^\s]+)/g);
+    parts.forEach(function (p) {
+      if (/^https?:\/\//.test(p)) {
+        var a = document.createElement('a');
+        a.href = p;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.textContent = p;
+        a.style.color = 'var(--accent)';
+        a.style.textDecoration = 'underline';
+        msgEl.appendChild(a);
+      } else {
+        msgEl.appendChild(document.createTextNode(p));
+      }
+    });
   }
   function clearError() { document.getElementById('preview-error').classList.add('is-hide'); }
   function enableActions() {
@@ -1526,11 +1566,7 @@
       try { localStorage.setItem(STORAGE_SPEC, JSON.stringify(spec)); } catch (_) {}
     } catch (e) {
       showLoading(false);
-      var em = (e && e.message) || String(e);
-      if (/401|invalid.*api.?key|authentication/i.test(em)) {
-        em = '🔑 API 키가 유효하지 않습니다. 좌측 「변경」 버튼으로 새 sk-ant-... 키 입력하세요.\n\n' + em;
-      }
-      showError(em);
+      showError(friendlyApiError((e && e.message) || String(e)));
       showToast('AI 호출 실패', 'err');
       return;
     }
@@ -2071,11 +2107,11 @@
       if (input) input.value = '';
       showToast('AI 변경 적용 완료', 'ok');
     } catch (e) {
-      var em = (e && e.message) || String(e);
-      if (/401|invalid.*api.?key|authentication/i.test(em)) {
-        em = 'API 키 무효 — 좌측 「변경」 버튼으로 재입력';
-      }
-      setStatus('실패: ' + em, 'warn');
+      var em = friendlyApiError((e && e.message) || String(e));
+      // refine 패널은 좁아서 너무 긴 메시지면 첫 줄만 (전체는 콘솔)
+      console.warn('[SCM Sim] refineSpec 실패:', em);
+      var firstLine = em.split('\n')[0];
+      setStatus(firstLine, 'warn');
       showToast('AI 변경 실패', 'err');
     } finally {
       if (btn) btn.disabled = !(input && input.value.trim());
