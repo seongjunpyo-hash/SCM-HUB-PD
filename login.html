@@ -172,9 +172,9 @@
     const submit = document.getElementById('submit');
     const errMsg = document.getElementById('errMsg');
     const params = new URLSearchParams(location.search);
-    // 로그인 후 디폴트 진입은 데모(협업 VOC) — 워크스페이스(/) 가 아닌 /voc/.
+    // 로그인 후 디폴트 진입은 데모 SKU 관리.
     // ?next=… 가 명시되어 있으면 그쪽을 우선.
-    const next = params.get('next') || '/voc/';
+    const next = params.get('next') || '/demo/sku-management';
 
     // If already logged in, redirect
     fetch('/api/auth/me', { credentials: 'same-origin' })
