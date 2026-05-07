@@ -134,7 +134,7 @@
     s.id = 'scm-voc-style';
     s.textContent = `
       .scm-voc-fab {
-        position: fixed; right: 24px; bottom: 24px; z-index: ${Z + 1};
+        position: fixed; right: 162px; bottom: 24px; z-index: ${Z + 1};
         display: inline-flex; align-items: center; gap: 8px;
         height: 48px; padding: 0 18px 0 16px;
         background: #6E6BFF; color: #fff;
@@ -146,6 +146,9 @@
         transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
         user-select: none;
       }
+      /* 코멘트 모드 (FAB.is-active) 일 때는 오른쪽으로 이동 — 편집 FAB 가 숨어서
+         오른쪽 자리가 비어보이지 않게. */
+      .scm-voc-fab.is-active { right: 24px; }
       .scm-voc-fab:hover { transform: translateY(-2px); box-shadow: 0 16px 32px rgba(110, 107, 255, 0.5), 0 6px 10px rgba(0,0,0,0.15); }
       .scm-voc-fab.is-active { background: #DC2626; box-shadow: 0 12px 28px rgba(220, 38, 38, 0.4), 0 4px 8px rgba(0,0,0,0.12); }
       .scm-voc-fab__icon { width: 18px; height: 18px; }
@@ -159,25 +162,27 @@
       }
       .scm-voc-fab.is-active .scm-voc-fab__count { background: rgba(255,255,255,0.25); }
 
-      /* 편집 모드 진입 FAB (super/admin 만 노출) — 코멘트 FAB 좌측에 배치.
-         protocol VOC 화면 (편집 가능) 으로 이동. */
+      /* 편집 모드 진입 FAB (super/admin 만 노출) — 코멘트 FAB 우측에 배치.
+         협업 VOC 화면 (편집 가능) 으로 이동. */
       .scm-voc-edit-fab {
-        position: fixed; right: 162px; bottom: 24px; z-index: ${Z + 1};
+        position: fixed; right: 24px; bottom: 24px; z-index: ${Z + 1};
         display: none;  /* role 체크 후 inline-flex */
         align-items: center; gap: 8px;
         height: 48px; padding: 0 18px 0 16px;
-        background: #1F1F26; color: #fff;
+        background: #4B5563; color: #fff;
         border: 0; border-radius: 999px;
         font-family: -apple-system, BlinkMacSystemFont, 'Pretendard Variable', Pretendard, sans-serif;
         font-size: 13px; font-weight: 600; letter-spacing: -0.01em;
         cursor: pointer;
-        box-shadow: 0 12px 28px rgba(31, 31, 38, 0.35), 0 4px 8px rgba(0,0,0,0.12);
+        box-shadow: 0 12px 28px rgba(75, 85, 99, 0.35), 0 4px 8px rgba(0,0,0,0.12);
         transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
         user-select: none;
       }
       .scm-voc-edit-fab.is-visible { display: inline-flex; }
-      .scm-voc-edit-fab:hover { transform: translateY(-2px); background: #000; box-shadow: 0 16px 32px rgba(31, 31, 38, 0.45), 0 6px 10px rgba(0,0,0,0.18); }
+      .scm-voc-edit-fab:hover { transform: translateY(-2px); background: #374151; box-shadow: 0 16px 32px rgba(55, 65, 81, 0.45), 0 6px 10px rgba(0,0,0,0.18); }
       .scm-voc-edit-fab__icon { width: 16px; height: 16px; }
+      /* 코멘트 모드 진입 시 편집 FAB 숨김 — 두 모드는 상호 배타적. */
+      body.scm-voc-mode-active .scm-voc-edit-fab { display: none !important; }
       /* worker 모드 (VOC iframe 안) 에선 자체 편집 UI 가 이미 있으므로 숨김 */
       html.scm-voc-worker .scm-voc-edit-fab { display: none !important; }
 
