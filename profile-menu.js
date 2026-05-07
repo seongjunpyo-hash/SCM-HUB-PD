@@ -88,12 +88,6 @@
           '<svg viewBox="0 0 20 20" fill="none"><path d="M10 11.5v3M6.5 8V6a3.5 3.5 0 0 1 7 0v2M5 8h10v8H5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>' +
           '<span>비밀번호 재설정</span>' +
         '</button>' +
-        ((user.role === 'super' || user.role === 'admin')
-          ? '<button type="button" class="scm-profile-btn" data-act="manage-accounts">' +
-              '<svg viewBox="0 0 20 20" fill="none"><path d="M7 9a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zm0 1.5c-2.5 0-5 1.25-5 3.5V16h10v-2c0-2.25-2.5-3.5-5-3.5zM14 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 1.5c-.6 0-1.2.1-1.7.3 1.1.7 1.7 1.7 1.7 3.2v1H18v-1c0-2-2-3.5-4-3.5z" fill="currentColor"/></svg>' +
-              '<span>계정 관리</span>' +
-            '</button>'
-          : '') +
         '<button type="button" class="scm-profile-btn scm-profile-btn--danger" data-act="logout">' +
           '<svg viewBox="0 0 20 20" fill="none"><path d="M11 14v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v2M9 10h8m0 0l-3-3m3 3l-3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
           '<span>로그아웃</span>' +
@@ -112,10 +106,6 @@
         // 'outside' 로 잡아 곧바로 닫히는 버그 방지.
         closeModal();
         openPasswordModal();
-      }
-      else if (act === 'manage-accounts') {
-        closeModal();
-        openAccountsModal();
       }
       else if (act === 'logout') doLogout();
     });
