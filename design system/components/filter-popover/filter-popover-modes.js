@@ -311,7 +311,7 @@
         });
         // defaultFilters 다시 적용 (data-default 마킹 + 라벨 동기화) — 페이지에서 별도 처리 불필요
         Object.keys(defaultFilters).forEach(function (k) {
-          setFilterValueDirect(k, defaultFilters[k]);
+          setFilterValueDirect(k, defaultFilters[k], true);
         });
         appliedSnap = snapshot();
         if (onReset) onReset();
@@ -319,7 +319,9 @@
       });
     }
 
-    function setFilterValueDirect(key, displayText) {
+    // isSystemApply=true 일 때만 디폴트 값과 일치하면 data-default 마킹.
+    // 사용자가 직접 디폴트 값을 골랐을 때는 data-default 를 찍지 않아서 초기화 버튼이 정상 노출됨.
+    function setFilterValueDirect(key, displayText, isSystemApply) {
       var btn = filterBarEl.querySelector('.scm-filter-select[data-mp-filter="' + key + '"]');
       if (!btn) return;
       var valueEl = btn.querySelector('.scm-filter-select__value');
@@ -330,9 +332,11 @@
       if (displayText) {
         btn.setAttribute('data-state', 'filled');
         valueEl.textContent = displayText;
-        // 디폴트 값과 일치하면 'data-default' 표기 — 초기화 버튼 visibility 판단 시 제외 대상
-        if (defaultFilters[key] === displayText) btn.setAttribute('data-default', 'true');
-        else                                      btn.removeAttribute('data-default');
+        if (isSystemApply && defaultFilters[key] === displayText) {
+          btn.setAttribute('data-default', 'true');
+        } else {
+          btn.removeAttribute('data-default');
+        }
       } else {
         btn.setAttribute('data-state', 'placeholder');
         valueEl.textContent = btn.getAttribute('data-pop-default') || valueEl.textContent;
@@ -1124,7 +1128,7 @@
           });
           // defaultFilters 다시 적용 (data-default 마킹 + 라벨 동기화)
           Object.keys(defaultFilters).forEach(function (k) {
-            setFilterValueDirect(k, defaultFilters[k]);
+            setFilterValueDirect(k, defaultFilters[k], true);
           });
           appliedSnap = snapshot();
           if (onReset) onReset();
@@ -1159,7 +1163,7 @@
 
     // defaultFilters 자동 적용 — chip 의 data-default 마킹 + 라벨 동기화 (페이지에서 직접 호출 안 해도 init 시 처리)
     Object.keys(defaultFilters).forEach(function (k) {
-      setFilterValueDirect(k, defaultFilters[k]);
+      setFilterValueDirect(k, defaultFilters[k], true);
     });
     appliedSnap = snapshot();    // 디폴트 적용 후 스냅샷 갱신 — 디폴트 변경 없는 한 search disabled
     // 초기 검색/초기화 버튼 상태 — 초기 적용된 필터 없으니 검색 disabled, 초기화 hidden.
