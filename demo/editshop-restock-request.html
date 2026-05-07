@@ -470,6 +470,7 @@
               <li data-key="barcode">바코드 복사 (500)</li>
             </ul>
           </span>
+          <button class="scm-mini-action scm-mini-action--primary" type="button" id="er-bulk-request-btn" disabled>보충요청</button>
           <button class="scm-mini-action" type="button" id="er-deselect-btn" disabled>선택 해제</button>
         </div>
       </div>
@@ -1153,14 +1154,16 @@
         if (labelMap[key]) li.textContent = labelMap[key] + ' 복사 (' + displayN + ')';
       });
     }
-    // stats-bar 의 "선택 해제" 미니 액션 — 선택 0 disabled, 1+ 활성
+    // stats-bar 의 "선택 해제" / "보충요청" 미니 액션 — 선택 0 disabled, 1+ 활성
     var deselectMini = document.getElementById('er-deselect-btn');
-    if (deselectMini) {
-      if (n === 0) deselectMini.setAttribute('disabled', '');
-      else         deselectMini.removeAttribute('disabled');
-    }
+    var bulkReqMini = document.getElementById('er-bulk-request-btn');
+    [deselectMini, bulkReqMini].forEach(function (el) {
+      if (!el) return;
+      if (n === 0) el.setAttribute('disabled', '');
+      else         el.removeAttribute('disabled');
+    });
   }
-  // stats-bar 선택 해제 클릭 — 모든 cb 해제
+  // stats-bar 선택 해제 / 보충요청 클릭 핸들러
   (function () {
     var btn = document.getElementById('er-deselect-btn');
     if (btn) {
@@ -1171,6 +1174,16 @@
         if (h) h.setAttribute('aria-checked', 'false');
         erHeaderWasAll = false;
         refreshERAction();
+      });
+    }
+    var bulk = document.getElementById('er-bulk-request-btn');
+    if (bulk) {
+      bulk.addEventListener('click', function () {
+        if (bulk.disabled) return;
+        var n = getERRowCbs().filter(function (c) { return c.getAttribute('aria-checked') === 'true'; }).length;
+        if (window.SCM && SCM.toast) {
+          SCM.toast.show({ variant: 'success', title: n + '건 보충요청 전송', desc: '선택한 행에 대한 보충요청이 접수되었습니다.' });
+        }
       });
     }
   })();
