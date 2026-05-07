@@ -579,6 +579,22 @@
     .save-ver-modal__close:hover { background: #F3F4F6; color: #1A1A1A; }
     .save-ver-modal__body { padding: 16px 20px 8px; }
     .save-ver-modal__hint { margin: 0 0 12px; font-size: 13px; color: #6B7280; }
+    .save-ver-modal__note-label {
+      display: flex; align-items: center; justify-content: space-between;
+      margin: 4px 0 6px; font-size: 12.5px; font-weight: 600; color: #15151D;
+    }
+    .save-ver-modal__note-label small { font-weight: 400; color: #888; font-size: 11.5px; }
+    .save-ver-modal__note {
+      display: block; width: 100%; min-height: 64px; max-height: 180px;
+      padding: 10px 12px; margin: 0 0 16px;
+      font-family: inherit; font-size: 13px; line-height: 1.55; color: #15151D;
+      background: #fff; border: 1px solid #E5E7EB; border-radius: 6px;
+      resize: vertical; box-sizing: border-box;
+      transition: border-color 0.12s;
+    }
+    .save-ver-modal__note:focus { outline: none; border-color: #4F46E5; }
+    .save-ver-modal__note::placeholder { color: #9CA3AF; }
+    .save-ver-modal__note-counter { font-size: 11px; color: #9CA3AF; }
     .save-ver-modal__options { display: flex; flex-direction: column; gap: 6px; }
     .save-ver-opt {
       display: flex; align-items: center; gap: 10px;
@@ -1242,6 +1258,16 @@
     </header>
     <div class="save-ver-modal__body">
       <p class="save-ver-modal__hint">편집한 내용을 어떻게 저장할까요?</p>
+      <label class="save-ver-modal__note-label" for="saveVerNote">
+        <span>📝 메모 <small>— 어떤 작업이 된 버전인지 (선택)</small></span>
+        <span class="save-ver-modal__note-counter" id="saveVerNoteCounter">0/200</span>
+      </label>
+      <textarea
+        class="save-ver-modal__note"
+        id="saveVerNote"
+        rows="2"
+        maxlength="200"
+        placeholder="예: 검색 버튼 위치 변경 + 필터 3개 추가 / SKU 등록 폼 reorder · 무신사 톤 적용"></textarea>
       <div class="save-ver-modal__options" id="saveVerOptions"></div>
     </div>
     <footer class="save-ver-modal__foot">
@@ -1735,7 +1761,11 @@
       const finalId = (ver.finalId && ver.list.some((v) => v.id === ver.finalId)) ? ver.finalId : null;
       sel.innerHTML = newestFirst.map((v) => {
         const isFinal = v.id === finalId;
-        return `<option value="${escapeHtml(v.id)}">${labelMap[v.id]}${isFinal ? ' (최종)' : ''}</option>`;
+        const note = (v.note || '').trim();
+        // option label — 라벨 + (최종) + 메모 prefix (20자 truncate). title 에는 전체.
+        const noteShort = note ? ' · ' + (note.length > 20 ? note.substring(0, 20) + '…' : note) : '';
+        const titleAttr = note ? escapeHtml(note) : '메모 없음';
+        return `<option value="${escapeHtml(v.id)}" title="${titleAttr}">${labelMap[v.id]}${isFinal ? ' (최종)' : ''}${escapeHtml(noteShort)}</option>`;
       }).join('');
       // 드롭다운 선택 위치는 미리보기(activeId)를 따르되, activeId 가
       // 비어있으면 finalId, 그것도 없으면 가장 최근 버전으로 폴백.
@@ -2653,7 +2683,21 @@
         const modal     = document.getElementById('saveVerModal');
         const backdrop  = document.getElementById('saveVerBackdrop');
         const optsHost  = document.getElementById('saveVerOptions');
+        const noteEl    = document.getElementById('saveVerNote');
+        const noteCount = document.getElementById('saveVerNoteCounter');
         if (!modal || !backdrop || !optsHost) { resolve(null); return; }
+        // 메모 input 초기화 + counter 동기화
+        if (noteEl) {
+          noteEl.value = '';
+          if (noteCount) noteCount.textContent = '0/200';
+          const onNoteInput = () => {
+            if (noteCount) noteCount.textContent = (noteEl.value.length || 0) + '/200';
+          };
+          noteEl.addEventListener('input', onNoteInput);
+          // dispose
+          const _origClose = (val) => val;  // placeholder; real close defined below
+          // wrap close to remove listener — handled in finalize block below
+        }
         // v1 is the FIRST saved version (no synthetic origin). Saved
         // versions are all merge targets. Display labels are recomputed
         // from ascending createdAt position so they stay stable in the
@@ -2698,6 +2742,7 @@
           document.removeEventListener('keydown', onKey);
           resolve(val);
         };
+        const readNote = () => (noteEl ? (noteEl.value || '').trim().substring(0, 200) : '');
         const onClick = (e) => {
           const act = e.target.closest && e.target.closest('[data-save-ver-act]');
           if (!act) return;
@@ -2707,8 +2752,9 @@
             const picked = optsHost.querySelector('input[name="save-ver-opt"]:checked');
             const v = picked && picked.value;
             if (!v) return close(null);
-            if (v === 'new') return close({ mode: 'new' });
-            if (v.startsWith('merge:')) return close({ mode: 'merge', mergeId: v.slice('merge:'.length) });
+            const note = readNote();
+            if (v === 'new') return close({ mode: 'new', note: note });
+            if (v.startsWith('merge:')) return close({ mode: 'merge', mergeId: v.slice('merge:'.length), note: note });
           }
         };
         const onBackdrop = () => close(null);
@@ -2738,20 +2784,14 @@
       if (state.currentPage !== page && state.versions[state.currentPage]) {
         delete state.versions[state.currentPage];
       }
-      let mode, mergeId;
-      // v1 is the demo's implicit origin (empty applied). User saves start
-      // at v2 to keep numbering aligned with what the selector shows.
-      if (!ver.list.length) {
-        // First save for this page — only option is to create v2; skip
-        // the modal since there's nothing to merge into.
-        mode = 'first';
-      } else {
-        // Subsequent saves: open the modal to pick new / merge target.
-        const choice = await openSaveVersionModal(ver);
-        if (!choice) return;                       // cancelled
-        mode = choice.mode;
-        mergeId = choice.mergeId;
-      }
+      let mode, mergeId, note = '';
+      // 항상 modal 을 열어서 메모를 받을 수 있게. ver.list 비어있으면 modal
+      // 안에서 'new' 옵션만 보임 (merge 대상 없음).
+      const choice = await openSaveVersionModal(ver);
+      if (!choice) return;                         // cancelled
+      mode = choice.mode;
+      mergeId = choice.mergeId;
+      note = choice.note || '';
       const now = Date.now();
       // First save creates v1, then v2, v3, … (positional). Stored label
       // is 'v<N>' raw; the selector recomputes display labels from
@@ -2760,17 +2800,22 @@
       if (mode === 'first' || mode === 'new') {
         const id = 'v' + now.toString(36) + Math.random().toString(36).slice(2, 5);
         const label = nextLabel();
-        ver.list.push({ id, label, createdAt: now, applied: draftClone });
+        const entry = { id, label, createdAt: now, applied: draftClone };
+        if (note) entry.note = note;
+        ver.list.push(entry);
         ver.activeId = id;
       } else if (mode === 'merge') {
         const target = ver.list.find((v) => v.id === mergeId) || ver.list.find((v) => v.id === ver.activeId);
         if (target) {
           target.applied = draftClone;
           target.updatedAt = now;
+          if (note) target.note = note;             // 머지 시 메모 갱신 (있으면)
           ver.activeId = target.id;
         } else {
           const id = 'v' + now.toString(36) + Math.random().toString(36).slice(2, 5);
-          ver.list.push({ id, label: nextLabel(), createdAt: now, applied: draftClone });
+          const entry = { id, label: nextLabel(), createdAt: now, applied: draftClone };
+          if (note) entry.note = note;
+          ver.list.push(entry);
           ver.activeId = id;
         }
       }

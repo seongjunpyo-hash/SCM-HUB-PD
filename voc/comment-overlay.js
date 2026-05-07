@@ -302,6 +302,11 @@
         font-size: 13px; color: #15151D; line-height: 1.55;
         white-space: pre-wrap; word-break: break-word;
       }
+      .scm-voc-reply__body a.scm-voc-link {
+        color: #4F46E5; text-decoration: underline; text-underline-offset: 2px;
+        word-break: break-all;
+      }
+      .scm-voc-reply__body a.scm-voc-link:hover { color: #4338CA; }
       .scm-voc-reply__del {
         margin-left: auto; padding: 4px 8px;
         background: transparent; border: 0; cursor: pointer;
@@ -869,7 +874,7 @@
           <span>${time}</span>
           ${canDel ? `<button class="scm-voc-reply__del" data-del-reply="${r.id}" type="button" title="삭제">삭제</button>` : ''}
         </div>
-        <div class="scm-voc-reply__body">${escapeHtml(r.text)}</div>
+        <div class="scm-voc-reply__body">${escapeHtmlWithLinks(r.text)}</div>
       </div>
     `;
   }
@@ -1110,6 +1115,22 @@
     return String(s == null ? '' : s)
       .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
       .replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+  }
+  // 코멘트 본문에 URL 이 있으면 클릭 가능한 <a> 로 변환.
+  // HTML escape 먼저 한 후 URL 패턴을 anchor 로 교체. URL 마지막의 흔한 구두점
+  // (마침표/콤마/괄호닫힘 등) 은 링크에서 제외해서 자연스러운 문장 매핑.
+  function escapeHtmlWithLinks(s) {
+    if (s == null) return '';
+    const escaped = escapeHtml(s);
+    return escaped.replace(/(https?:\/\/[^\s<]+)/g, function (m) {
+      // 마지막 문장부호 분리 — '...링크).' 같은 경우 ')', '.' 는 링크 밖으로
+      let trail = '';
+      while (m.length > 1 && /[.,;:!?)\]]/.test(m[m.length - 1])) {
+        trail = m[m.length - 1] + trail;
+        m = m.slice(0, -1);
+      }
+      return '<a href="' + m + '" target="_blank" rel="noopener noreferrer" class="scm-voc-link">' + m + '</a>' + trail;
+    });
   }
   function showToast(msg) {
     elToast.textContent = msg;
