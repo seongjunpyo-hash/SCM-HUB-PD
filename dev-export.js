@@ -1050,15 +1050,15 @@ ${jsxBody}
       .scm-dev-export-action-btn {
         display: inline-flex; align-items: center; gap: 4px;
         height: 32px; padding: 0 12px;
-        /* matches the GNB DEMO tag color (#1A1A1A black) */
-        background: #1A1A1A; color: #fff;
-        border: 1px solid #1A1A1A; border-radius: 6px;
+        /* success-green to signal the affirmative '최종 확정' action */
+        background: #16A34A; color: #fff;
+        border: 1px solid #16A34A; border-radius: 6px;
         font-family: -apple-system, BlinkMacSystemFont, 'Pretendard Variable', Pretendard, sans-serif;
         font-size: 12px; font-weight: 600;
         cursor: pointer; white-space: nowrap;
         transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
       }
-      .scm-dev-export-action-btn:hover:not(:disabled) { background: #000; border-color: #000; }
+      .scm-dev-export-action-btn:hover:not(:disabled) { background: #15803D; border-color: #15803D; }
       /* Disabled (e.g. super viewing the current 최종) — muted, no fill,
          clearly non-interactive. Without this the disabled button kept
          the solid black surface and visually read as active. */

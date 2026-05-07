@@ -95,7 +95,12 @@
       var btn = e.target.closest('[data-act]');
       if (!btn) return;
       var act = btn.getAttribute('data-act');
-      if (act === 'change-pw') openPasswordModal();
+      if (act === 'change-pw') {
+        // 비밀번호 모달이 열리면 dropdown 은 닫음 — onOutsideClick 이 pw 모달
+        // 입력창 클릭을 'outside' 로 잡아 모달이 곧바로 닫히는 버그 방지.
+        closeModal();
+        openPasswordModal();
+      }
       else if (act === 'logout') doLogout();
     });
     setTimeout(function () {
@@ -283,8 +288,8 @@
     '}\n' +
     '.scm-profile-modal__head {\n' +
     '  position: relative;\n' +
-    '  display: flex; align-items: center; justify-content: center;\n' +
-    '  padding: 18px 56px; border-bottom: 1px solid #F0F0F0;\n' +
+    '  display: flex; align-items: center;\n' +
+    '  padding: 18px 56px 18px 20px;\n' +
     '}\n' +
     '.scm-profile-modal__head strong { font-size: 15px; font-weight: 700; }\n' +
     '.scm-profile-modal__close {\n' +
