@@ -31,6 +31,13 @@
   color: inherit;
 }
 .scm-input-cell__input:focus { border-color: #000; }
+/* input disabled — bg #88888810, border #EBEBEB, fg #00000020 */
+.scm-input-cell__input:disabled {
+  background: rgba(138, 138, 138, 0.10);
+  border-color: #EBEBEB;
+  color: rgba(0, 0, 0, 0.20);
+  cursor: not-allowed;
+}
 .scm-input-cell__max {
   height: 36px; padding: 8px 10px;
   background: rgba(138, 138, 138, 0.10);
@@ -39,8 +46,11 @@
   cursor: pointer;
 }
 .scm-input-cell__max:hover:not(:disabled) { background: rgba(138, 138, 138, 0.16); }
+/* max disabled — bg #88888810, outline 1px #EBEBEB, fg #00000020 */
 .scm-input-cell__max:disabled {
-  background: rgba(138, 138, 138, 0.05);
-  color: rgba(0, 0, 0, 0.30);
+  background: rgba(138, 138, 138, 0.10);
+  outline: 1px solid #EBEBEB;
+  outline-offset: -1px;
+  color: rgba(0, 0, 0, 0.20);
   cursor: not-allowed;
 }
