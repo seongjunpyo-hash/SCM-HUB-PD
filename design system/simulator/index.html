@@ -404,8 +404,8 @@
             '</div>' +
             '<div class="preview__loading is-hide" id="preview-loading">' +
               '<div class="preview__loading-ring"></div>' +
-              '<h3>구조 분석 중…</h3>' +
-              '<p>PRD 에서 페이지 구조를 추출하고 있습니다 (5~15초).</p>' +
+              '<h3 id="loading-title">구조 분석 중…</h3>' +
+              '<p id="loading-desc">PRD 에서 페이지 구조를 추출하고 있습니다 (5~15초).</p>' +
             '</div>' +
             '<div class="preview__error is-hide" id="preview-error">' +
               '<h3>와이어프레임 생성 실패</h3>' +
@@ -778,9 +778,15 @@
     return html2;
   }
 
-  function showLoading(on) {
+  function showLoading(on, title, desc) {
     document.getElementById('preview-empty').classList.toggle('is-hide', on);
     document.getElementById('preview-loading').classList.toggle('is-hide', !on);
+    if (on) {
+      var t = document.getElementById('loading-title');
+      var d = document.getElementById('loading-desc');
+      if (t && title) t.textContent = title;
+      if (d && desc) d.textContent = desc;
+    }
   }
   function showError(msg) {
     document.getElementById('preview-empty').classList.add('is-hide');
@@ -1756,14 +1762,170 @@
   var currentFreeHtml = '';
   try { currentFreeHtml = localStorage.getItem(STORAGE_FREE_HTML) || ''; } catch (_) {}
 
+  // ===== Step 1: PRD 분석 → 페이지 구조 outline =====
+  async function fetchLowFiPlan(byokKey, prd, prdText, aiHint) {
+    var prompt = [
+      '당신은 시니어 IA 디자이너입니다. PRD 를 정독하고 페이지 구조 outline 을 작성하세요.',
+      'HTML 작성은 금지 — 다음 단계에서 다른 AI 가 합니다. 지금은 plain text outline 만.',
+      '',
+      '[outline 형식 — 정확히 이 양식으로]',
+      '페이지 종류: form / list+filter / dashboard / detail-edit / wizard / cards / tree+detail / dialog / 그 외',
+      '핵심 작업: (사용자가 이 페이지에서 가장 자주 하는 1~2 작업)',
+      'entity: (상품/매장/PO/사용자/정산/카테고리/...)',
+      '구조:',
+      '  - 영역 A 이름 (예: 상단 액션바) — 짧은 설명',
+      '  - 영역 B 이름 (예: 메인 폼) — 짧은 설명',
+      '  - ...',
+      '주요 데이터:',
+      '  - 항목/필드 이름 — 예시 값 1~2개',
+      '  - ...',
+      '액션:',
+      '  - 액션명 (primary/ghost/destructive)',
+      '',
+      '[규칙]',
+      '· 좌측 사이드바·탭·breadcrumb 등은 PRD 가 명시적으로 요구할 때만 추가.',
+      '· PRD 가 단순한 폼이면 그냥 폼만. wizard 면 step 흐름. 다이얼로그면 박스 하나.',
+      '· entity 가 SKU 가 아니면 SKU 데이터 X. PRD entity 그대로.',
+      '',
+      '[페이지 메타]',
+      '- 이름: ' + (prd.name || ''),
+      '- LNB: ' + ((CAT_LABEL[prd.category] || prd.category || '') + ' > ' + (prd.menu || '')),
+      '- 사용자: ' + (prd.user || ''),
+      '- 작업 유형: ' + (WORK_LABEL[prd.workType] || prd.workType || ''),
+      '',
+      '[PRD 본문]',
+      (prdText || '(본문 없음)').substring(0, 6000),
+      '',
+      aiHint ? '[★ 사용자 추가 지시사항]\n' + aiHint.substring(0, 1500) : '',
+      '',
+      '[출력 — outline plain text 만, 다른 인사말/markdown 절대 금지]',
+    ].filter(Boolean).join('\n');
+
+    var res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': byokKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1500,
+        system: '당신은 PRD outline 분석 전문가. 응답은 plain text outline 만. HTML/markdown/인사말 절대 X. 페이지 구조는 PRD 기반 — sidebar/탭/breadcrumb 강요 X.',
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    if (!res.ok) {
+      var t = await res.text();
+      throw new Error(res.status + ': ' + t.substring(0, 200));
+    }
+    var data = await res.json();
+    var plan = (data.content && data.content[0] && data.content[0].text) || '';
+    if (!plan) throw new Error('Step 1 빈 응답');
+    return plan;
+  }
+
+  // ===== Step 2: outline + PRD → 완성 HTML =====
+  async function fetchLowFiHtml(byokKey, prd, prdText, aiHint, plan) {
+    var prompt = [
+      '당신은 low-fi 와이어프레임 전문가. 아래 [outline] 과 [PRD] 를 바탕으로 완성된 HTML 와이어프레임 작성.',
+      '',
+      '[★ 비주얼 스타일 — 엄격]',
+      '· 폰트: \'Pretendard\', monospace 폴백. 13px 기본.',
+      '· 색: 흑(#000) / 백(#fff) / 연회색(#f5f5f5, #e5e5e5, #999) 만.',
+      '· 강조 (active/primary): 검은 배경 + 흰 글자.',
+      '· 보더: 1.5px solid #000. placeholder/추가/destructive 만 1.5px dashed #999.',
+      '· 그림자·border-radius·gradient·이미지·SVG 절대 X.',
+      '· 아이콘: emoji/text symbols (▶▼↑↓×△○●□■⚠) 만.',
+      '',
+      '[★ 표기]',
+      '· 페이지 타이틀: `[ 페이지명 ]`',
+      '· 액션: `[ 라벨 ]` (primary 검은 배경 흰 글자, destructive dashed + `[ × 라벨 ]`)',
+      '· 입력: `[ 값 ]` 또는 `[ 검색... ]`',
+      '· 드롭다운: `[ 값 v ]`',
+      '· 체크박스/라디오: `□ ■ ○ ●`',
+      '· 탭: `▶ 라벨 [n]` (활성 검은 배경 흰 글자)',
+      '· 트리: `▼ 부모` 들여쓰기 + `▶ 자식`',
+      '· 뱃지: `[기본]` `[NEW]` 작은 박스',
+      '· 정보 banner: #FFF8DC 배경 + #999 보더 + `△`',
+      '· 시각화 (gauge/bar): white→#f5f5f5→#e5e5e5→#999 + `|` 구분',
+      '',
+      '[★ 구조 — outline 따르기]',
+      'outline 에 명시된 영역만 그릴 것. outline 에 없는 sidebar/탭/breadcrumb 강제 추가 X.',
+      '',
+      '[★ 데이터 — outline 의 entity 따르기]',
+      'outline 에 명시된 entity (상품/매장/PO/사용자/...) 데이터만. 다른 entity 데이터 끼워넣기 X.',
+      '항목 5~10개. 각 항목 다른 값. placeholder ("샘플 1") 금지.',
+      '',
+      '[★ 출력]',
+      '· `<!DOCTYPE html>` 로 시작 `</html>` 로 끝.',
+      '· `<style>` 인라인. CDN OK (Pretendard).',
+      '· markdown / 설명 / 인사말 / `<script>` 절대 X.',
+      '· CSS 최소화 — 같은 클래스 재사용.',
+      '',
+      '[outline — Step 1 분석 결과]',
+      plan,
+      '',
+      '[페이지 메타]',
+      '- 이름: ' + (prd.name || ''),
+      '- LNB: ' + ((CAT_LABEL[prd.category] || prd.category || '') + ' > ' + (prd.menu || '')),
+      '- 사용자: ' + (prd.user || ''),
+      '',
+      '[PRD 본문 (참고)]',
+      (prdText || '').substring(0, 5000),
+      '',
+      aiHint ? '[★ 사용자 추가 지시사항]\n' + aiHint.substring(0, 1500) : '',
+      '',
+      '[출력 — <!DOCTYPE html> 로 시작 </html> 로 끝, 다른 텍스트 절대 금지]',
+    ].filter(Boolean).join('\n');
+
+    var res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': byokKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 5500,
+        system: '당신은 low-fi 와이어프레임 (Balsamiq 톤) 전문가. 응답은 <!DOCTYPE html> 로 시작 </html> 로 끝나는 완전한 HTML. markdown/설명/인사말 절대 X. 흑/백/연회색만 + bracket 표기 엄격. 그림자·radius·이미지·SVG·script 절대 X. outline 의 구조와 entity 만 따르기 — sidebar/탭/breadcrumb 강요 X.',
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    if (!res.ok) {
+      var t = await res.text();
+      throw new Error(res.status + ': ' + t.substring(0, 200));
+    }
+    var data = await res.json();
+    var raw = (data.content && data.content[0] && data.content[0].text) || '';
+    if (!raw) throw new Error('Step 2 빈 응답');
+
+    // markdown 코드블록 제거 + DOCTYPE 시작점 + truncate 복구
+    var html = raw;
+    var cb = raw.match(/```(?:html)?\s*([\s\S]*?)```/i);
+    if (cb) html = cb[1];
+    var doctypeIdx = html.search(/<!DOCTYPE/i);
+    if (doctypeIdx > 0) html = html.substring(doctypeIdx);
+    var endIdx = html.search(/<\/html>/i);
+    if (endIdx >= 0) {
+      html = html.substring(0, endIdx + 7);
+    } else {
+      console.warn('[SCM Sim] HTML 응답 truncate — 미닫힘 태그 자동 닫기');
+      html = repairTruncatedHtml(html);
+    }
+    return html;
+  }
+
+  // ===== 통합 — Step 1 (분석) → Step 2 (HTML) =====
   async function buildLowFiWireframe(prd, prdText) {
     clearError();
-    showLoading(true);
 
     var byokKey = '';
     try { byokKey = (localStorage.getItem(STORAGE_KEY) || '').trim(); } catch (_) {}
     if (!byokKey || !/^sk-ant-/.test(byokKey)) {
-      showLoading(false);
       showError('Anthropic 키가 설정되지 않았습니다.\n좌측 「키 입력」 버튼으로 sk-ant-... 키를 입력하세요.');
       return;
     }
@@ -1776,146 +1938,54 @@
       aiHintLength: aiHint.length, aiHintHead: aiHint.substring(0, 120),
     });
 
-    var prompt = [
-      '당신은 시니어 IA 디자이너입니다. PRD 를 정독하고 **low-fidelity 와이어프레임** 을 HTML 로 그리세요.',
-      '',
-      '★★★ 가장 중요한 두 원칙 ★★★',
-      '1) 스타일 (시각 톤) 은 아래 [비주얼 스타일] 규칙을 **엄격히** 따를 것 — Balsamiq 같이 흑백 + bracket 표기.',
-      '2) **페이지 구조는 PRD 가 시키는 대로**. 정해진 템플릿/레이아웃 강요 X.',
-      '   PRD 가 단순한 폼이면 폼 한 페이지. 다이얼로그면 다이얼로그. wizard 면 step 흐름.',
-      '   대시보드면 그리드. 리스트면 목록만. 사이드바·탭·breadcrumb 등 PRD 에 안 나오면 강제로 넣지 말 것.',
-      '   "참고 이미지의 sidebar+main 같은 구조" 그대로 복제 절대 X. PRD 마다 다른 구조여야 함.',
-      '',
-      '[★ 비주얼 스타일 — 매우 엄격]',
-      '· 폰트: \'Pretendard\', monospace 폴백. 13px 기본.',
-      '· 색: 흑(#000) / 백(#fff) / 연회색(#f5f5f5, #e5e5e5, #999) 만. 그 외 색 절대 X.',
-      '· 강조 (active/primary): 검은 배경 + 흰 글자.',
-      '· 보더: 1.5px solid #000. placeholder/추가/destructive 만 1.5px dashed #999.',
-      '· 그림자·border-radius·gradient·이미지·SVG 절대 X.',
-      '· 아이콘은 emoji/text symbols (▶▼↑↓×△○●□■◆◇⚠) 만.',
-      '',
-      '[★ 표기 규칙]',
-      '· 페이지 타이틀: `[ 페이지명 ]`',
-      '· 액션 버튼: `[ 라벨 ]` (primary 는 검은 배경 흰 글자)',
-      '· destructive 버튼: dashed 보더 + `[ × 라벨 ]`',
-      '· 입력 필드: 박스 + 값/placeholder. 예: `[ 150 ]` `[ 검색... ]`',
-      '· 드롭다운: `[ 값 v ]`',
-      '· 체크박스/라디오: `□` `■` `○` `●`',
-      '· 탭: `▶ 라벨 [n]`. 활성 = 검은 배경 흰 글자',
-      '· 트리/접기: `▼ 부모` / 들여쓰기 자식 + `▶`',
-      '· 뱃지: `[기본]` `[개별]` `[NEW]` 작은 박스',
-      '· 정보 banner: 옅은 노랑 (#FFF8DC) 배경 + #999 보더 + `△`',
-      '· 시각화 (gauge/bar): white→#f5f5f5→#e5e5e5→#999 회색 단계 + `|` 구분',
-      '· 빈/placeholder 텍스트: italic + #999',
-      '',
-      '[★ 페이지 구조 — PRD 기반 자유 (예시)]',
-      'PRD 마다 가장 적합한 골격 선택:',
-      '  · 신규 등록/수정 페이지 → 폼 한 컬럼 (섹션 + 필드 + 저장 버튼)',
-      '  · 단순 대시보드 → 통계 박스 그리드 + 차트 자리',
-      '  · 다건 관리 → 필터 + 표 + 페이지네이션 (사이드바 없을 수도)',
-      '  · 단건 깊이 편집 → 상단 메타 + 탭 또는 섹션 (사이드바 없이 메인 단독)',
-      '  · 워크플로우 (승인/단계) → 단계 표시 + 단계별 영역',
-      '  · 카탈로그 → 카드 그리드',
-      '  · 정책/규칙 카테고리별 설정 (참고 이미지 같은 케이스) → 좌측 트리 + 우측 상세',
-      '  · 단순 다이얼로그/모달 → 한 박스에 헤더 + 내용 + 풋터',
-      '★ 위는 예시일 뿐. PRD 에 안 어울리면 안 쓸 것. **참고 이미지 (정책 관리) 와 같은',
-      '  좌측 트리 + 우측 상세 구조는 정책/카테고리별 설정 PRD 에만 적합. 일반 폼/리스트/대시보드 PRD 에 강요 X.**',
-      '',
-      '[★ 데이터]',
-      'PRD entity 를 먼저 파악 (상품/매장/PO/사용자/정산/...) 하고 그 entity 데이터.',
-      'SKU 외 entity 면 SKU 데이터 절대 X. placeholder 텍스트 ("샘플 1") 금지.',
-      '데이터 행/항목 5~10개 (간결하게).',
-      '',
-      '[★ 출력 — 간결성 중요]',
-      '· `<!DOCTYPE html>` 로 시작 `</html>` 로 끝.',
-      '· `<style>` 인라인. CDN OK (Pretendard).',
-      '· markdown / 설명 / 인사말 / `<script>` 절대 X.',
-      '· **CSS 는 최소화** — 같은 클래스 재사용. 응답 길이가 제한 있어서 truncate 되면 안 됨.',
-      '',
-      '[페이지 메타]',
-      '- 이름: ' + (prd.name || ''),
-      '- LNB: ' + ((CAT_LABEL[prd.category] || prd.category || '') + ' > ' + (prd.menu || '')),
-      '- 사용자: ' + (prd.user || ''),
-      '- 작업 유형: ' + (WORK_LABEL[prd.workType] || prd.workType || ''),
-      '',
-      '[PRD 본문 — 줄 단위로 정독]',
-      (prdText || '(본문 없음)').substring(0, 8000),
-      '',
-      aiHint ? '[★ 사용자 추가 지시사항 — 가장 우선 반영]\n' + aiHint.substring(0, 2000) : '',
-      '',
-      '[출력 — <!DOCTYPE html> 로 시작 </html> 로 끝, 다른 텍스트 절대 금지]',
-    ].filter(Boolean).join('\n');
-
+    // Step 1: 분석
+    showLoading(true, 'Step 1/2 · PRD 구조 분석 중', '페이지 종류·entity·작업 흐름 추출 (5~10초)');
+    var plan;
     try {
-      var res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'x-api-key': byokKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 6500,
-          system: '당신은 low-fi 와이어프레임 (Balsamiq 톤) 전문가. 응답은 <!DOCTYPE html> 로 시작 </html> 로 끝나는 완전한 HTML 문서. markdown / 설명 / 인사말 절대 X. 흑/백/연회색만 + bracket [라벨] 표기 + 1.5px 보더 엄격. 색·그림자·radius·이미지·SVG·script 절대 X. **페이지 구조는 PRD 가 시키는 대로 — 정해진 sidebar+main 템플릿 강요 X**. PRD 가 단순 폼이면 폼만, 다이얼로그면 다이얼로그만. CSS 는 최소화 (truncate 방지).',
-          messages: [{ role: 'user', content: prompt }],
-        }),
-      });
-      if (!res.ok) {
-        var t = await res.text();
-        throw new Error(res.status + ': ' + t.substring(0, 200));
-      }
-      var data = await res.json();
-      var raw = (data.content && data.content[0] && data.content[0].text) || '';
-      if (!raw) throw new Error('빈 응답');
-
-      // markdown 코드블록 제거 (혹시 들어있으면)
-      var html = raw;
-      var cb = raw.match(/```(?:html)?\s*([\s\S]*?)```/i);
-      if (cb) html = cb[1];
-      // <!DOCTYPE 가 없으면 시작점 찾아서 자르기
-      var doctypeIdx = html.search(/<!DOCTYPE/i);
-      if (doctypeIdx > 0) html = html.substring(doctypeIdx);
-      // </html> 다음 텍스트 제거
-      var endIdx = html.search(/<\/html>/i);
-      if (endIdx >= 0) {
-        html = html.substring(0, endIdx + 7);
-      } else {
-        // </html> 가 없음 = 응답이 truncate 됨. 미닫힘 태그를 자동 닫기.
-        console.warn('[SCM Sim] HTML 응답 truncate — 미닫힘 태그 자동 닫기');
-        html = repairTruncatedHtml(html);
-      }
-
-      currentFreeHtml = html;
-      try { localStorage.setItem(STORAGE_FREE_HTML, html); } catch (_) {}
-      console.log('[SCM Sim] low-fi 와이어프레임 생성 완료 — ' + html.length.toLocaleString() + ' chars');
-
-      showLoading(false);
-      renderFreeIframe(html);
-      enableActions();
-      // low-fi 생성됐으니 데모화 버튼 활성화 (Stage 2 — 현재는 placeholder)
-      var demoBtn = document.getElementById('btn-demoify');
-      if (demoBtn) demoBtn.disabled = false;
-      // 재생성 버튼도 low-fi 재생성으로 동작
-      var rebBtn = document.getElementById('btn-rebuild');
-      if (rebBtn) {
-        rebBtn.onclick = function () { buildLowFiWireframe(prd, prdText); };
-      }
-      // 스펙 패널은 low-fi 모드에선 숨김 (JSON spec 없음)
-      var specBox = document.getElementById('panel-spec');
-      if (specBox) specBox.style.display = 'none';
-      var refineBox = document.getElementById('panel-refine');
-      if (refineBox) refineBox.style.display = 'none';
-      // variant chip 영역에 "low-fi 모드" 라벨
-      var variantsEl = document.getElementById('preview-variants');
-      if (variantsEl) variantsEl.innerHTML = '<span class="preview__variant preview__variant--ai is-active" style="cursor:default;">low-fi 모드</span>';
-      showToast('low-fi 와이어프레임 생성 완료 (' + html.length.toLocaleString() + ' chars)', 'ok');
+      plan = await fetchLowFiPlan(byokKey, prd, prdText, aiHint);
+      console.log('[SCM Sim] Step 1 outline:\n' + plan);
     } catch (e) {
       showLoading(false);
       showError(friendlyApiError((e && e.message) || String(e)));
-      showToast('low-fi 와이어프레임 실패', 'err');
+      showToast('Step 1 (분석) 실패', 'err');
+      return;
     }
+
+    // Step 2: HTML
+    showLoading(true, 'Step 2/2 · 와이어프레임 그리는 중', 'outline 기반으로 HTML 작성 (15~25초)');
+    var html;
+    try {
+      html = await fetchLowFiHtml(byokKey, prd, prdText, aiHint, plan);
+    } catch (e) {
+      showLoading(false);
+      var em = (e && e.message) || String(e);
+      // rate limit 에러면 안내에 'Step 1 통과했으니 1분 후 재시도' 추가
+      if (/rate.?limit|429/i.test(em)) {
+        em += '\n\n💡 Step 1 분석은 통과. 1분 정도 기다린 뒤 「재생성」 클릭하면 Step 2 만 다시 시도.';
+      }
+      showError(friendlyApiError(em));
+      showToast('Step 2 (HTML) 실패', 'err');
+      return;
+    }
+
+    currentFreeHtml = html;
+    try { localStorage.setItem(STORAGE_FREE_HTML, html); } catch (_) {}
+    console.log('[SCM Sim] low-fi 와이어프레임 생성 완료 — ' + html.length.toLocaleString() + ' chars');
+
+    showLoading(false);
+    renderFreeIframe(html);
+    enableActions();
+    var demoBtn = document.getElementById('btn-demoify');
+    if (demoBtn) demoBtn.disabled = false;
+    var rebBtn = document.getElementById('btn-rebuild');
+    if (rebBtn) rebBtn.onclick = function () { buildLowFiWireframe(prd, prdText); };
+    var specBox = document.getElementById('panel-spec');
+    if (specBox) specBox.style.display = 'none';
+    var refineBox = document.getElementById('panel-refine');
+    if (refineBox) refineBox.style.display = 'none';
+    var variantsEl = document.getElementById('preview-variants');
+    if (variantsEl) variantsEl.innerHTML = '<span class="preview__variant preview__variant--ai is-active" style="cursor:default;">low-fi · 다단계 생성</span>';
+    showToast('low-fi 와이어프레임 생성 완료 (' + html.length.toLocaleString() + ' chars)', 'ok');
   }
 
   function renderFreeIframe(html) {
