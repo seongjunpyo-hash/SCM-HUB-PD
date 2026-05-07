@@ -115,7 +115,7 @@
 
     /* 매장 입고예정 accent (>0) */
     .er-num-accent { color: #245EFF; font-weight: 600; }
-    .mp-table tbody td.er-num-zero { background: rgba(243,17,16,0.10); color: #F31110; }
+    .mp-table tbody td.er-num-zero { background: #fff; color: #F31110; }
 
     /* 이동 요청 수량 — INPUT 셀 light blue bg (legacy er-input-cell 재현) */
     .mp-table tbody td.er-input-cell {
@@ -124,6 +124,14 @@
     }
     .mp-table tbody tr:hover td.er-input-cell {
       background: rgba(36,94,255,0.12);
+    }
+    /* 이동 가능 재고 = 0 → 요청 불가 — INPUT 셀도 흰색 + 입력창 disabled 톤 */
+    .mp-table tbody td.er-input-cell.is-disabled,
+    .mp-table tbody tr:hover td.er-input-cell.is-disabled { background: #fff; }
+    .scm-input-cell__input:disabled {
+      background: #fff;
+      color: rgba(0, 0, 0, 0.30);
+      cursor: not-allowed;
     }
 
     /* Date cards (legacy er-date-row) */
@@ -805,19 +813,25 @@
       : `<div class="cell-clamp"><span class="scm-product-name"><span class="scm-product-name__thumb"></span><span class="scm-product-name__text">${escapeHtml(r.name)}</span></span></div>`;
 
     // 이동 요청 수량 — input cell. 현재 값이 available 이상이면 '최대' 버튼 disabled.
+    // 이동 가능 재고가 0 이면 요청 자체 불가 — checkbox / input 모두 disabled.
     const requestQtyVal = isEmpty(r.requestQty) ? '' : Number(r.requestQty).toLocaleString();
     const reqNum = Number(r.requestQty) || 0;
     const availNum = Number(r.available) || 0;
     const isMaxed = !isEmpty(r.available) && reqNum >= availNum;
+    const isUnavailable = !isEmpty(r.available) && availNum === 0;
     const requestQtyCell = `
       <span class="scm-input-cell">
-        <input type="text" class="scm-input-cell__input" value="${requestQtyVal}" inputmode="numeric"/>
+        <input type="text" class="scm-input-cell__input" value="${requestQtyVal}" inputmode="numeric"${isUnavailable ? ' disabled' : ''}/>
         <button class="scm-input-cell__max" type="button"${isMaxed ? ' disabled' : ''}>최대</button>
       </span>`;
+    const cbCls = isUnavailable ? 'scm-checkbox is-disabled' : 'scm-checkbox';
+    const cbAttrs = isUnavailable
+      ? 'role="checkbox" aria-checked="false" aria-disabled="true" tabindex="-1"'
+      : 'role="checkbox" aria-checked="false" tabindex="0"';
 
     return `
       <tr>
-        <td class="cb-col col-frozen-1"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="선택"></span></td>
+        <td class="cb-col col-frozen-1"><span class="${cbCls}" ${cbAttrs} aria-label="선택"></span></td>
         <td class="col-auto col-frozen-2">${kindChip}</td>
         <td class="col-auto col-frozen-3">${fmtText(r.storeName)}</td>
         <td class="col-auto">${fmtText(r.brand)}</td>
@@ -833,7 +847,7 @@
         <td class="col-auto cell-numeric">${fmtNum(r.stock)}</td>
         <td class="col-auto cell-numeric">${incomingHtml}</td>
         <td class="col-auto cell-numeric">${fmtNum(r.prevReq)}</td>
-        <td class="col-auto er-input-cell">${requestQtyCell}</td>
+        <td class="col-auto er-input-cell${isUnavailable ? ' is-disabled' : ''}">${requestQtyCell}</td>
         <td class="col-auto cell-numeric ${availableCls}">${fmtNum(r.available)}</td>
         <td class="col-auto">${introChip}</td>
         <td class="col-auto">${promoHtml}</td>
