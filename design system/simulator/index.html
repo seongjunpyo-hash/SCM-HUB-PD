@@ -253,6 +253,7 @@
   var STORAGE_DATA = 'scm-prd-data';
   var STORAGE_TEXT = 'scm-prd-text';
   var STORAGE_SUPP = 'scm-prd-supp';
+  var STORAGE_AI_HINT = 'scm-prd-ai-hint';
   var STORAGE_KEY  = 'scm-ai-key';
   var STORAGE_HTML = 'scm-prd-wireframe-html';
   var STORAGE_SPEC = 'scm-prd-wireframe-spec';
@@ -265,6 +266,7 @@
   function loadPrd()    { try { return JSON.parse(localStorage.getItem(STORAGE_DATA) || 'null'); } catch (_) { return null; } }
   function loadText()   { try { return localStorage.getItem(STORAGE_TEXT) || ''; } catch (_) { return ''; } }
   function loadSupp()   { try { return JSON.parse(localStorage.getItem(STORAGE_SUPP) || 'null'); } catch (_) { return null; } }
+  function loadAiHint() { try { return localStorage.getItem(STORAGE_AI_HINT) || ''; } catch (_) { return ''; } }
   function loadCachedHtml() { try { return localStorage.getItem(STORAGE_HTML) || ''; } catch (_) { return ''; } }
   function saveCachedHtml(h){ try { localStorage.setItem(STORAGE_HTML, h || ''); } catch (_) {} }
   function captureWireframeHtml(ifr) {
@@ -2064,6 +2066,11 @@
       '[현재 spec]',
       JSON.stringify(specForAi, null, 2),
       '',
+      (function () {
+        var hint = '';
+        try { hint = (localStorage.getItem('scm-prd-ai-hint') || '').trim(); } catch (_) {}
+        return hint ? '[★ 사용자가 PRD 업로드 시 적은 AI 추가 지시사항 — 항상 우선 반영]\n' + hint.substring(0, 2000) + '\n' : '';
+      })(),
       '[사용자 변경 요청]',
       String(userPrompt || '').substring(0, 2000),
       '',
@@ -2338,6 +2345,11 @@
       '[PRD 본문 — 줄 단위로 정독]',
       (prdText || '(없음)').substring(0, 8000),
       suppText ? '\n[보충 입력]\n' + suppText : '',
+      (function () {
+        var hint = '';
+        try { hint = (localStorage.getItem('scm-prd-ai-hint') || '').trim(); } catch (_) {}
+        return hint ? '\n[★ 사용자가 직접 적은 AI 추가 지시사항 — 가장 우선 반영]\n' + hint.substring(0, 2000) : '';
+      })(),
       historyText,
       '',
       '[출력 — JSON only, 다른 텍스트 금지]',
