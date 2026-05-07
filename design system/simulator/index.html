@@ -351,6 +351,7 @@
 
           '<div class="panel__spec" id="panel-spec" style="display:none;">' +
             '<div class="panel__spec-title">AI 가 PRD 에서 추출한 구조</div>' +
+            '<div class="panel__row"><span class="k">레이아웃</span><span class="v" id="spec-layout">table</span></div>' +
             '<div class="panel__row" id="spec-notes-row" style="display:none;"><span class="k">💡 AI 메모 (자유 제안)</span><div class="v" id="spec-notes"></div></div>' +
             '<div class="panel__row"><span class="k">서브타이틀</span><span class="v" id="spec-sub">-</span></div>' +
             '<div class="panel__row"><span class="k">컬럼 (<span id="spec-cols-count">0</span>)</span><div class="panel__chips" id="spec-cols"></div></div>' +
@@ -723,6 +724,258 @@
     }
   }
 
+  /* ============================================================
+   * Non-table 레이아웃 — cards / master-detail / kanban / dashboard / form / timeline
+   * 각 layout 의 마크업 + CSS 는 디자인시스템 토큰 (CSS var --ld-*) 에 맞춰 작성.
+   * ============================================================ */
+  var WF_LAYOUT_CSS = '\n' +
+    '.wf-section { padding: 16px 0 24px; }\n' +
+    /* CARDS */
+    '.wf-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(248px, 1fr)); gap: 16px; padding: 16px 0 24px; }\n' +
+    '.wf-card { display: flex; flex-direction: column; gap: 10px; padding: 16px; background: #fff; border: 1px solid var(--ld-line, #E5E5EA); border-radius: 10px; transition: border-color 0.15s ease, box-shadow 0.15s ease; }\n' +
+    '.wf-card:hover { border-color: #1F1F26; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }\n' +
+    '.wf-card__thumb { width: 100%; aspect-ratio: 4/3; background: #F2F2F4 linear-gradient(135deg, #F8F8FA 0%, #ECECEF 100%); border-radius: 6px; }\n' +
+    '.wf-card__title { font-size: 15px; font-weight: 700; color: #1F1F26; margin: 0; line-height: 1.4; }\n' +
+    '.wf-card__sub { font-size: 13px; color: #666; margin: 0; }\n' +
+    '.wf-card__meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: #888; }\n' +
+    '.wf-card__chips { display: flex; flex-wrap: wrap; gap: 4px; }\n' +
+    /* MASTER-DETAIL */
+    '.wf-split { display: grid; grid-template-columns: 320px 1fr; gap: 16px; padding: 16px 0 24px; min-height: 480px; }\n' +
+    '.wf-split__list { background: #fff; border: 1px solid var(--ld-line, #E5E5EA); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }\n' +
+    '.wf-split__search { padding: 12px 16px; border-bottom: 1px solid var(--ld-line, #E5E5EA); }\n' +
+    '.wf-split__search input { width: 100%; height: 36px; padding: 0 12px; border: 1px solid var(--ld-line, #E5E5EA); border-radius: 6px; font-size: 13px; font-family: inherit; }\n' +
+    '.wf-split__items { flex: 1; overflow-y: auto; }\n' +
+    '.wf-split__item { display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; border-bottom: 1px solid #F4F4F7; cursor: pointer; }\n' +
+    '.wf-split__item:hover { background: #FAFBFC; }\n' +
+    '.wf-split__item.is-active { background: #F0F0FF; border-left: 3px solid #4F46E5; padding-left: 13px; }\n' +
+    '.wf-split__item-title { font-size: 14px; font-weight: 600; color: #1F1F26; }\n' +
+    '.wf-split__item-sub { font-size: 12px; color: #888; }\n' +
+    '.wf-split__detail { background: #fff; border: 1px solid var(--ld-line, #E5E5EA); border-radius: 10px; padding: 24px; overflow: auto; }\n' +
+    '.wf-split__detail-section { margin-bottom: 24px; }\n' +
+    '.wf-split__detail-section h3 { font-size: 14px; font-weight: 700; margin: 0 0 12px; color: #1F1F26; padding-bottom: 8px; border-bottom: 1px solid var(--ld-line, #E5E5EA); }\n' +
+    '.wf-split__detail-fields { display: grid; grid-template-columns: 140px 1fr; gap: 8px 16px; font-size: 13px; }\n' +
+    '.wf-split__detail-fields dt { color: #888; padding: 6px 0; }\n' +
+    '.wf-split__detail-fields dd { margin: 0; padding: 6px 0; color: #1F1F26; }\n' +
+    /* KANBAN */
+    '.wf-kanban { display: flex; gap: 12px; padding: 16px 0 24px; overflow-x: auto; }\n' +
+    '.wf-kanban__col { flex: 0 0 280px; background: #F8F8FA; border-radius: 10px; padding: 12px; max-height: 600px; display: flex; flex-direction: column; }\n' +
+    '.wf-kanban__col-head { display: flex; align-items: center; justify-content: space-between; padding: 4px 8px 12px; }\n' +
+    '.wf-kanban__col-label { font-size: 13px; font-weight: 700; color: #1F1F26; }\n' +
+    '.wf-kanban__col-count { font-size: 12px; color: #888; background: #fff; padding: 2px 8px; border-radius: 999px; }\n' +
+    '.wf-kanban__cards { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }\n' +
+    '.wf-kanban__card { background: #fff; border: 1px solid var(--ld-line, #E5E5EA); border-radius: 8px; padding: 12px; cursor: grab; }\n' +
+    '.wf-kanban__card:hover { border-color: #1F1F26; }\n' +
+    '.wf-kanban__card-title { font-size: 13px; font-weight: 600; color: #1F1F26; margin: 0 0 6px; }\n' +
+    '.wf-kanban__card-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11.5px; color: #888; }\n' +
+    /* DASHBOARD */
+    '.wf-dashboard { padding: 16px 0 24px; display: flex; flex-direction: column; gap: 16px; }\n' +
+    '.wf-dashboard__stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }\n' +
+    '.wf-stat { background: #fff; border: 1px solid var(--ld-line, #E5E5EA); border-radius: 10px; padding: 16px 18px; }\n' +
+    '.wf-stat__label { font-size: 12px; color: #888; margin-bottom: 6px; font-weight: 600; }\n' +
+    '.wf-stat__value { font-size: 24px; font-weight: 700; color: #1F1F26; line-height: 1.2; }\n' +
+    '.wf-stat__delta { display: inline-block; margin-top: 4px; font-size: 12px; font-weight: 600; padding: 1px 6px; border-radius: 4px; }\n' +
+    '.wf-stat__delta--up { color: #28A745; background: #E8F7EC; }\n' +
+    '.wf-stat__delta--down { color: #D9332B; background: #FCEAE9; }\n' +
+    '.wf-dashboard__charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 12px; }\n' +
+    '.wf-chart { background: #fff; border: 1px solid var(--ld-line, #E5E5EA); border-radius: 10px; padding: 18px; min-height: 220px; display: flex; flex-direction: column; }\n' +
+    '.wf-chart__title { font-size: 14px; font-weight: 700; color: #1F1F26; margin: 0 0 12px; }\n' +
+    '.wf-chart__placeholder { flex: 1; display: flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #FAFBFC 0%, #F2F2F4 100%); border-radius: 6px; color: #B5B5BD; font-size: 12px; font-weight: 600; letter-spacing: 0.5px; }\n' +
+    /* FORM */
+    '.wf-form { padding: 16px 0 32px; max-width: 720px; }\n' +
+    '.wf-form__section { background: #fff; border: 1px solid var(--ld-line, #E5E5EA); border-radius: 10px; padding: 24px; margin-bottom: 16px; }\n' +
+    '.wf-form__section-title { font-size: 15px; font-weight: 700; color: #1F1F26; margin: 0 0 16px; padding-bottom: 10px; border-bottom: 1px solid var(--ld-line, #E5E5EA); }\n' +
+    '.wf-form__fields { display: grid; grid-template-columns: 160px 1fr; gap: 14px 16px; align-items: start; }\n' +
+    '.wf-form__label { font-size: 13px; font-weight: 600; color: #1F1F26; padding-top: 10px; }\n' +
+    '.wf-form__input { width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--ld-line, #E5E5EA); border-radius: 6px; font-size: 13px; font-family: inherit; background: #fff; }\n' +
+    '.wf-form__input:focus { outline: none; border-color: #4F46E5; }\n' +
+    '.wf-form__textarea { width: 100%; min-height: 96px; padding: 10px 12px; border: 1px solid var(--ld-line, #E5E5EA); border-radius: 6px; font-size: 13px; font-family: inherit; resize: vertical; }\n' +
+    '.wf-form__select { position: relative; }\n' +
+    '.wf-form__select::after { content: ""; position: absolute; right: 14px; top: 50%; width: 8px; height: 8px; border-right: 1.5px solid #888; border-bottom: 1.5px solid #888; transform: translateY(-70%) rotate(45deg); pointer-events: none; }\n' +
+    '.wf-form__footer { display: flex; gap: 8px; justify-content: flex-end; padding-top: 16px; }\n' +
+    /* TIMELINE */
+    '.wf-timeline { padding: 16px 0 24px; max-width: 720px; list-style: none; margin: 0; position: relative; }\n' +
+    '.wf-timeline::before { content: ""; position: absolute; left: 7px; top: 8px; bottom: 8px; width: 2px; background: var(--ld-line, #E5E5EA); }\n' +
+    '.wf-timeline__item { position: relative; padding: 0 0 16px 28px; }\n' +
+    '.wf-timeline__dot { position: absolute; left: 0; top: 6px; width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 3px solid #4F46E5; }\n' +
+    '.wf-timeline__time { font-size: 11.5px; color: #888; font-variant-numeric: tabular-nums; }\n' +
+    '.wf-timeline__head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }\n' +
+    '.wf-timeline__actor { font-size: 13px; font-weight: 700; color: #1F1F26; }\n' +
+    '.wf-timeline__action { font-size: 13px; color: #1F1F26; }\n' +
+    '.wf-timeline__detail { font-size: 12.5px; color: #666; line-height: 1.5; padding: 8px 12px; background: #FAFBFC; border-radius: 6px; margin-top: 6px; }\n' +
+    /* status-chip 가용 */
+    '.wf-chip { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 4px; font-size: 11.5px; font-weight: 600; background: #F2F2F4; color: #555; }\n' +
+    '.wf-chip--ok { background: #E8F7EC; color: #28A745; }\n' +
+    '.wf-chip--warn { background: #FFF7E6; color: #D88500; }\n' +
+    '.wf-chip--err { background: #FCEAE9; color: #D9332B; }\n' +
+    '.wf-chip--info { background: #E8F1FF; color: #2566E8; }\n' +
+    '';
+
+  function ensureLayoutCss(doc) {
+    if (!doc || !doc.head) return;
+    if (doc.getElementById('wf-layout-css')) return;
+    var s = doc.createElement('style');
+    s.id = 'wf-layout-css';
+    s.textContent = WF_LAYOUT_CSS;
+    doc.head.appendChild(s);
+  }
+
+  function statusChipClass(status) {
+    var s = String(status || '').toLowerCase();
+    if (/완료|성공|승인|활성|운영|ok/.test(s)) return 'wf-chip wf-chip--ok';
+    if (/오류|실패|반려|err|중지|err/.test(s)) return 'wf-chip wf-chip--err';
+    if (/대기|보류|warn|예정/.test(s)) return 'wf-chip wf-chip--warn';
+    if (/처리중|진행|info|검토/.test(s)) return 'wf-chip wf-chip--info';
+    return 'wf-chip';
+  }
+
+  function renderLayoutByKind(kind, spec, prd) {
+    var data = spec.layoutData || {};
+    if (kind === 'cards')         return renderCardsLayout(data);
+    if (kind === 'master-detail') return renderSplitLayout(data);
+    if (kind === 'kanban')        return renderKanbanLayout(data);
+    if (kind === 'dashboard')     return renderDashboardLayout(data, spec);
+    if (kind === 'form')          return renderFormLayout(data, spec);
+    if (kind === 'timeline')      return renderTimelineLayout(data);
+    return '<div class="wf-section" style="padding: 32px; color: #888;">알 수 없는 layout: ' + escH(kind) + '</div>';
+  }
+
+  function renderCardsLayout(data) {
+    var cards = (data.cards || []);
+    if (!cards.length) {
+      // fallback dummy 8장
+      cards = [];
+      for (var i = 0; i < 8; i++) cards.push({ title: '카드 항목 ' + (i + 1), subtitle: '서브 정보', status: '활성', meta: ['메타1', '메타2'] });
+    }
+    var cardsHtml = cards.map(function (c) {
+      var metaHtml = (c.meta || []).map(function (m) { return '<span>' + escH(m) + '</span>'; }).join('');
+      return '<article class="wf-card">' +
+        '<div class="wf-card__thumb"></div>' +
+        '<h3 class="wf-card__title">' + escH(c.title || '제목') + '</h3>' +
+        (c.subtitle ? '<p class="wf-card__sub">' + escH(c.subtitle) + '</p>' : '') +
+        (metaHtml ? '<div class="wf-card__meta">' + metaHtml + '</div>' : '') +
+        (c.status ? '<div class="wf-card__chips"><span class="' + statusChipClass(c.status) + '">' + escH(c.status) + '</span></div>' : '') +
+        '</article>';
+    }).join('');
+    return '<div class="wf-cards">' + cardsHtml + '</div>';
+  }
+
+  function renderSplitLayout(data) {
+    var list = data.list || [];
+    if (!list.length) for (var i = 0; i < 8; i++) list.push({ title: '항목 ' + (i + 1), subtitle: '서브 정보', status: '활성' });
+    var detail = data.detail || { sections: [{ title: '기본 정보', fields: [{ label: '필드 1', value: '값 1' }, { label: '필드 2', value: '값 2' }] }] };
+    var listHtml = list.map(function (it, i) {
+      return '<div class="wf-split__item' + (i === 0 ? ' is-active' : '') + '">' +
+        '<span class="wf-split__item-title">' + escH(it.title || '항목') + '</span>' +
+        (it.subtitle ? '<span class="wf-split__item-sub">' + escH(it.subtitle) + '</span>' : '') +
+        '</div>';
+    }).join('');
+    var detailHtml = (detail.sections || []).map(function (s) {
+      var fields = (s.fields || []).map(function (f) {
+        return '<dt>' + escH(f.label || '') + '</dt><dd>' + escH(f.value || '-') + '</dd>';
+      }).join('');
+      return '<div class="wf-split__detail-section"><h3>' + escH(s.title || '섹션') + '</h3>' +
+        '<dl class="wf-split__detail-fields">' + fields + '</dl></div>';
+    }).join('');
+    return '<div class="wf-split">' +
+      '<aside class="wf-split__list">' +
+        '<div class="wf-split__search"><input type="text" placeholder="검색" /></div>' +
+        '<div class="wf-split__items">' + listHtml + '</div>' +
+      '</aside>' +
+      '<section class="wf-split__detail">' + detailHtml + '</section>' +
+      '</div>';
+  }
+
+  function renderKanbanLayout(data) {
+    var cols = data.columns || [];
+    if (!cols.length) cols = [
+      { label: '대기', count: 3, cards: [{ title: '항목 1', meta: ['홍길동', '2026-05-01'] }, { title: '항목 2', meta: ['김민준', '2026-05-02'] }, { title: '항목 3', meta: ['이서연', '2026-05-02'] }] },
+      { label: '처리중', count: 2, cards: [{ title: '항목 4', meta: ['박지훈', '2026-05-03'] }, { title: '항목 5', meta: ['최유진', '2026-05-03'] }] },
+      { label: '완료', count: 4, cards: [{ title: '항목 6', meta: ['홍길동', '2026-05-04'] }, { title: '항목 7', meta: ['김민준', '2026-05-04'] }] },
+    ];
+    var colsHtml = cols.map(function (col) {
+      var cardsHtml = (col.cards || []).map(function (c) {
+        var metaHtml = (c.meta || []).map(function (m) { return '<span>' + escH(m) + '</span>'; }).join('');
+        return '<div class="wf-kanban__card">' +
+          '<h4 class="wf-kanban__card-title">' + escH(c.title || '항목') + '</h4>' +
+          (metaHtml ? '<div class="wf-kanban__card-meta">' + metaHtml + '</div>' : '') +
+          '</div>';
+      }).join('');
+      return '<div class="wf-kanban__col">' +
+        '<div class="wf-kanban__col-head">' +
+          '<span class="wf-kanban__col-label">' + escH(col.label || '컬럼') + '</span>' +
+          '<span class="wf-kanban__col-count">' + (col.count != null ? col.count : (col.cards || []).length) + '</span>' +
+        '</div>' +
+        '<div class="wf-kanban__cards">' + cardsHtml + '</div>' +
+        '</div>';
+    }).join('');
+    return '<div class="wf-kanban">' + colsHtml + '</div>';
+  }
+
+  function renderDashboardLayout(data, spec) {
+    var stats = data.stats || [{ label: '전체', value: '1,234', delta: '+12' }, { label: '활성', value: '987' }, { label: '오류', value: '12', delta: '-3' }, { label: '대기', value: '45' }];
+    var charts = data.charts || [{ title: '추이', hint: 'line chart' }, { title: '비율', hint: 'pie chart' }];
+    var statsHtml = stats.map(function (s) {
+      var deltaCls = !s.delta ? '' : (/^-/.test(String(s.delta)) ? 'wf-stat__delta--down' : 'wf-stat__delta--up');
+      return '<div class="wf-stat">' +
+        '<div class="wf-stat__label">' + escH(s.label || '') + '</div>' +
+        '<div class="wf-stat__value">' + escH(s.value || '0') + '</div>' +
+        (s.delta ? '<span class="wf-stat__delta ' + deltaCls + '">' + escH(s.delta) + '</span>' : '') +
+        '</div>';
+    }).join('');
+    var chartsHtml = charts.map(function (c) {
+      return '<div class="wf-chart"><h3 class="wf-chart__title">' + escH(c.title || '차트') + '</h3>' +
+        '<div class="wf-chart__placeholder">' + escH(String(c.hint || 'CHART').toUpperCase()) + '</div></div>';
+    }).join('');
+    return '<div class="wf-dashboard">' +
+      '<div class="wf-dashboard__stats">' + statsHtml + '</div>' +
+      '<div class="wf-dashboard__charts">' + chartsHtml + '</div>' +
+      '</div>';
+  }
+
+  function renderFormLayout(data, spec) {
+    var sections = data.sections || [{ title: '기본 정보', fields: [{ label: '이름', type: 'text', placeholder: '예: 홍길동' }, { label: '카테고리', type: 'select' }, { label: '설명', type: 'textarea' }] }];
+    var sectionsHtml = sections.map(function (s) {
+      var fieldsHtml = (s.fields || []).map(function (f) {
+        var t = f.type || 'text';
+        var placeholder = f.placeholder || (f.label ? f.label + ' 입력' : '');
+        var input;
+        if (t === 'textarea')      input = '<textarea class="wf-form__textarea" placeholder="' + escH(placeholder) + '"></textarea>';
+        else if (t === 'select')   input = '<div class="wf-form__select"><input class="wf-form__input" placeholder="' + escH(placeholder) + '" readonly /></div>';
+        else if (t === 'number')   input = '<input type="number" class="wf-form__input" placeholder="' + escH(placeholder) + '" />';
+        else if (t === 'date')     input = '<input type="date" class="wf-form__input" />';
+        else                       input = '<input type="text" class="wf-form__input" placeholder="' + escH(placeholder) + '" />';
+        return '<label class="wf-form__label">' + escH(f.label || '') + '</label><div>' + input + '</div>';
+      }).join('');
+      return '<section class="wf-form__section">' +
+        '<h3 class="wf-form__section-title">' + escH(s.title || '섹션') + '</h3>' +
+        '<div class="wf-form__fields">' + fieldsHtml + '</div>' +
+        '</section>';
+    }).join('');
+    return '<div class="wf-form">' + sectionsHtml +
+      '<div class="wf-form__footer">' +
+        '<button class="scm-button" type="button">취소</button>' +
+        '<button class="scm-button scm-button--primary" type="button">저장</button>' +
+      '</div>' +
+      '</div>';
+  }
+
+  function renderTimelineLayout(data) {
+    var items = data.items || [];
+    if (!items.length) for (var i = 0; i < 6; i++) items.push({ time: '2026-05-0' + (i + 1) + ' 14:23', actor: '홍길동', action: '항목 변경', detail: '필드 A 를 "값 1" → "값 2" 로 변경.' });
+    var itemsHtml = items.map(function (it) {
+      return '<li class="wf-timeline__item">' +
+        '<span class="wf-timeline__dot"></span>' +
+        '<div class="wf-timeline__time">' + escH(it.time || '') + '</div>' +
+        '<div class="wf-timeline__head">' +
+          '<span class="wf-timeline__actor">' + escH(it.actor || '시스템') + '</span>' +
+          '<span class="wf-timeline__action">' + escH(it.action || '') + '</span>' +
+        '</div>' +
+        (it.detail ? '<div class="wf-timeline__detail">' + escH(it.detail) + '</div>' : '') +
+        '</li>';
+    }).join('');
+    return '<ul class="wf-timeline">' + itemsHtml + '</ul>';
+  }
+
   // wireframe-template.html 의 DOM 을 PRD spec 으로 강제 변형
   function injectPrd(iframe, prd, spec) {
     console.log('[SCM Sim] injectPrd 호출됨', { hasSpec: !!spec, prd: prd && prd.name, columns: spec && spec.table && spec.table.columns && spec.table.columns.length });
@@ -773,6 +1026,20 @@
           btn.textContent = a.label || '';
           actionsContainer.appendChild(btn);
         });
+      }
+
+      // === 4-1. layout 디스패치 — table 이 아니면 main 의 filter-bar 이하 영역을
+      //          layout 별 마크업으로 교체하고 종료 (table 분기 5~9 스킵).
+      var layoutKind = spec.layout || 'table';
+      if (layoutKind !== 'table') {
+        ensureLayoutCss(doc);
+        var mainEl = doc.querySelector('main');
+        if (mainEl) {
+          var pageHeadEl = mainEl.querySelector('.scm-page-head');
+          mainEl.innerHTML = (pageHeadEl ? pageHeadEl.outerHTML : '') +
+            renderLayoutByKind(layoutKind, spec, prd);
+        }
+        return true;
       }
 
       // === 5. 필터 — 갯수 + 라벨 ===
@@ -919,8 +1186,9 @@
 
     // 2-1) deep clone — alternatives 가 main spec 의 table/filters reference 공유 차단
     spec = JSON.parse(JSON.stringify(spec));
+    if (!spec.layout) spec.layout = 'table';
 
-    // 3) AI 응답 검증/보강 — 필터 ↔ 컬럼 1:1 매칭 강제
+    // 3) AI 응답 검증/보강 — 필터 ↔ 컬럼 1:1 매칭 강제 (table 레이아웃에만 적용)
     reconcileSpec(spec);
     console.log('[SCM Sim] reconcileSpec 후 — main columns:', ((spec.table && spec.table.columns) || []).map(function(c){return c.label;}));
 
@@ -928,13 +1196,15 @@
     var allVariants = [{ label: '메인 (PRD 그대로)', spec: spec }];
     if (spec.alternatives && spec.alternatives.length) {
       spec.alternatives.forEach(function (alt) {
-        // alt 는 메인의 pageHead/empty 를 공유하되 filters/table 만 alt 자체
+        // alt 는 메인의 pageHead/empty 를 공유하되 filters/table/layout 만 alt 자체
         var altSpec = {
           pageHead: spec.pageHead,
           filters: alt.filters || spec.filters,
           table: alt.table || spec.table,
           empty: spec.empty,
           customNotes: alt.customNotes || '',
+          layout: alt.layout || 'table',
+          layoutData: alt.layoutData || null,
         };
         allVariants.push({ label: alt.label || '변형', spec: altSpec });
       });
@@ -1006,7 +1276,15 @@
   function reconcileSpec(spec) {
     if (!spec) { console.warn('[SCM Sim] reconcileSpec: spec 없음'); return; }
     var fixOne = function (s, tag) {
-      if (!s || !s.table) {
+      if (!s) return;
+      // layout != 'table' 인 경우 컬럼/필터 보정 스킵 — 카드/칸반/대시보드/폼/타임라인은
+      // 자체 layoutData 로 렌더되므로 table 강제 보강하면 오히려 의미 없는 데이터 생김
+      var layoutKind = s.layout || (s.table ? 'table' : 'table');
+      if (layoutKind !== 'table' && layoutKind !== 'dashboard' && layoutKind !== 'master-detail') {
+        console.log('[SCM Sim] reconcileSpec ' + tag + ': layout=' + layoutKind + ' — 테이블 보강 스킵');
+        return;
+      }
+      if (!s.table) {
         console.warn('[SCM Sim] reconcileSpec ' + tag + ': spec.table 없음');
         return;
       }
@@ -1128,6 +1406,15 @@
 
     var pageSub = (spec.pageHead && spec.pageHead.sub) || '-';
     document.getElementById('spec-sub').textContent = pageSub;
+
+    // layout — table / cards / master-detail / kanban / dashboard / form / timeline
+    var layoutEl = document.getElementById('spec-layout');
+    if (layoutEl) {
+      var l = spec.layout || 'table';
+      var emoji = ({ table: '🧮', cards: '🃏', 'master-detail': '📑', kanban: '📋', dashboard: '📊', form: '📝', timeline: '🕒' })[l] || '🧩';
+      layoutEl.textContent = emoji + '  ' + l;
+      layoutEl.style.fontWeight = '600';
+    }
 
     // customNotes — 'AI 추천 (자유 제안)' variant 의 자유 형식 제안 메모
     var notesRow = document.getElementById('spec-notes-row');
@@ -1364,7 +1651,10 @@
       '',
       '[규칙]',
       '· 사용자 요청과 무관한 부분은 그대로 유지 — 함부로 다른 곳까지 바꾸지 말 것.',
-      '· 필터·컬럼·액션·rowSamples 모두 일관성 유지 (필터 ↔ 컬럼 1:1 매칭).',
+      '· spec.layout 은 그대로 유지하되, 사용자가 명시적으로 다른 형태 (카드·칸반·폼·대시보드·마스터-디테일·타임라인) 를 요청하면 변경.',
+      '  layout 변경 시에는 layoutData 도 그 layout 에 맞춰 채울 것 (cards/columns/sections/items/list+detail/stats+charts).',
+      '· filters · columns · rowSamples 는 layout="table" 일 때만 의미 있음 — 다른 layout 은 layoutData 가 메인.',
+      '· filters ↔ columns 1:1 매칭 (table layout 한정).',
       '· customNotes 는 사용자가 신규 컴포넌트/레이아웃을 요청한 경우에만 한국어로 짧게 작성.',
       '· alternatives 는 출력하지 말 것 — 메인 spec 만.',
       '',
@@ -1469,7 +1759,39 @@
 
     var prompt = [
       '당신은 SCM/이커머스 시스템에 정통한 시니어 PM 이자 인터랙션 디자이너입니다.',
-      'PRD 본문을 **줄 단위로 정독** 해서 페이지의 진짜 구조 (컬럼/필터/액션/dummy데이터) 를 추출하세요.',
+      'PRD 본문을 **줄 단위로 정독** 해서 페이지의 진짜 구조 + 가장 적합한 **레이아웃** 을 결정하세요.',
+      '',
+      '[★★★ 레이아웃 선택 — 가장 먼저 결정 ★★★]',
+      'PRD 의 작업 성격에 맞춰 다음 7개 layout 중 하나를 spec.layout 에 지정. 무조건 "table" 만 쓰는 건 금지.',
+      '',
+      '· "table"          — 다건 데이터 조회/관리 (목록 + 필터 + 검색). 운영 관리 페이지의 기본.',
+      '· "cards"          — 시각 정보 위주의 카탈로그 (썸네일·상품·매장·캠페인). 표보다 카드가 더 직관적인 경우.',
+      '· "master-detail"  — 좌측 목록 + 우측 상세. 한 항목을 깊게 보거나 편집해야 하는 흐름.',
+      '· "kanban"         — 상태 흐름이 핵심 (대기→처리중→완료, 요청→승인→반려). 워크플로우/티켓.',
+      '· "dashboard"      — 통계 + 차트 + 요약 (KPI/현황 모니터링).',
+      '· "form"           — 등록/편집 화면. 입력 필드 + 섹션 + 저장 버튼.',
+      '· "timeline"       — 시간순 이벤트/감사로그/이력 추적.',
+      '',
+      'layout 결정 기준 (PRD 본문 키워드 매칭):',
+      '  · "등록", "신규", "추가", "수정/편집 페이지" → form',
+      '  · "상태 흐름", "단계", "승인/반려", "처리중/완료" → kanban',
+      '  · "이력", "감사 로그", "변경 이력", "활동" → timeline',
+      '  · "현황", "대시보드", "KPI", "요약 통계" → dashboard',
+      '  · "상세 보기", "1건 깊이 편집", "리스트 + 상세" → master-detail',
+      '  · "카탈로그", "썸네일 위주", "상품 갤러리", "매장 목록 카드" → cards',
+      '  · 그 외 일반 조회/관리 → table',
+      '',
+      'layout 별 추가 데이터 — spec.layoutData 에 다음 형태로:',
+      '  · cards:        layoutData.cards = [{title, subtitle, status, thumb?, meta:[...]}, ...] (8~12개)',
+      '  · master-detail: layoutData.list = [{title, subtitle, status}, ...] (8~10개), layoutData.detail = {sections:[{title, fields:[{label, value}]}]}',
+      '  · kanban:       layoutData.columns = [{label:"대기", count:3, cards:[{title, meta}]}, ...]',
+      '  · dashboard:    layoutData.stats = [{label, value, delta?}, ...] (4~6개), layoutData.charts = [{title, hint}, ...] (1~2개)',
+      '  · form:         layoutData.sections = [{title, fields:[{label, type:"text|select|textarea|date|number", placeholder?}]}, ...]',
+      '  · timeline:     layoutData.items = [{time, actor, action, detail?}, ...] (8~12개)',
+      '  · table:        layoutData 불필요 — 기존 filters/table.columns/rowSamples 사용.',
+      '',
+      'layout != "table" 인 경우 filters 와 table.columns 는 fallback 용으로만 채우고 (선택사항),',
+      'layoutData 가 메인 콘텐츠.',
       '',
       '[★ PRD 활용도 — 최우선]',
       '1) PRD 본문에 명시된 항목은 **빠짐없이 모두** 추출. 누락 절대 X.',
@@ -1524,17 +1846,15 @@
       '    - "모바일 친화" — 컬럼 적게, 핵심 정보만',
       '',
       '· 3 번째 alternative — label "AI 추천 (자유 제안)".',
-      '  PRD 본문이 일반 CRUD 테이블 패턴에 잘 맞지 않거나, 더 효과적인 구조가 있다면',
-      '  **디자인시스템에 현재 없는 컴포넌트/레이아웃이라도** 자유롭게 제안.',
-      '  예: 카드 그리드, 칸반 보드, 마스터-디테일, 타임라인, 캘린더, 스플릿 뷰,',
-      '       2단 wizard, 차트+테이블 대시보드, 트리뷰, 상세 사이드 drawer 등.',
+      '  PRD 본문 기반으로 **메인과 다른 layout** 을 선택해서 layoutData 까지 채우세요.',
+      '  메인이 "table" 이면 cards / master-detail / kanban / dashboard / form / timeline 중 적합한 것.',
+      '  메인이 이미 비-table 이면 또 다른 비-table 레이아웃.',
       '  이 variant 는 **반드시 customNotes 필드** 에 한국어로 2~5줄 설명 포함:',
-      '    - 어떤 레이아웃/패턴인지 (예: "좌측 칸반 + 우측 상세 drawer")',
+      '    - 어떤 레이아웃/패턴인지 (예: "좌측 칸반(상태별 컬럼) + 우측 상세 drawer")',
       '    - 왜 이 PRD 에 더 적합한지 (PRD 본문 근거 1~2문장 인용)',
-      '    - 어떤 신규 컴포넌트가 필요한지 (예: "kanban-column, drawer-detail")',
-      '  filters/table 은 그래도 채워서 — fallback 으로 표 렌더링은 가능하게.',
+      '    - 어떤 사용자 시나리오에 강점인지',
       '',
-      '메인 + 1·2 번째 alternative 와 3 번째는 분명히 다른 컬럼/필터 조합으로 구성.',
+      '메인 + 1·2 번째 alternative 와 3 번째는 분명히 다른 layout/컬럼/필터 조합으로 구성.',
       '',
       '[페이지 메타]',
       '- 이름: ' + (prd.name || ''),
@@ -1549,6 +1869,7 @@
       '',
       '[출력 — JSON only, 다른 텍스트 금지]',
       '{',
+      '  "layout": "table",',
       '  "pageHead": {',
       '    "title": "페이지명",',
       '    "actions": [{"label":"신규 등록","kind":"primary"},{"label":"일괄 업로드","kind":"ghost"}]',
@@ -1565,11 +1886,18 @@
       '  },',
       '  "empty": "등록된 항목이 없습니다",',
       '  "alternatives": [',
-      '    {"label":"상세 정보 강조","filters":[{"label":"..."}],"table":{"checkable":true,"columns":[...],"rowSamples":[...]}},',
-      '    {"label":"운영 효율 강조","filters":[{"label":"..."}],"table":{"checkable":true,"columns":[...],"rowSamples":[...]}},',
-      '    {"label":"AI 추천 (자유 제안)","customNotes":"좌측 칸반(상태별 컬럼) + 우측 상세 drawer 조합. PRD 의 \\"상태 흐름이 핵심\\" 부분을 시각화하기 위함. 신규 컴포넌트: kanban-column, drawer-detail.","filters":[{"label":"..."}],"table":{"checkable":true,"columns":[...],"rowSamples":[...]}}',
+      '    {"label":"상세 정보 강조","layout":"table","filters":[{"label":"..."}],"table":{"checkable":true,"columns":[...],"rowSamples":[...]}},',
+      '    {"label":"운영 효율 강조","layout":"table","filters":[{"label":"..."}],"table":{"checkable":true,"columns":[...],"rowSamples":[...]}},',
+      '    {"label":"AI 추천 (자유 제안)","layout":"kanban","customNotes":"상태 흐름(대기→처리중→완료)이 핵심인 페이지라 칸반이 더 적합. 한 화면에서 진행 상태별 분포를 즉시 파악 가능. PRD 의 \\"상태 단계별 처리\\" 부분 근거.","layoutData":{"columns":[{"label":"대기","count":3,"cards":[{"title":"PO-001","meta":["무탠다드","2026-05-01"]}]},{"label":"처리중","count":2,"cards":[...]},{"label":"완료","count":4,"cards":[...]}]}}',
       '  ]',
       '}',
+      '',
+      '[layoutData 예시 — 각 layout 별]',
+      '· cards: {"cards":[{"title":"상품A","subtitle":"무탠다드","status":"활성","meta":["₩39,000","재고 120"]}]}',
+      '· master-detail: {"list":[{"title":"홍대점","subtitle":"매장 코드 ST-001","status":"운영중"}],"detail":{"sections":[{"title":"기본 정보","fields":[{"label":"매장명","value":"홍대점"},{"label":"주소","value":"서울 마포..."}]}]}}',
+      '· dashboard: {"stats":[{"label":"전체 SKU","value":"12,453","delta":"+128"},{"label":"활성","value":"11,209"}],"charts":[{"title":"일별 등록 추이","hint":"line chart"}]}',
+      '· form: {"sections":[{"title":"상품 기본 정보","fields":[{"label":"상품명","type":"text","placeholder":"예: 데님 셔츠"},{"label":"카테고리","type":"select"},{"label":"설명","type":"textarea"}]}]}',
+      '· timeline: {"items":[{"time":"2026-05-01 14:23","actor":"홍길동","action":"승인 요청","detail":"PO-2026-001"}]}',
     ].filter(Boolean).join('\n');
 
     var res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -1583,7 +1911,7 @@
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 8000,
-        system: '당신은 JSON 만 출력하는 API 입니다. 응답은 반드시 { 로 시작 } 로 끝. markdown 코드블록 / 설명 / 인사말 절대 금지. alternatives 는 반드시 3개 포함 — 마지막 1개는 label "AI 추천 (자유 제안)" 이며 customNotes 필수.',
+        system: '당신은 JSON 만 출력하는 API 입니다. 응답은 반드시 { 로 시작 } 로 끝. markdown 코드블록 / 설명 / 인사말 절대 금지. spec.layout 필수 (table/cards/master-detail/kanban/dashboard/form/timeline 중 PRD 에 가장 적합한 1개). alternatives 는 반드시 3개 포함 — 마지막 1개는 label "AI 추천 (자유 제안)" + 메인과 다른 layout + customNotes 필수.',
         messages: [{ role: 'user', content: prompt }],
       }),
     });
