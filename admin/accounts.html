@@ -136,6 +136,26 @@
     #loadingMsg { padding: 32px; text-align: center; color: var(--fg-mute); }
     #accessDenied { padding: 64px 0; text-align: center; color: var(--fg-mute); display: none; }
 
+    /* 요청 섹션 */
+    .sec-title {
+      font-size: 15px; font-weight: 700; margin: 0 0 10px;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .sec-count {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 22px; height: 22px; padding: 0 8px;
+      background: var(--warn); color: #fff; border-radius: 999px;
+      font-size: 11px; font-weight: 700;
+    }
+    .req-role-sel {
+      height: 30px; padding: 0 8px;
+      background: var(--surface); color: var(--fg);
+      border: 1px solid var(--line); border-radius: 6px;
+      font-family: inherit; font-size: 12px;
+    }
+    .req-actions { display: flex; gap: 6px; justify-content: flex-end; }
+    .btn--sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+
     /* iframe-modal 모드 — 부모 모달이 이미 헤더/닫기를 제공하므로
        자체 topbar / 페이지 타이틀은 숨김. min-width / 외곽 padding 도 축소. */
     body.is-modal { background: #FFFFFF; min-width: 0; }
@@ -167,6 +187,23 @@
     </div>
 
     <div id="content" style="display:none;">
+      <!-- 계정 생성 요청 (pending) — super/admin 만 노출. 0건이면 숨김. -->
+      <div id="reqSection" style="display:none; margin-bottom:24px;">
+        <h2 class="sec-title">대기 중 요청 <span id="reqCount" class="sec-count">0</span></h2>
+        <table id="reqTbl">
+          <thead>
+            <tr>
+              <th>이메일</th>
+              <th>이름</th>
+              <th>요청일</th>
+              <th>승인 시 역할</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="reqTbody"></tbody>
+        </table>
+      </div>
+
       <div class="toolbar">
         <div class="stats">
           <span>전체 <b id="cntAll">0</b></span>
@@ -342,8 +379,86 @@
       const allowed = u.role === 'super' ? ['super', 'admin', ...memberRoles] : memberRoles;
       sel.innerHTML = allowed.map(r => `<option value="${r}">${roleLabel(r)}</option>`).join('');
 
-      await loadUsers();
+      await Promise.all([loadUsers(), loadRequests()]);
     }
+
+    // ===== 계정 생성 요청 (super/admin) =====
+    function fmtRequestTime(ts) {
+      if (!ts) return '—';
+      const d = new Date(ts * 1000);
+      return d.toLocaleString('ko-KR', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+    }
+    async function loadRequests() {
+      // dev/pm 권한은 요청 처리 불가 — 섹션 자체 미노출.
+      if (!['super', 'admin'].includes(me.role)) return;
+      const res = await api('/api/account-requests');
+      if (!res.ok) {
+        // 마이그레이션 미적용 등으로 실패하면 섹션 숨김 — 콘솔에만 로그.
+        console.warn('account-requests load failed:', res.status, res.data);
+        return;
+      }
+      const requests = res.data.requests || [];
+      const sec = $('reqSection');
+      $('reqCount').textContent = requests.length;
+      if (requests.length === 0) { sec.style.display = 'none'; return; }
+      sec.style.display = 'block';
+
+      const memberRoles = ['biz', 'pm', 'dev', 'pd'];
+      const allowed = me.role === 'super' ? ['super', 'admin', ...memberRoles] : memberRoles;
+      const defaultRole = me.role === 'super' ? 'biz' : 'biz';
+
+      $('reqTbody').innerHTML = requests.map(r => `
+        <tr data-req-id="${r.id}">
+          <td class="email">${escapeHtml(r.email)}</td>
+          <td>${escapeHtml(r.name || '—')}</td>
+          <td class="meta">${fmtRequestTime(r.created_at)}</td>
+          <td>
+            <select class="req-role-sel" data-role-for="${r.id}">
+              ${allowed.map(rr => `<option value="${rr}"${rr === defaultRole ? ' selected' : ''}>${roleLabel(rr)}</option>`).join('')}
+            </select>
+          </td>
+          <td class="actions">
+            <div class="req-actions">
+              <button class="btn btn--ghost btn--sm" data-reject="${r.id}">거절</button>
+              <button class="btn btn--primary btn--sm" data-approve="${r.id}">승인</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+    document.addEventListener('click', async (e) => {
+      const approveBtn = e.target.closest('[data-approve]');
+      const rejectBtn  = e.target.closest('[data-reject]');
+      if (approveBtn) {
+        const id = approveBtn.dataset.approve;
+        const role = document.querySelector(`[data-role-for="${id}"]`)?.value;
+        if (!role) return;
+        approveBtn.disabled = true; approveBtn.textContent = '승인 중...';
+        const res = await api(`/api/account-requests/${id}/approve`, {
+          method: 'POST', body: JSON.stringify({ role }),
+        });
+        if (!res.ok) {
+          alert('승인 실패: ' + (res.data?.error || res.status));
+          approveBtn.disabled = false; approveBtn.textContent = '승인';
+          return;
+        }
+        await Promise.all([loadRequests(), loadUsers()]);
+      } else if (rejectBtn) {
+        const id = rejectBtn.dataset.reject;
+        const reason = prompt('거절 사유 (선택)');
+        if (reason === null) return; // 취소
+        rejectBtn.disabled = true; rejectBtn.textContent = '거절 중...';
+        const res = await api(`/api/account-requests/${id}/reject`, {
+          method: 'POST', body: JSON.stringify({ reason }),
+        });
+        if (!res.ok) {
+          alert('거절 실패: ' + (res.data?.error || res.status));
+          rejectBtn.disabled = false; rejectBtn.textContent = '거절';
+          return;
+        }
+        await loadRequests();
+      }
+    });
 
     async function loadUsers() {
       const res = await api('/api/users');

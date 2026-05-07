@@ -531,6 +531,140 @@ export async function onRequest(context) {
       });
     }
 
+    // ========== /api/account-requests (public POST, admin GET) ==========
+    // 미가입 사용자가 로그인 화면에서 계정 생성을 요청하면 pending 큐에
+    // 들어간다. super/admin 이 GET 으로 목록 조회, /:id/approve 또는
+    // /:id/reject 로 처리.
+    if (path === '/api/account-requests') {
+      if (method === 'POST') {
+        // 공개 엔드포인트 — 로그인 불필요.
+        const { email, name, password } = await readBody();
+        if (!email || !password) return json({ error: 'invalid' }, 400);
+        if (String(password).length < 8) return json({ error: 'password_too_short' }, 400);
+
+        const emailLower = String(email).toLowerCase().trim();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailLower)) {
+          return json({ error: 'invalid_email' }, 400);
+        }
+
+        // 이미 가입된 이메일은 거부.
+        const existingUser = await env.DB.prepare(
+          `SELECT id FROM users WHERE email = ? COLLATE NOCASE`
+        ).bind(emailLower).first();
+        if (existingUser) return json({ error: 'email_exists' }, 409);
+
+        // 같은 이메일의 pending 요청이 이미 있으면 거부.
+        const existingReq = await env.DB.prepare(
+          `SELECT id FROM account_requests WHERE email = ? COLLATE NOCASE AND status = 'pending'`
+        ).bind(emailLower).first();
+        if (existingReq) return json({ error: 'request_pending' }, 409);
+
+        const hash = await hashPassword(password);
+        const result = await env.DB.prepare(
+          `INSERT INTO account_requests (email, name, password_hash, status)
+           VALUES (?, ?, ?, 'pending') RETURNING id`
+        ).bind(emailLower, (name || '').trim() || null, hash).first();
+
+        await audit(env, request, null, null, 'account_request_create', {
+          request_id: result.id,
+          email: emailLower,
+        });
+
+        return json({ ok: true, id: result.id });
+      }
+
+      if (method === 'GET') {
+        const actor = await getCurrentUser(request, env);
+        if (!actor) return json({ error: 'unauthorized' }, 401);
+        if (!['super', 'admin'].includes(actor.role)) return json({ error: 'forbidden' }, 403);
+
+        // 기본은 pending 만, ?status=all 이면 전체.
+        const statusFilter = url.searchParams.get('status');
+        const sql = statusFilter === 'all'
+          ? `SELECT r.id, r.email, r.name, r.status, r.reject_reason, r.created_at,
+                    r.decided_at, r.decided_by_user_id, r.approved_user_id,
+                    d.email AS decided_by_email
+             FROM account_requests r
+             LEFT JOIN users d ON d.id = r.decided_by_user_id
+             ORDER BY r.created_at DESC
+             LIMIT 200`
+          : `SELECT r.id, r.email, r.name, r.status, r.reject_reason, r.created_at,
+                    r.decided_at, r.decided_by_user_id, r.approved_user_id,
+                    d.email AS decided_by_email
+             FROM account_requests r
+             LEFT JOIN users d ON d.id = r.decided_by_user_id
+             WHERE r.status = 'pending'
+             ORDER BY r.created_at DESC
+             LIMIT 200`;
+        const rows = await env.DB.prepare(sql).all();
+        return json({ requests: rows.results || [] });
+      }
+
+      return json({ error: 'method_not_allowed' }, 405);
+    }
+
+    // ========== /api/account-requests/:id/(approve|reject) ==========
+    const reqDecideMatch = path.match(/^\/api\/account-requests\/(\d+)\/(approve|reject)$/);
+    if (reqDecideMatch && method === 'POST') {
+      const actor = await getCurrentUser(request, env);
+      if (!actor) return json({ error: 'unauthorized' }, 401);
+      if (!['super', 'admin'].includes(actor.role)) return json({ error: 'forbidden' }, 403);
+
+      const reqId = parseInt(reqDecideMatch[1], 10);
+      const action = reqDecideMatch[2];
+
+      const req = await env.DB.prepare(
+        `SELECT id, email, name, password_hash, status FROM account_requests WHERE id = ?`
+      ).bind(reqId).first();
+      if (!req) return json({ error: 'not_found' }, 404);
+      if (req.status !== 'pending') return json({ error: 'already_decided' }, 409);
+
+      if (action === 'approve') {
+        const { role } = await readBody();
+        if (!role || !ROLES.includes(role)) return json({ error: 'invalid_role' }, 400);
+        if (!canCreateRole(actor.role, role)) return json({ error: 'forbidden' }, 403);
+
+        // 승인 시점에 이메일 충돌 재확인.
+        const dup = await env.DB.prepare(
+          `SELECT id FROM users WHERE email = ? COLLATE NOCASE`
+        ).bind(req.email).first();
+        if (dup) return json({ error: 'email_exists' }, 409);
+
+        const ins = await env.DB.prepare(
+          `INSERT INTO users (email, name, role, password_hash, is_active, created_by_user_id)
+           VALUES (?, ?, ?, ?, 1, ?) RETURNING id`
+        ).bind(req.email, req.name, role, req.password_hash, actor.id).first();
+
+        await env.DB.prepare(
+          `UPDATE account_requests
+           SET status = 'approved', decided_at = unixepoch(), decided_by_user_id = ?,
+               approved_user_id = ?
+           WHERE id = ?`
+        ).bind(actor.id, ins.id, reqId).run();
+
+        await audit(env, request, actor.id, ins.id, 'account_request_approve', {
+          request_id: reqId, email: req.email, role,
+        });
+
+        return json({ ok: true, user_id: ins.id });
+      }
+
+      // reject
+      const { reason } = await readBody();
+      await env.DB.prepare(
+        `UPDATE account_requests
+         SET status = 'rejected', decided_at = unixepoch(), decided_by_user_id = ?,
+             reject_reason = ?
+         WHERE id = ?`
+      ).bind(actor.id, (reason || '').trim() || null, reqId).run();
+
+      await audit(env, request, actor.id, null, 'account_request_reject', {
+        request_id: reqId, email: req.email, reason: reason || null,
+      });
+
+      return json({ ok: true });
+    }
+
     // 404 fallthrough
     return json({ error: 'not_found', path }, 404);
   } catch (e) {
