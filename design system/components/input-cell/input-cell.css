@@ -38,6 +38,13 @@
   color: rgba(0, 0, 0, 0.20);
   cursor: not-allowed;
 }
+/* input error — bg #F311101A (faded red), border #F31110, fg #F31110 */
+.scm-input-cell__input.is-error,
+.scm-input-cell__input[aria-invalid="true"] {
+  background: rgba(243, 17, 16, 0.10);
+  border-color: #F31110;
+  color: #F31110;
+}
 .scm-input-cell__max {
   height: 36px; padding: 8px 10px;
   background: rgba(138, 138, 138, 0.10);
