@@ -312,7 +312,8 @@
       $('meRole').textContent = roleLabel(u.role);
       $('meRole').className = 'role-badge role-' + u.role;
 
-      if (!['super','admin'].includes(u.role)) {
+      // super/admin 외에 dev/pm 도 사용자 등록 가능. biz/pd 는 권한 없음.
+      if (!['super','admin','dev','pm'].includes(u.role)) {
         $('accessDenied').style.display = 'block';
         return;
       }

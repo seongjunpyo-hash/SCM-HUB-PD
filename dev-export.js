@@ -56,9 +56,11 @@
     return (ver.list || []).some((v) => v.id === ver.finalId) ? ver.finalId : null;
   }
   function isConfirmed() {
-    // 새 모델: finalId 존재 = 확정. 레거시: confirmed[page] 도 hold.
-    if (_finalIdForPage()) return true;
-    return !!confirmed[pageKey()];
+    // 핸드오프 다운로드는 super 가 명시적으로 finalize 한 버전 (finalId) 만
+    // 인정. 레거시 confirmed[page] 플래그는 stale 데이터 가능성이 있어
+    // 더 이상 fallback 으로 쓰지 않음 — '작업중' 인데 다운로드가 활성화되는
+    // 현상 방지.
+    return !!_finalIdForPage();
   }
   // 최종확정 — 현재 보고 있는 버전(activeId)을 finalId 로 승격.
   // 버전이 하나도 없으면 v1 을 자동 생성한 뒤 그걸 finalId 로 지정.
@@ -1089,12 +1091,12 @@ ${jsxBody}
       }
       .scm-dev-export-modal__head {
         position: relative;
-        display: flex; align-items: center; justify-content: center;
+        display: flex; align-items: center;
         gap: 12px;
-        padding: 18px 56px;             /* 위/아래 동일, 좌우 close 버튼 자리 확보 */
+        padding: 18px 56px 18px 20px;   /* 위/아래 동일, 우측 close 버튼 자리 확보 */
         border-bottom: 1px solid #F0F0F0;
       }
-      .scm-dev-export-modal__titles { text-align: center; }
+      .scm-dev-export-modal__titles { flex: 1; min-width: 0; text-align: left; }
       .scm-dev-export-modal__titles strong { display: block; font-size: 15px; font-weight: 700; }
       .scm-dev-export-modal__titles small {
         display: block; margin-top: 4px;
