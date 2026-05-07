@@ -134,7 +134,7 @@
     s.id = 'scm-voc-style';
     s.textContent = `
       .scm-voc-fab {
-        position: fixed; right: 162px; bottom: 24px; z-index: ${Z + 1};
+        position: fixed; right: 120px; bottom: 24px; z-index: ${Z + 1};
         display: inline-flex; align-items: center; gap: 8px;
         height: 48px; padding: 0 18px 0 16px;
         background: #6E6BFF; color: #fff;
@@ -146,9 +146,9 @@
         transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
         user-select: none;
       }
-      /* 코멘트 모드 (FAB.is-active) 일 때는 오른쪽으로 이동 — 편집 FAB 가 숨어서
-         오른쪽 자리가 비어보이지 않게. */
-      .scm-voc-fab.is-active { right: 24px; }
+      /* 코멘트 모드 (FAB.is-active) — right 고정, 텍스트 늘어나면서 좌측으로 자동 확장.
+         '코멘트' → '코멘트 모드 ON' 으로 라벨 변경이 width 증가를 만들어 줌. */
+      .scm-voc-fab.is-active { right: 120px; }
       .scm-voc-fab:hover { transform: translateY(-2px); box-shadow: 0 16px 32px rgba(110, 107, 255, 0.5), 0 6px 10px rgba(0,0,0,0.15); }
       .scm-voc-fab.is-active { background: #DC2626; box-shadow: 0 12px 28px rgba(220, 38, 38, 0.4), 0 4px 8px rgba(0,0,0,0.12); }
       .scm-voc-fab__icon { width: 18px; height: 18px; }
