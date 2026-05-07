@@ -103,7 +103,9 @@
     const submit = document.getElementById('submit');
     const errMsg = document.getElementById('errMsg');
     const params = new URLSearchParams(location.search);
-    const next = params.get('next') || '/';
+    // 로그인 후 디폴트 진입은 데모(협업 VOC) — 워크스페이스(/) 가 아닌 /voc/.
+    // ?next=… 가 명시되어 있으면 그쪽을 우선.
+    const next = params.get('next') || '/voc/';
 
     // If already logged in, redirect
     fetch('/api/auth/me', { credentials: 'same-origin' })

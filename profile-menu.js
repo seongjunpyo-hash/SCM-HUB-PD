@@ -22,10 +22,21 @@
 
   var Z = 99999;
 
+  // 스타일은 SCM topbar 가 없는 페이지(voc/index.html, /index.html)에서도
+  // window.SCM.openAccountsModal 호출만으로 모달이 그려지도록 항상 inject.
+  function injectStylesOnce() {
+    if (document.getElementById('scm-profile-style')) return;
+    var s = document.createElement('style');
+    s.id = 'scm-profile-style';
+    s.textContent = STYLE_CSS;
+    document.head.appendChild(s);
+  }
+
   function init(user) {
     if (!user) return;
+    injectStylesOnce();
 
-    // 1) 토픽바 사용자 영역 동적 업데이트 ----------------------------
+    // 토픽바 사용자 영역 동적 업데이트 — 데모 페이지(SCM topbar) 에서만 적용
     var rightEl  = document.querySelector('.scm-topbar__right');
     var avatarEl = document.querySelector('.scm-topbar__avatar');
     var nameEl   = document.querySelector('.scm-topbar__name-first');
@@ -41,17 +52,12 @@
     rightEl.addEventListener('click', function (e) {
       e.preventDefault();
       e.stopPropagation();
+      // sub-modal (pw / accounts) 가 떠 있으면 dropdown 토글을 무시 — 사용자가
+      // 진행 중인 서브 모달을 우발적으로 닫지 않도록.
+      if (pwModal || accountsModal) return;
       if (modalEl) closeModal();
       else openProfileModal(user, rightEl);
     });
-
-    // 2) 모달 마크업 + 스타일 한 번만 inject ------------------------
-    if (!document.getElementById('scm-profile-style')) {
-      var s = document.createElement('style');
-      s.id = 'scm-profile-style';
-      s.textContent = STYLE_CSS;
-      document.head.appendChild(s);
-    }
   }
 
   // -------- dropdown popover API (no backdrop, anchored to profile) --------
@@ -82,6 +88,12 @@
           '<svg viewBox="0 0 20 20" fill="none"><path d="M10 11.5v3M6.5 8V6a3.5 3.5 0 0 1 7 0v2M5 8h10v8H5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>' +
           '<span>비밀번호 재설정</span>' +
         '</button>' +
+        ((user.role === 'super' || user.role === 'admin')
+          ? '<button type="button" class="scm-profile-btn" data-act="manage-accounts">' +
+              '<svg viewBox="0 0 20 20" fill="none"><path d="M7 9a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zm0 1.5c-2.5 0-5 1.25-5 3.5V16h10v-2c0-2.25-2.5-3.5-5-3.5zM14 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 1.5c-.6 0-1.2.1-1.7.3 1.1.7 1.7 1.7 1.7 3.2v1H18v-1c0-2-2-3.5-4-3.5z" fill="currentColor"/></svg>' +
+              '<span>계정 관리</span>' +
+            '</button>'
+          : '') +
         '<button type="button" class="scm-profile-btn scm-profile-btn--danger" data-act="logout">' +
           '<svg viewBox="0 0 20 20" fill="none"><path d="M11 14v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v2M9 10h8m0 0l-3-3m3 3l-3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
           '<span>로그아웃</span>' +
@@ -96,10 +108,14 @@
       if (!btn) return;
       var act = btn.getAttribute('data-act');
       if (act === 'change-pw') {
-        // 비밀번호 모달이 열리면 dropdown 은 닫음 — onOutsideClick 이 pw 모달
-        // 입력창 클릭을 'outside' 로 잡아 모달이 곧바로 닫히는 버그 방지.
+        // 서브모달 열기 전 dropdown 닫음 — onOutsideClick 이 서브모달 클릭을
+        // 'outside' 로 잡아 곧바로 닫히는 버그 방지.
         closeModal();
         openPasswordModal();
+      }
+      else if (act === 'manage-accounts') {
+        closeModal();
+        openAccountsModal();
       }
       else if (act === 'logout') doLogout();
     });
@@ -133,7 +149,8 @@
     document.removeEventListener('keydown', onEsc);
     window.removeEventListener('resize', positionPopover);
     window.removeEventListener('scroll', positionPopover, true);
-    closePasswordModal();
+    // Sub-modals (pw / accounts) 의 lifecycle 은 dropdown 과 분리 — 여기서
+    // 닫지 않음. 그래야 dropdown 닫는 어떤 경로도 sub-modal 을 죽이지 않음.
   }
   function onEsc(e) { if (e.key === 'Escape') closeModal(); }
 
@@ -150,6 +167,8 @@
 
   // -------- password modal --------
   var pwModal = null;
+  var pwBackdropMouseDown = false;
+  function onPwEsc(e) { if (e.key === 'Escape') closePasswordModal(); }
   function openPasswordModal() {
     closePasswordModal();
     pwModal = document.createElement('div');
@@ -188,12 +207,31 @@
     var form  = pwModal.querySelector('form');
     var msgEl = pwModal.querySelector('[data-msg]');
     var subBtn = pwModal.querySelector('.scm-profile-pw__submit');
+    var box    = pwModal.querySelector('.scm-profile-modal');
 
-    pwModal.addEventListener('click', function (e) {
-      if (e.target === pwModal) return closePasswordModal();
-      if (e.target.closest('.scm-profile-modal__close')) return closePasswordModal();
-      if (e.target.closest('.scm-profile-pw__cancel')) return closePasswordModal();
+    // 모달 박스 내부 클릭/마우스다운/마우스업은 외부로 전파시키지 않음 —
+    // 다른 코드의 document-level 리스너가 'outside click' 으로 오해해서
+    // 모달을 닫는 것을 원천 차단.
+    box.addEventListener('mousedown', function (e) { e.stopPropagation(); });
+    box.addEventListener('click',     function (e) { e.stopPropagation(); });
+
+    // 백드롭 닫기는 mousedown 과 mouseup 모두 백드롭(=pwModal 자신) 위에서
+    // 발생했을 때만 동작. input 안에서 드래그(텍스트 선택)하다 백드롭으로
+    // 떼는 경우, 또는 그 반대 경우에는 닫지 않음.
+    pwModal.addEventListener('mousedown', function (e) {
+      pwBackdropMouseDown = (e.target === pwModal);
     });
+    pwModal.addEventListener('mouseup', function (e) {
+      var startedOnBackdrop = pwBackdropMouseDown;
+      pwBackdropMouseDown = false;
+      if (startedOnBackdrop && e.target === pwModal) closePasswordModal();
+    });
+    // 닫기/취소 버튼
+    pwModal.addEventListener('click', function (e) {
+      if (e.target.closest('.scm-profile-modal__close')) return closePasswordModal();
+      if (e.target.closest('.scm-profile-pw__cancel'))   return closePasswordModal();
+    });
+    document.addEventListener('keydown', onPwEsc);
     form.addEventListener('submit', async function (e) {
       e.preventDefault();
       msgEl.className = 'scm-profile-pw__msg';
@@ -245,6 +283,51 @@
   }
   function closePasswordModal() {
     if (pwModal) { pwModal.remove(); pwModal = null; }
+    pwBackdropMouseDown = false;
+    document.removeEventListener('keydown', onPwEsc);
+  }
+
+  // -------- accounts modal (super/admin) --------
+  // 별도의 /admin/accounts.html 페이지로 이동하지 않고, 같은 페이지 위에서
+  // iframe 으로 띄워 컨텍스트 손실 없이 빠르게 사용/닫기 가능.
+  var accountsModal = null;
+  var acctBackdropMouseDown = false;
+  function onAcctEsc(e) { if (e.key === 'Escape') closeAccountsModal(); }
+  function openAccountsModal() {
+    closeAccountsModal();
+    accountsModal = document.createElement('div');
+    accountsModal.className = 'scm-profile-backdrop scm-profile-backdrop--acct';
+    accountsModal.innerHTML =
+      '<div class="scm-profile-modal scm-profile-modal--acct" role="dialog" aria-label="계정 관리">' +
+        '<header class="scm-profile-modal__head">' +
+          '<strong>계정 관리</strong>' +
+          '<button type="button" class="scm-profile-modal__close" aria-label="닫기">×</button>' +
+        '</header>' +
+        '<div class="scm-profile-modal__body scm-profile-modal__body--acct">' +
+          '<iframe class="scm-profile-acct-frame" src="/admin/accounts.html?modal=1" title="계정 관리" loading="lazy"></iframe>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(accountsModal);
+    var box = accountsModal.querySelector('.scm-profile-modal');
+    box.addEventListener('mousedown', function (e) { e.stopPropagation(); });
+    box.addEventListener('click',     function (e) { e.stopPropagation(); });
+    accountsModal.addEventListener('mousedown', function (e) {
+      acctBackdropMouseDown = (e.target === accountsModal);
+    });
+    accountsModal.addEventListener('mouseup', function (e) {
+      var startedOnBackdrop = acctBackdropMouseDown;
+      acctBackdropMouseDown = false;
+      if (startedOnBackdrop && e.target === accountsModal) closeAccountsModal();
+    });
+    accountsModal.addEventListener('click', function (e) {
+      if (e.target.closest('.scm-profile-modal__close')) closeAccountsModal();
+    });
+    document.addEventListener('keydown', onAcctEsc);
+  }
+  function closeAccountsModal() {
+    if (accountsModal) { accountsModal.remove(); accountsModal = null; }
+    acctBackdropMouseDown = false;
+    document.removeEventListener('keydown', onAcctEsc);
   }
   function showMsg(el, kind, text) {
     el.className = 'scm-profile-pw__msg scm-profile-pw__msg--' + kind;
@@ -301,6 +384,15 @@
     '}\n' +
     '.scm-profile-modal__close:hover { background: #F3F4F6; color: #1A1A1A; }\n' +
     '.scm-profile-modal__body { padding: 20px; }\n' +
+    /* 계정관리 모달 — 큰 iframe 컨텐츠 */
+    '.scm-profile-modal--acct {\n' +
+    '  width: min(1200px, calc(100vw - 80px));\n' +
+    '  height: min(820px, calc(100vh - 80px));\n' +
+    '  display: flex; flex-direction: column;\n' +
+    '}\n' +
+    '.scm-profile-modal__body--acct { padding: 0; flex: 1; min-height: 0; display: flex; }\n' +
+    '.scm-profile-acct-frame { width: 100%; height: 100%; border: 0; display: block; }\n' +
+    '.scm-profile-backdrop--acct { z-index: ' + (Z + 1) + '; }\n' +
     /* card (popover + modal 공용) */
     '.scm-profile-card {\n' +
     '  display: flex; align-items: center; gap: 12px;\n' +
@@ -369,6 +461,14 @@
     '';
 
   // -------- bootstrap --------
+  // 다른 페이지(예: voc/index.html, index.html 의 topbar 계정관리 버튼)에서도
+  // 같은 iframe 모달을 띄울 수 있도록 노출. 권한 체크는 호출측에서 함.
+  window.SCM = window.SCM || {};
+  window.SCM.openAccountsModal = function () {
+    injectStylesOnce();
+    openAccountsModal();
+  };
+
   if (window.SCM_USER) {
     init(window.SCM_USER);
   } else {

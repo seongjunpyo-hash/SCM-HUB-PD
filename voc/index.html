@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SCM HUB · 협업 VOC (작업자)</title>
   <script src="/auth-gate.js"></script>
+  <script src="/profile-menu.js" defer></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
   <style>
     :root {
@@ -1031,7 +1032,7 @@
       <span id="userName">—</span>
       <span class="topbar__role" id="userRole" style="display:none;">—</span>
     </span>
-    <a class="topbar__back" id="topbarGoAccounts" href="/admin/accounts.html" style="display:none;" title="계정 관리 화면으로 이동">계정관리</a>
+    <a class="topbar__back" id="topbarGoAccounts" href="#" style="display:none;" title="계정 관리">계정관리</a>
   </header>
 
   <div class="layout">
@@ -1662,10 +1663,19 @@
         roleEl.textContent = ROLE_LABEL_KO[u.role] || u.role;
         roleEl.dataset.role = u.role;
         roleEl.style.display = '';
-        // 계정관리 버튼은 super / admin 만 노출
+        // 계정관리 버튼은 super / admin 만 노출 — 별도 페이지로 이동하지 않고
+        // profile-menu.js 가 노출한 iframe 모달을 띄움.
         const acctEl = $('#topbarGoAccounts');
         if (acctEl && (u.role === 'super' || u.role === 'admin')) {
           acctEl.style.display = '';
+          acctEl.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (window.SCM && typeof window.SCM.openAccountsModal === 'function') {
+              window.SCM.openAccountsModal();
+            } else {
+              location.href = '/admin/accounts.html';
+            }
+          });
         }
       });
       document.addEventListener('keydown', (e) => {

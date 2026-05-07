@@ -135,6 +135,14 @@
     .empty { text-align: center; padding: 64px 0; color: var(--fg-dim); font-size: 13px; }
     #loadingMsg { padding: 32px; text-align: center; color: var(--fg-mute); }
     #accessDenied { padding: 64px 0; text-align: center; color: var(--fg-mute); display: none; }
+
+    /* iframe-modal 모드 — 부모 모달이 이미 헤더/닫기를 제공하므로
+       자체 topbar / 페이지 타이틀은 숨김. min-width / 외곽 padding 도 축소. */
+    body.is-modal { background: #FFFFFF; min-width: 0; }
+    body.is-modal .shell { padding: 24px 28px 32px; max-width: none; }
+    body.is-modal .top,
+    body.is-modal h1,
+    body.is-modal .shell > .sub { display: none; }
   </style>
 </head>
 <body>
@@ -270,6 +278,11 @@
 
   <script src="/auth-gate.js"></script>
   <script>
+    // iframe-modal 모드 (profile-menu.js 가 ?modal=1 로 띄움)
+    if (new URLSearchParams(location.search).get('modal') === '1') {
+      document.body.classList.add('is-modal');
+    }
+
     let me = null;
 
     const $ = (id) => document.getElementById(id);
