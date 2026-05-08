@@ -41,7 +41,8 @@
 |---|---|---|
 | 인증 / 라우팅 / 튜토리얼 트리거 / FOUC LNB 복원 | `/auth-gate.js` | `<script src="/auth-gate.js">` (동기) |
 | 코멘트 / dev-export / 프로필 메뉴 | `/scm-shell.js` 가 일괄 로드 | `<script src="/scm-shell.js" defer>` (1줄) |
-| LNB 마크업 | `lnb.js` 의 `CANONICAL_LNB_HTML` | 빈 `<nav class="scm-lnb">` placeholder. `mount()` 가 자동 inject |
+| SVG 심볼 스프라이트 (모든 `<use href="#ic-*">`) | `/scm-icons.js` 가 sprite union 주입 | `<script src="/scm-icons.js">` (body 첫 줄, 동기) |
+| LNB 마크업 + 메뉴 데이터 | `lnb.js` 의 `CANONICAL_LNB_HTML` (+ `SCM.lnb.getMenu()` 자동 파싱) | 빈 `<nav class="scm-lnb">` placeholder. `mount()` 가 자동 inject. VOC 도 `SCM.lnb.getMenu()` 로 same source 사용 |
 | topbar 마크업 | `topbar.js` 의 `CANONICAL_TOPBAR_HTML` | 빈 `<header class="scm-topbar">` placeholder |
 | 공통 sticky 토큰 (`--scm-lnb-width` / `--scm-sticky-gnb`) + body/.app/main shell 룰 | `lnb.css` 상단 `:root` + shell 블록 | `lnb.css` 가 자동 로드되므로 페이지에서 별도 작업 X |
 
@@ -73,6 +74,7 @@
 - [ ] `<script src="/auth-gate.js"></script>` 동기 로드 (LNB FOUC 복원도 여기서 처리되므로 별도 inline script 불필요)
 - [ ] `<script src="/scm-shell.js" defer></script>` 추가
 - [ ] design system CSS 중 본인이 쓰는 것만 `<link rel="stylesheet">` (lnb.css 는 필수 — shell 룰 + sticky 토큰 포함)
+- [ ] body 시작 직후 `<script src="/scm-icons.js"></script>` (SVG 스프라이트 주입 — `<use href="#ic-*">` 사용 시 필수)
 - [ ] body 시작 부분에 `<header class="scm-topbar" role="banner"></header>` placeholder
 - [ ] body main 영역 앞에 `<nav class="scm-lnb" data-active="페이지키" aria-label="주메뉴"></nav>` placeholder
 - [ ] body 끝 design-system script 뒤에 `SCM.lnb.mount(document.querySelector('.scm-lnb'), { active: '페이지키' })` 와 `SCM.topbar.mount(document.querySelector('.scm-topbar'))` 호출
