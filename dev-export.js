@@ -1450,7 +1450,7 @@ ${jsxBody}
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'scm-dev-version-btn';
-    btn.innerHTML = '<span class="lbl">DEMO_V1</span><svg class="chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l3 3 3-3"/></svg>';
+    btn.innerHTML = '<span class="lbl">DEMO_V0</span><svg class="chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l3 3 3-3"/></svg>';
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       elVersionWrap.classList.toggle('is-open');
@@ -1504,8 +1504,8 @@ ${jsxBody}
       const newest = ver.list.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0];
       label = labelMap[newest.id] || 'DEMO_V?';
     } else {
-      // no saved versions yet — first save creates DEMO_V1
-      label = 'DEMO_V1';
+      // 저장된 버전이 0개 — DEMO_V0 으로 표시. 첫 저장 시 DEMO_V1 생성.
+      label = 'DEMO_V0';
     }
     if (elVersionWrap) {
       elVersionWrap.style.display = '';
