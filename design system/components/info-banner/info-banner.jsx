@@ -6,8 +6,9 @@ import { useState } from 'react';
 
 const InfoIcon = (
   <svg className="scm-info-banner__icon" viewBox="0 0 20 20" aria-hidden="true">
-    <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.4" fill="none" />
-    <path d="M10 6.5v.01M10 9v5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+    <circle cx="10" cy="10" r="8" fill="currentColor" />
+    <path d="M10 6V11" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" />
+    <circle cx="10" cy="14" r="0.9" fill="#fff" />
   </svg>
 );
 
