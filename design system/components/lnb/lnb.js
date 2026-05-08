@@ -95,16 +95,42 @@
 
   // ---------- per-page status tags ----------
   // 작업중   — 실데모 페이지 기본 상태 (아직 최종확정 안 됨)
-  // 최종확정 — page is in scm:dev-export:confirmed:v1 (super 가 '최종확정' 버튼 누름)
-  // # 플레이스홀더 메뉴는 정적 마크업에 이미 작업중 태그가 있어 동적 처리 skip.
-  var CONFIRMED_KEY  = 'scm:dev-export:confirmed:v1';
+  // 최종확정 — versions[page].finalId 가 채워졌거나 confirmed[page] flag 가 truthy.
+  // # 플레이스홀더는 동적 태그 부착 안 함. 정적 마크업 태그는 CSS 로 숨김.
+  var CONFIRMED_KEY = 'scm:dev-export:confirmed:v1';
+  var VERSIONS_KEY  = 'scm:voc:versions:v1';
   function _readJsonLs(key) {
     try { var raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : null; } catch (_) { return null; }
   }
+  function _normalizePath(p) {
+    if (!p) return p;
+    var n = p.replace(/\.html?$/i, '');
+    if (n.endsWith('/')) n += 'index';
+    return n;
+  }
+  function _candidatePaths(pagePath) {
+    // 데이터가 다양한 형태로 저장되어 있을 수 있어 (clean URL vs .html), 후보 키들을 모두 검사
+    var raw = pagePath;
+    var noExt = pagePath.replace(/\.html?$/i, '');
+    var norm = _normalizePath(pagePath);
+    var withHtml = noExt + '.html';
+    var withSlash = noExt.replace(/\/index$/, '/');
+    return [raw, noExt, norm, withHtml, withSlash];
+  }
   function _isConfirmedPage(pagePath) {
-    var map = _readJsonLs(CONFIRMED_KEY);
-    if (!map || !map[pagePath]) return false;
-    return map[pagePath] === true || (map[pagePath] && map[pagePath].confirmed === true);
+    var cands = _candidatePaths(pagePath);
+    var conf = _readJsonLs(CONFIRMED_KEY);
+    if (conf) {
+      for (var i = 0; i < cands.length; i++) if (conf[cands[i]]) return true;
+    }
+    var versions = _readJsonLs(VERSIONS_KEY);
+    if (versions) {
+      for (var j = 0; j < cands.length; j++) {
+        var v = versions[cands[j]];
+        if (v && v.finalId) return true;
+      }
+    }
+    return false;
   }
   function applyStatusTags(el) {
     if (!el || typeof URL === 'undefined') return;
@@ -144,12 +170,18 @@
     applyStatusTags(el);
     // re-apply when versions / confirmed state changes from another tab
     if (!root.__scmLnbStorageWired) {
+      // cross-tab — localStorage storage event
       window.addEventListener('storage', function (e) {
         if (!e || !e.key) return;
-        if (e.key === CONFIRMED_KEY) {
+        if (e.key === CONFIRMED_KEY || e.key === VERSIONS_KEY) {
           var nodes = document.querySelectorAll('.scm-lnb');
           for (var i = 0; i < nodes.length; i++) applyStatusTags(nodes[i]);
         }
+      });
+      // same-tab — dev-export.js 가 confirm/unfinalize 시 dispatch
+      document.addEventListener('scm:confirmed-changed', function () {
+        var nodes = document.querySelectorAll('.scm-lnb');
+        for (var i = 0; i < nodes.length; i++) applyStatusTags(nodes[i]);
       });
       root.__scmLnbStorageWired = true;
     }
