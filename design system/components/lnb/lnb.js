@@ -118,16 +118,18 @@
     return [raw, noExt, norm, withHtml, withSlash];
   }
   function _isConfirmedPage(pagePath) {
-    var cands = _candidatePaths(pagePath);
-    var conf = _readJsonLs(CONFIRMED_KEY);
-    if (conf) {
-      for (var i = 0; i < cands.length; i++) if (conf[cands[i]]) return true;
-    }
+    // 단일 source of truth = versions[page].finalId.
+    // 레거시 confirmed[page] flag 는 stale 가능성이 있어 사용 X
+    // (dev-export.js isConfirmed() 도 동일 정책).
     var versions = _readJsonLs(VERSIONS_KEY);
-    if (versions) {
-      for (var j = 0; j < cands.length; j++) {
-        var v = versions[cands[j]];
-        if (v && v.finalId) return true;
+    if (!versions) return false;
+    var cands = _candidatePaths(pagePath);
+    for (var j = 0; j < cands.length; j++) {
+      var v = versions[cands[j]];
+      if (!v || !v.finalId) continue;
+      // finalId 가 list 안의 실제 버전을 가리키는지 확인 (삭제 후 잔존 방지)
+      if (Array.isArray(v.list) && v.list.some(function (x) { return x && x.id === v.finalId; })) {
+        return true;
       }
     }
     return false;

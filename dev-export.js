@@ -40,8 +40,9 @@
   function saveConfirmed() {
     try { localStorage.setItem(CONFIRMED_KEY, JSON.stringify(confirmed)); }
     catch (e) { console.warn('[dev-export] save failed', e); }
-    // LNB 등이 same-tab 에서 즉시 갱신될 수 있게 broadcast
-    try { document.dispatchEvent(new CustomEvent('scm:confirmed-changed')); } catch (_) {}
+    // 주의: same-tab broadcast 는 confirmPage / unfinalize 끝에서 (versions
+    // 갱신까지 완료된 시점에) dispatch 한다. 여기서 dispatch 하면 LNB 가
+    // 아직 finalId 가 안 박힌 versions 를 읽어 stale 결과를 보일 수 있음.
   }
   function pageKey() { return location.pathname; }
   // 최종 확정 (finalId) — '최종확정' 버튼이 가리키는 운영 베이스라인 버전.
@@ -75,6 +76,8 @@
     if (elVersionWrap && elVersionWrap.classList.contains('is-open')) {
       try { renderVersionMenu(); } catch (_) {}
     }
+    // versions 갱신까지 완료된 후 broadcast — LNB 등 외부 컴포넌트 즉시 갱신
+    try { document.dispatchEvent(new CustomEvent('scm:confirmed-changed')); } catch (_) {}
   }
   // 최종확정 해제 — super/admin 이 finalId 를 제거해서 '작업중' 상태로 되돌림.
   // 다운로드 버튼이 다시 비활성화되고, super 가 '최종확정' 버튼을 다시 누를 수 있음.
@@ -96,6 +99,8 @@
     _saveVersions(versions);
     refresh();
     if (typeof refreshVersionLabel === 'function') refreshVersionLabel();
+    // versions 갱신 후 broadcast — LNB 등이 즉시 작업중 톤으로 복귀
+    try { document.dispatchEvent(new CustomEvent('scm:confirmed-changed')); } catch (_) {}
   }
   // 호환용 별칭
   function revertPage() { unfinalize(); }
