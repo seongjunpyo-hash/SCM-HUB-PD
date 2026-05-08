@@ -1042,6 +1042,40 @@
       flex-shrink: 0; line-height: 1;
     }
     .edit-row__edit:hover { background: #EEF2FF; }
+    .edit-row__rename {
+      background: transparent; border: 0; cursor: pointer;
+      font-size: 11px; color: #6B7280; padding: 2px 6px; border-radius: 4px;
+      flex-shrink: 0; line-height: 1;
+      opacity: 0.45;
+      transition: opacity 0.12s, background 0.12s, color 0.12s;
+    }
+    .edit-row:hover .edit-row__rename,
+    .edit-row.is-renamed .edit-row__rename { opacity: 1; }
+    .edit-row__rename:hover { background: #EEF2FF; color: #4F46E5; }
+    .edit-row.is-renamed .edit-row__label::after {
+      content: '·'; margin-left: 6px; color: #4F46E5; font-weight: 700;
+    }
+    .edit-row__label-input {
+      flex: 1; min-width: 0;
+      padding: 4px 8px;
+      background: #fff; color: #1A1A1A;
+      border: 1px solid #4F46E5; border-radius: 4px;
+      font-family: inherit; font-size: 12.5px;
+      outline: none;
+    }
+    .edit-row__cell-type {
+      flex-shrink: 0;
+      height: 22px; padding: 0 22px 0 8px;
+      background: #fff; color: #1A1A1A;
+      border: 1px solid #E5E7EB; border-radius: 4px;
+      font-family: inherit; font-size: 11px; font-weight: 600;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='8' height='5' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l3 3 3-3' stroke='%236B7280' stroke-width='1.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 6px center;
+    }
+    .edit-row__cell-type:hover { border-color: #4F46E5; }
+    .edit-row__cell-type:focus { outline: none; border-color: #4F46E5; }
     .edit-row__del {
       background: transparent; border: 0; cursor: pointer;
       font-size: 14px; color: #9CA3AF; padding: 2px 4px; border-radius: 4px;
@@ -2048,6 +2082,9 @@
         applyFilterOrderToIframe();
         applyColumnOrderToIframe();
         applyFilterTypesToIframe();
+        applyFilterLabelsToIframe();
+        applyColumnLabelsToIframe();
+        applyCellTypesToIframe();
         applyNativeComponentEdits();
         applyEditCss();
         applyBasicSettings();
@@ -2424,6 +2461,13 @@
         e.frozenCount = null;
       }
       e.filterTypes = (e.filterTypes && typeof e.filterTypes === 'object' && !Array.isArray(e.filterTypes)) ? e.filterTypes : {};
+      // 사용자 라벨 오버라이드 (NATIVE 필터/컬럼만 — added 항목은 entry.label 직접 수정).
+      e.labels = (e.labels && typeof e.labels === 'object' && !Array.isArray(e.labels)) ? e.labels : {};
+      e.labels.filter = (e.labels.filter && typeof e.labels.filter === 'object' && !Array.isArray(e.labels.filter)) ? e.labels.filter : {};
+      e.labels.column = (e.labels.column && typeof e.labels.column === 'object' && !Array.isArray(e.labels.column)) ? e.labels.column : {};
+      // 컬럼 셀타입 — 'need-only' | 'basic' | 'input' | 'select' | 'disabled'.
+      // null/undefined 또는 'basic' = 기본(스타일 변경 없음).
+      e.cellTypes = (e.cellTypes && typeof e.cellTypes === 'object' && !Array.isArray(e.cellTypes)) ? e.cellTypes : {};
       if (!e.added) e.added = {};
       e.added.filters = Array.isArray(e.added.filters) ? e.added.filters : [];
       e.added.columns = Array.isArray(e.added.columns) ? e.added.columns : [];
@@ -2451,6 +2495,9 @@
       applyFilterOrderToIframe();
       applyColumnOrderToIframe();
       applyFilterTypesToIframe();
+      applyFilterLabelsToIframe();
+      applyColumnLabelsToIframe();
+      applyCellTypesToIframe();
       applyNativeComponentEdits();
       applyEditCss();
       applyBasicSettings();
@@ -2471,6 +2518,7 @@
       rebuildAddedFiltersOnly();
       applyFilterOrderToIframe();
       applyFilterTypesToIframe();
+      applyFilterLabelsToIframe();
       applyEditCss();
       // Snapshot the filter slice we just pushed; per-section [적용] dirty
       // compares against this so the button disables until the user makes
@@ -2481,6 +2529,8 @@
     function applyColumnSectionToIframe() {
       rebuildAddedColumnsOnly();
       applyColumnOrderToIframe();
+      applyColumnLabelsToIframe();
+      applyCellTypesToIframe();
       applyEditCss();
       _setPreviewedColumn();
       refreshSaveBtn();
@@ -2689,6 +2739,42 @@
       persistDraft();
       applyFilterSectionToIframe();
     }
+    // 라벨 오버라이드 — NATIVE 필터/컬럼은 labels[kind][selector] 에 저장,
+    // ADDED 는 entry.label 직접 수정.
+    function setNativeLabel(kind, selector, label) {
+      const d = pageDraft();
+      d.labels = d.labels || {};
+      d.labels[kind] = d.labels[kind] || {};
+      const v = (label || '').trim();
+      if (v) d.labels[kind][selector] = v;
+      else delete d.labels[kind][selector];
+      persistDraft();
+      renderEditPane();
+      if (kind === 'filter') applyFilterSectionToIframe();
+      else applyColumnSectionToIframe();
+    }
+    function setAddedLabel(kind, id, label) {
+      const d = pageDraft();
+      const list = kind === 'filter' ? d.added.filters : d.added.columns;
+      const item = (list || []).find((x) => x.id === id);
+      if (!item) return;
+      const v = (label || '').trim();
+      if (!v) return;
+      item.label = v;
+      persistDraft();
+      renderEditPane();
+      if (kind === 'filter') applyFilterSectionToIframe();
+      else applyColumnSectionToIframe();
+    }
+    // 컬럼 셀타입 — 'need-only' | 'input' | 'select' | 'disabled' | 'basic'(=default)
+    function setCellType(selector, type) {
+      const d = pageDraft();
+      d.cellTypes = d.cellTypes || {};
+      if (!type || type === 'basic') delete d.cellTypes[selector];
+      else d.cellTypes[selector] = type;
+      persistDraft();
+      applyColumnSectionToIframe();
+    }
     // Component mutators — added components live in d.added.components,
     // native-component edits live in d.componentEdits[selector] = { html, label, type }.
     function addComponent({ label, type, html }) {
@@ -2870,6 +2956,43 @@
           content: 'C'; margin-left: 4px;
           font-size: 9px; font-weight: 700; color: #4F46E5;
           background: #EEF2FF; padding: 1px 4px; border-radius: 3px;
+        }
+        /* 셀타입 시각 변형 — th + td 모두 적용. */
+        [data-voc-cell-type="need-only"] {
+          color: #6B7280 !important;
+          font-style: italic !important;
+        }
+        [data-voc-cell-type="input"] {
+          background: #FFFBEB !important;
+          box-shadow: inset 0 0 0 1px #FCD34D !important;
+        }
+        [data-voc-cell-type="select"] {
+          background: #EFF6FF !important;
+          box-shadow: inset 0 0 0 1px #93C5FD !important;
+          position: relative !important;
+          padding-right: 24px !important;
+        }
+        [data-voc-cell-type="select"]::after {
+          content: '▾';
+          position: absolute; right: 8px; top: 50%;
+          transform: translateY(-50%);
+          font-size: 11px; color: #2563EB; pointer-events: none;
+        }
+        [data-voc-cell-type="disabled"] {
+          color: #9CA3AF !important;
+          background: repeating-linear-gradient(45deg, #F9FAFB 0 6px, #F3F4F6 6px 12px) !important;
+          cursor: not-allowed !important;
+        }
+        /* th 의 셀타입 라벨 — 헤더 우측에 작게 표시해서 어떤 셀타입인지
+           항상 보이게. */
+        th[data-voc-cell-type]::before {
+          content: attr(data-voc-cell-type);
+          display: inline-block; margin-right: 6px;
+          padding: 1px 5px; border-radius: 3px;
+          font-size: 9px; font-weight: 700; letter-spacing: 0.3px;
+          color: #4F46E5; background: #EEF2FF;
+          text-transform: uppercase;
+          vertical-align: middle;
         }
       `);
       style.textContent = lines.join('\n');
@@ -3196,6 +3319,89 @@
       });
     }
 
+    // 사용자 라벨 오버라이드 — 필터 chip 의 .scm-filter-select__label /
+    // __value 텍스트를 교체. 추가 필터는 applyAddedDom 이 이미 사용자
+    // 라벨로 inject 하므로 여기선 native 만 처리.
+    function applyFilterLabelsToIframe() {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      const a = pageDraft();
+      const labels = (a.labels && a.labels.filter) || {};
+      Object.keys(labels).forEach((sel) => {
+        let el; try { el = doc.querySelector(sel); } catch { return; }
+        if (!el) return;
+        const labEl = el.querySelector('.scm-filter-select__label');
+        if (labEl) labEl.textContent = labels[sel];
+        const valEl = el.querySelector('.scm-filter-select__value');
+        if (valEl && valEl !== labEl) valEl.textContent = labels[sel];
+      });
+    }
+    // 컬럼 라벨 오버라이드 — th 의 텍스트 노드만 교체 (icon span 등 보존).
+    function applyColumnLabelsToIframe() {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      const a = pageDraft();
+      const labels = (a.labels && a.labels.column) || {};
+      Object.keys(labels).forEach((sel) => {
+        let cells; try { cells = doc.querySelectorAll(sel); } catch { return; }
+        cells.forEach((cell) => {
+          const host = cell.querySelector(':scope > .cell-clamp, :scope > .cell-clamp-2') || cell;
+          // 첫 번째 non-empty text 노드만 교체. 없으면 첫 자식으로 prepend.
+          let textNode = null;
+          for (const n of host.childNodes) {
+            if (n.nodeType === 3 && n.textContent.trim()) { textNode = n; break; }
+          }
+          if (textNode) textNode.textContent = labels[sel];
+          else host.insertBefore(doc.createTextNode(labels[sel]), host.firstChild);
+        });
+      });
+    }
+    // 컬럼 셀타입 — 각 컬럼의 모든 td 에 data-voc-cell-type 을 stamp.
+    // CSS 규칙은 applyEditCss 에서 함께 inject. 이전 stamp 는 모두 클린업
+    // 후 다시 stamp 해서 idempotent.
+    function applyCellTypesToIframe() {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      doc.querySelectorAll('[data-voc-cell-type]').forEach((el) => {
+        delete el.dataset.vocCellType;
+      });
+      const a = pageDraft();
+      const types = a.cellTypes || {};
+      Object.keys(types).forEach((sel) => {
+        const type = types[sel];
+        if (!type || type === 'basic') return;
+        let th; try { th = doc.querySelector(sel); } catch { return; }
+        if (!th) return;
+        th.dataset.vocCellType = type;
+        const headTable = th.closest('.mp-table');
+        if (!headTable) return;
+        const reorderApi = headTable._scmReorder;
+        let leafIdx = -1;
+        if (reorderApi) {
+          try { leafIdx = reorderApi.model.thLeafIdx(th); } catch {}
+        }
+        if (leafIdx < 0) {
+          const tr = th.parentElement;
+          if (tr) {
+            let walk = 0, hit = -1;
+            for (let i = 0; i < tr.children.length; i++) {
+              const c = tr.children[i];
+              const cs = parseInt(c.getAttribute('colspan') || '1', 10) || 1;
+              if (c === th) { hit = walk; break; }
+              walk += cs;
+            }
+            leafIdx = hit;
+          }
+        }
+        if (leafIdx < 0) return;
+        const host = headTable.closest('.mp-table-host') || headTable;
+        host.querySelectorAll('.mp-table > tbody > tr').forEach((tr) => {
+          const td = tr.children[leafIdx];
+          if (td) td.dataset.vocCellType = type;
+        });
+      });
+    }
+
     function applyAddedDom() {
       const doc = iframe.contentDocument;
       if (!doc) return;
@@ -3331,6 +3537,7 @@
         filterTypes: p.filterTypes || {},
         added:       (p.added && p.added.filters) || [],
         hidden:      (p.hidden || []).filter(_isFilterSel),
+        labels:      (p.labels && p.labels.filter) || {},
       });
     }
     function _columnSlice(p) {
@@ -3342,6 +3549,8 @@
         added:             (p.added && p.added.columns) || [],
         hidden:            (p.hidden || []).filter(_isColumnSel),
         frozenCount:       (p.frozenCount == null ? null : p.frozenCount),
+        labels:            (p.labels && p.labels.column) || {},
+        cellTypes:         p.cellTypes || {},
       });
     }
     // Component slice — anything in p.hidden that's NOT a filter chip and
@@ -4536,8 +4745,15 @@
       }
 
       // merge native + user-added items, then sort by saved order
+      const filterLabelOverride = (d.labels && d.labels.filter) || {};
+      const columnLabelOverride = (d.labels && d.labels.column) || {};
       const filterRowsRaw = [
-        ...targets.filters.map((it) => ({ ...it, kind: 'filter' })),
+        ...targets.filters.map((it) => ({
+          ...it,
+          kind: 'filter',
+          label: filterLabelOverride[it.selector] || it.label,
+          renamed: !!filterLabelOverride[it.selector],
+        })),
         ...d.added.filters.map((f) => ({
           label: f.label, kind: 'filter',
           selector: `#voc-added-filter-${f.id}`,
@@ -4573,6 +4789,11 @@
         ? [...savedTop, ...allTop.filter((s) => !savedSet.has(s))]
         : allTop;
       const columnRows = [];
+      const _applyColLabel = (row) => {
+        const ovr = columnLabelOverride[row.selector];
+        if (ovr) { row.label = ovr; row.renamed = true; }
+        return row;
+      };
       effectiveTop.forEach((sel) => {
         const grp = groupBySel[sel];
         if (grp) {
@@ -4589,19 +4810,19 @@
           // on the group header so the user can see at a glance how many
           // of the group's columns are still visible.
           const visibleCount = naturalLeaves.reduce((n, ls) => n + (hidden.has(ls) ? 0 : 1), 0);
-          columnRows.push({
+          columnRows.push(_applyColLabel({
             kind: 'column', isGroup: true, depth: 0,
             label: grp.label, selector: sel,
             childCount: naturalLeaves.length,
             visibleCount,
             parent: null, draggable: true,
             collapsed,
-          });
+          }));
           if (!collapsed) {
             leafOrder.forEach((lsel) => {
               const leaf = colBySel[lsel];
               if (!leaf) return;
-              columnRows.push({ ...leaf, kind: 'column', depth: 1 });
+              columnRows.push(_applyColLabel({ ...leaf, kind: 'column', depth: 1 }));
             });
           }
           return;
@@ -4609,7 +4830,7 @@
         // top-level leaf (ungrouped native, e.g. "No") or user-added col
         const native = colBySel[sel];
         if (native) {
-          columnRows.push({ ...native, kind: 'column', depth: 0 });
+          columnRows.push(_applyColLabel({ ...native, kind: 'column', depth: 0 }));
           return;
         }
         const added = addedBySel[sel];
@@ -4636,6 +4857,7 @@
         })),
       ];
 
+      const cellTypes = d.cellTypes || {};
       const renderList = (containerId, countId, items) => {
         const cnt = document.getElementById(countId);
         const list = document.getElementById(containerId);
@@ -4649,25 +4871,39 @@
           if (it.isGroup)  cls.push('is-group');
           if (it.depth === 1) cls.push('is-leaf');
           if (it.anchor) cls.push('is-anchor');
+          if (it.renamed) cls.push('is-renamed');
           const sel = escapeHtml(it.selector);
           let middle = '';
           if (it.kind === 'column' && !it.added && !it.isGroup) {
-            // leaf column gets sort/filter icon toggles (group + added skip).
-            // 고정 boundary is configured via the single dropdown above
-            // "+컬럼 추가" — per-column toggles caused inconsistent frozen
-            // ranges, so we surface a global "마지막 고정 컬럼" picker instead.
+            // leaf column gets sort/filter icon toggles + cell-type select.
             const sortOn   = showSort.has(it.selector);
             const filterOn = showFilter.has(it.selector);
-            // Visual hint: leaves inside the current frozen area get a small
-            // lock badge so the user can spot the boundary at a glance.
             const frozenBadge = (it.leafIdx != null && it.leafIdx >= 0 && it.leafIdx < effectiveFrozenCount)
               ? '<span class="edit-row__frozen-badge" aria-hidden="true" title="고정 영역">🔒</span>' : '';
+            const ct = cellTypes[it.selector] || 'basic';
             middle = `
               ${frozenBadge}
+              <select class="edit-row__cell-type" data-cell-type-key="${sel}" title="셀 타입 — 이 컬럼의 데이터 셀 렌더 스타일">
+                <option value="basic"     ${ct === 'basic'     ? 'selected' : ''}>기본정보</option>
+                <option value="need-only" ${ct === 'need-only' ? 'selected' : ''}>니드온리</option>
+                <option value="input"     ${ct === 'input'     ? 'selected' : ''}>입력창</option>
+                <option value="select"    ${ct === 'select'    ? 'selected' : ''}>셀렉트</option>
+                <option value="disabled"  ${ct === 'disabled'  ? 'selected' : ''}>디세이블</option>
+              </select>
               <button type="button" class="edit-row__icon-toggle ${sortOn ? 'is-on' : ''}"   data-toggle-icon="sort"   data-selector="${sel}" title="컬럼 정렬 아이콘 표시/숨김">정렬</button>
               <button type="button" class="edit-row__icon-toggle ${filterOn ? 'is-on' : ''}" data-toggle-icon="filter" data-selector="${sel}" title="컬럼 필터 아이콘 표시/숨김">필터</button>`;
+          } else if (it.kind === 'column' && it.added && !it.isGroup) {
+            // 사용자 추가 컬럼도 셀타입 선택 가능.
+            const ct = cellTypes[it.selector] || 'basic';
+            middle = `
+              <select class="edit-row__cell-type" data-cell-type-key="${sel}" title="셀 타입">
+                <option value="basic"     ${ct === 'basic'     ? 'selected' : ''}>기본정보</option>
+                <option value="need-only" ${ct === 'need-only' ? 'selected' : ''}>니드온리</option>
+                <option value="input"     ${ct === 'input'     ? 'selected' : ''}>입력창</option>
+                <option value="select"    ${ct === 'select'    ? 'selected' : ''}>셀렉트</option>
+                <option value="disabled"  ${ct === 'disabled'  ? 'selected' : ''}>디세이블</option>
+              </select>`;
           } else if (it.isGroup) {
-            // group header — show the leaf-count badge for orientation
             middle = `<span class="edit-row__group-count" title="선택된 컬럼 수 / 전체 컬럼 수">${it.visibleCount}/${it.childCount}</span>`;
           } else if (it.kind === 'filter') {
             // EVERY filter row (native + added) gets the type select
@@ -4688,6 +4924,15 @@
           // (HTML override editor) and user-added ones (entry editor).
           const editBtn = it.kind === 'component'
             ? `<button type="button" class="edit-row__edit" data-edit-component="${sel}"${it.added ? ` data-edit-added-id="${escapeHtml(it.added.id)}"` : ''} title="컴포넌트 편집">✏</button>`
+            : '';
+          // 필터 / 컬럼 (group 포함) 행은 inline rename 버튼 노출.
+          // anchor 행(rs>=2 cb/No 등) + 컴포넌트 행은 제외.
+          const renameAttrs = it.added
+            ? ` data-rename-kind="${it.kind}" data-rename-added-id="${escapeHtml(it.added.id)}"`
+            : ` data-rename-kind="${it.kind}" data-rename-selector="${sel}"`;
+          const canRename = (it.kind === 'filter' || it.kind === 'column') && !it.anchor;
+          const renameBtn = canRename
+            ? `<button type="button" class="edit-row__rename"${renameAttrs} title="라벨 수정">✏</button>`
             : '';
           // Reorderable iff kind is filter/column AND it.draggable !== false.
           // Anchor row1 cells (rs>=2 like "No") have draggable=false — we
@@ -4714,6 +4959,7 @@
                 ${grip}
                 <span class="edit-row__check edit-row__check--placeholder" aria-hidden="true"></span>
                 <span class="edit-row__label">${escapeHtml(it.label)}</span>
+                ${renameBtn}
                 ${middle}
                 ${chev}
               </div>`;
@@ -4723,6 +4969,7 @@
               ${grip}
               <input type="checkbox" class="edit-row__check" data-selector="${sel}" ${isHidden ? '' : 'checked'} />
               <span class="edit-row__label">${escapeHtml(it.label)}</span>
+              ${renameBtn}
               ${middle}
               <button type="button" class="edit-row__locate" data-locate="${sel}" title="화면에서 위치 확인">↗</button>
               ${editBtn}
@@ -4861,6 +5108,12 @@
         }
         return;
       }
+      // 컬럼 셀타입 변경
+      const ctSel = t.closest && t.closest('[data-cell-type-key]');
+      if (ctSel) {
+        setCellType(ctSel.dataset.cellTypeKey, ctSel.value);
+        return;
+      }
     });
     document.addEventListener('click', (e) => {
       const t = e.target;
@@ -4912,6 +5165,49 @@
         e.preventDefault();
         const key = sec.dataset.toggleSec;
         toggleSectionCollapsed(key);
+        return;
+      }
+      // 필터 / 컬럼 라벨 inline 수정 — ✏ 버튼 클릭 시 label span 을 input
+      // 으로 swap. blur / Enter 로 저장, Esc 로 취소.
+      const ren = t.closest && t.closest('[data-rename-kind]');
+      if (ren) {
+        e.preventDefault();
+        e.stopPropagation();
+        const row = ren.closest('.edit-row');
+        if (!row) return;
+        const labelEl = row.querySelector('.edit-row__label');
+        if (!labelEl || labelEl.dataset.editing === '1') return;
+        labelEl.dataset.editing = '1';
+        const orig = labelEl.textContent;
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.className = 'edit-row__label-input';
+        inp.value = orig;
+        inp.maxLength = 28;
+        labelEl.replaceWith(inp);
+        // checkbox click 으로 이어지지 않도록 stopPropagation 등록
+        inp.addEventListener('click', (ev) => ev.stopPropagation());
+        inp.addEventListener('mousedown', (ev) => ev.stopPropagation());
+        const finish = (commit) => {
+          if (inp.dataset.done) return; inp.dataset.done = '1';
+          const val = (inp.value || '').trim();
+          if (commit && val && val !== orig) {
+            const kind = ren.dataset.renameKind;
+            if (ren.dataset.renameAddedId) {
+              setAddedLabel(kind, ren.dataset.renameAddedId, val);
+            } else if (ren.dataset.renameSelector) {
+              setNativeLabel(kind, ren.dataset.renameSelector, val);
+            }
+          } else {
+            renderEditPane();
+          }
+        };
+        inp.addEventListener('keydown', (ev) => {
+          if (ev.key === 'Enter') { ev.preventDefault(); finish(true); }
+          else if (ev.key === 'Escape') { ev.preventDefault(); finish(false); }
+        });
+        inp.addEventListener('blur', () => finish(true));
+        setTimeout(() => { inp.focus(); inp.select(); }, 0);
         return;
       }
       // edit a component (native or added) — opens the component editor
