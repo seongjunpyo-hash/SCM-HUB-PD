@@ -528,9 +528,6 @@
 <script>
 (function () {
   // GNB + LNB
-  if (window.SCM && SCM.lnb)    SCM.lnb.mount(document.querySelector('.scm-lnb'), { active: 'sku-management' });
-  if (window.SCM && SCM.topbar) SCM.topbar.mount(document.querySelector('.scm-topbar'));
-
   // 모든 .mp-table 자동 init — sticky thead / resize / reorder / 더블클릭 컬럼선택 / 셀 드래그 선택
   if (window.SCMTable) {
     try { window.SCMTable.init({ root: document }); } catch (e) { console.warn('SCMTable init failed:', e); }

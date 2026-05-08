@@ -122,6 +122,22 @@
     };
   }
 
+  // Auto-mount — 페이지 인라인 SCM.topbar.mount() 호출 없이도 동작
+  function autoMount() {
+    var nodes = document.querySelectorAll('.scm-topbar');
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      if (el.children.length === 0) mount(el);
+    }
+  }
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', autoMount, { once: true });
+    } else {
+      autoMount();
+    }
+  }
+
   root.SCM = root.SCM || {};
   root.SCM.topbar = { mount: mount };
 })(typeof window !== 'undefined' ? window : globalThis);

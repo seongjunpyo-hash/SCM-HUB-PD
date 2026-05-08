@@ -753,9 +753,6 @@
   // ============================================================
   // 0. 공통 셸 mount
   // ============================================================
-  if (window.SCM && SCM.lnb)    SCM.lnb.mount(document.querySelector('.scm-lnb'), { active: 'otb-budget' });
-  if (window.SCM && SCM.topbar) SCM.topbar.mount(document.querySelector('.scm-topbar'));
-
   // info-banner
   if (window.SCM && SCM.infoBanner) {
     try { SCM.infoBanner.mount(document.getElementById('otb-info-banner')); } catch (_) {}

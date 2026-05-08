@@ -422,6 +422,25 @@
     return out;
   }
 
+  // ===== Auto-mount =====
+  // 페이지 인라인 <script>SCM.lnb.mount(...)</script> 호출 없이도 동작하도록
+  // DOMContentLoaded 시 모든 .scm-lnb 빈 placeholder 를 자동 mount.
+  // active 키는 data-active 속성에서 읽음.
+  function autoMount() {
+    var nodes = document.querySelectorAll('.scm-lnb');
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      if (el.children.length === 0) mount(el);
+    }
+  }
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', autoMount, { once: true });
+    } else {
+      autoMount();
+    }
+  }
+
   root.SCM = root.SCM || {};
   root.SCM.lnb = {
     mount: mount,

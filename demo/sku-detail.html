@@ -591,9 +591,6 @@
   }
 
   // GNB + LNB
-  if (window.SCM && SCM.lnb)    SCM.lnb.mount(document.querySelector('.scm-lnb'), { active: 'sku-management' });
-  if (window.SCM && SCM.topbar) SCM.topbar.mount(document.querySelector('.scm-topbar'));
-
   // Back button — referrer 가 있으면 history.back, 없으면 sku-management.html
   const backBtn = document.getElementById('back-btn');
   if (backBtn) {
