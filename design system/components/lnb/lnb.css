@@ -215,3 +215,16 @@ html:not(.is-lnb-open) .scm-lnb:hover .scm-lnb-item.is-open .scm-lnb-l2-list {
 .scm-lnb-l2[href=""] .scm-lnb-tag {
   display: none;
 }
+
+/* ============================================================
+ * 방어선 — 외부 동적 hide CSS (dev-export VOC version hide,
+ * data-voc-hidden 등) 가 LNB 메뉴를 우연히 가리는 사례 차단.
+ * !important + 클래스 두 개 specificity 로 외부 룰을 이김.
+ * 부모 .scm-lnb-l2-list 자체는 default display:none 인 상태에서
+ * html.is-lnb-open + .scm-lnb-item.is-open 조건으로만 펼쳐지므로
+ * 자식 a 가 항상 flex 라도 펼침 동작은 영향 X.
+ * ============================================================ */
+.scm-lnb .scm-lnb-l2 {
+  display: flex !important;
+}
+.scm-lnb .scm-lnb-l2[hidden] { display: none !important; }
