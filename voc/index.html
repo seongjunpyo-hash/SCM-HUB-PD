@@ -1644,6 +1644,7 @@
                 </div>
                 <div class="edit-add-form" id="addColumnForm">
                   <input type="text" id="addColumnLabel" placeholder="컬럼 라벨 (예: 비고)" maxlength="20" />
+                  <select id="addColumnTable" hidden title="추가할 테이블 선택"></select>
                   <div class="edit-add-form__actions">
                     <button type="button" class="edit-add-form__btn edit-add-form__btn--ghost" data-cancel="column">취소</button>
                     <button type="button" class="edit-add-form__btn edit-add-form__btn--primary" data-submit="column">추가</button>
@@ -2942,11 +2943,12 @@
       renderEditPane();
       applyFilterSectionToIframe();
     }
-    function addColumn(label) {
+    function addColumn(label, tableIdx) {
       const d = pageDraft();
       d.added.columns.push({
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
         label,
+        tableIdx: (typeof tableIdx === 'number' && tableIdx >= 0) ? tableIdx : 0,
       });
       persistDraft();
       renderEditPane();
@@ -3691,19 +3693,29 @@
         });
       }
       // ---- Columns ----
-      // We inject into BOTH the sticky-clone .mp-table (which carries the
-      // thead) AND the body .mp-table (which carries tbody). Each may also
-      // have a colgroup we need to keep in sync so scm-table's reorder API
-      // (moveColumn) can find a matching <col> at the same leaf index.
-      const allTables = [...doc.querySelectorAll('.mp-table')];
-      // Pick any table for the source-of-truth thead / tbody — they live in
-      // separate .mp-table elements when sticky thead is enabled, so collect
-      // both and inject independently.
+      // 페이지 visible .mp-table-host 들을 idx 0..N 으로 정렬한 뒤, 각 추가
+      // 컬럼은 entry.tableIdx (default 0) 가 가리키는 host 의 모든 .mp-table
+      // (sticky-clone + body table) 에만 inject. 이전엔 모든 mp-table 에
+      // 한꺼번에 inject 해서 다중 테이블 페이지에서 "내가 추가 안 한 테이블에
+      // 도 컬럼이 생긴다" 는 문제가 있었음.
+      const visibleTables = [...doc.querySelectorAll('.mp-table')].filter(_isElVisible);
+      const hostsByIdx = [];
+      const _seenHosts = new Set();
+      visibleTables.forEach((t) => {
+        const host = t.closest('.mp-table-host') || t;
+        if (_seenHosts.has(host)) return;
+        _seenHosts.add(host);
+        hostsByIdx.push({ host, tables: [...host.querySelectorAll('.mp-table')] });
+      });
       const cellStyle = 'min-width:120px;width:120px;padding:12px 16px;';
       a.added.columns.forEach((c) => {
         const id = `voc-added-col-${c.id}`;
         if (doc.getElementById(id)) return;
         const klass = `voc-added-col-${c.id}`;
+        const ti = (typeof c.tableIdx === 'number' && c.tableIdx >= 0) ? c.tableIdx : 0;
+        const target = hostsByIdx[ti] || hostsByIdx[0];
+        if (!target) return;
+        const allTables = target.tables;
         // 1) thead (sticky clone or original) — row1 placeholder + row2 leaf
         allTables.forEach((tbl) => {
           const thead = tbl.querySelector('thead');
@@ -3714,7 +3726,14 @@
           const th = doc.createElement('th');
           th.id = id;
           th.className = `col-auto scm-voc-added-col ${klass}`;
-          th.textContent = c.label;
+          // 헤더 안에 .cell-clamp 을 두면 sort-ic / filter-ic 는 그 안에 inject
+          // 가능. 라벨 + sort-ic + filter-ic 자리 잡기 위해 wrapper 사용.
+          th.innerHTML =
+            '<div class="cell-clamp">'
+            + escapeHtml(c.label)
+            + '<svg class="sort-ic" viewBox="0 0 16 16" style="display:none;"><use href="#ic-arrowUpDown"/></svg>'
+            + '<span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20" style="display:none;"><use href="#ic-funnel"/></svg></span>'
+            + '</div>';
           th.setAttribute('style', cellStyle);
           const colSpacer = colTr.querySelector('.col-spacer');
           colTr.insertBefore(th, colSpacer || null);
@@ -4423,14 +4442,26 @@
       const hasLeafOrder = a.columnLeafOrder && Object.keys(a.columnLeafOrder).length;
       const hasFrozenOverride = a.frozenCount != null;
       if (!hasTopOrder && !hasLeafOrder && !hasFrozenOverride) return;
-      // pick the first table that has scm-table API attached
-      const tables = [...doc.querySelectorAll('.mp-table')];
-      const reorderApi = tables.map((t) => t._scmReorder).find(Boolean);
-      if (reorderApi) {
-        applyOrderViaScmTable(reorderApi, a, doc);
-      } else {
-        applyOrderFlat(doc, a);
-      }
+      // 페이지의 visible .mp-table-host 모두 — 각 host 의 reorderApi 에 대해
+      // 동일 columnOrder/columnLeafOrder 를 적용. 각 API 는 자기 테이블의
+      // leaves 만 인식해서 잘못된 cross-table 이동은 자동 noop.
+      const tables = [...doc.querySelectorAll('.mp-table')].filter(_isElVisible);
+      const seen = new Set();
+      let applied = 0;
+      tables.forEach((tbl) => {
+        const host = tbl.closest('.mp-table-host') || tbl;
+        if (seen.has(host)) return;
+        seen.add(host);
+        const tablesInHost = [...host.querySelectorAll('.mp-table')];
+        const reorderApi = (host === tbl ? tbl : null && tbl._scmReorder)
+                       || tablesInHost.map((t) => t._scmReorder).find(Boolean)
+                       || null;
+        if (reorderApi) {
+          applyOrderViaScmTable(reorderApi, a, doc);
+          applied++;
+        }
+      });
+      if (!applied) applyOrderFlat(doc, a);
     }
 
     // ----- scm-table-driven apply (preferred) -----
@@ -4709,6 +4740,22 @@
     // selector for it stays valid through reorders. The key is
     // position-based (`flt-3`, `col-7`) so a page reload re-keys
     // identically as long as the source DOM order hasn't changed.
+    // 요소가 화면에 노출되어 있는지 — [hidden] / display:none / visibility:hidden
+    // 한 ancestor 가 있으면 false. modal 안의 sub-table (.scm-bu-modal 의
+    // history-table 등) 을 스캔에서 제외하기 위해 사용.
+    function _isElVisible(el) {
+      if (!el || el.nodeType !== 1) return false;
+      const doc = el.ownerDocument;
+      const win = doc && doc.defaultView;
+      for (let cur = el; cur && cur.nodeType === 1 && cur !== doc.documentElement; cur = cur.parentElement) {
+        if (cur.hasAttribute && cur.hasAttribute('hidden')) return false;
+        if (win && win.getComputedStyle) {
+          const cs = win.getComputedStyle(cur);
+          if (cs && (cs.display === 'none' || cs.visibility === 'hidden')) return false;
+        }
+      }
+      return true;
+    }
     function ensureVocKey(el, prefix, idx) {
       if (!el || !el.dataset) return null;
       if (!el.dataset.vocKey) el.dataset.vocKey = `${prefix}-${idx}`;
@@ -4807,6 +4854,9 @@
       const allTables = [...main.querySelectorAll('.mp-table')];
       const hostMap = new Map();
       allTables.forEach((t) => {
+        // 숨겨진 modal/popover 안의 sub-table 은 스캔 대상에서 제외.
+        // (예: SKU 관리의 일괄 업로드 modal 안 history table)
+        if (!_isElVisible(t)) return;
         const host = t.closest('.mp-table-host') || t;
         if (!hostMap.has(host)) hostMap.set(host, []);
         hostMap.get(host).push(t);
@@ -5173,6 +5223,7 @@
         label: c.label, kind: 'column',
         selector: `#voc-added-col-${c.id}`,
         added: c, parent: null, draggable: true, anchor: false,
+        tableIdx: (typeof c.tableIdx === 'number' && c.tableIdx >= 0) ? c.tableIdx : 0,
       }));
       const addedBySel = Object.fromEntries(addedColMeta.map((c) => [c.selector, c]));
       // Effective top-level order: user's saved columnOrder, falling back to
@@ -5292,11 +5343,11 @@
           if (it.renamed) cls.push('is-renamed');
           const sel = escapeHtml(it.selector);
           let middle = '';
-          if (it.kind === 'column' && !it.added && !it.isGroup) {
-            // leaf column gets sort/filter icon toggles + cell-type select.
+          if (it.kind === 'column' && !it.isGroup) {
+            // leaf column (native + added) — 셀타입 + 정렬/필터 토글 모두 노출.
             const sortOn   = showSort.has(it.selector);
             const filterOn = showFilter.has(it.selector);
-            const frozenBadge = (it.leafIdx != null && it.leafIdx >= 0 && it.leafIdx < effectiveFrozenCount)
+            const frozenBadge = (!it.added && it.leafIdx != null && it.leafIdx >= 0 && it.leafIdx < effectiveFrozenCount)
               ? '<span class="edit-row__frozen-badge" aria-hidden="true" title="고정 영역">🔒</span>' : '';
             const ct = cellTypes[it.selector] || 'basic';
             middle = `
@@ -5310,17 +5361,6 @@
               </select>
               <button type="button" class="edit-row__icon-toggle ${sortOn ? 'is-on' : ''}"   data-toggle-icon="sort"   data-selector="${sel}" title="컬럼 정렬 아이콘 표시/숨김">정렬</button>
               <button type="button" class="edit-row__icon-toggle ${filterOn ? 'is-on' : ''}" data-toggle-icon="filter" data-selector="${sel}" title="컬럼 필터 아이콘 표시/숨김">필터</button>`;
-          } else if (it.kind === 'column' && it.added && !it.isGroup) {
-            // 사용자 추가 컬럼도 셀타입 선택 가능.
-            const ct = cellTypes[it.selector] || 'basic';
-            middle = `
-              <select class="edit-row__cell-type" data-cell-type-key="${sel}" title="셀 타입">
-                <option value="basic"     ${ct === 'basic'     ? 'selected' : ''}>기본정보</option>
-                <option value="need-only" ${ct === 'need-only' ? 'selected' : ''}>니드온리</option>
-                <option value="input"     ${ct === 'input'     ? 'selected' : ''}>입력창</option>
-                <option value="select"    ${ct === 'select'    ? 'selected' : ''}>셀렉트</option>
-                <option value="disabled"  ${ct === 'disabled'  ? 'selected' : ''}>디세이블</option>
-              </select>`;
           } else if (it.isGroup) {
             middle = `<span class="edit-row__group-count" title="선택된 컬럼 수 / 전체 컬럼 수">${it.visibleCount}/${it.childCount}</span>`;
           } else if (it.kind === 'filter') {
@@ -5663,6 +5703,22 @@
         if (form) {
           form.classList.add('is-open');
           addBtn.style.display = 'none';
+          // 컬럼 추가 form: 다중 테이블이면 타깃 select 노출.
+          if (which === 'column') {
+            const tSel = document.getElementById('addColumnTable');
+            const tables = (scanEditTargets().tables) || [];
+            if (tSel) {
+              if (tables.length > 1) {
+                tSel.innerHTML = tables.map((t) =>
+                  `<option value="${t.idx}">${escapeHtml(t.label)} 에 추가</option>`).join('');
+                tSel.hidden = false;
+                tSel.value = String(tables[0].idx);
+              } else {
+                tSel.hidden = true;
+                tSel.innerHTML = '';
+              }
+            }
+          }
           setTimeout(() => { const inp = form.querySelector('input'); inp && inp.focus(); }, 0);
         }
         return;
@@ -5695,7 +5751,9 @@
         } else {
           const label = (document.getElementById('addColumnLabel').value || '').trim();
           if (!label) { document.getElementById('addColumnLabel').focus(); return; }
-          addColumn(label);
+          const tSel = document.getElementById('addColumnTable');
+          const ti = tSel && !tSel.hidden ? parseInt(tSel.value, 10) : 0;
+          addColumn(label, Number.isFinite(ti) ? ti : 0);
           document.getElementById('addColumnLabel').value = '';
           document.getElementById('addColumnForm').classList.remove('is-open');
           document.querySelector('.edit-add-btn[data-add="column"]').style.display = '';
