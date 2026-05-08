@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=1440" />
-  <title>OTB 예산 관리 · SCM HUB</title>
+  <title>SCM-Hub · OTB 예산 관리 (모듈 기반)</title>
   <script src="/auth-gate.js"></script>
   <script src="/voc/comment-overlay.js" defer></script>
   <script src="/dev-export.js" defer></script>
@@ -89,22 +89,23 @@
     .scm-table-action-bar__count strong { color: #245EFF; font-weight: 700; margin-right: 4px; }
     .scm-table-action-bar__actions { display: flex; gap: 8px; }
 
-    /* === Domain — OTB 예산 관리 === */
-    /* 채널 chip — MUSINSA=초록 / 29CM=파랑 / 전체=회색 (legacy kind-chip 재현) */
-    .scm-kind-chip--musinsa { background: #ECFFEC; color: #1EA514; }
-    .scm-kind-chip--29cm    { background: #E2F1FF; color: #1A4FD6; }
-    .scm-kind-chip--all     { background: rgba(138,138,138,0.10); color: #666; }
+    /* === Domain — 편집샵 재고 보충 요청 === */
+    /* 보충 대상 구분 chip — target=초록 / nontarget=회색 (legacy er-kind-chip 재현) */
+    .scm-kind-chip--target    { background: #ECFFEC; color: #1EA514; }
+    .scm-kind-chip--nontarget { background: rgba(138,138,138,0.10); color: #666; }
 
-    /* 상태 chip — 정상 blue / 주의 orange / 초과 red */
-    .otb-status-chip {
+    /* 옵션 chip wrap — 다중 chip 한 줄 (max 260) */
+    .er-opt-chips { display: inline-flex; align-items: center; gap: 4px; flex-wrap: nowrap; max-width: 260px; white-space: nowrap; }
+    /* er-opt-chips 는 .scm-tag 모듈 기본 스펙 그대로 (h24/p2,8/fs13/lh18) — 별도 오버라이드 X */
+
+    /* 초도 chip — 파란 chip "초도" (legacy er-intro-chip 재현, scm-tag 톤 통일) */
+    .er-intro-chip {
       display: inline-flex; align-items: center; height: 24px; padding: 2px 8px; border-radius: 4px;
+      background: #E2F1FF; color: #000;
       font-size: 13px; font-weight: 500; line-height: 18px;
     }
-    .otb-status-chip--ok    { background: #E2F1FF; color: #1A4FD6; }
-    .otb-status-chip--warn  { background: #FFF3E0; color: #C97A00; }
-    .otb-status-chip--over  { background: #FBDAD7; color: #B91C1C; }
 
-    /* 메모 — 제목 styled (legacy er-promo-title 재현) */
+    /* 프로모션 정보 — 제목 + 날짜 (legacy er-promo) */
     .er-promo { display: flex; flex-direction: column; gap: 4px; }
     .er-promo-title { font-size: 15px; font-weight: 500; line-height: 20.4px; color: #000; }
     .er-promo-date  { font-size: 15px; font-weight: 400; line-height: 20.4px; color: #000; }
@@ -112,14 +113,11 @@
     /* 헤더 옆 info icon */
     .er-th-info { display: inline-flex; align-items: center; gap: 4px; }
 
-    /* 잔여금액 음수(초과) — 빨강 / 사용률 over → 빨강 */
-    .mp-table tbody td.er-num-zero { background: #fff; color: #F31110; }
-    .mp-table .otb-rate--warn  { color: #C97A00; font-weight: 500; }
-    .mp-table .otb-rate--over  { color: #F31110; font-weight: 600; }
-    .mp-table .otb-remain--negative { color: #F31110; font-weight: 500; }
+    /* 매장 입고예정 accent (>0) */
     .er-num-accent { color: #245EFF; font-weight: 600; }
+    .mp-table tbody td.er-num-zero { background: #fff; color: #F31110; }
 
-    /* 예산 조정 수량 — INPUT 셀 light blue bg (legacy er-input-cell 재현) */
+    /* 이동 요청 수량 — INPUT 셀 light blue bg (legacy er-input-cell 재현) */
     .mp-table tbody td.er-input-cell {
       background: rgba(36,94,255,0.08);
       padding: 12px 14px;
@@ -127,41 +125,34 @@
     .mp-table tbody tr:hover td.er-input-cell {
       background: rgba(36,94,255,0.12);
     }
-    /* 사용 가능 예산 = 0 → 조정 불가 — disabled bg */
+    /* 이동 가능 재고 = 0 → 요청 불가 — INPUT 셀 bg 도 disabled 토큰 (#88888810) 적용
+       (input/max disabled 톤은 디자인 시스템 input-cell.css 가 처리) */
     .mp-table tbody td.er-input-cell.is-disabled,
     .mp-table tbody tr:hover td.er-input-cell.is-disabled {
       background: rgba(138, 138, 138, 0.10);
     }
-    /* 조정 수량 > 사용 가능 예산 → 에러 톤 */
+    /* 요청 수량 > 이동 가능 재고 → 에러 톤 — INPUT 셀 wrapper bg-critical-low (faded red) */
     .mp-table tbody td.er-input-cell.is-error,
     .mp-table tbody tr:hover td.er-input-cell.is-error {
       background: rgba(243, 17, 16, 0.10);
     }
 
-    /* OTB info banner — er-date-row 자리에 배너 형태로 변환 */
-    .otb-info-banner {
-      display: flex; gap: 12px; align-items: flex-start;
-      padding: 16px 20px;
-      background: #F4F8FF;
-      border: 1px solid #D6E4FF;
-      border-radius: 6px;
-      margin: 16px 0 16px;
+    /* Date cards (legacy er-date-row) */
+    .er-date-row {
+      display: flex; gap: 12px; padding: 16px 28px 16px; flex-wrap: wrap;
+      background: #fff;
+      margin: 0 -28px;
     }
-    .otb-info-banner__icon {
-      flex: 0 0 auto;
-      width: 24px; height: 24px;
-      color: #1A4FD6;
+    .er-date-card {
+      flex: 0 0 auto; padding: 20px 24px;
+      background: #fff; border: 1px solid #E0E0E0; border-radius: 4px;
+      display: flex; align-items: center; gap: 24px;
     }
-    .otb-info-banner__body { flex: 1 1 auto; }
-    .otb-info-banner__title {
-      font-size: 15px; font-weight: 600; line-height: 20.4px; color: #1A4FD6;
-      margin-bottom: 4px;
-    }
-    .otb-info-banner__desc {
-      font-size: 13px; font-weight: 400; line-height: 18.2px; color: #333;
-    }
-    .otb-info-banner__desc ul { margin: 4px 0 0; padding-left: 18px; }
-    .otb-info-banner__desc li { line-height: 1.6; }
+    .er-date-cell { display: flex; flex-direction: column; }
+    .er-date-cell-label { font-size: 13px; font-weight: 400; line-height: 18.2px; color: #666; margin-bottom: 4px; }
+    .er-date-cell-value { font-size: 18px; font-weight: 500; line-height: 25.2px; color: #000; }
+    .er-date-cell-value--muted { color: #666; font-weight: 400; font-size: 16px; line-height: 22.4px; }
+    .er-date-divider { width: 1px; height: 56px; background: #EBEBEB; flex-shrink: 0; }
   </style>
 
   <script>
@@ -196,7 +187,6 @@
   <symbol id="ic-close" viewBox="0 0 20 20"><path d="M5 5L15 15M15 5L5 15" stroke="currentColor" fill="none"/></symbol>
   <symbol id="ic-alertTriangle" viewBox="0 0 20 20"><path d="M10 14.7499V12.8832M10 11.9499V7.28322M2.30694 16.4999H17.6931C17.9272 16.4999 18.0711 16.2437 17.9493 16.0438L10.2562 3.42025C10.1393 3.22841 9.86077 3.22841 9.74386 3.42025L2.05076 16.0438C1.92893 16.2437 2.07283 16.4999 2.30694 16.4999Z" stroke="currentColor" fill="none"/></symbol>
   <symbol id="ic-alertCircle" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="currentColor"/><path d="M10 6V11" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="14" r="0.9" fill="#fff"/></symbol>
-  <symbol id="ic-info" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M10 9V14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="6.2" r="0.9" fill="currentColor"/></symbol>
 </defs>
 </svg>
 
@@ -414,11 +404,16 @@
       </button>
       <div class="scm-filter-overflow">
         <div class="scm-filter-overflow__track">
-          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="season"><span class="scm-filter-select__label">시즌</span><span class="scm-filter-select__value">시즌</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
-          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="category"><span class="scm-filter-select__label">카테고리</span><span class="scm-filter-select__value">카테고리</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="purchaseType"><span class="scm-filter-select__label">매입형태</span><span class="scm-filter-select__value">매입형태</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="platform"><span class="scm-filter-select__label">플랫폼</span><span class="scm-filter-select__value">플랫폼</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
           <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="brand"><span class="scm-filter-select__label">브랜드</span><span class="scm-filter-select__value">브랜드</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
-          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="channel"><span class="scm-filter-select__label">채널</span><span class="scm-filter-select__value">채널</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
-          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="status"><span class="scm-filter-select__label">상태</span><span class="scm-filter-select__value">상태</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="store"><span class="scm-filter-select__label">스토어</span><span class="scm-filter-select__value">스토어</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="sku"><span class="scm-filter-select__label">SKU번호</span><span class="scm-filter-select__value">SKU번호</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="uid"><span class="scm-filter-select__label">UID</span><span class="scm-filter-select__value">UID</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="barcode"><span class="scm-filter-select__label">바코드</span><span class="scm-filter-select__value">바코드</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="styleNumber"><span class="scm-filter-select__label">스타일넘버</span><span class="scm-filter-select__value">스타일넘버</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="firstInbound"><span class="scm-filter-select__label">초도 입고 여부</span><span class="scm-filter-select__value">초도 입고 여부</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="restockKind"><span class="scm-filter-select__label">보충 대상 구분</span><span class="scm-filter-select__value">보충 대상 구분</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
         </div>
         <div class="scm-filter-overflow__fade scm-filter-overflow__fade--left" style="opacity:0;"></div>
         <div class="scm-filter-overflow__fade scm-filter-overflow__fade--right" style="opacity:0;"></div>
@@ -432,17 +427,23 @@
       </div>
     </div>
 
-    <!-- Info banner — OTB 예산 운영 안내 -->
-    <div class="otb-info-banner">
-      <svg class="otb-info-banner__icon" viewBox="0 0 20 20" aria-hidden="true"><use href="#ic-info"/></svg>
-      <div class="otb-info-banner__body">
-        <div class="otb-info-banner__title">OTB 예산 운영 안내</div>
-        <div class="otb-info-banner__desc">
-          <ul>
-            <li>예산은 시즌·카테고리·브랜드·채널 단위로 배정되며, 발주 확정 시점에 사용금액으로 차감됩니다.</li>
-            <li>사용률 80% 이상 진입 시 <b>주의</b>, 100% 초과 시 <b>초과</b> 상태로 자동 전환되며 담당자에게 알림이 발송됩니다.</li>
-            <li>예산 조정 수량은 잔여 예산 한도 내에서만 입력 가능하며, 한도를 초과하면 일괄 수정 대상에서 제외됩니다.</li>
-          </ul>
+    <!-- Date info cards -->
+    <div class="er-date-row">
+      <div class="er-date-card">
+        <div class="er-date-cell">
+          <div class="er-date-cell-label">스토어 입고일</div>
+          <div class="er-date-cell-value">25년 11월 27일(월)</div>
+        </div>
+        <div class="er-date-divider"></div>
+        <div class="er-date-cell">
+          <div class="er-date-cell-label">확정 마감일시</div>
+          <div class="er-date-cell-value er-date-cell-value--muted">11월 26일(목) 18:00</div>
+        </div>
+      </div>
+      <div class="er-date-card">
+        <div class="er-date-cell">
+          <div class="er-date-cell-label">다음 스토어 입고일</div>
+          <div class="er-date-cell-value">25년 12월 4일(목)</div>
         </div>
       </div>
     </div>
@@ -452,13 +453,11 @@
       <div class="scm-stats-bar__left">
         <div class="scm-stats-bar__counts-wrap">
           <div class="scm-stats-bar__counts">
-            <span class="scm-stat scm-stat--all"><span class="scm-stat__label">전체</span> <span class="scm-stat__num">25</span></span>
+            <span class="scm-stat scm-stat--all"><span class="scm-stat__label">전체</span> <span class="scm-stat__num">500</span></span>
             <span class="scm-stat-divider"></span>
-            <span class="scm-stat"><span class="scm-stat__label">정상</span> <span class="scm-stat__num" id="stat-ok" style="color:#1A4FD6;">0</span></span>
+            <span class="scm-stat"><span class="scm-stat__label">대상</span> <span class="scm-stat__num" style="color:#1EA514;">320</span></span>
             <span class="scm-stat-divider"></span>
-            <span class="scm-stat"><span class="scm-stat__label">주의</span> <span class="scm-stat__num" id="stat-warn" style="color:#C97A00;">0</span></span>
-            <span class="scm-stat-divider"></span>
-            <span class="scm-stat"><span class="scm-stat__label">초과</span> <span class="scm-stat__num" id="stat-over" style="color:#F31110;">0</span></span>
+            <span class="scm-stat"><span class="scm-stat__label">비대상</span> <span class="scm-stat__num" style="color:#666;">180</span></span>
           </div>
         </div>
         <div class="scm-stats-bar__mini-actions">
@@ -468,11 +467,11 @@
               <svg viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
             </button>
             <ul class="scm-mini-popup" role="listbox">
-              <li data-key="budgetCode">예산코드 복사 (25)</li>
-              <li data-key="manager">담당자 복사 (25)</li>
+              <li data-key="sku">SKU번호 복사 (500)</li>
+              <li data-key="barcode">바코드 복사 (500)</li>
             </ul>
           </span>
-          <button class="scm-mini-action scm-mini-action--primary" type="button" id="er-bulk-request-btn" disabled>예산 일괄 수정</button>
+          <button class="scm-mini-action scm-mini-action--primary" type="button" id="er-bulk-request-btn" disabled>보충요청</button>
           <button class="scm-mini-action" type="button" id="er-deselect-btn" disabled>선택 해제</button>
         </div>
       </div>
@@ -485,7 +484,7 @@
         <span class="scm-stats-bar__v-divider"></span>
         <span class="scm-pager">
           <strong class="scm-pager__current">1</strong>
-          <span class="scm-pager__total">/ <span>1</span> 페이지</span>
+          <span class="scm-pager__total">/ <span>5</span> 페이지</span>
           <button class="scm-pager-btn" type="button" aria-label="이전 페이지" disabled><svg viewBox="0 0 20 20"><use href="#ic-chevronLeft"/></svg></button>
           <button class="scm-pager-btn" type="button" aria-label="다음 페이지"><svg viewBox="0 0 20 20"><use href="#ic-chevronRight"/></svg></button>
         </span>
@@ -499,7 +498,7 @@
       </div>
     </div>
 
-    <!-- Data table — OTB 예산 컬럼 (cb + 16 데이터 컬럼 + spacer) -->
+    <!-- Data table — legacy 22 컬럼 + spacer -->
     <div class="mp-table-host">
       <div class="mp-thead-sticky"><div class="mp-thead-scroll"></div></div>
       <div class="mp-table-scroll">
@@ -507,21 +506,27 @@
           <thead>
             <tr>
               <th class="cb-col col-frozen-1" title="전체 선택"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" id="mp-cb-all" aria-label="전체 선택"></span></th>
-              <th class="col-auto col-frozen-2">시즌 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
-              <th class="col-medium col-frozen-3"><div class="cell-clamp">카테고리</div> <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="col-auto col-frozen-2">보충 대상 구분 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="col-auto col-frozen-3">스토어명 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
               <th class="col-auto">브랜드 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
-              <th class="col-auto">채널</th>
-              <th class="col-auto">SKU 그룹</th>
-              <th class="col-auto cell-numeric">예산금액 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg></th>
-              <th class="col-auto cell-numeric">사용금액 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg></th>
-              <th class="col-auto cell-numeric">잔여금액</th>
-              <th class="col-auto cell-numeric"><span class="er-th-info">사용률 <svg viewBox="0 0 20 20" style="width:16px;height:16px;color:#666;"><circle cx="10" cy="10" r="8" fill="currentColor"/><path d="M10 6V11" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="14" r="0.9" fill="#fff"/></svg></span> <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg></th>
-              <th class="col-auto cell-numeric"><span class="er-th-info">사용 가능 예산 <svg viewBox="0 0 20 20" style="width:16px;height:16px;color:#666;"><circle cx="10" cy="10" r="8" fill="currentColor"/><path d="M10 6V11" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="14" r="0.9" fill="#fff"/></svg></span></th>
-              <th class="col-auto">예산 조정 수량</th>
-              <th class="col-auto">상태</th>
-              <th class="col-auto">담당자</th>
-              <th class="col-auto">최근 수정</th>
-              <th class="col-medium"><div class="cell-clamp">메모</div></th>
+              <th class="col-auto">SKU번호</th>
+              <th class="col-medium"><div class="cell-clamp">카테고리</div></th>
+              <th class="col-auto">UID <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="col-medium">옵션</th>
+              <th class="col-auto">바코드</th>
+              <th class="col-large" data-pad="full"><div class="cell-clamp">SKU명</div></th>
+              <th class="col-auto cell-numeric">직전 7일 판매량</th>
+              <th class="col-auto cell-numeric">직전 14일 판매량</th>
+              <th class="col-auto"><span class="er-th-info">판매예측치 <svg viewBox="0 0 20 20" style="width:16px;height:16px;color:#666;"><circle cx="10" cy="10" r="8" fill="currentColor"/><path d="M10 6V11" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="14" r="0.9" fill="#fff"/></svg></span></th>
+              <th class="col-auto cell-numeric">매장재고</th>
+              <th class="col-auto cell-numeric">매장 입고예정수량</th>
+              <th class="col-auto"><span class="er-th-info">기요청 수량 <svg viewBox="0 0 20 20" style="width:16px;height:16px;color:#666;"><circle cx="10" cy="10" r="8" fill="currentColor"/><path d="M10 6V11" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="14" r="0.9" fill="#fff"/></svg></span></th>
+              <th class="col-auto">이동 요청 수량</th>
+              <th class="col-auto cell-numeric">이동 가능 재고</th>
+              <th class="col-auto">초도 입고 여부</th>
+              <th class="col-auto"><div class="cell-clamp">프로모션 정보</div></th>
+              <th class="col-auto">스타일넘버</th>
+              <th class="col-auto">매입형태</th>
               <th class="col-spacer" aria-hidden="true"></th>
             </tr>
           </thead>
@@ -530,7 +535,7 @@
       </div>
     </div>
 
-    <!-- 코드 확인 popover (예산코드·담당자) -->
+    <!-- 코드 확인 popover (UID·SKU번호·바코드·스타일넘버) -->
     <div class="scm-code-popover-backdrop"></div>
     <div class="scm-code-popover" role="dialog" aria-labelledby="cp-title" id="code-popover">
       <h4 id="cp-title">코드 확인</h4>
@@ -541,11 +546,11 @@
       </div>
     </div>
 
-    <!-- 예산 운영 popover -->
-    <div class="scm-deploy-popover" role="dialog" aria-label="운영 여부 변경" id="deploy-popover">
+    <!-- 스토어 전개 여부 popover -->
+    <div class="scm-deploy-popover" role="dialog" aria-label="전개 여부 변경" id="deploy-popover">
       <ul>
-        <li data-deploy-opt="deployed" data-current="true">운영중</li>
-        <li data-deploy-opt="undeployed">미운영</li>
+        <li data-deploy-opt="deployed" data-current="true">전개중</li>
+        <li data-deploy-opt="undeployed">미전개</li>
       </ul>
     </div>
 
@@ -554,7 +559,7 @@
     <div class="scm-confirm-modal" id="confirm-modal" role="dialog" aria-labelledby="cm-title">
       <h3 class="scm-confirm-modal__title" id="cm-title">처리 확인</h3>
       <p class="scm-confirm-modal__desc">
-        선택하신 예산을 처리합니다.<br/>
+        선택하신 상품을 처리합니다.<br/>
         계속 진행하시겠습니까?
       </p>
       <div class="scm-confirm-modal__actions">
@@ -579,8 +584,8 @@
             <div class="scm-bu-warning__head-body">
               <div class="scm-bu-warning__title">일괄 업로드 시 유의사항</div>
               <ul class="scm-bu-warning__list">
-                <li>업로드 후 예산 반영에 약 5–30분이 소요될 수 있습니다.</li>
-                <li>같은 예산코드가 여러 행에 있을 경우 마지막 행의 값이 적용됩니다.</li>
+                <li>업로드 후 적용에 약 5–30분이 소요될 수 있습니다.</li>
+                <li>같은 SKU 가 여러 행에 있을 경우 마지막 행의 값이 적용됩니다.</li>
                 <li class="is-critical">템플릿을 변경하지 마세요. 컬럼 순서가 바뀌면 처리가 실패할 수 있습니다.</li>
               </ul>
             </div>
@@ -632,7 +637,7 @@
               <tr>
                 <td>1</td>
                 <td><span class="scm-bu-status-pill" data-state="processing">처리중</span></td>
-                <td>20260221_OTB예산_일괄등록.xlsx</td>
+                <td>20260221_재고보충요청.xlsx</td>
                 <td class="scm-bu-result-cell">-</td>
                 <td>2026.02.21. 11:00</td>
                 <td>guji@musinsa.com</td>
@@ -640,10 +645,10 @@
               <tr>
                 <td>2</td>
                 <td><span class="scm-bu-status-pill" data-state="done">처리완료</span></td>
-                <td>20260220_OTB예산_일괄등록_001.xlsx</td>
+                <td>20260220_재고보충요청_001.xlsx</td>
                 <td class="scm-bu-result-cell">
                   <span class="scm-bu-result">
-                    <span class="scm-bu-result-group scm-bu-result-group--success">성공 <em>240</em></span>
+                    <span class="scm-bu-result-group scm-bu-result-group--success">성공 <em>1,200</em></span>
                     <span class="scm-bu-result-divider" aria-hidden="true"></span>
                     <span class="scm-bu-result-group scm-bu-result-group--fail">실패 <em>0</em></span>
                   </span>
@@ -654,13 +659,13 @@
               <tr>
                 <td>3</td>
                 <td><span class="scm-bu-status-pill" data-state="partial">부분완료</span></td>
-                <td>20260219_OTB예산_일괄등록.xlsx</td>
+                <td>20260219_재고보충요청.xlsx</td>
                 <td class="scm-bu-result-cell">
                   <span class="scm-bu-result">
-                    <span class="scm-bu-result-group scm-bu-result-group--success">성공 <em>198</em></span>
+                    <span class="scm-bu-result-group scm-bu-result-group--success">성공 <em>980</em></span>
                     <button class="scm-bu-result-dl" type="button">다운로드</button>
                     <span class="scm-bu-result-divider" aria-hidden="true"></span>
-                    <span class="scm-bu-result-group scm-bu-result-group--fail">실패 <em>12</em></span>
+                    <span class="scm-bu-result-group scm-bu-result-group--fail">실패 <em>20</em></span>
                     <button class="scm-bu-result-dl" type="button">다운로드</button>
                   </span>
                 </td>
@@ -675,7 +680,7 @@
         <button class="scm-button" type="button" id="bu-cancel">닫기</button>
         <button class="scm-button scm-button--primary" type="button" id="bu-submit">
           <svg viewBox="0 0 16 16" fill="none" style="width:16px;height:16px;vertical-align:-3px;"><path d="M8 14V3M8 3L4 7M8 3L12 7M2 2H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          엑셀 업로드(예산 일괄 등록)
+          엑셀 업로드(요청시작)
         </button>
       </footer>
     </div>
@@ -744,47 +749,39 @@
 
 <script>
 (function () {
-  // ----- Demo data — OTB 예산 25 row -----
-  // status: 정상(ok) / 주의(warn) / 초과(over)  — 사용률 기준 자동 산출 가능, 데모 단순화로 명시
-  // budget: 예산금액 / used: 사용금액 / availableBudget: 사용 가능 예산 (= 예산-사용금액 한도, 음수면 0 또는 표시용)
-  // adjustQty: 예산 조정 수량 (사용자 입력값)
+  // ----- Demo data (legacy 12 row 그대로) -----
   const ROWS = [
-    { season:'25 FW', cat:'상의 > 셔츠',     brand:'MUSINSA STANDARD', channel:'MUSINSA', skuGroup:'musinsa', budgetCode:'OTB-25FW-0001', budget:120000000, used: 56000000, adjustQty:0,         manager:'guji@musinsa.com',  updatedAt:'25.10.24 11:30', memo:'상반기 베이직 위크 대비 증액'   },
-    { season:'25 FW', cat:'상의 > 후디',     brand:'MUSINSA STANDARD', channel:'MUSINSA', skuGroup:'musinsa', budgetCode:'OTB-25FW-0002', budget: 80000000, used: 72000000, adjustQty:0,         manager:'jun@musinsa.com',   updatedAt:'25.10.24 10:11', memo:'시즌 마감 임박'                  },
-    { season:'25 FW', cat:'하의 > 슬랙스',   brand:'MUSINSA STANDARD', channel:'MUSINSA', skuGroup:'musinsa', budgetCode:'OTB-25FW-0003', budget: 60000000, used: 65000000, adjustQty:0,         manager:'guji@musinsa.com',  updatedAt:'25.10.24 09:50', memo:'초과분 차감 협의 필요'           },
-    { season:'25 FW', cat:'아우터 > 코트',   brand:'아크테릭스',        channel:'29CM',    skuGroup:'29cm',    budgetCode:'OTB-25FW-0004', budget:200000000, used: 80000000, adjustQty:0,         manager:'kim@29cm.co.kr',    updatedAt:'25.10.23 18:22', memo:''                                },
-    { season:'25 FW', cat:'아우터 > 자켓',   brand:'아크테릭스',        channel:'29CM',    skuGroup:'29cm',    budgetCode:'OTB-25FW-0005', budget:150000000, used:120000000, adjustQty:0,         manager:'kim@29cm.co.kr',    updatedAt:'25.10.23 17:00', memo:'겨울시즌 추가 발주 검토'         },
-    { season:'25 FW', cat:'신발 > 운동화',   brand:'NIKE',             channel:'전체',     skuGroup:'all',     budgetCode:'OTB-25FW-0006', budget: 90000000, used: 18000000, adjustQty:0,         manager:'park@musinsa.com',  updatedAt:'25.10.23 14:11', memo:''                                },
-    { season:'25 FW', cat:'신발 > 운동화',   brand:'아디다스',          channel:'MUSINSA', skuGroup:'musinsa', budgetCode:'OTB-25FW-0007', budget: 70000000, used: 60000000, adjustQty:0,         manager:'park@musinsa.com',  updatedAt:'25.10.23 13:40', memo:'런닝 페어 종료 후 재산정'         },
-    { season:'25 FW', cat:'신발 > 스니커즈', brand:'NIKE',             channel:'29CM',    skuGroup:'29cm',    budgetCode:'OTB-25FW-0008', budget: 50000000, used: 51000000, adjustQty:0,         manager:'lee@29cm.co.kr',    updatedAt:'25.10.23 12:00', memo:'초과 — 예산 조정 필요'           },
-    { season:'25 FW', cat:'잡화 > 가방',     brand:'MUSINSA',          channel:'MUSINSA', skuGroup:'musinsa', budgetCode:'OTB-25FW-0009', budget: 30000000, used:  6000000, adjustQty:0,         manager:'choi@musinsa.com',  updatedAt:'25.10.22 19:00', memo:''                                },
-    { season:'25 FW', cat:'잡화 > 모자',     brand:'MUSINSA',          channel:'MUSINSA', skuGroup:'musinsa', budgetCode:'OTB-25FW-0010', budget: 20000000, used:    500000, adjustQty:0,         manager:'choi@musinsa.com',  updatedAt:'25.10.22 18:10', memo:'재고 회전 양호'                  },
-    { season:'25 FW', cat:'잡화 > 가방 > 토트백', brand:'MUSINSA',     channel:'29CM',    skuGroup:'29cm',    budgetCode:'OTB-25FW-0011', budget: 25000000, used: 22000000, adjustQty:0,         manager:'lee@29cm.co.kr',    updatedAt:'25.10.22 16:25', memo:''                                },
-    { season:'26 SS', cat:'상의 > 셔츠',     brand:'MUSINSA STANDARD', channel:'MUSINSA', skuGroup:'musinsa', budgetCode:'OTB-26SS-0001', budget:140000000, used:  4000000, adjustQty:0,         manager:'guji@musinsa.com',  updatedAt:'25.10.22 11:30', memo:'시즌 시작 직전'                  },
-    { season:'26 SS', cat:'상의 > 티셔츠',   brand:'MUSINSA STANDARD', channel:'MUSINSA', skuGroup:'musinsa', budgetCode:'OTB-26SS-0002', budget:100000000, used:  2000000, adjustQty:0,         manager:'guji@musinsa.com',  updatedAt:'25.10.21 18:00', memo:''                                },
-    { season:'26 SS', cat:'하의 > 청바지',   brand:'MUSINSA STANDARD', channel:'전체',     skuGroup:'all',     budgetCode:'OTB-26SS-0003', budget: 90000000, used:  9000000, adjustQty:0,         manager:'jun@musinsa.com',   updatedAt:'25.10.21 17:00', memo:''                                },
-    { season:'26 SS', cat:'하의 > 슬랙스',   brand:'시티스케이프',      channel:'29CM',    skuGroup:'29cm',    budgetCode:'OTB-26SS-0004', budget: 50000000, used: 41000000, adjustQty:0,         manager:'kim@29cm.co.kr',    updatedAt:'25.10.21 14:50', memo:'주의 임계'                       },
-    { season:'26 SS', cat:'아우터 > 자켓',   brand:'시티스케이프',      channel:'29CM',    skuGroup:'29cm',    budgetCode:'OTB-26SS-0005', budget: 30000000, used: 25000000, adjustQty:0,         manager:'kim@29cm.co.kr',    updatedAt:'25.10.21 13:00', memo:''                                },
-    { season:'26 SS', cat:'신발 > 운동화',   brand:'NIKE',             channel:'MUSINSA', skuGroup:'musinsa', budgetCode:'OTB-26SS-0006', budget:120000000, used: 12000000, adjustQty:0,         manager:'park@musinsa.com',  updatedAt:'25.10.21 11:30', memo:''                                },
-    { season:'26 SS', cat:'신발 > 스니커즈', brand:'아디다스',          channel:'전체',     skuGroup:'all',     budgetCode:'OTB-26SS-0007', budget: 80000000, used: 88000000, adjustQty:0,         manager:'park@musinsa.com',  updatedAt:'25.10.20 19:00', memo:'초과 — 긴급 조정'                },
-    { season:'26 SS', cat:'잡화 > 가방',     brand:'MUSINSA',          channel:'29CM',    skuGroup:'29cm',    budgetCode:'OTB-26SS-0008', budget: 35000000, used:  7000000, adjustQty:0,         manager:'choi@musinsa.com',  updatedAt:'25.10.20 18:00', memo:''                                },
-    { season:'26 SS', cat:'잡화 > 모자',     brand:'MUSINSA',          channel:'MUSINSA', skuGroup:'musinsa', budgetCode:'OTB-26SS-0009', budget: 18000000, used: 14400000, adjustQty:0,         manager:'choi@musinsa.com',  updatedAt:'25.10.20 16:30', memo:'주의'                            },
-    { season:'25 FW', cat:'아우터 > 패딩',   brand:'아크테릭스',        channel:'MUSINSA', skuGroup:'musinsa', budgetCode:'OTB-25FW-0012', budget:180000000, used: 36000000, adjustQty:0,         manager:'kim@29cm.co.kr',    updatedAt:'25.10.20 11:00', memo:''                                },
-    { season:'25 FW', cat:'액세서리',        brand:'MUSINSA',          channel:'전체',     skuGroup:'all',     budgetCode:'OTB-25FW-0013', budget: 12000000, used: 12000000, adjustQty:0,         manager:'choi@musinsa.com',  updatedAt:'25.10.19 17:25', memo:'한도 도달 — 조정 검토'           },
-    { season:'25 FW', cat:'홈 > 침구',       brand:'시티스케이프',      channel:'29CM',    skuGroup:'29cm',    budgetCode:'OTB-25FW-0014', budget: 22000000, used:  4400000, adjustQty:0,         manager:'lee@29cm.co.kr',    updatedAt:'25.10.19 14:00', memo:''                                },
-    { season:'26 SS', cat:'상의 > 셔츠',     brand:'아크테릭스',        channel:'29CM',    skuGroup:'29cm',    budgetCode:'OTB-26SS-0010', budget: 65000000, used:  3250000, adjustQty:0,         manager:'kim@29cm.co.kr',    updatedAt:'25.10.19 11:11', memo:''                                },
-    { season:'26 SS', cat:'상의 > 후디',     brand:'MUSINSA STANDARD', channel:'MUSINSA', skuGroup:'musinsa', budgetCode:'OTB-26SS-0011', budget: 95000000, used: 76000000, adjustQty:0,         manager:'jun@musinsa.com',   updatedAt:'25.10.19 09:30', memo:'주의'                            },
+    { kind:'target',   storeName:'무신사 스탠다드 강남',  brand:'아크테릭스',    sku:'S000001', cat:'신발 > 운동화', uid:'123456', opt:['블랙','XL'], barcode:'880K/13029/EFGH',  name:'스몰 소프트 나파 크루아상 숄더백', sales7:40, sales14:68, forecast:'higher', stock:130, incoming:99999, prevReq:99999, requestQty:99999, available:99999, intro:true,  promoTitle:'팝업명 노출', promoDate:'25.10.01 ~ 25.11.31', styleNo:'383827', buyType:'위탁' },
+    { kind:'target',   storeName:'무신사 스탠다드 홍대',   brand:'아크테릭스',    sku:'S000001', cat:'신발 > 운동화', uid:'123456', opt:['블랙','L'],  barcode:'880K/13029/EFGH',  name:'스몰 소프트 나파 크루아상 숄더백', sales7:68, sales14:68, forecast:null,     stock:68,  incoming:0,     prevReq:0,     requestQty:3100,  available:3100,  intro:true,  promoTitle:'팝업명 노출', promoDate:'25.10.01 ~ 25.11.31', styleNo:'383827', buyType:'위탁' },
+    { kind:'target',   storeName:'무신사 스탠다드 강남',  brand:'아크테릭스',    sku:'S000001', cat:'신발 > 운동화', uid:'123456', opt:['블랙','XL'], barcode:'880K/13029/EFGH',  name:'스몰 소프트 나파 크루아상 숄더백', sales7:30, sales14:46, forecast:null,     stock:68,  incoming:0,     prevReq:0,     requestQty:580,   available:580,   intro:true,  promoTitle:'팝업명 노출이 길어지면 줄바꿈 좋습니다.', promoDate:'25.10.01 ~ 25.11.31', styleNo:'383827', buyType:'위탁' },
+    { kind:'target',   storeName:'무신사 스탠다드 성수',   brand:'아크테릭스',    sku:'S000001', cat:'신발 > 운동화', uid:'123456', opt:['블랙','M'],  barcode:'880K/13029/EFGH',  name:'스몰 소프트 나파 크루아상 숄더백', sales7:68, sales14:68, forecast:null,     stock:68,  incoming:0,     prevReq:0,     requestQty:1130,  available:1130,  intro:true,  promoTitle:'팝업명 노출', promoDate:'25.10.01 ~ 25.11.31', styleNo:'383827', buyType:'위탁' },
+    { kind:'target',   storeName:'무신사 스탠다드 동대문', brand:'아크테릭스',    sku:'S000001', cat:'신발 > 운동화', uid:'123456', opt:['블랙','S'],  barcode:'920K/14029/EFGH',  name:'스몰 소프트 나파 크루아상 숄더백', sales7:85, sales14:85, forecast:null,     stock:85,  incoming:0,     prevReq:0,     requestQty:300,   available:430,   intro:true,  promoTitle:'팝업명 노출', promoDate:'25.12.01 ~ 26.01.31', styleNo:'494939', buyType:'위탁' },
+    { kind:'target',   storeName:'무신사 스탠다드 남대문', brand:'아크테릭스',    sku:'S000001', cat:'신발 > 운동화', uid:'123456', opt:['블랙','XS'], barcode:'750K/12029/EFGH',  name:'스몰 소프트 나파 크루아상 숄더백', sales7:78, sales14:78, forecast:null,     stock:78,  incoming:0,     prevReq:0,     requestQty:180,   available:530,   intro:true,  promoTitle:'팝업명 노출', promoDate:'25.09.01 ~ 25.10.30', styleNo:'38382',  buyType:'위탁' },
+    { kind:'nontarget',storeName:'무신사 스탠다드 강남',  brand:'아크테릭스',    sku:'S000002', cat:'신발 > 운동화', uid:'123456', opt:['블랙','XL'], barcode:'600K/11029/EFGH',  name:'스몰 소프트 나파 크루아상 숄더백', sales7:55, sales14:55, forecast:null,     stock:55,  incoming:0,     prevReq:0,     requestQty:180,   available:630,   intro:true,  promoTitle:'팝업명 노출', promoDate:'25.10.15 ~ 25.11.14', styleNo:'393837', buyType:'위탁' },
+    { kind:'nontarget',storeName:'무신사 스탠다드 홍대',   brand:'아크테릭스',    sku:'S000002', cat:'신발 > 운동화', uid:'123456', opt:['블랙','L'],  barcode:'650K/12000/XYZ',   name:'스몰 소프트 나파 크루아상 숄더백', sales7:60, sales14:60, forecast:null,     stock:60,  incoming:0,     prevReq:0,     requestQty:130,   available:0,     intro:true,  promoTitle:'팝업명 노출', promoDate:'25.11.01 ~ 25.12.01', styleNo:'393838', buyType:'위탁' },
+    { kind:'nontarget',storeName:'무신사 스탠다드 성수',   brand:'시티스케이프',  sku:'S000002', cat:'신발 > 운동화', uid:'234567', opt:['블랙','M'],  barcode:'700K/13000/ABC',   name:'스몰 소프트 나파 크루아상 숄더백', sales7:65, sales14:65, forecast:null,     stock:65,  incoming:0,     prevReq:0,     requestQty:130,   available:230,   intro:true,  promoTitle:'팝업명 노출', promoDate:'25.12.05 ~ 26.01.05', styleNo:'393838', buyType:'위탁' },
+    { kind:'nontarget',storeName:'무신사 스탠다드 동대문', brand:'시티스케이프',  sku:'S000002', cat:'신발 > 운동화', uid:'234567', opt:['블랙','S'],  barcode:'800K/15000/DEF',   name:'스몰 소프트 나파 크루아상 숄더백', sales7:70, sales14:70, forecast:null,     stock:70,  incoming:0,     prevReq:0,     requestQty:150,   available:230,   intro:true,  promoTitle:'팝업명 노출', promoDate:'26.01.10 ~ 26.02.10', styleNo:'393838', buyType:'위탁' },
+    { kind:'nontarget',storeName:'무신사 스탠다드 남대문', brand:'시티스케이프',  sku:'S000002', cat:'신발 > 운동화', uid:'234567', opt:['블랙','XS'], barcode:'900K/16000/GHI',   name:'스몰 소프트 나파 크루아상 숄더백', sales7:75, sales14:75, forecast:null,     stock:75,  incoming:0,     prevReq:0,     requestQty:160,   available:330,   intro:true,  promoTitle:'팝업명 노출', promoDate:'26.02.15 ~ 26.03.15', styleNo:'393838', buyType:'위탁' },
+    { kind:'nontarget',storeName:'무신사 스탠다드 강남',  brand:'시티스케이프',  sku:'S000003', cat:'신발 > 운동화', uid:'234567', opt:['블랙','XL'], barcode:'1000K/17000/JKL',  name:'스몰 소프트 나파 크루아상 숄더백', sales7:80, sales14:80, forecast:null,     stock:80,  incoming:0,     prevReq:0,     requestQty:0,     available:530,   intro:false, promoTitle:'',           promoDate:'',                    styleNo:'393838', buyType:'위탁' },
+    { kind:'target',   storeName:'무신사 스탠다드 강남',  brand:'NIKE',          sku:'S000004', cat:'신발 > 스니커즈', uid:'345678', opt:['화이트','275'], barcode:'1100K/18000/MNO', name:'스니커즈 코어 화이트',                sales7:42, sales14:88, forecast:'higher', stock:120, incoming:50,    prevReq:50,    requestQty:200,   available:380,   intro:true,  promoTitle:'팝업명 노출', promoDate:'25.10.10 ~ 25.11.10', styleNo:'494940', buyType:'매입' },
+    { kind:'target',   storeName:'무신사 스탠다드 홍대',   brand:'NIKE',          sku:'S000004', cat:'신발 > 스니커즈', uid:'345678', opt:['화이트','270'], barcode:'1100K/18000/MNO', name:'스니커즈 코어 화이트',                sales7:35, sales14:70, forecast:null,     stock:90,  incoming:0,     prevReq:0,     requestQty:150,   available:300,   intro:true,  promoTitle:'팝업명 노출', promoDate:'25.10.10 ~ 25.11.10', styleNo:'494940', buyType:'매입' },
+    { kind:'target',   storeName:'무신사 스탠다드 성수',   brand:'NIKE',          sku:'S000004', cat:'신발 > 스니커즈', uid:'345678', opt:['블랙','280'],   barcode:'1100K/18000/MNO', name:'스니커즈 코어 블랙',                  sales7:50, sales14:95, forecast:'higher', stock:110, incoming:30,    prevReq:30,    requestQty:0,     available:420,   intro:false, promoTitle:'',           promoDate:'',                    styleNo:'494941', buyType:'매입' },
+    { kind:'target',   storeName:'무신사 스탠다드 동대문', brand:'아디다스',      sku:'S000005', cat:'신발 > 운동화',   uid:'456789', opt:['블루','275'],   barcode:'1200K/19000/PQR', name:'런닝화 울트라 부스트',                sales7:65, sales14:120,forecast:'higher', stock:140, incoming:80,    prevReq:80,    requestQty:300,   available:520,   intro:true,  promoTitle:'런닝 페어',  promoDate:'25.11.01 ~ 25.12.31', styleNo:'595950', buyType:'위탁' },
+    { kind:'target',   storeName:'무신사 스탠다드 남대문', brand:'아디다스',      sku:'S000005', cat:'신발 > 운동화',   uid:'456789', opt:['블루','280'],   barcode:'1200K/19000/PQR', name:'런닝화 울트라 부스트',                sales7:70, sales14:130,forecast:null,     stock:150, incoming:0,     prevReq:0,     requestQty:250,   available:200,   intro:true,  promoTitle:'런닝 페어',  promoDate:'25.11.01 ~ 25.12.31', styleNo:'595950', buyType:'위탁' },
+    { kind:'nontarget',storeName:'무신사 스탠다드 강남',  brand:'아디다스',      sku:'S000005', cat:'신발 > 운동화',   uid:'456789', opt:['블랙','275'],   barcode:'1200K/19000/PQR', name:'런닝화 울트라 부스트',                sales7:55, sales14:100,forecast:null,     stock:110, incoming:20,    prevReq:0,     requestQty:120,   available:0,     intro:false, promoTitle:'',           promoDate:'',                    styleNo:'595951', buyType:'위탁' },
+    { kind:'nontarget',storeName:'무신사 스탠다드 홍대',   brand:'MUSINSA STANDARD', sku:'S000006', cat:'상의 > 셔츠',     uid:'567890', opt:['화이트','M'],  barcode:'1300K/20000/STU', name:'옥스포드 셔츠 화이트 M',              sales7:38, sales14:72, forecast:'higher', stock:80,  incoming:40,    prevReq:40,    requestQty:90,    available:240,   intro:true,  promoTitle:'베이직 위크', promoDate:'25.10.20 ~ 25.11.20', styleNo:'606060', buyType:'매입' },
+    { kind:'nontarget',storeName:'무신사 스탠다드 성수',   brand:'MUSINSA STANDARD', sku:'S000006', cat:'상의 > 셔츠',     uid:'567890', opt:['화이트','L'],  barcode:'1300K/20000/STU', name:'옥스포드 셔츠 화이트 L',              sales7:42, sales14:80, forecast:null,     stock:85,  incoming:0,     prevReq:0,     requestQty:100,   available:260,   intro:true,  promoTitle:'베이직 위크', promoDate:'25.10.20 ~ 25.11.20', styleNo:'606060', buyType:'매입' },
+    { kind:'nontarget',storeName:'무신사 스탠다드 동대문', brand:'MUSINSA STANDARD', sku:'S000006', cat:'상의 > 셔츠',     uid:'567890', opt:['네이비','M'], barcode:'1300K/20000/STU', name:'옥스포드 셔츠 네이비 M',              sales7:48, sales14:90, forecast:null,     stock:95,  incoming:30,    prevReq:30,    requestQty:60,    available:180,   intro:false, promoTitle:'',           promoDate:'',                    styleNo:'606061', buyType:'매입' },
+    { kind:'nontarget',storeName:'무신사 스탠다드 남대문', brand:'MUSINSA STANDARD', sku:'S000006', cat:'상의 > 셔츠',     uid:'567890', opt:['네이비','L'], barcode:'1300K/20000/STU', name:'옥스포드 셔츠 네이비 L',              sales7:52, sales14:100,forecast:'higher', stock:100, incoming:0,     prevReq:0,     requestQty:80,    available:220,   intro:false, promoTitle:'',           promoDate:'',                    styleNo:'606061', buyType:'매입' },
+    { kind:'target',   storeName:'무신사 스탠다드 강남',  brand:'MUSINSA',       sku:'S000007', cat:'잡화 > 모자',     uid:'678901', opt:['블랙','FREE'], barcode:'1400K/21000/VWX', name:'볼캡 로고 블랙',                       sales7:25, sales14:48, forecast:null,     stock:60,  incoming:20,    prevReq:0,     requestQty:50,    available:150,   intro:false, promoTitle:'',           promoDate:'',                    styleNo:'707070', buyType:'위탁' },
+    { kind:'target',   storeName:'무신사 스탠다드 홍대',   brand:'MUSINSA',       sku:'S000007', cat:'잡화 > 모자',     uid:'678901', opt:['네이비','FREE'], barcode:'1400K/21000/VWX', name:'볼캡 로고 네이비',                     sales7:28, sales14:55, forecast:null,     stock:70,  incoming:0,     prevReq:0,     requestQty:60,    available:130,   intro:false, promoTitle:'',           promoDate:'',                    styleNo:'707070', buyType:'위탁' },
+    { kind:'target',   storeName:'무신사 스탠다드 성수',   brand:'MUSINSA',       sku:'S000008', cat:'잡화 > 가방 > 토트백', uid:'789012', opt:['블랙','FREE'], barcode:'1500K/22000/YZA', name:'토트백 캔버스 블랙',                   sales7:18, sales14:36, forecast:null,     stock:45,  incoming:15,    prevReq:15,    requestQty:30,    available:90,    intro:false, promoTitle:'',           promoDate:'',                    styleNo:'808080', buyType:'위탁' },
+    { kind:'nontarget',storeName:'무신사 스탠다드 동대문', brand:'MUSINSA STANDARD', sku:'S000009', cat:'하의 > 슬랙스',   uid:'890123', opt:['차콜','30'],  barcode:'1600K/23000/BCD', name:'슬랙스 테이퍼드 차콜 30',              sales7:22, sales14:44, forecast:null,     stock:50,  incoming:0,     prevReq:0,     requestQty:0,     available:140,   intro:false, promoTitle:'',           promoDate:'',                    styleNo:'909090', buyType:'위탁' },
+    { kind:'nontarget',storeName:'무신사 스탠다드 남대문', brand:'MUSINSA STANDARD', sku:'S000009', cat:'하의 > 슬랙스',   uid:'890123', opt:['차콜','32'],  barcode:'1600K/23000/BCD', name:'슬랙스 테이퍼드 차콜 32',              sales7:26, sales14:50, forecast:'higher', stock:55,  incoming:25,    prevReq:25,    requestQty:40,    available:160,   intro:false, promoTitle:'',           promoDate:'',                    styleNo:'909090', buyType:'위탁' },
+    { kind:'target',   storeName:'무신사 스탠다드 강남',  brand:'MUSINSA STANDARD', sku:'S000010', cat:'상의 > 후디',     uid:'901234', opt:['그레이','M'],  barcode:'1700K/24000/EFG', name:'후디 베이직 그레이 M',                 sales7:32, sales14:64, forecast:null,     stock:75,  incoming:0,     prevReq:0,     requestQty:0,     available:0,     intro:false, promoTitle:'',           promoDate:'',                    styleNo:'101010', buyType:'매입' },
+    { kind:'target',   storeName:'무신사 스탠다드 홍대',   brand:'MUSINSA STANDARD', sku:'S000010', cat:'상의 > 후디',     uid:'901234', opt:['그레이','L'],  barcode:'1700K/24000/EFG', name:'후디 베이직 그레이 L',                 sales7:36, sales14:72, forecast:'higher', stock:80,  incoming:30,    prevReq:30,    requestQty:50,    available:170,   intro:false, promoTitle:'',           promoDate:'',                    styleNo:'101010', buyType:'매입' },
+    { kind:'nontarget',storeName:'무신사 스탠다드 성수',   brand:'MUSINSA STANDARD', sku:'S000010', cat:'상의 > 후디',     uid:'901234', opt:['블랙','M'],   barcode:'1700K/24000/EFH', name:'후디 베이직 블랙 M',                   sales7:34, sales14:68, forecast:null,     stock:78,  incoming:0,     prevReq:0,     requestQty:0,     available:130,   intro:false, promoTitle:'',           promoDate:'',                    styleNo:'101011', buyType:'매입' },
   ];
-
-  // 파생 — 잔여금액 / 사용률 / 사용가능예산 / 상태 자동 계산
-  ROWS.forEach(r => {
-    r.remain = r.budget - r.used;                                            // 잔여금액 (음수 가능)
-    r.rate   = r.budget > 0 ? Math.round((r.used / r.budget) * 1000) / 10 : 0; // 사용률 (소수1자리)
-    r.availableBudget = Math.max(0, r.remain);                               // 사용 가능 예산 (음수면 0)
-    if (r.rate > 100)      r.status = 'over';
-    else if (r.rate >= 80) r.status = 'warn';
-    else                   r.status = 'ok';
-  });
 
   function escapeHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -796,57 +793,72 @@
     const fmtNum = n => isEmpty(n) ? NA : Number(n).toLocaleString();
     const fmtText = v => isEmpty(v) ? NA : escapeHtml(v);
 
-    // 채널 chip — kind-chip 모듈 + 도메인 variant
-    const CH_LABEL = { 'MUSINSA':'MUSINSA', '29CM':'29CM', '전체':'전체' };
-    const CH_VAR   = { 'MUSINSA':'musinsa', '29CM':'29cm',   '전체':'all'  };
-    const skuGroupChip = isEmpty(r.skuGroup) ? NA
-      : `<span class="scm-kind-chip scm-kind-chip--${CH_VAR[r.channel]||r.skuGroup}">${CH_LABEL[r.channel]||r.channel}</span>`;
+    // 보충대상 구분 chip — kind-chip 모듈 + 도메인 variant
+    const KIND_LABEL = { target:'보충대상', nontarget:'비대상' };
+    const kindChip = isEmpty(r.kind) ? NA
+      : `<span class="scm-kind-chip scm-kind-chip--${r.kind}">${KIND_LABEL[r.kind] || r.kind}</span>`;
 
-    // 상태 chip
-    const STATUS_LABEL = { ok:'정상', warn:'주의', over:'초과' };
-    const statusChip = isEmpty(r.status) ? NA
-      : `<span class="otb-status-chip otb-status-chip--${r.status}">${STATUS_LABEL[r.status] || r.status}</span>`;
-
-    // 사용률 — 색상 분기
-    const rateCls = r.rate > 100 ? 'otb-rate--over' : (r.rate >= 80 ? 'otb-rate--warn' : 'otb-rate--ok');
-    const rateHtml = isEmpty(r.rate) ? NA : `<span class="${rateCls}">${Number(r.rate).toLocaleString(undefined, {minimumFractionDigits:1, maximumFractionDigits:1})}%</span>`;
-
-    // 잔여금액 — 음수 시 빨강
-    const remainCls = r.remain < 0 ? 'otb-remain--negative' : '';
-    const remainHtml = isEmpty(r.remain) ? NA : `<span class="${remainCls}">${Number(r.remain).toLocaleString()}</span>`;
-
-    // 사용 가능 예산 — 0 이면 er-num-zero
-    const availableCls = r.availableBudget === 0 ? 'er-num-zero' : '';
-
-    // 메모 (제목만)
-    const memoHtml = r.memo
-      ? `<div class="er-promo"><span class="er-promo-title">${escapeHtml(r.memo)}</span></div>`
+    // 판매예측치 chip — forecast-chip 모듈 (higher → high, mid → low, lower → zero 매핑)
+    const FORECAST_LABEL = { higher:'높음', mid:'보통', lower:'낮음' };
+    const FORECAST_VAR   = { higher:'high', mid:'low',  lower:'zero' };
+    const forecastChip = r.forecast
+      ? `<span class="scm-forecast-chip scm-forecast-chip--${FORECAST_VAR[r.forecast]||''}">${FORECAST_LABEL[r.forecast]}</span>`
       : NA;
 
-    // 코드 link cells (예산코드 / 담당자)
-    const budgetCodeHtml = isEmpty(r.budgetCode) ? NA : `<a class="scm-code-link" data-code-type="budgetCode" style="font-weight:600;">${escapeHtml(r.budgetCode)}</a>`;
-    const managerHtml    = isEmpty(r.manager)    ? NA : `<a class="scm-code-link" data-code-type="manager">${escapeHtml(r.manager)}</a>`;
+    // 옵션 chip 다중
+    const optChips = (r.opt && r.opt.length)
+      ? `<span class="er-opt-chips">${r.opt.map(o => `<span class="scm-tag">${escapeHtml(o)}</span>`).join('')}</span>`
+      : NA;
 
-    // 예산 조정 수량 — input cell. 사용 가능 예산이 0 이면 disabled, 입력값이 사용가능예산 초과 시 error.
-    const reqNum = Number(r.adjustQty) || 0;
-    const availNum = Number(r.availableBudget) || 0;
-    const isMaxed = !isEmpty(r.availableBudget) && reqNum >= availNum;
-    const isUnavailable = !isEmpty(r.availableBudget) && availNum === 0;
-    const isError = !isEmpty(r.availableBudget) && availNum > 0 && reqNum > availNum;
-    const adjustQtyVal = isUnavailable
+    // 매장 입고예정수량 — 0 초과 시 accent
+    const incomingHtml = isEmpty(r.incoming) ? NA
+      : (r.incoming > 0 ? `<span class="er-num-accent">${fmtNum(r.incoming)}</span>` : fmtNum(r.incoming));
+
+    // 초도 chip
+    const introChip = r.intro ? `<span class="er-intro-chip">초도</span>` : NA;
+
+    // 프로모션 정보 (제목 + 기간)
+    const promoHtml = (r.promoTitle || r.promoDate)
+      ? `<div class="er-promo"><span class="er-promo-title">${escapeHtml(r.promoTitle||'')}</span><span class="er-promo-date">${escapeHtml(r.promoDate||'')}</span></div>`
+      : NA;
+
+    // 이동 가능 재고 0 → er-num-zero
+    const availableCls = r.available === 0 ? 'er-num-zero' : '';
+
+    // 코드 link cells (UID / SKU번호 / 바코드 / 스타일넘버 — 4종)
+    const skuHtml     = isEmpty(r.sku)     ? NA : `<a class="scm-code-link" data-code-type="sku" style="font-weight:600;">${escapeHtml(r.sku)}</a>`;
+    const uidHtml     = isEmpty(r.uid)     ? NA : `<a class="scm-code-link" data-code-type="uid">${escapeHtml(r.uid)}</a>`;
+    const barcodeHtml = isEmpty(r.barcode) ? NA : escapeHtml(r.barcode);
+    const styleNoHtml = isEmpty(r.styleNo) ? NA : `<a class="scm-code-link" data-code-type="styleNo">${escapeHtml(r.styleNo)}</a>`;
+
+    // SKU명 (썸네일 + 텍스트)
+    const nameCell = isEmpty(r.name) ? NA
+      : `<div class="cell-clamp"><span class="scm-product-name"><span class="scm-product-name__thumb"></span><span class="scm-product-name__text">${escapeHtml(r.name)}</span></span></div>`;
+
+    // 이동 요청 수량 — input cell. 현재 값이 available 이상이면 '최대' 버튼 disabled.
+    // 이동 가능 재고가 0 이면 요청 자체 불가 — checkbox / input 모두 disabled.
+    const reqNum = Number(r.requestQty) || 0;
+    const availNum = Number(r.available) || 0;
+    const isMaxed = !isEmpty(r.available) && reqNum >= availNum;
+    const isUnavailable = !isEmpty(r.available) && availNum === 0;
+    // 요청 수량 > 이동 가능 재고 → 에러 톤. avail=0 은 입력 자체 불가하므로
+    // disabled 만 적용 (에러 아님). avail>0 인데 req 가 초과한 경우만 error.
+    const isError = !isEmpty(r.available) && availNum > 0 && reqNum > availNum;
+    // disabled 행은 값을 비우고 placeholder '입력' 노출 — avail=0 인데 req 값이 표시되는 모순 제거.
+    const requestQtyVal = isUnavailable
       ? ''
-      : (isEmpty(r.adjustQty) || reqNum === 0 ? '' : Number(r.adjustQty).toLocaleString());
+      : (isEmpty(r.requestQty) ? '' : Number(r.requestQty).toLocaleString());
     const inputAttrs = [
       isUnavailable ? 'disabled' : '',
       isError ? 'aria-invalid="true"' : '',
     ].filter(Boolean).join(' ');
     const inputCls = isError ? 'scm-input-cell__input is-error' : 'scm-input-cell__input';
-    const adjustQtyCell = `
+    const requestQtyCell = `
       <span class="scm-input-cell">
-        <input type="text" class="${inputCls}" value="${adjustQtyVal}" placeholder="입력" inputmode="numeric" ${inputAttrs}/>
+        <input type="text" class="${inputCls}" value="${requestQtyVal}" placeholder="입력" inputmode="numeric" ${inputAttrs}/>
         <button class="scm-input-cell__max" type="button"${isMaxed ? ' disabled' : ''}>최대</button>
       </span>`;
-    // 체크박스 비활성 — 조정 불가 (avail=0) 또는 에러 (req > avail)
+    // 체크박스 비활성 — 요청 불가 (avail=0) 또는 에러 (req > avail) 양쪽 다.
     const cbDisabled = isUnavailable || isError;
     const cbCls = cbDisabled ? 'scm-checkbox is-disabled' : 'scm-checkbox';
     const cbAttrs = cbDisabled
@@ -856,21 +868,27 @@
     return `
       <tr>
         <td class="cb-col col-frozen-1"><span class="${cbCls}" ${cbAttrs} aria-label="선택"></span></td>
-        <td class="col-auto col-frozen-2">${fmtText(r.season)}</td>
-        <td class="col-medium col-frozen-3"><div class="cell-clamp">${fmtText(r.cat)}</div></td>
+        <td class="col-auto col-frozen-2">${kindChip}</td>
+        <td class="col-auto col-frozen-3">${fmtText(r.storeName)}</td>
         <td class="col-auto">${fmtText(r.brand)}</td>
-        <td class="col-auto">${fmtText(r.channel)}</td>
-        <td class="col-auto">${skuGroupChip}</td>
-        <td class="col-auto cell-numeric">${fmtNum(r.budget)}</td>
-        <td class="col-auto cell-numeric">${fmtNum(r.used)}</td>
-        <td class="col-auto cell-numeric">${remainHtml}</td>
-        <td class="col-auto cell-numeric">${rateHtml}</td>
-        <td class="col-auto cell-numeric ${availableCls}">${fmtNum(r.availableBudget)}</td>
-        <td class="col-auto er-input-cell${isError ? ' is-error' : (isUnavailable ? ' is-disabled' : '')}">${adjustQtyCell}</td>
-        <td class="col-auto">${statusChip}</td>
-        <td class="col-auto">${managerHtml}</td>
-        <td class="col-auto">${fmtText(r.updatedAt)}</td>
-        <td class="col-medium">${memoHtml}</td>
+        <td class="col-auto">${skuHtml}</td>
+        <td class="col-medium"><div class="cell-clamp">${fmtText(r.cat)}</div></td>
+        <td class="col-auto">${uidHtml}</td>
+        <td class="col-medium">${optChips}</td>
+        <td class="col-auto">${barcodeHtml}</td>
+        <td class="col-large">${nameCell}</td>
+        <td class="col-auto cell-numeric">${fmtNum(r.sales7)}</td>
+        <td class="col-auto cell-numeric">${fmtNum(r.sales14)}</td>
+        <td class="col-auto">${forecastChip}</td>
+        <td class="col-auto cell-numeric">${fmtNum(r.stock)}</td>
+        <td class="col-auto cell-numeric">${incomingHtml}</td>
+        <td class="col-auto cell-numeric">${fmtNum(r.prevReq)}</td>
+        <td class="col-auto er-input-cell${isError ? ' is-error' : (isUnavailable ? ' is-disabled' : '')}">${requestQtyCell}</td>
+        <td class="col-auto cell-numeric ${availableCls}">${fmtNum(r.available)}</td>
+        <td class="col-auto">${introChip}</td>
+        <td class="col-auto">${promoHtml}</td>
+        <td class="col-auto">${styleNoHtml}</td>
+        <td class="col-auto">${fmtText(r.buyType)}</td>
         <td class="col-spacer" aria-hidden="true"></td>
       </tr>
     `;
@@ -878,20 +896,8 @@
 
   document.getElementById('data-tbody').innerHTML = ROWS.map(rowHtml).join('');
 
-  // ----- Stats counts (정상 / 주의 / 초과) -----
-  (function () {
-    const counts = { ok: 0, warn: 0, over: 0 };
-    ROWS.forEach(r => { counts[r.status] = (counts[r.status] || 0) + 1; });
-    const okEl   = document.getElementById('stat-ok');
-    const warnEl = document.getElementById('stat-warn');
-    const overEl = document.getElementById('stat-over');
-    if (okEl)   okEl.textContent   = counts.ok;
-    if (warnEl) warnEl.textContent = counts.warn;
-    if (overEl) overEl.textContent = counts.over;
-  })();
-
   // ----- SCM Table 인터랙션 init -----
-  // frozenCount=3: cb-col(1) + 시즌(2) + 카테고리(3)
+  // frozenCount=3: cb-col(1) + 보충대상 구분(2) + 스토어명(3)
   if (window.SCMTable) {
     try { window.SCMTable.init({ root: document, frozenCount: 3 }); } catch (e) { console.warn('SCMTable init failed:', e); }
   }
@@ -953,20 +959,33 @@
   if (SCM.miniAction) {
     SCM.miniAction.mount(document.getElementById('copy-wrap'), {
       onSelect: (key) => {
-        const labels = { budgetCode: '예산코드', manager: '담당자' };
-        SCM.toast.show({ variant: 'success', title: `${labels[key]} 복사 완료`, desc: `${ROWS.length}개 복사되었습니다.` });
+        const labels = { sku: 'SKU번호', barcode: '바코드' };
+        SCM.toast.show({ variant: 'success', title: `${labels[key]} 복사 완료`, desc: '500개 복사되었습니다.' });
       },
     });
   }
 
-  // 코드 link → 예산코드는 상세 페이지 미구현 — code-popover 동일 처리
+  // 코드 link → SKU번호는 상세 페이지로 이동 / 그 외(uid/barcode/styleNo)는 code-popover
+  // legacy 동작: 클릭한 링크 + 같은 type의 인접 row 들에서 코드 모음 (max 7) → 묶음으로 확인
   document.getElementById('data-tbody').addEventListener('click', (e) => {
     const link = e.target.closest('.scm-code-link');
+    if (link) {
+      const type0 = link.getAttribute('data-code-type') || 'sku';
+      if (type0 === 'sku') {
+        const sku = link.textContent.trim();
+        if (sku) {
+          e.preventDefault();
+          window.location.href = 'sku-detail.html?sku=' + encodeURIComponent(sku);
+        }
+        return;
+      }
+    }
     if (link && SCM.codePopover) {
       e.preventDefault();
-      const type = link.getAttribute('data-code-type') || 'budgetCode';
-      const TITLE = { budgetCode:'예산코드 확인', manager:'담당자 확인' };
-      const COPY  = { budgetCode:'예산코드 복사', manager:'담당자 복사' };
+      const type = link.getAttribute('data-code-type') || 'sku';
+      const TITLE = { sku:'SKU번호 확인', uid:'연결된 UID번호 확인', barcode:'바코드 확인', styleNo:'스타일넘버 확인' };
+      const COPY  = { sku:'SKU번호 복사', uid:'UID 복사', barcode:'바코드 복사', styleNo:'스타일넘버 복사' };
+      // 같은 column 의 다른 row 코드값을 최대 7개까지 모음 (legacy 와 동일)
       const tbody = link.closest('tbody');
       const items = [];
       if (tbody) {
@@ -1018,25 +1037,40 @@
   // ============================================================
   let filterModeInstance = null;
 
-  function matchesFiltersOTB(r, active) {
-    // 시즌 (single)
-    if (active.season && !active.season.includes(r.season)) return false;
-    // 카테고리 (single)
-    if (active.category && !active.category.some(v => r.cat && r.cat.includes(v))) return false;
-    // 브랜드 (single)
+  function matchesFiltersER(r, active) {
+    // 매입형태 (single)
+    if (active.purchaseType && !active.purchaseType.includes(r.buyType)) return false;
+    // 브랜드 (multi)
     if (active.brand && !active.brand.includes(r.brand)) return false;
-    // 채널 (single)
-    if (active.channel && !active.channel.includes(r.channel)) return false;
-    // 상태 (single)
-    if (active.status) {
-      const STATUS_MAP = { '정상':'ok', '주의':'warn', '초과':'over' };
-      const targets = active.status.map(l => STATUS_MAP[l] || l);
-      if (!targets.includes(r.status)) return false;
+    // 스토어 (multi)
+    if (active.store) {
+      // r.storeName 은 "무신사 스탠다드 강남" 등 long 표기 — 옵션 라벨 (강남점 등) 의 substring 매치
+      const has = active.store.some(s => {
+        const short = (s || '').replace(/점$/, '');
+        return r.storeName && r.storeName.includes(short);
+      });
+      if (!has) return false;
     }
+    // 초도 입고 여부 (single)
+    if (active.firstInbound) {
+      const introLabel = r.intro ? '초도' : '재발주';
+      if (!active.firstInbound.includes(introLabel)) return false;
+    }
+    // 보충 대상 구분 (single — '보충대상' = target, '비대상' = nontarget)
+    if (active.restockKind) {
+      const kindMap = { '보충대상': 'target', '비대상': 'nontarget' };
+      const targets = active.restockKind.map(l => kindMap[l] || l);
+      if (!targets.includes(r.kind)) return false;
+    }
+    // SKU번호 / UID / 바코드 / 스타일넘버 (codeinput — 부분 매치)
+    if (active.sku && !active.sku.some(v => r.sku && r.sku.toLowerCase().includes(v.toLowerCase()))) return false;
+    if (active.uid && !active.uid.some(v => r.uid && r.uid.toLowerCase().includes(v.toLowerCase()))) return false;
+    if (active.barcode && !active.barcode.some(v => r.barcode && r.barcode.toLowerCase().includes(v.toLowerCase()))) return false;
+    if (active.styleNumber && !active.styleNumber.some(v => r.styleNo && r.styleNo.toLowerCase().includes(v.toLowerCase()))) return false;
     return true;
   }
 
-  function applyDataFilterOTB() {
+  function applyDataFilterER() {
     if (!filterModeInstance) return;
     const active = filterModeInstance.getActiveFilters();
     const tbody = document.querySelector('.mp-table tbody');
@@ -1045,7 +1079,7 @@
     Array.from(tbody.children).forEach((tr, i) => {
       const r = ROWS[i];
       if (!r) return;
-      const visible = matchesFiltersOTB(r, active);
+      const visible = matchesFiltersER(r, active);
       tr.style.display = visible ? '' : 'none';
       if (visible) visibleCount++;
     });
@@ -1057,10 +1091,10 @@
       rootEl: document.getElementById('filter-popover-root'),
       filterBarEl: document.getElementById('filter-bar'),
       onSearch: () => {
-        applyDataFilterOTB();
+        applyDataFilterER();
       },
       onReset: () => {
-        applyDataFilterOTB();
+        applyDataFilterER();
         if (SCM.toast) SCM.toast.show({ variant: 'info', title: '필터 초기화 완료' });
       },
     });
@@ -1097,7 +1131,7 @@
         headerCb.setAttribute('aria-checked', erHeaderWasAll ? 'mixed' : 'false');
       }
     }
-    // 상단 stats 첫 번째 stat — 선택 0 = "전체 N" / 1+ = "선택됨 N / total"
+    // 상단 stats 첫 번째 stat — 선택 0 = "전체 N" / 1+ = "선택됨 N / total" (legacy 동작)
     var statMain = document.querySelector('.scm-stats-bar__counts .scm-stat--all, .scm-stats-bar__counts .scm-stat--selected');
     if (statMain) {
       var totalRows = ROWS.length;
@@ -1114,14 +1148,14 @@
     // 미니 액션 코드 복사 popup 라벨 카운트 갱신
     var copyPopup = document.querySelector('#copy-wrap .scm-mini-popup');
     if (copyPopup) {
-      var labelMap = { budgetCode: '예산코드', manager: '담당자' };
+      var labelMap = { sku: 'SKU번호', barcode: '바코드' };
       var displayN = n > 0 ? n : ROWS.length;
       copyPopup.querySelectorAll('li').forEach(function (li) {
         var key = li.getAttribute('data-key');
         if (labelMap[key]) li.textContent = labelMap[key] + ' 복사 (' + displayN + ')';
       });
     }
-    // stats-bar 의 "선택 해제" / "예산 일괄 수정" 미니 액션 — 선택 0 disabled, 1+ 활성
+    // stats-bar 의 "선택 해제" / "보충요청" 미니 액션 — 선택 0 disabled, 1+ 활성
     var deselectMini = document.getElementById('er-deselect-btn');
     var bulkReqMini = document.getElementById('er-bulk-request-btn');
     [deselectMini, bulkReqMini].forEach(function (el) {
@@ -1130,7 +1164,7 @@
       else         el.removeAttribute('disabled');
     });
   }
-  // stats-bar 선택 해제 / 예산 일괄 수정 클릭 핸들러
+  // stats-bar 선택 해제 / 보충요청 클릭 핸들러
   (function () {
     var btn = document.getElementById('er-deselect-btn');
     if (btn) {
@@ -1147,9 +1181,9 @@
     if (bulk) {
       bulk.addEventListener('click', function () {
         if (bulk.disabled) return;
-        var n = Array.from(getERRowCbs()).filter(function (c) { return c.getAttribute('aria-checked') === 'true'; }).length;
+        var n = getERRowCbs().filter(function (c) { return c.getAttribute('aria-checked') === 'true'; }).length;
         if (window.SCM && SCM.toast) {
-          SCM.toast.show({ variant: 'success', title: n + '건 예산 일괄 수정', desc: '데모 단순 처리 — 선택한 예산이 일괄 수정되었습니다.' });
+          SCM.toast.show({ variant: 'success', title: n + '건 보충요청 전송', desc: '선택한 행에 대한 보충요청이 접수되었습니다.' });
         }
       });
     }
@@ -1169,10 +1203,7 @@
     }
     if (cb.id === 'mp-cb-all') {
       cb.setAttribute('aria-checked', next);
-      getERRowCbs().forEach(function (c) {
-        // disabled 체크박스는 토글 대상에서 제외 (전체 선택 시에도 selectable 만)
-        if (!c.classList.contains('is-disabled')) c.setAttribute('aria-checked', next);
-      });
+      getERRowCbs().forEach(function (c) { c.setAttribute('aria-checked', next); });
       erHeaderWasAll = (next === 'true');
     } else if (cb.closest('td.cb-col')) {
       cb.setAttribute('aria-checked', next);
@@ -1205,8 +1236,8 @@
     function openCM() {
       if (!cm) return;
       const cnt = parseInt(tabCount.textContent, 10) || 0;
-      if (cmTitle) cmTitle.textContent = `${cnt}건 예산 일괄 처리`;
-      if (cmDesc) cmDesc.innerHTML = `선택하신 ${cnt}건의 OTB 예산을 일괄 처리합니다.<br/>계속 진행하시겠습니까?`;
+      if (cmTitle) cmTitle.textContent = `${cnt}건 보충 요청 일괄 처리`;
+      if (cmDesc) cmDesc.innerHTML = `선택하신 ${cnt}건의 보충 요청을 일괄 처리합니다.<br/>계속 진행하시겠습니까?`;
       cm.classList.add('is-open'); if (cmBackdrop) cmBackdrop.classList.add('is-open');
     }
     function closeCM() { if (cm) cm.classList.remove('is-open'); if (cmBackdrop) cmBackdrop.classList.remove('is-open'); }
@@ -1219,12 +1250,13 @@
     if (cmConfirm) cmConfirm.addEventListener('click', function () {
       const cnt = tabCount.textContent;
       closeCM();
-      if (SCM.toast) SCM.toast.show({ variant: 'success', title: `${cnt}건 일괄 처리 완료`, desc: '요청하신 예산 일괄 작업이 적용되었습니다.' });
+      if (SCM.toast) SCM.toast.show({ variant: 'success', title: `${cnt}건 일괄 처리 완료`, desc: '요청하신 일괄 작업이 적용되었습니다.' });
       if (sel) sel.clear();
     });
   })();
 
-  // 예산 조정 수량 input — 더블클릭 시 전체 선택
+  // 이동 요청 수량 input — 더블클릭 시 전체 선택
+  // capture phase + preventDefault 로 브라우저 기본 word-select 차단 + 즉시 전체 선택
   document.getElementById('data-tbody').addEventListener('dblclick', (e) => {
     const input = e.target.closest('.scm-input-cell__input');
     if (input) {
@@ -1241,7 +1273,7 @@
     if (input) e.stopPropagation();
   }, true);
 
-  // 예산 조정 수량 input 변경 시 — 값/availableBudget 비교 → '최대' 버튼 disabled 토글 + 초과 시 input error 톤
+  // 이동 요청 수량 input 변경 시 — 값/available 비교 → '최대' 버튼 disabled 토글 + 초과 시 input error 톤
   document.getElementById('data-tbody').addEventListener('input', (e) => {
     const input = e.target.closest('.scm-input-cell__input');
     if (!input) return;
@@ -1254,10 +1286,10 @@
     const r = ROWS[idx];
     if (!r) return;
     const inputVal = parseInt(String(input.value).replace(/,/g, ''), 10) || 0;
-    const avail = Number(r.availableBudget) || 0;
+    const avail = Number(r.available) || 0;
     if (avail > 0 && inputVal >= avail) max.setAttribute('disabled', '');
     else max.removeAttribute('disabled');
-    // 사용 가능 예산 초과 입력 → 에러 톤 (input + td wrapper + 체크박스 비활성)
+    // 이동 가능 재고 초과 입력 → 에러 톤 (input + td wrapper + 체크박스 비활성)
     const td = input.closest('td.er-input-cell');
     const tr2 = input.closest('tr');
     const cb = tr2 ? tr2.querySelector('td.cb-col .scm-checkbox') : null;
@@ -1284,7 +1316,7 @@
     }
   });
 
-  // 최대 버튼 클릭 → 사용 가능 예산만큼 input 채우고 버튼 disabled
+  // 최대 버튼 클릭 → 이동 가능 재고만큼 input 채우고 버튼 disabled
   document.getElementById('data-tbody').addEventListener('click', (e) => {
     const max = e.target.closest('.scm-input-cell__max');
     if (!max || max.hasAttribute('disabled')) return;
@@ -1293,33 +1325,32 @@
     const tr = max.closest('tr');
     const idx = Array.prototype.indexOf.call(tr.parentNode.children, tr);
     const r = ROWS[idx];
-    if (r && !isNaN(r.availableBudget)) {
-      input.value = Number(r.availableBudget).toLocaleString();
+    if (r && !isNaN(r.available)) {
+      input.value = Number(r.available).toLocaleString();
       max.setAttribute('disabled', '');
     }
   });
 
   // ============================================================
-  // 양식 다운로드 — OTB 예산 일괄 등록 양식 (5컬럼)
+  // 양식 다운로드 — 재고 보충 요청 양식 (4컬럼: 스토어코드 / SKU번호 / 바코드 / 이동수량)
   // ============================================================
   const RESTOCK_TEMPLATE = {
-    label: 'OTB 예산 일괄 등록 양식',
-    sheetName: 'OTB 예산 일괄 등록',
+    label: '재고 보충 요청 양식',
+    sheetName: '재고 보충 요청 양식',
     bannerText: '※ 템플릿 가이드 및 유의사항 수정/삭제 불가',
-    columns: ['예산코드', '시즌', '카테고리', '브랜드', '예산조정금액'],
+    columns: ['스토어코드', 'SKU번호', '바코드', '이동수량'],
     descriptions: [
-      '[필수]\n\n예산코드를 입력해 주세요.\n\n[예산코드 입력]\n- 예산코드는 옆 탭의 \'예산코드 목록\'에서\n  확인하여 입력해 주세요.',
-      '[필수]\n\n시즌을 입력해 주세요.\n\n[시즌 입력]\n- 예: 25 FW, 26 SS 등\n  정확한 시즌 표기가 필요합니다.',
-      '[필수]\n\n카테고리를 입력해 주세요.\n\n[카테고리 입력]\n- 시스템에 등록된 카테고리 명을\n  정확히 입력해 주세요.',
-      '[필수]\n\n브랜드를 입력해 주세요.\n\n[브랜드 입력]\n- 시스템에 등록된 브랜드를 정확히\n  입력해 주세요.',
-      '[필수]\n\n예산 조정금액을 입력해 주세요.\n\n[예산조정금액 입력]\n- 잔여 예산을 초과해서 입력\n  하실 수 없습니다.\n  (※ 0 이상 & 숫자만 가능)',
+      '[필수]\n\n스토어코드를 입력해 주세요.\n\n[스토어코드 입력]\n- 스토어코드는 옆 탭의 \'스토어 코드 목록\'에서\n  확인하여 해당 스토어 코드를 입력해 주세요.',
+      '[필수]\n\nSKU번호를 입력해 주세요.\n\n[SKU번호 입력]\n- 시스템에 등록된 SKU 번호를 정확히\n  입력해 주세요.',
+      '[필수]\n\n바코드를 입력해 주세요.\n\n[바코드 입력]\n- 시스템에 등록된 바코드를 정확히\n  입력해 주세요.',
+      '[필수]\n\n이동 수량을 입력해 주세요.\n\n[이동수량 입력]\n- 이동 가능 재고를 초과해서 입력\n  하실 수 없습니다.\n  (※ 0 이상 & 숫자만 가능)',
     ],
     storeCodes: [
-      ['25 FW · 상의', 'OTB-25FW-TOP'],
-      ['25 FW · 하의', 'OTB-25FW-BTM'],
-      ['25 FW · 아우터', 'OTB-25FW-OUT'],
-      ['26 SS · 상의', 'OTB-26SS-TOP'],
-      ['26 SS · 하의', 'OTB-26SS-BTM'],
+      ['무신사 스탠다드 강남',  'MS_GANGNAM'],
+      ['무신사 스탠다드 홍대',   'MS_HONGDAE'],
+      ['무신사 스탠다드 성수',   'MS_SEONGSU'],
+      ['무신사 스탠다드 동대문', 'MS_DONGDAEMUN'],
+      ['무신사 스탠다드 남대문', 'MS_NAMDAEMUN'],
     ],
   };
 
@@ -1378,10 +1409,10 @@
     bannerCell.alignment = { wrapText: true, vertical: 'middle', horizontal: 'left' };
     bannerCell.border = thinBorder('FFCCCCCC');
 
-    // Row 2: descriptions — 동적 높이
+    // Row 2: descriptions — 동적 높이 (가장 긴 desc 의 wrap-line 추정값 사용)
     ws.addRow(new Array(cols).fill(null));
     const r2 = ws.getRow(2);
-    const CHAR_PER_LINE = 28;
+    const CHAR_PER_LINE = 28;  // sz 10 / 컬럼 width 30 기준
     let maxLines = 3;
     for (const d of t.descriptions) {
       const lines = String(d || '').split('\n');
@@ -1412,10 +1443,10 @@
       cell.border = thinBorder('FF000000');
     }
 
-    // Sheet 2: 예산코드 목록
-    const ws2 = wb.addWorksheet('예산코드 목록');
+    // Sheet 2: 스토어코드 목록
+    const ws2 = wb.addWorksheet('스토어코드 목록');
     ws2.columns = [{ width: 30 }, { width: 24 }];
-    const head2 = ws2.addRow(['시즌·카테고리', '예산코드']);
+    const head2 = ws2.addRow(['스토어명', '스토어코드']);
     head2.height = 28;
     for (let c = 1; c <= 2; c++) {
       const cell = ws2.getCell(1, c);
