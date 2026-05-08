@@ -4,6 +4,10 @@
  * 페이지 로드 시 /api/auth/me 호출 → 미인증이면 /login.html 로 리다이렉트.
  * 인증되었으면 window.SCM_USER 에 사용자 객체 저장 + 'scm:auth-ready' 이벤트 발생.
  *
+ * 추가: LNB 펼침 상태 FOUC 복원 (이전엔 각 페이지 inline script 였으나
+ *       단일 source 로 여기서 처리). auth-gate 가 동기 로드라서 첫 paint
+ *       이전에 .is-lnb-open 클래스 부여 가능.
+ *
  * Usage:
  *   <script src="/auth-gate.js"></script>
  *   ...
@@ -11,6 +15,16 @@
  *     console.log(e.detail.user); // { id, email, name, role }
  *   });
  * ============================================================ */
+
+// FOUC 방지 — DOM 파싱 시작 즉시 적용. IIFE 밖, sync 로드의 이점 활용.
+try {
+  if (typeof localStorage !== 'undefined' &&
+      localStorage.getItem('scm-lnb-open') === '1' &&
+      typeof document !== 'undefined' && document.documentElement) {
+    document.documentElement.classList.add('is-lnb-open');
+  }
+} catch (_) {}
+
 (function () {
   // 로그인 / 초대수락 페이지 자체는 인증 필요 없음 — 게이트 스킵
   var SKIP = ['/login.html', '/invite-accept.html'];
