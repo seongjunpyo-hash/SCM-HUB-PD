@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=1440" />
   <title>SCM-Hub · OTB 예산 관리</title>
   <script src="/auth-gate.js"></script>
-  <script src="/scm-shell.js" defer></script>  <!-- ExcelJS — rich text / 셀 스타일 / 병합 / 폰트 출력 풀 지원 -->
+  <script src="/scm-shell.js" defer></script>
+  <!-- ExcelJS — rich text / 셀 스타일 / 병합 / 폰트 출력 풀 지원 -->
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
@@ -50,6 +51,19 @@
   <link rel="stylesheet" href="../design%20system/components/product-name/product-name.css" />
 
   <style>
+    :root {
+      --scm-lnb-width: 56px;
+      --scm-sticky-gnb: 64px;
+      --scm-sticky-filter: 76px;
+    }
+    html.is-lnb-open { --scm-lnb-width: 260px; }
+
+    body { margin: 0; font-family: var(--ld-font-family-base); color: var(--ld-fg); background: #fff; min-width: 1440px; }
+
+    .app { display: grid; grid-template-columns: var(--scm-lnb-width) minmax(0, 1fr); transition: grid-template-columns 0.2s ease; }
+
+    main { min-width: 0; padding: 0 28px 40px; }
+
     /* sticky stack */
     .scm-filter-bar { top: var(--scm-sticky-gnb); }
     .scm-stats-bar--sticky { top: calc(var(--scm-sticky-gnb) + var(--scm-sticky-filter)); }
@@ -296,8 +310,6 @@
     .otb-section__tools .scm-stats-bar__v-divider {
       width: 1px; height: 16px; background: var(--ld-border); margin: 0 4px;
     }
-
-    /* (결재선 하단 fixed bar 제거됨) */
     .otb-approval-bar {
       position: fixed;
       bottom: 0; left: var(--scm-lnb-width); right: 0;
@@ -761,7 +773,19 @@
   }
 
   // filter-bar
+  if (window.SCM && SCM.filterBar) {
+    try { SCM.filterBar.mount(document.getElementById('filter-bar')); } catch (_) {}
+  }
+
   // filter-drawer
+  if (window.SCM && SCM.filterDrawer) {
+    try {
+      var fd = SCM.filterDrawer.mount(document.getElementById('filter-drawer'), {
+        backdrop: document.getElementById('fd-backdrop'),
+      });
+      var openBtn = document.getElementById('filter-drawer-open');
+      if (openBtn && fd && fd.open) openBtn.addEventListener('click', fd.open);
+    } catch (_) {}
   }
 
   // ============================================================
@@ -1534,7 +1558,6 @@
 
     $('#otb-version-btn').addEventListener('click', openVersionModal);
     $('#otb-submit-btn').addEventListener('click', openSubmitModal);
-    // 하단 결재선 bar 제거 — approve / reject 더 이상 노출 X. 가드.
     $('#otb-approve-btn')?.addEventListener('click', openApproveModal);
     $('#otb-reject-btn')?.addEventListener('click', openRejectModal);
     $('#otb-comments-btn').addEventListener('click', openCommentsModal);
