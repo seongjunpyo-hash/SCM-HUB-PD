@@ -39,10 +39,11 @@
 
 | 자원 | 위치 | 페이지에서 어떻게 |
 |---|---|---|
-| 인증 / 라우팅 / 튜토리얼 트리거 | `/auth-gate.js` | `<script src="/auth-gate.js">` (동기) |
+| 인증 / 라우팅 / 튜토리얼 트리거 / FOUC LNB 복원 | `/auth-gate.js` | `<script src="/auth-gate.js">` (동기) |
 | 코멘트 / dev-export / 프로필 메뉴 | `/scm-shell.js` 가 일괄 로드 | `<script src="/scm-shell.js" defer>` (1줄) |
 | LNB 마크업 | `lnb.js` 의 `CANONICAL_LNB_HTML` | 빈 `<nav class="scm-lnb">` placeholder. `mount()` 가 자동 inject |
 | topbar 마크업 | `topbar.js` 의 `CANONICAL_TOPBAR_HTML` | 빈 `<header class="scm-topbar">` placeholder |
+| 공통 sticky 토큰 (`--scm-lnb-width` / `--scm-sticky-gnb`) + body/.app/main shell 룰 | `lnb.css` 상단 `:root` + shell 블록 | `lnb.css` 가 자동 로드되므로 페이지에서 별도 작업 X |
 
 ### 새 메뉴 항목 추가 / LNB 위치 변경
 
@@ -69,10 +70,9 @@
 
 새 데모 페이지 만들 때:
 
-- [ ] `<script src="/auth-gate.js"></script>` 동기 로드
+- [ ] `<script src="/auth-gate.js"></script>` 동기 로드 (LNB FOUC 복원도 여기서 처리되므로 별도 inline script 불필요)
 - [ ] `<script src="/scm-shell.js" defer></script>` 추가
-- [ ] head 에 `<style> :root { --scm-lnb-width: 56px; --scm-sticky-gnb: 64px; ... } html.is-lnb-open { --scm-lnb-width: 260px; } </style>` (FOUC 방지)
-- [ ] 인라인 head script: `try { if (localStorage.getItem('scm-lnb-open') === '1') document.documentElement.classList.add('is-lnb-open'); } catch(_) {}`
+- [ ] design system CSS 중 본인이 쓰는 것만 `<link rel="stylesheet">` (lnb.css 는 필수 — shell 룰 + sticky 토큰 포함)
 - [ ] body 시작 부분에 `<header class="scm-topbar" role="banner"></header>` placeholder
 - [ ] body main 영역 앞에 `<nav class="scm-lnb" data-active="페이지키" aria-label="주메뉴"></nav>` placeholder
 - [ ] body 끝 design-system script 뒤에 `SCM.lnb.mount(document.querySelector('.scm-lnb'), { active: '페이지키' })` 와 `SCM.topbar.mount(document.querySelector('.scm-topbar'))` 호출
