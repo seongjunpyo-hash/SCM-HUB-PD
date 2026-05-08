@@ -886,7 +886,7 @@
       transition: transform 0.12s ease;
       flex-shrink: 0;
     }
-    .edit-sec__chev svg { width: 18px; height: 18px; display: block; stroke-width: 2.4; }
+    .edit-sec__chev svg { width: 16px; height: 16px; display: block; stroke-width: 1.6; }
     .edit-sec.is-collapsed .edit-sec__chev { transform: rotate(-90deg); }
     .edit-sec.is-collapsed .edit-sec__body { display: none; }
     .edit-sec__body { display: block; }
@@ -1920,6 +1920,19 @@
       // Section-level collapse (필터 / 컬럼 / 컴포넌트). Global (not per-page) —
       // user expects sections they've collapsed to stay collapsed across pages.
       state.ui.collapsedSections = (state.ui.collapsedSections && typeof state.ui.collapsedSections === 'object') ? state.ui.collapsedSections : {};
+      // 디폴트: 기본 설정 / 필터 / 컬럼 = 닫힘, 컴포넌트 = 열림.
+      // 사용자가 직접 토글한 적이 있으면(저장된 키가 1개라도 있으면) 사용자
+      // 선호를 존중하고 디폴트 시드는 1회만 적용한다.
+      if (!state.ui.collapsedSectionsInit) {
+        const hasPref = Object.keys(state.ui.collapsedSections).length > 0;
+        if (!hasPref) {
+          state.ui.collapsedSections.basic  = true;
+          state.ui.collapsedSections.filter = true;
+          state.ui.collapsedSections.column = true;
+          // component 는 entry 자체를 두지 않음 → expanded
+        }
+        state.ui.collapsedSectionsInit = true;
+      }
       // Library customizations for small-unit components — keyed by preset id.
       const libRaw = loadJsonKey(LIB_KEY);
       state.lib = (libRaw && typeof libRaw === 'object' && !Array.isArray(libRaw)) ? libRaw : {};
@@ -2145,13 +2158,18 @@
       // If the caller passed an L3 child path (e.g. /demo/sku-detail.html),
       // resolve it to the parent L2 first so L2 select reflects the parent.
       // The actual L3 child is then chosen below via renderL3Select.
-      let preferredL2 = preferL2Path;
       const preferredL3 = preferL2Path && _l3Parent(preferL2Path) ? preferL2Path : null;
-      if (preferredL3) preferredL2 = _l3Parent(preferL2Path);
+      const preferredL2 = preferredL3 ? _l3Parent(preferL2Path) : preferL2Path;
+      // currentPage 가 L3 child 일 수도 있으니 L2 매칭은 부모 기준으로.
+      const currentL2 = _l3Parent(state.currentPage) || state.currentPage;
       let target;
-      if (preferredL2 && item.children.some((c) => c.path === preferredL2)) target = preferredL2;
-      else if (item.children.some((c) => c.path === _l3Parent(state.currentPage) || state.currentPage)) target = _l3Parent(state.currentPage) || state.currentPage;
-      else                                                                  target = item.children[0].path;
+      if (preferredL2 && item.children.some((c) => c.path === preferredL2)) {
+        target = preferredL2;
+      } else if (item.children.some((c) => c.path === currentL2)) {
+        target = currentL2;
+      } else {
+        target = item.children[0].path;
+      }
       l2Select.value = target;
       // Render L3 select. If preferL2Path was actually an L3 child, surface
       // it as the selected L3 option so the user lands back on the same page.
