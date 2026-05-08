@@ -890,6 +890,72 @@
     .edit-sec.is-collapsed .edit-sec__chev { transform: rotate(-90deg); }
     .edit-sec.is-collapsed .edit-sec__body { display: none; }
     .edit-sec__body { display: block; }
+    /* "기본 설정" — toggle row 전용 변형 */
+    .edit-list--settings { padding: 4px 0; }
+    .edit-row--setting {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px;
+      cursor: pointer;
+    }
+    .edit-row--setting:hover { background: #F9FAFB; }
+    .edit-row__hint {
+      font-size: 11.5px; color: #6B7280; flex-shrink: 0;
+    }
+    .edit-row__hint.is-off { color: #DC2626; font-weight: 600; }
+    .edit-toggle {
+      position: relative;
+      display: inline-flex; align-items: center;
+      flex-shrink: 0;
+      width: 40px; height: 22px;
+    }
+    .edit-toggle__input {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      opacity: 0; margin: 0;
+      cursor: pointer;
+      z-index: 2;
+    }
+    .edit-toggle__track {
+      position: absolute; inset: 0;
+      background: #D1D5DB;
+      border-radius: 999px;
+      transition: background 0.15s ease;
+    }
+    .edit-toggle__thumb {
+      position: absolute; top: 2px; left: 2px;
+      width: 18px; height: 18px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.18);
+      transition: transform 0.15s ease;
+    }
+    .edit-toggle__input:checked + .edit-toggle__track { background: #4F46E5; }
+    .edit-toggle__input:checked + .edit-toggle__track .edit-toggle__thumb { transform: translateX(18px); }
+    .edit-toggle__input:focus-visible + .edit-toggle__track {
+      box-shadow: 0 0 0 3px rgba(79,70,229,0.25);
+    }
+    /* "비공개" overlay — iframe 영역 위에 띄워서 데모가 OFF 임을 시각적으로 알림 */
+    .stage.is-private .browser__chrome::after {
+      content: '비공개'; margin-left: 8px;
+      padding: 2px 8px; border-radius: 999px;
+      font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px;
+      background: #FEE2E2; color: #B91C1C;
+    }
+    .stage.is-private .browser::before {
+      content: ''; position: absolute; inset: 0; z-index: 5;
+      background: repeating-linear-gradient(45deg, rgba(239,68,68,0.06) 0 12px, rgba(239,68,68,0.12) 12px 24px);
+      pointer-events: none;
+    }
+    .stage.is-private .browser::after {
+      content: '데모 비공개 — 공개 시 우측 [편집] 탭에서 [데모 노출 여부] 를 ON 하세요';
+      position: absolute; left: 50%; top: 50%; z-index: 6;
+      transform: translate(-50%, -50%);
+      padding: 10px 18px; border-radius: 999px;
+      background: rgba(31,41,55,0.92); color: #fff;
+      font-size: 12px; font-weight: 600; letter-spacing: -0.01em;
+      pointer-events: none;
+      white-space: nowrap;
+    }
     .edit-list {
       display: flex; flex-direction: column;
       background: #FAFBFC; border: 1px solid #EBEEF2; border-radius: 8px;
@@ -1347,6 +1413,24 @@
           <p class="edit-hint">현재 화면의 요소를 숨기거나 표시할 수 있습니다. 변경 사항은 자동 저장되며, 페이지를 새로고침해도 유지됩니다.</p>
         </div>
         <div class="edit-body">
+          <section class="edit-sec" data-sec="basic">
+            <header class="edit-sec__head" data-toggle-sec="basic" role="button" tabindex="0" aria-expanded="true">
+              <span class="edit-sec__chev" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l3 3 3-3"/></svg></span>
+              <h4>기본 설정</h4>
+            </header>
+            <div class="edit-sec__body">
+              <div class="edit-list edit-list--settings">
+                <label class="edit-row edit-row--setting" for="settingExposed">
+                  <span class="edit-row__label">데모 노출 여부</span>
+                  <span class="edit-row__hint" id="settingExposedHint">공개</span>
+                  <span class="edit-toggle">
+                    <input type="checkbox" id="settingExposed" class="edit-toggle__input" data-setting="exposed" />
+                    <span class="edit-toggle__track" aria-hidden="true"><span class="edit-toggle__thumb"></span></span>
+                  </span>
+                </label>
+              </div>
+            </div>
+          </section>
           <section class="edit-sec" data-sec="filter">
             <header class="edit-sec__head" data-toggle-sec="filter" role="button" tabindex="0" aria-expanded="true">
               <span class="edit-sec__chev" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l3 3 3-3"/></svg></span>
@@ -1912,6 +1996,7 @@
         applyFilterTypesToIframe();
         applyNativeComponentEdits();
         applyEditCss();
+        applyBasicSettings();
         renderVersionSelect();
       });
 
@@ -2288,6 +2373,10 @@
       // applied to NATIVE components on top of their existing DOM (selectors
       // include data-voc-key paths and arbitrary CSS paths).
       e.componentEdits = (e.componentEdits && typeof e.componentEdits === 'object' && !Array.isArray(e.componentEdits)) ? e.componentEdits : {};
+      // 기본 설정 (per-page) — 데모 노출 여부 등.
+      // exposed: true (기본 — 협업/공개 노출) | false (비공개 — 데모 가림 + 비공개 배지)
+      e.settings = (e.settings && typeof e.settings === 'object' && !Array.isArray(e.settings)) ? e.settings : {};
+      if (typeof e.settings.exposed !== 'boolean') e.settings.exposed = true;
       return e;
     }
     function pageDraft()   { return pageOf('draft'); }
@@ -2305,6 +2394,7 @@
       applyFilterTypesToIframe();
       applyNativeComponentEdits();
       applyEditCss();
+      applyBasicSettings();
     }
     function rebuildAddedFiltersOnly() {
       const doc = iframe.contentDocument;
@@ -2411,6 +2501,37 @@
       return String(h);
     }
 
+    // 기본 설정 — 데모 노출 여부 등 페이지 단위 메타 토글.
+    function setSetting(key, value) {
+      const d = pageDraft();
+      d.settings = d.settings || {};
+      d.settings[key] = value;
+      persistDraft();
+      applyBasicSettings();
+      // dirty 트래킹 — 컴포넌트 슬라이스에 묶어 저장 흐름이 픽업하도록.
+      _setPreviewedComponent();
+      refreshSaveBtn();
+      // 라벨/스위치 상태 동기화
+      _syncSettingExposedUi();
+    }
+    // 데모 화면(stage) 위에 .is-private 토글 — CSS 가 비공개 배지/오버레이를 표시.
+    function applyBasicSettings() {
+      const d = pageDraft();
+      const stage = document.querySelector('.stage');
+      const exposed = !!(d.settings && d.settings.exposed !== false);
+      if (stage) stage.classList.toggle('is-private', !exposed);
+    }
+    function _syncSettingExposedUi() {
+      const d = pageDraft();
+      const exposed = !!(d.settings && d.settings.exposed !== false);
+      const cb = document.getElementById('settingExposed');
+      const hint = document.getElementById('settingExposedHint');
+      if (cb) cb.checked = exposed;
+      if (hint) {
+        hint.textContent = exposed ? '공개' : '비공개';
+        hint.classList.toggle('is-off', !exposed);
+      }
+    }
     function setHidden(selector, hide) {
       const d = pageDraft();
       const s = new Set(d.hidden);
@@ -3168,6 +3289,7 @@
         hidden:        (p.hidden || []).filter((s) => !_isFilterSel(s) && !_isColumnSel(s)),
         added:         (p.added && p.added.components) || [],
         componentEdits: p.componentEdits || {},
+        settings:      p.settings || {},
       });
     }
     // Per-section [적용] dirty uses a "previewed" snapshot — the slice of
@@ -4550,6 +4672,7 @@
       renderList('editComponentList', 'editComponentCount', componentRows);
       renderFrozenSelect(targets, effectiveFrozenCount, hidden);
       _syncSectionCollapseDom();
+      _syncSettingExposedUi();
       refreshSaveBtn();
     }
     // Populate "마지막 고정 컬럼" select with the current leaves (in leaf-idx
@@ -4645,6 +4768,11 @@
 
     document.addEventListener('change', (e) => {
       const t = e.target;
+      // 기본 설정 토글 (데모 노출 여부)
+      if (t.dataset && t.dataset.setting) {
+        setSetting(t.dataset.setting, !!t.checked);
+        return;
+      }
       // 마지막 고정 컬럼 선택 → setFrozenCount(value)
       if (t.id === 'editFrozenSelect') {
         const v = parseInt(t.value, 10);
