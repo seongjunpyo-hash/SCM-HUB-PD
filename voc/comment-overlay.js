@@ -303,7 +303,7 @@
       .scm-voc-popover__target {
         flex: 1; min-width: 0;
         font-family: ui-monospace, "SF Mono", Menlo, monospace;
-        font-size: 11px; color: #6B7280;
+        font-size: 13px; font-weight: 500; color: #111;
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       }
       .scm-voc-popover__close {
