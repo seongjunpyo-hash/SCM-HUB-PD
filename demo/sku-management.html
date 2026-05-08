@@ -726,22 +726,6 @@
   if (window.SCM && SCM.columnMoreMenu) SCM.columnMoreMenu.mount({ tableSelector: '.mp-table-scroll .mp-table' });
   // 컬럼 필터 (filter-ic ⏷ 클릭 → 코드 입력 popover)
   if (window.SCM && SCM.columnFilterPopover) SCM.columnFilterPopover.mount({ tableSelector: '.mp-table-scroll .mp-table' });
-
-  // sticky 변수 측정
-  function syncStickyVars() {
-    const root = document.documentElement;
-    const fb = document.getElementById('filter-bar');
-    const sb = document.querySelector('.scm-stats-bar');
-    if (fb) root.style.setProperty('--scm-sticky-filter', fb.offsetHeight + 'px');
-    if (sb) root.style.setProperty('--scm-sticky-stats',  sb.offsetHeight + 'px');
-  }
-  syncStickyVars();
-  if (typeof ResizeObserver !== 'undefined') {
-    const ro = new ResizeObserver(syncStickyVars);
-    document.querySelectorAll('#filter-bar, .scm-stats-bar').forEach(el => ro.observe(el));
-  }
-  window.addEventListener('resize', syncStickyVars);
-
   // ----- Module mounts -----
   if (!window.SCM) return;
 
