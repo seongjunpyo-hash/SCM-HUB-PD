@@ -976,6 +976,21 @@
       display: block; padding: 14px; text-align: center;
       font-size: 12px; color: #9CA3AF;
     }
+    .edit-table-header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px 8px;
+      border-top: 1px solid #EFF1F4;
+      background: #F8F9FB;
+      font-size: 11.5px; font-weight: 700; color: #4B5563;
+      letter-spacing: 0.2px;
+      text-transform: uppercase;
+    }
+    .edit-list > .edit-table-header:first-child { border-top: 0; }
+    .edit-table-header__dot {
+      width: 6px; height: 6px; border-radius: 999px;
+      background: #4F46E5;
+      flex-shrink: 0;
+    }
     .edit-row {
       display: flex; align-items: center; gap: 10px;
       padding: 10px 12px;
@@ -3107,7 +3122,9 @@
       }
       persistDraft();
       renderEditPane();
-      refreshSaveBtn();
+      // 즉시 적용 — drag-drop 으로 순서 바꾸자마자 좌측 데모도 동일 순서로 갱신.
+      if (kind === 'filter') applyFilterSectionToIframe();
+      else applyColumnSectionToIframe();
     }
 
     // ---- inject CSS / DOM into iframe (read APPLIED only) ----
@@ -4732,7 +4749,7 @@
       // naturalFrozenCount = the live frozenCount from scm-table's API
       // (whatever scm-table inited the table with — used as the fallback
       // when the user hasn't overridden it).
-      const out = { filters: [], columns: [], groups: [], topOrder: [], components: [], naturalFrozenCount: 0 };
+      const out = { filters: [], columns: [], groups: [], topOrder: [], components: [], naturalFrozenCount: 0, tables: [] };
       const doc = iframe.contentDocument;
       if (!doc) return out;
       const main = doc.querySelector('main') || doc.body;
@@ -4761,40 +4778,50 @@
         out.filters.push({ label, selector: sel });
       });
 
-      // Table columns — pick the FIRST .mp-table thead (sticky clone if
-      // present; otherwise the original). scm-table moves the original
-      // thead into a sticky clone, so usually the first match is the clone.
-      // We walk row 0 (group row, if any) to detect groups + their parent
-      // mapping, then row 1 (leaves). For 1-row tables row 0 == row 1 and
-      // every leaf is "ungrouped" (parent: null).
+      // Table columns — 페이지에 .mp-table 이 여러 개 있으면 (예: 그룹별 요약
+      // 테이블 + 브랜드별 상세 테이블) 각각을 독립된 "테이블 그룹" 으로 스캔.
+      // sticky-clone + body-table 페어는 같은 .mp-table-host 에 묶여 있으므로
+      // host 단위로 dedup 한다.
       const colSeen = new Set();
       let colCounter = 0;
       let grpCounter = 0;
-      const theads = [...main.querySelectorAll('.mp-table thead')];
-      const primaryThead = theads[0] || null;
-      // helper: find the table that owns this thead so we can read
-      // _scmReorder.model.thLeafIdx for accurate leaf-idx tagging.
-      const reorderApi = (() => {
-        const tbls = [...main.querySelectorAll('.mp-table')];
-        return tbls.map((t) => t._scmReorder).find(Boolean) || null;
-      })();
-      if (reorderApi) {
-        out.naturalFrozenCount = reorderApi.frozenCount | 0;
-      }
-      const leafIdxOf = (cell) => {
-        if (!reorderApi || !cell) return -1;
-        try { return reorderApi.model.thLeafIdx(cell); } catch { return -1; }
-      };
-      if (primaryThead) {
+      const allTables = [...main.querySelectorAll('.mp-table')];
+      const hostMap = new Map();
+      allTables.forEach((t) => {
+        const host = t.closest('.mp-table-host') || t;
+        if (!hostMap.has(host)) hostMap.set(host, []);
+        hostMap.get(host).push(t);
+      });
+      let tableIdx = 0;
+      hostMap.forEach((tablesInHost, host) => {
+        const headTable = tablesInHost.find((t) => t.querySelector('thead')) || tablesInHost[0];
+        const primaryThead = headTable && headTable.querySelector('thead');
+        if (!primaryThead) return;
+        const reorderApi = headTable._scmReorder
+                       || tablesInHost.map((t) => t._scmReorder).find(Boolean)
+                       || null;
+        if (tableIdx === 0 && reorderApi) {
+          out.naturalFrozenCount = reorderApi.frozenCount | 0;
+        }
+        // 테이블 라벨 — 가장 가까운 카드/섹션 타이틀 또는 fallback "테이블 N".
+        let tableLabel = '';
+        try {
+          const card = host.closest && host.closest('.scm-card, .scm-page-section');
+          const titleEl = (card && card.querySelector(':scope .scm-card-title, :scope .scm-page-section__title'))
+                       || (host.querySelector && host.querySelector(':scope .scm-card-title, :scope .scm-page-section__title'));
+          if (titleEl) tableLabel = (titleEl.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 28);
+        } catch (_) {}
+        if (!tableLabel) tableLabel = '테이블 ' + (tableIdx + 1);
+        out.tables.push({ idx: tableIdx, label: tableLabel });
+        const curTable = { idx: tableIdx, label: tableLabel };
+        const leafIdxOf = (cell) => {
+          if (!reorderApi || !cell) return -1;
+          try { return reorderApi.model.thLeafIdx(cell); } catch { return -1; }
+        };
         const trAll = [...primaryThead.querySelectorAll('tr')];
         const groupTr = trAll.length > 1 ? trAll[0] : null;
         const leafTr  = trAll[trAll.length - 1] || null;
-        // leafChildIdx-aligned parent map (built when groupTr exists).
         const leafParentByPos = [];
-        // Track the most recent labeled group cell so that an empty-label
-        // group cell (the non-frozen continuation of a frozen-split group,
-        // e.g. SKU's 기본 정보 split into "기본 정보" + an empty cs=4 cell)
-        // can inherit its label.
         let lastLabeledGroupText = null;
         if (groupTr) {
           let leafIdx = 0;
@@ -4804,10 +4831,6 @@
             const colspan = parseInt(cell.getAttribute('colspan') || '1', 10);
             const rowspan = parseInt(cell.getAttribute('rowspan') || '1', 10);
             if (rowspan > 1) {
-              // ungrouped row1 leaf (rs=2): cell IS the leaf. We surface
-              // it in `columns` with parent=null + draggable=false (scm-table
-              // refuses to drop on rs>=2 cells, so it can't be reordered
-              // anyway — render-side just disables drag/grip).
               if (cell.classList.contains('cb-col')) return;
               ensureVocKey(cell, 'col', colCounter++);
               const sel = ifrCssPath(cell);
@@ -4816,28 +4839,22 @@
                 let label = (cell.textContent || '').trim().replace(/\s+/g, ' ');
                 if (!label) label = '(빈 컬럼)';
                 if (label.length > 28) label = label.slice(0, 28) + '…';
-                out.columns.push({ label, selector: sel, parent: null, draggable: false, anchor: true, leafIdx: leafIdxOf(cell) });
+                out.columns.push({ label, selector: sel, parent: null, draggable: false, anchor: true, leafIdx: leafIdxOf(cell), tableIdx: curTable.idx, tableLabel: curTable.label });
                 out.topOrder.push(sel);
               }
             } else if (colspan > 1) {
-              // native group — stamp grp-N. Children below in row 2 get
-              // parent = this group's selector (one entry per leafIdx).
               ensureVocKey(cell, 'grp', grpCounter++);
               const gsel = ifrCssPath(cell);
               let glabel = (cell.textContent || '').trim().replace(/\s+/g, ' ');
-              // Empty label = continuation of a previous frozen-split group.
-              // Inherit the most recent labeled group's text so the user
-              // sees "기본 정보" instead of "(그룹)".
               if (!glabel && lastLabeledGroupText) glabel = lastLabeledGroupText;
               if (!glabel) glabel = '(그룹)';
               else lastLabeledGroupText = glabel;
               if (glabel.length > 28) glabel = glabel.slice(0, 28) + '…';
-              out.groups.push({ label: glabel, selector: gsel });
+              out.groups.push({ label: glabel, selector: gsel, tableIdx: curTable.idx, tableLabel: curTable.label });
               out.topOrder.push(gsel);
               for (let i = 0; i < colspan; i++) leafParentByPos[leafIdx + i] = gsel;
               leafIdx += colspan;
             } else {
-              // colspan=1 + rowspan=1 in row 1 (rare): ungrouped row1 leaf
               ensureVocKey(cell, 'col', colCounter++);
               const sel = ifrCssPath(cell);
               if (!colSeen.has(sel)) {
@@ -4845,28 +4862,19 @@
                 let label = (cell.textContent || '').trim().replace(/\s+/g, ' ');
                 if (!label) label = '(빈 컬럼)';
                 if (label.length > 28) label = label.slice(0, 28) + '…';
-                out.columns.push({ label, selector: sel, parent: null, draggable: true, anchor: false, leafIdx: leafIdxOf(cell) });
+                out.columns.push({ label, selector: sel, parent: null, draggable: true, anchor: false, leafIdx: leafIdxOf(cell), tableIdx: curTable.idx, tableLabel: curTable.label });
                 out.topOrder.push(sel);
               }
             }
           });
         }
-        // Walk the leaf row. For 1-row tables, this is the only row and
-        // we hit every leaf here; parent stays null. For 2-row tables the
-        // group row above already populated leafParentByPos.
         if (leafTr) {
           let leafChildIdx = 0;
           [...leafTr.children].forEach((th) => {
             if (th.classList.contains('col-spacer') || th.classList.contains('cb-col')) return;
             if (th.classList.contains('scm-voc-added-col')) return;
             const colspan = parseInt(th.getAttribute('colspan') || '1', 10);
-            if (colspan > 1) {
-              // group cell already handled above (only happens when groupTr
-              // === leafTr, i.e. 1-row tables — but then colspan>1 is rare;
-              // skip it the same way the old code did)
-              leafChildIdx += colspan;
-              return;
-            }
+            if (colspan > 1) { leafChildIdx += colspan; return; }
             const parent = groupTr ? (leafParentByPos[leafChildIdx] || null) : null;
             ensureVocKey(th, 'col', colCounter++);
             const sel = ifrCssPath(th);
@@ -4876,13 +4884,12 @@
             let label = (th.textContent || '').trim().replace(/\s+/g, ' ');
             if (!label) label = '(빈 컬럼)';
             if (label.length > 28) label = label.slice(0, 28) + '…';
-            out.columns.push({ label, selector: sel, parent, draggable: true, anchor: false, leafIdx: leafIdxOf(th) });
-            // 1-row tables: every leaf is also a top-level entry.
-            // 2-row tables: leaves under groups belong to columnLeafOrder, NOT topOrder.
+            out.columns.push({ label, selector: sel, parent, draggable: true, anchor: false, leafIdx: leafIdxOf(th), tableIdx: curTable.idx, tableLabel: curTable.label });
             if (!groupTr) out.topOrder.push(sel);
           });
         }
-      }
+        tableIdx++;
+      });
 
       // Components — top-level scm-* / db-* 컨테이너.
       // dashboard 의 card/section/kpi 외에, 테이블 기반 데모(sku-management,
@@ -5166,8 +5173,23 @@
         if (ovr) { row.label = ovr; row.renamed = true; }
         return row;
       };
+      // 페이지에 .mp-table 이 여러 개면 컬럼 행 사이에 [테이블 N] 헤더를 삽입.
+      const tableCount = (targets.tables || []).length;
+      let _prevTableIdx = -1;
+      const _maybeEmitTableHeader = (it) => {
+        if (tableCount <= 1) return;
+        const ti = (it && typeof it.tableIdx === 'number') ? it.tableIdx : -1;
+        if (ti === _prevTableIdx) return;
+        _prevTableIdx = ti;
+        const t = (targets.tables || []).find((x) => x.idx === ti);
+        const label = (t && t.label) || (ti >= 0 ? '테이블 ' + (ti + 1) : '추가');
+        columnRows.push({ kind: 'table-header', label, tableIdx: ti });
+      };
       effectiveTop.forEach((sel) => {
         const grp = groupBySel[sel];
+        const colHere = colBySel[sel];
+        const seenItem = grp || colHere;
+        if (seenItem) _maybeEmitTableHeader(seenItem);
         if (grp) {
           // group header row
           const naturalLeaves = naturalLeavesByGroup[sel] || [];
@@ -5233,9 +5255,14 @@
       const renderList = (containerId, countId, items) => {
         const cnt = document.getElementById(countId);
         const list = document.getElementById(containerId);
-        if (cnt) cnt.textContent = String(items.length);
+        // table-header 가짜 행은 카운트에서 제외 — 실제 컬럼/필터 수와 무관.
+        const realCount = items.filter((it) => it.kind !== 'table-header').length;
+        if (cnt) cnt.textContent = String(realCount);
         if (!list) return;
         list.innerHTML = items.map((it) => {
+          if (it.kind === 'table-header') {
+            return `<div class="edit-table-header"><span class="edit-table-header__dot"></span>${escapeHtml(it.label)}</div>`;
+          }
           const isHidden = hidden.has(it.selector);
           const cls = ['edit-row'];
           if (isHidden)  cls.push('is-hidden');
