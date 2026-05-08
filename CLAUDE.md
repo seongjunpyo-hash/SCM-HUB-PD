@@ -77,6 +77,6 @@
 - [ ] body 시작 직후 `<script src="/scm-icons.js"></script>` (SVG 스프라이트 주입 — `<use href="#ic-*">` 사용 시 필수)
 - [ ] body 시작 부분에 `<header class="scm-topbar" role="banner"></header>` placeholder
 - [ ] body main 영역 앞에 `<nav class="scm-lnb" data-active="페이지키" aria-label="주메뉴"></nav>` placeholder
-- [ ] body 끝 design-system script 뒤에 `SCM.lnb.mount(document.querySelector('.scm-lnb'), { active: '페이지키' })` 와 `SCM.topbar.mount(document.querySelector('.scm-topbar'))` 호출
+- [ ] LNB / topbar mount 호출 **불필요** — `lnb.js` / `topbar.js` 가 DOMContentLoaded 시 자동 mount (data-active 속성에서 active 키 읽음)
 - [ ] LNB 에 메뉴 등록 — `lnb.js` 의 `CANONICAL_LNB_HTML` 안 적절한 L1 그룹의 L2 list 에 새 `<a class="scm-lnb-l2" href="새페이지.html" data-key="페이지키">...</a>` 추가
 - [ ] VOC 협업 화면에도 노출하려면 `voc/index.html` 의 `MENU` 배열에도 추가
