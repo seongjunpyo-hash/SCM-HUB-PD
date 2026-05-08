@@ -1875,13 +1875,17 @@ ${jsxBody}
     if (!document.getElementById(styleId)) {
       const s = document.createElement('style');
       s.id = styleId;
-      // 회색 반투명 사선 패턴이 데모 위로 깔리고, 가운데에 큼직한
-      // [작업중 — 미공개] 핀이 떠있는 형태. 페이지 자체는 그대로 보이되
-      // "아직 미공개" 라는 시각 신호를 강하게 줌. pointer-events:none 으로
-      // 클릭은 페이지로 통과 → 이해관계자가 스크롤하며 미리 살펴볼 수는 있음.
+      // 회색 반투명 사선 패턴이 main 영역 위로만 깔리고, 가운데에 큼직한
+      // [비공개] 핀이 떠있는 형태. GNB / LNB 는 가리지 않아서 다른 페이지로
+      // 이동 가능. pointer-events:none 으로 클릭은 페이지로 통과 →
+      // 이해관계자가 스크롤하며 미리 살펴볼 수는 있음.
       s.textContent = `
         #scm-voc-private-overlay {
-          position: fixed; inset: 0; z-index: 99999;
+          position: fixed;
+          top: var(--scm-sticky-gnb, 64px);
+          left: var(--scm-lnb-width, 56px);
+          right: 0; bottom: 0;
+          z-index: 30;
           pointer-events: none;
           background: repeating-linear-gradient(
             45deg,
@@ -1890,6 +1894,7 @@ ${jsxBody}
           );
           font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
           letter-spacing: -0.01em;
+          transition: left 0.2s ease;
         }
         #scm-voc-private-overlay .scm-pv-pin {
           position: absolute; left: 50%; top: 50%;
@@ -1926,11 +1931,11 @@ ${jsxBody}
     const root = document.createElement('div');
     root.id = 'scm-voc-private-overlay';
     root.setAttribute('role', 'note');
-    root.setAttribute('aria-label', '아직 작업중 — 미공개 데모');
+    root.setAttribute('aria-label', '아직 작업중 — 비공개 데모');
     root.innerHTML = `
       <div class="scm-pv-pin">
         <span class="scm-pv-tag">비공개</span>
-        <h2 class="scm-pv-title">🚧 아직 작업중이라 미공개입니다</h2>
+        <h2 class="scm-pv-title">🚧 아직 작업중이라 비공개입니다</h2>
         <p class="scm-pv-sub">공개되면 같은 URL 에서 그대로 열어볼 수 있습니다.</p>
       </div>
     `;
