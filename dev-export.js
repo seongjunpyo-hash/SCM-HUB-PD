@@ -1875,81 +1875,66 @@ ${jsxBody}
     if (!document.getElementById(styleId)) {
       const s = document.createElement('style');
       s.id = styleId;
+      // 회색 반투명 사선 패턴이 데모 위로 깔리고, 가운데에 큼직한
+      // [작업중 — 미공개] 핀이 떠있는 형태. 페이지 자체는 그대로 보이되
+      // "아직 미공개" 라는 시각 신호를 강하게 줌. pointer-events:none 으로
+      // 클릭은 페이지로 통과 → 이해관계자가 스크롤하며 미리 살펴볼 수는 있음.
       s.textContent = `
         #scm-voc-private-overlay {
           position: fixed; inset: 0; z-index: 99999;
-          display: flex; align-items: center; justify-content: center;
-          background: rgba(15, 23, 42, 0.78);
-          backdrop-filter: blur(6px);
-          -webkit-backdrop-filter: blur(6px);
+          pointer-events: none;
+          background: repeating-linear-gradient(
+            45deg,
+            rgba(107, 114, 128, 0.10) 0 18px,
+            rgba(107, 114, 128, 0.22) 18px 36px
+          );
           font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
           letter-spacing: -0.01em;
         }
-        #scm-voc-private-overlay .scm-pv-card {
-          display: flex; flex-direction: column; align-items: center; gap: 16px;
-          padding: 36px 44px 32px;
-          background: #fff; color: #111827;
-          border-radius: 16px;
-          box-shadow: 0 32px 64px -16px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.06);
-          max-width: 520px; text-align: center;
-        }
-        #scm-voc-private-overlay .scm-pv-icon {
-          display: inline-flex; align-items: center; justify-content: center;
-          width: 56px; height: 56px;
-          background: #FEE2E2; color: #B91C1C;
-          border-radius: 50%;
-          font-size: 26px; font-weight: 800;
+        #scm-voc-private-overlay .scm-pv-pin {
+          position: absolute; left: 50%; top: 50%;
+          transform: translate(-50%, -50%);
+          display: inline-flex; flex-direction: column; align-items: center; gap: 10px;
+          padding: 26px 44px 22px;
+          background: rgba(31, 41, 55, 0.94); color: #fff;
+          border-radius: 18px;
+          box-shadow: 0 24px 56px rgba(0,0,0,0.32);
+          text-align: center;
+          max-width: min(86vw, 580px);
         }
         #scm-voc-private-overlay .scm-pv-tag {
           display: inline-flex; align-items: center; gap: 6px;
-          padding: 4px 12px; border-radius: 999px;
-          background: #FEE2E2; color: #B91C1C;
+          padding: 4px 14px; border-radius: 999px;
+          background: rgba(255,255,255,0.12); color: #F9FAFB;
           font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase;
         }
+        #scm-voc-private-overlay .scm-pv-tag::before {
+          content: ''; width: 6px; height: 6px; border-radius: 999px;
+          background: #FCA5A5;
+        }
         #scm-voc-private-overlay .scm-pv-title {
-          margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.4px;
+          margin: 0;
+          font-size: 26px; font-weight: 700; letter-spacing: -0.5px;
+          line-height: 1.3;
         }
-        #scm-voc-private-overlay .scm-pv-desc {
-          margin: 0; font-size: 13.5px; line-height: 1.65; color: #4B5563; max-width: 420px;
+        #scm-voc-private-overlay .scm-pv-sub {
+          margin: 0; font-size: 13px; color: #D1D5DB; line-height: 1.55;
         }
-        #scm-voc-private-overlay .scm-pv-desc b { color: #111827; font-weight: 600; }
-        #scm-voc-private-overlay .scm-pv-cta {
-          margin-top: 8px;
-          display: inline-flex; align-items: center; gap: 6px;
-          padding: 10px 18px; border-radius: 8px;
-          background: #4F46E5; color: #fff;
-          font-size: 13px; font-weight: 600;
-          text-decoration: none;
-        }
-        #scm-voc-private-overlay .scm-pv-cta:hover { background: #4338CA; }
-        #scm-voc-private-overlay .scm-pv-meta {
-          margin-top: 4px;
-          font-size: 11px; color: #9CA3AF;
-        }
-        body.scm-voc-private-locked { overflow: hidden !important; }
       `;
       document.head.appendChild(s);
     }
     const root = document.createElement('div');
     root.id = 'scm-voc-private-overlay';
-    root.setAttribute('role', 'dialog');
-    root.setAttribute('aria-modal', 'true');
-    root.setAttribute('aria-label', '비공개 데모 안내');
+    root.setAttribute('role', 'note');
+    root.setAttribute('aria-label', '아직 작업중 — 미공개 데모');
     root.innerHTML = `
-      <div class="scm-pv-card">
-        <span class="scm-pv-icon">🔒</span>
+      <div class="scm-pv-pin">
         <span class="scm-pv-tag">비공개</span>
-        <h2 class="scm-pv-title">아직 공개되지 않은 데모입니다</h2>
-        <p class="scm-pv-desc">
-          이 데모는 현재 <b>비공개</b> 상태로, 작업이 진행 중입니다.<br/>
-          공개되면 같은 URL 에서 바로 열어볼 수 있습니다.
-        </p>
-        <a class="scm-pv-cta" href="/voc/" title="협업(편집) 화면으로 이동">협업 화면 열기</a>
-        <span class="scm-pv-meta">VOC &gt; 편집 &gt; 기본 설정 &gt; 데모 공개 ON 후 저장하면 공개됩니다</span>
+        <h2 class="scm-pv-title">🚧 아직 작업중이라 미공개입니다</h2>
+        <p class="scm-pv-sub">공개되면 같은 URL 에서 그대로 열어볼 수 있습니다.</p>
       </div>
     `;
     document.body.appendChild(root);
-    document.body.classList.add('scm-voc-private-locked');
   }
 
   function applyActiveVersionMinimal() {
