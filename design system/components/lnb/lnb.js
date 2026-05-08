@@ -277,23 +277,49 @@
     var withSlash = noExt.replace(/\/index$/, '/');
     return [raw, noExt, norm, withHtml, withSlash];
   }
-  function _isConfirmedPage(pagePath) {
-    // 단일 source of truth = versions[page].finalId.
-    // 레거시 confirmed[page] flag 는 stale 가능성이 있어 사용 X
-    // (dev-export.js isConfirmed() 도 동일 정책).
-    var versions = _readJsonLs(VERSIONS_KEY);
-    if (!versions) return false;
+  function _verEntryForPath(versions, pagePath) {
+    if (!versions) return null;
     var cands = _candidatePaths(pagePath);
     for (var j = 0; j < cands.length; j++) {
       var v = versions[cands[j]];
-      if (!v || !v.finalId) continue;
-      // finalId 가 list 안의 실제 버전을 가리키는지 확인 (삭제 후 잔존 방지)
-      if (Array.isArray(v.list) && v.list.some(function (x) { return x && x.id === v.finalId; })) {
-        return true;
+      if (v) return v;
+    }
+    return null;
+  }
+  function _isConfirmedPage(pagePath) {
+    // 단일 source of truth = versions[page].finalId 가 list 의 실제 버전을 가리킴.
+    // 레거시 confirmed[page] flag 는 stale 가능성이 있어 사용 X
+    // (dev-export.js isConfirmed() 도 동일 정책).
+    var versions = _readJsonLs(VERSIONS_KEY);
+    var v = _verEntryForPath(versions, pagePath);
+    if (!v || !v.finalId) return false;
+    return Array.isArray(v.list) && v.list.some(function (x) { return x && x.id === v.finalId; });
+  }
+  // 페이지의 active(또는 fallback) applied snapshot 의 settings.exposed 를 읽음.
+  // 반환: true(공개) / false(비공개) / null(버전 없음)
+  function _readActiveExposed(pagePath) {
+    var versions = _readJsonLs(VERSIONS_KEY);
+    var v = _verEntryForPath(versions, pagePath);
+    if (!v || !Array.isArray(v.list) || !v.list.length) return null;
+    var active = null;
+    if (v.activeId) {
+      for (var i = 0; i < v.list.length; i++) {
+        if (v.list[i] && v.list[i].id === v.activeId) { active = v.list[i]; break; }
       }
     }
-    return false;
+    if (!active) active = v.list[v.list.length - 1];
+    if (!active || !active.applied) return true; // 버전은 있지만 settings 없음 → 공개 default
+    var s = active.applied.settings;
+    if (!s || typeof s.exposed !== 'boolean') return true;
+    return s.exposed;
   }
+  // LNB 페이지 상태 태그 정책:
+  //   1) 최종확정 — versions[page].finalId 가 set (super 가 최종확정 누름)
+  //   2) 작업중   — active version 의 applied.settings.exposed === false
+  //                 (편집 탭의 [데모 공개] 토글 OFF — 비공개 데모)
+  //   3) 검토중   — 버전 1개 이상, 비공개 아님
+  //   4) (없음)   — 버전 자체가 없는 페이지 (손대지 않음)
+  // # placeholder 메뉴는 정적 마크업의 --wip 태그 그대로 (미구현 화면).
   function applyStatusTags(el) {
     if (!el || typeof URL === 'undefined') return;
     var l2s = el.querySelectorAll('.scm-lnb-l2');
@@ -307,14 +333,22 @@
       if (!href || href === '#' || href.charAt(0) === '#') continue;
       var pagePath;
       try { pagePath = new URL(href, document.baseURI).pathname; } catch (_) { continue; }
-      var tagText, tagCls;
+      var tagText = null, tagCls = null;
       if (_isConfirmedPage(pagePath)) {
         tagText = '최종확정';
         tagCls = 'scm-lnb-tag--done';
       } else {
-        tagText = '작업중';
-        tagCls = 'scm-lnb-tag--wip';
+        var exposed = _readActiveExposed(pagePath);
+        if (exposed === false) {
+          tagText = '작업중';
+          tagCls = 'scm-lnb-tag--wip';
+        } else if (exposed === true) {
+          tagText = '검토중';
+          tagCls = 'scm-lnb-tag--review';
+        }
+        // exposed === null → 버전 없음, 태그 없음
       }
+      if (!tagText) continue;
       var tag = document.createElement('span');
       tag.className = 'scm-lnb-tag is-dynamic ' + tagCls;
       tag.textContent = tagText;
