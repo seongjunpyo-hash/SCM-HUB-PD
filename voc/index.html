@@ -75,7 +75,12 @@
     .page-select:hover { border-color: var(--line-2); }
     .page-select:focus { border-color: var(--accent); }
     .page-select.menu-l2 { min-width: 200px; }
+    .page-select.menu-l3 { min-width: 160px; }
     .page-select.menu-version { min-width: 140px; }
+    /* L3 nav (e.g. SKU 관리 > 상품 상세) — hidden when current L2 has no children */
+    .menu-l3-wrap[hidden],
+    .menu-l3-wrap.is-empty { display: none !important; }
+    .menu-l3-wrap { display: contents; }
 
     /* Label preceding each navigation control (1뎁스 / 2뎁스 / 버전) */
     .menu-label {
@@ -858,9 +863,9 @@
     .edit-body::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 999px; }
     .edit-sec { margin-top: 14px; }
     .edit-sec__head {
-      display: flex; align-items: center; gap: 8px;
-      padding: 8px;
-      font-size: 12.5px; font-weight: 700; color: #1A1A1A;
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 8px;
+      font-size: 15px; font-weight: 700; color: #1A1A1A;
       cursor: pointer;
       user-select: none;
       border-radius: 6px;
@@ -869,19 +874,19 @@
     .edit-sec__head:hover { background: #F3F4F6; }
     .edit-sec__head h4 { margin: 0; font-size: inherit; font-weight: inherit; }
     .edit-sec__count {
-      font-size: 11px; font-weight: 600; color: #6B7280;
+      font-size: 12px; font-weight: 600; color: #6B7280;
       background: #F3F4F6; border-radius: 999px;
-      padding: 2px 7px;
+      padding: 3px 9px;
       margin-left: auto;
     }
     .edit-sec__chev {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 18px; height: 18px;
-      color: #6B7280;
+      width: 24px; height: 24px;
+      color: #4B5563;
       transition: transform 0.12s ease;
       flex-shrink: 0;
     }
-    .edit-sec__chev svg { width: 12px; height: 12px; display: block; }
+    .edit-sec__chev svg { width: 18px; height: 18px; display: block; stroke-width: 2.4; }
     .edit-sec.is-collapsed .edit-sec__chev { transform: rotate(-90deg); }
     .edit-sec.is-collapsed .edit-sec__body { display: none; }
     .edit-sec__body { display: block; }
@@ -1185,6 +1190,10 @@
     <div class="menu-l1" id="menuL1"></div>
     <span class="menu-label">2뎁스</span>
     <select class="page-select menu-l2" id="l2Select"></select>
+    <span class="menu-l3-wrap" id="menuL3Wrap" hidden>
+      <span class="menu-label">3뎁스</span>
+      <select class="page-select menu-l3" id="l3Select"></select>
+    </span>
     <span class="menu-label">버전</span>
     <select class="page-select menu-version" id="versionSelect"></select>
     <button class="icon-btn" id="reloadBtn" title="새로고침">
@@ -1617,9 +1626,35 @@
     }
     // Flat list — preserved for label lookups (sidebar 'pageLabel(path)').
     const PAGES = MENU.flatMap((m) => m.children);
+    // L3 — 2뎁스 페이지 아래의 세부 화면들. 키는 L2 페이지의 .html 풀 경로,
+    // 값은 [{ path, label }] 배열. 배열의 첫 항목은 보통 L2 자기 자신
+    // (= 목록/메인 화면) 으로 둔다. 여기에 키가 있는 L2 만 topbar 에 3뎁스
+    // 셀렉트를 노출.
+    const L3_MAP = {
+      '/demo/sku-management.html': [
+        { path: '/demo/sku-management.html', label: '목록' },
+        { path: '/demo/sku-detail.html',     label: '상품 상세' },
+        { path: '/demo/sku-register.html',   label: 'SKU 단건 등록' },
+      ],
+    };
+    // child path → parent L2 path. Lets syncMenuFromPath resolve L1/L2 from
+    // an arbitrary L3 page (e.g. /demo/sku-detail.html → sku-management).
+    const _l3ParentByChild = (() => {
+      const m = {};
+      Object.keys(L3_MAP).forEach((parent) => {
+        L3_MAP[parent].forEach((c) => {
+          if (c.path !== parent) m[c.path] = parent;
+        });
+      });
+      return m;
+    })();
+    function _l3Parent(path) { return _l3ParentByChild[path] || null; }
+    function _l3ChildrenOf(l2Path) { return L3_MAP[l2Path] || null; }
     function findMenuByPath(path) {
+      // accept L3 child paths too — resolve to parent L2 entry
+      const lookup = _l3Parent(path) || path;
       for (const m of MENU) {
-        const c = m.children.find((x) => x.path === path);
+        const c = m.children.find((x) => x.path === lookup);
         if (c) return { l1: m, l2: c };
       }
       return null;
@@ -1717,7 +1752,17 @@
     }
     function pageLabel(p) {
       const f = PAGES.find((x) => x.path === p);
-      return f ? f.label : p;
+      if (f) return f.label;
+      // L3 child: show "<L2 label> · <L3 label>" so sidebar comments still
+      // read meaningfully when filed against a sub-page.
+      const parent = _l3Parent(p);
+      if (parent) {
+        const pp = PAGES.find((x) => x.path === parent);
+        const child = (L3_MAP[parent] || []).find((c) => c.path === p);
+        if (child && pp) return `${pp.label} · ${child.label}`;
+        if (child) return child.label;
+      }
+      return p;
     }
     function shortTarget(c) {
       if (!c) return '';
@@ -1806,6 +1851,8 @@
         if (target !== state.currentPage) navigateTo(target);
       });
       l2Select.addEventListener('change', () => navigateTo(l2Select.value));
+      const l3SelectEl = document.getElementById('l3Select');
+      if (l3SelectEl) l3SelectEl.addEventListener('change', () => navigateTo(l3SelectEl.value));
       const versionSelectEl = document.getElementById('versionSelect');
       if (versionSelectEl) versionSelectEl.addEventListener('change', () => onVersionSelectChange(versionSelectEl.value));
 
@@ -2010,18 +2057,52 @@
           return `<option value="${c.path}">${escapeHtml(c.label + suffix)}</option>`;
         }).join('');
       l2Select.disabled = item.children.length <= 1;
+      // If the caller passed an L3 child path (e.g. /demo/sku-detail.html),
+      // resolve it to the parent L2 first so L2 select reflects the parent.
+      // The actual L3 child is then chosen below via renderL3Select.
+      let preferredL2 = preferL2Path;
+      const preferredL3 = preferL2Path && _l3Parent(preferL2Path) ? preferL2Path : null;
+      if (preferredL3) preferredL2 = _l3Parent(preferL2Path);
       let target;
-      if (preferL2Path && item.children.some((c) => c.path === preferL2Path)) target = preferL2Path;
-      else if (item.children.some((c) => c.path === state.currentPage))      target = state.currentPage;
-      else                                                                   target = item.children[0].path;
+      if (preferredL2 && item.children.some((c) => c.path === preferredL2)) target = preferredL2;
+      else if (item.children.some((c) => c.path === _l3Parent(state.currentPage) || state.currentPage)) target = _l3Parent(state.currentPage) || state.currentPage;
+      else                                                                  target = item.children[0].path;
       l2Select.value = target;
-      return target;
+      // Render L3 select. If preferL2Path was actually an L3 child, surface
+      // it as the selected L3 option so the user lands back on the same page.
+      renderL3Select(target, preferredL3 || null);
+      return preferredL3 || target;
+    }
+    // Render the 3뎁스 select for a given L2 path. If the L2 has no children
+    // in L3_MAP, hide the wrap entirely. `selectedPath` (optional) sets the
+    // initial value; falls back to the L2 itself (= 목록 entry).
+    function renderL3Select(l2Path, selectedPath) {
+      const wrap = document.getElementById('menuL3Wrap');
+      const sel  = document.getElementById('l3Select');
+      if (!wrap || !sel) return;
+      const children = _l3ChildrenOf(l2Path);
+      if (!children || children.length <= 1) {
+        wrap.hidden = true;
+        sel.innerHTML = '';
+        return;
+      }
+      wrap.hidden = false;
+      sel.innerHTML = children.map((c) => {
+        const suffix = _menuStatusSuffix(c.path);
+        return `<option value="${c.path}">${escapeHtml(c.label + suffix)}</option>`;
+      }).join('');
+      const fallback = (selectedPath && children.some((c) => c.path === selectedPath))
+        ? selectedPath
+        : (children.some((c) => c.path === state.currentPage) ? state.currentPage : l2Path);
+      sel.value = fallback;
     }
     // Reflect a path change (iframe internal nav, sidebar jump, etc.)
     // back into the menu UI without triggering navigation.
     function syncMenuFromPath(path) {
       const m = findMenuByPath(path);
       if (!m) return;
+      // For L3 child pages (e.g. sku-detail), L2 select must show the parent.
+      const l2Path = _l3Parent(path) || path;
       menuL1.querySelectorAll('.menu-l1__chip').forEach((b) => {
         b.classList.toggle('is-active', b.dataset.l1 === m.l1.l1);
       });
@@ -2034,7 +2115,8 @@
           .map((c) => `<option value="${c.path}">${escapeHtml(c.label)}</option>`).join('');
         l2Select.disabled = m.l1.children.length <= 1;
       }
-      l2Select.value = path;
+      l2Select.value = l2Path;
+      renderL3Select(l2Path, path);
       renderVersionSelect();
     }
 
