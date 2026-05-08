@@ -70,75 +70,10 @@
     .scm-stats-bar--sticky { top: calc(var(--scm-sticky-gnb) + var(--scm-sticky-filter)); }
     .mp-table-host { margin-top: 0; }
 
-    /* 일괄 업로드 / SKU 단건 등록 버튼 — sticky 제거, page-head 안의 일반 flow → 스크롤하면 자연스럽게 사라짐 */
+    /* 숫자 셀 — tabular-nums (restock-status / sku-management 와 동일) */
     .mp-table .cell-numeric { font-variant-numeric: tabular-nums; text-align: right; }
 
-    /* 일괄 업로드 모달 — 템플릿 select popup (디자인 시스템 단일 선택 popover 와 동일 톤) */
-    .scm-bu-template-popup {
-      position: absolute; top: calc(100% + 4px); left: 0; min-width: 100%;
-      background: #fff; border: 1px solid #E0E0E0; border-radius: 4px;
-      box-shadow: 0 6px 16px rgba(0,0,0,0.12);
-      list-style: none; margin: 0; padding: 4px 0;
-      z-index: 100; max-height: 300px; overflow-y: auto;
-    }
-    .scm-bu-template-popup li {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 12px; font-size: 14px; cursor: pointer; line-height: 19.6px;
-      color: #000;
-    }
-    .scm-bu-template-popup li:hover { background: var(--ld-bg-low, #FAFBFC); }
-    .scm-bu-template-popup li.is-selected { background: #F5F5F5; color: #000; font-weight: 500; }
-    .scm-bu-template-popup li.is-selected::after {
-      content: '';
-      width: 16px; height: 16px; flex-shrink: 0; margin-left: 12px;
-      background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'><path d='M3.45 7.3l3.28 3.28L12.55 4.85' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>") center/16px no-repeat;
-    }
-    .scm-bu-template-popup li.is-disabled { color: #BBB; cursor: default; }
-    .scm-bu-template-popup li.is-disabled:hover { background: transparent; }
-
-    /* === Domain — SKU 관리 (legacy 인라인 보조) === */
-    /* 운영상태 / 매핑상태 pill — dot + label (legacy sku-status-pill 재현) */
-    .sku-status-pill { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 2px 8px; border-radius: 4px; font-size: 13px; font-weight: 500; line-height: 18px; }
-    .sku-status-pill .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-    .sku-status-pill[data-state="active"]   { background: #E2F1FF; color: #245EFF; }
-    .sku-status-pill[data-state="active"]   .dot { background: #245EFF; }
-    .sku-status-pill[data-state="inactive"] { background: rgba(138,138,138,0.10); color: #666; }
-    .sku-status-pill[data-state="inactive"] .dot { background: #999; }
-    .sku-status-pill[data-state="mapped"]   { background: #E8F5E9; color: #2E7D32; }
-    .sku-status-pill[data-state="mapped"]   .dot { background: #43A047; }
-    .sku-status-pill[data-state="unmapped"] { background: #FFF3E0; color: #E65100; }
-    .sku-status-pill[data-state="unmapped"] .dot { background: #FF9800; }
-
-    /* 옵션 chip wrap — 다중 chip 한 줄 (max 260) */
-    .sku-opt-chips { display: inline-flex; align-items: center; gap: 8px; flex-wrap: nowrap; max-width: 260px; white-space: nowrap; }
-
-    /* 숫자 셀 — tabular-nums */
-    .sku-num { font-variant-numeric: tabular-nums; }
-
-    /* info-banner 하단 마진 (legacy 8px) */
-    #sku-info-banner { margin-bottom: 8px; }
-
-    /* === confirm-modal 안내문 — 상품 등록 후 매핑 callout (legacy 재현, page-scope) === */
-    .scm-confirm-modal__desc .mp-modal-body-text { font-size: 15px; line-height: 20.4px; color: #1A1A1A; margin-bottom: 12px; }
-    .scm-confirm-modal__desc .mp-modal-callout { background: #F5F5F5; border-radius: 4px; padding: 12px 16px; }
-    .scm-confirm-modal__desc .mp-modal-callout .callout-title { font-size: 14px; font-weight: 500; line-height: 19.6px; color: #000; padding-bottom: 8px; }
-    .scm-confirm-modal__desc .mp-modal-callout .callout-text { font-size: 14px; font-weight: 400; line-height: 19.6px; color: #1A1A1A; }
-    .scm-confirm-modal__desc strong.accent { color: #245EFF; font-weight: 700; }
-
-    /* stat 선택됨 상태 (action sync 시 추가됨) — legacy mp-stat--selected 재현 */
-    .scm-stat--selected .scm-stat__num { color: #245EFF; font-weight: 700; }
-
-    /* === filter-bar joined group + input (legacy mp-filter-group / mp-filter-input 페이지 스코프) === */
-    .scm-filter-group { display: inline-flex; align-items: center; }
-    .scm-filter-group > * { border-radius: 0 !important; }
-    .scm-filter-group > *:first-child { border-top-left-radius: 4px !important; border-bottom-left-radius: 4px !important; }
-    .scm-filter-group > *:last-child { border-top-right-radius: 4px !important; border-bottom-right-radius: 4px !important; }
-    .scm-filter-group > *:not(:last-child) { border-right-width: 0 !important; }
-    .scm-filter-input { display: inline-flex; align-items: center; gap: 8px; min-width: 120px; padding: 12px 16px; background: #fff; border: 1px solid #E0E0E0; border-radius: 4px; box-sizing: border-box; height: 44px; }
-    .scm-filter-input input { flex: 1; min-width: 64px; border: 0; outline: none; background: transparent; font-size: 15px; font-weight: 500; line-height: 20.4px; color: #000; font-family: inherit; padding: 0; }
-    .scm-filter-input input::placeholder { color: #8A8A8A; font-weight: 500; }
-    .scm-filter-input__chev { width: 16px; height: 16px; flex-shrink: 0; color: rgba(0,0,0,0.20); }
-    .scm-filter-input:focus-within { border-color: #000; }
+    /* 변경 이력 / 임시저장 등 — sticky 제거, page-head 안의 일반 flow → 스크롤하면 자연스럽게 사라짐 */
 
     /* ============================================================
        OTB 도메인 — page-scope (디자인 시스템 토큰 기반)
@@ -310,6 +245,11 @@
     }
     .otb-section__tools .scm-stats-bar__v-divider {
       width: 1px; height: 16px; background: var(--ld-border); margin: 0 4px;
+    }
+    .otb-section__count {
+      color: var(--ld-fg-lower);
+      font-weight: var(--ld-font-weight-regular, 400);
+      margin-left: 4px;
     }
 
     /* (결재선 하단 fixed bar 제거됨 — main padding-bottom 정상값) */
@@ -576,9 +516,9 @@
     <div class="scm-lnb-l2-list">
       <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">무탠 재고 보충 현황</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
       <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">무탠 재고 보충 요청</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
-      <a class="scm-lnb-l2" href="index.html" data-key="index"><span class="scm-lnb-l2-text">무탠 전개상품 관리</span><span class="scm-lnb-tag scm-lnb-tag--new">NEW</span></a>
-      <a class="scm-lnb-l2" href="editshop-restock-status.html" data-key="editshop-status"><span class="scm-lnb-l2-text">편집샵 재고 보충 현황</span><span class="scm-lnb-tag scm-lnb-tag--new">NEW</span></a>
-      <a class="scm-lnb-l2" href="editshop-restock-request.html" data-key="editshop-request"><span class="scm-lnb-l2-text">편집샵 재고 보충 요청</span><span class="scm-lnb-tag scm-lnb-tag--new">NEW</span></a>
+      <a class="scm-lnb-l2" href="index.html" data-key="index"><span class="scm-lnb-l2-text">무탠 전개상품 관리</span></a>
+      <a class="scm-lnb-l2" href="editshop-restock-status.html" data-key="editshop-status"><span class="scm-lnb-l2-text">편집샵 재고 보충 현황</span></a>
+      <a class="scm-lnb-l2" href="editshop-restock-request.html" data-key="editshop-request"><span class="scm-lnb-l2-text">편집샵 재고 보충 요청</span></a>
       <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">편집샵 전개상품 관리</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
     </div>
   </div>
@@ -599,7 +539,7 @@
       </span>
     </button>
     <div class="scm-lnb-l2-list">
-      <a class="scm-lnb-l2" href="sku-management.html" data-key="sku-management"><span class="scm-lnb-l2-text">SKU 관리</span><span class="scm-lnb-tag scm-lnb-tag--new">NEW</span></a>
+      <a class="scm-lnb-l2" href="sku-management.html" data-key="sku-management"><span class="scm-lnb-l2-text">SKU 관리</span></a>
       <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">위탁 상품 미매핑 관리</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
     </div>
   </div>
@@ -626,7 +566,7 @@
       <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">위탁 상품 입고 현황</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
       <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">PB 상품 입고 검토</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
       <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">PB 상품 ASN 등록/확정</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
-      <a class="scm-lnb-l2" href="otb-budget.html" data-key="otb-budget"><span class="scm-lnb-l2-text">OTB 예산 관리</span><span class="scm-lnb-tag scm-lnb-tag--new">NEW</span></a>
+      <a class="scm-lnb-l2" href="otb-budget.html" data-key="otb-budget"><span class="scm-lnb-l2-text">OTB 예산 관리</span></a>
     </div>
   </div>
 
@@ -814,7 +754,7 @@
         </div>
       </div>
       <div class="scm-stats-bar__right">
-        <span style="font-size:13px; color:#666;">단위: 백만원 (VAT 제외)</span>
+        <span class="scm-stats-bar__ts">단위: 백만원 (VAT 제외)</span>
       </div>
     </div>
 
@@ -829,7 +769,7 @@
           <table class="mp-table" id="otb-summary-table">
             <thead>
               <tr>
-                <th class="col-large" style="text-align:left;">그룹</th>
+                <th class="col-large">그룹</th>
                 <th class="col-medium cell-numeric">기초재고</th>
                 <th class="col-medium cell-numeric">입고재고(OTB)</th>
                 <th class="col-auto cell-numeric">YoY</th>
@@ -843,6 +783,7 @@
                 <th class="col-medium cell-numeric">기말재고</th>
                 <th class="col-auto cell-numeric">소진율</th>
                 <th class="col-auto cell-numeric">재고일수</th>
+                <th class="col-spacer" aria-hidden="true"></th>
               </tr>
             </thead>
             <tbody id="otb-summary-body"></tbody>
@@ -895,23 +836,23 @@
           <table class="mp-table is-cell-selectable" id="otb-detail-table" data-scm-frozen="3">
             <thead>
               <tr>
-                <th class="col-medium col-frozen-1" style="text-align:left; width:200px;">브랜드 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
-                <th class="col-auto col-frozen-2" style="text-align:center;">그룹</th>
-                <th class="col-medium col-frozen-3" style="text-align:left;">본부 / 실</th>
-                <th class="col-medium cell-numeric">기초재고 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg></th>
-                <th class="col-medium cell-numeric" data-sort-key="otb">입고재고(OTB) <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg></th>
+                <th class="col-medium col-frozen-1">브랜드 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+                <th class="col-auto col-frozen-2">그룹 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+                <th class="col-medium col-frozen-3">본부 / 실 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+                <th class="col-medium cell-numeric">기초재고 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+                <th class="col-medium cell-numeric" data-sort-key="otb">입고재고(OTB) <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
                 <th class="col-auto cell-numeric">YoY</th>
-                <th class="col-medium cell-numeric" data-sort-key="gmv">GMV <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg></th>
+                <th class="col-medium cell-numeric" data-sort-key="gmv">GMV <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
                 <th class="col-auto cell-numeric">YoY</th>
-                <th class="col-medium cell-numeric" data-sort-key="cogs">출고원가 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg></th>
+                <th class="col-medium cell-numeric" data-sort-key="cogs">출고원가 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
                 <th class="col-auto cell-numeric">YoY</th>
-                <th class="col-medium cell-numeric">반품예정</th>
+                <th class="col-medium cell-numeric">반품예정 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
                 <th class="col-auto cell-numeric">COGS%</th>
                 <th class="col-auto cell-numeric">공급률</th>
-                <th class="col-medium cell-numeric">기말재고 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg></th>
+                <th class="col-medium cell-numeric">기말재고 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
                 <th class="col-auto cell-numeric">소진율</th>
                 <th class="col-auto cell-numeric">재고일수</th>
-                <th class="col-spacer" data-empty="true" aria-hidden="true"></th>
+                <th class="col-spacer" aria-hidden="true"></th>
               </tr>
             </thead>
             <tbody id="otb-detail-body"></tbody>
@@ -1206,7 +1147,8 @@
       + '<td class="cell-numeric">' + fmtPct(agg.supplyPct) + '</td>'
       + '<td class="cell-numeric">' + fmt(agg.final) + '</td>'
       + '<td class="cell-numeric">' + fmtPct(agg.turnover) + '</td>'
-      + '<td class="cell-numeric">' + agg.stockDays + '일</td>';
+      + '<td class="cell-numeric">' + agg.stockDays + '일</td>'
+      + '<td class="col-spacer" aria-hidden="true"></td>';
   }
 
   // ============================================================
@@ -1217,16 +1159,16 @@
     var total = aggregate(list);
     var html = ''
       + '<tr class="is-grand">'
-      + '<td style="text-align:left;">전체 합계 (1P · 무신사+29CM)</td>'
+      + '<td>전체 합계 (1P · 무신사+29CM)</td>'
       + summaryRowCells(total)
       + '</tr>';
     ['G1', 'G2', 'G3'].forEach(function (g) {
       var sub = list.filter(function (b) { return b.group === g; });
       var agg = aggregate(sub);
       html += '<tr class="is-group">'
-        + '<td style="text-align:left;"><span class="otb-group-pill" data-g="' + g + '">' + g + '</span> '
+        + '<td><span class="otb-group-pill" data-g="' + g + '">' + g + '</span> '
         + groupLabels[g].name
-        + ' <span style="color:#8A8A8A; font-weight:400; margin-left:4px;">· ' + sub.length + '개 브랜드</span></td>'
+        + ' <span class="otb-section__count">· ' + sub.length + '개 브랜드</span></td>'
         + summaryRowCells(agg)
         + '</tr>';
     });
@@ -1286,9 +1228,9 @@
       };
       html += ''
         + '<tr class="' + (isNew ? 'is-new' : '') + '" data-brand-id="' + b.id + '">'
-        + '<td class="col-frozen-1" style="text-align:left; width:200px;">' + escapeHtml(b.brand) + '</td>'
-        + '<td class="col-frozen-2" style="text-align:center;"><span class="otb-group-pill" data-g="' + b.group + '">' + b.group + '</span></td>'
-        + '<td class="col-frozen-3" style="text-align:left;">' + b.hq.replace('본부', '') + ' / ' + escapeHtml(b.team) + '</td>'
+        + '<td class="col-medium col-frozen-1">' + escapeHtml(b.brand) + '</td>'
+        + '<td class="col-auto col-frozen-2"><span class="otb-group-pill" data-g="' + b.group + '">' + b.group + '</span></td>'
+        + '<td class="col-medium col-frozen-3">' + b.hq.replace('본부', '') + ' / ' + escapeHtml(b.team) + '</td>'
         + '<td class="cell-numeric">' + fmt(b.base) + '</td>'
         + '<td class="cell-input cell-numeric' + ch('otb') + '"><input type="number" inputmode="numeric" min="0" step="1" value="' + b.otb + '" data-field="otb" readonly /></td>'
         + '<td class="cell-numeric">' + fmtYoY(otbYoY) + '</td>'
@@ -1302,7 +1244,7 @@
         + '<td class="cell-numeric cell-calc">' + fmt(d.final) + '</td>'
         + '<td class="cell-numeric cell-calc">' + fmtPct(d.turnover) + '</td>'
         + '<td class="cell-numeric cell-calc">' + d.stockDays + '일</td>'
-        + '<td class="col-spacer" data-empty="true" aria-hidden="true"></td>'
+        + '<td class="col-spacer" aria-hidden="true"></td>'
         + '</tr>';
     });
     $('#otb-detail-body').innerHTML = html;
