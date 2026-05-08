@@ -36,11 +36,20 @@
     if (!user) return;
     injectStylesOnce();
 
-    // 토픽바 사용자 영역 동적 업데이트 — 데모 페이지(SCM topbar) 에서만 적용
+    // 토픽바 사용자 영역 동적 업데이트 — 데모 페이지(SCM topbar) 에서만 적용.
+    // topbar.js 가 markup 을 비동기로 inject 할 수 있으므로(Phase 3 단일 source 화)
+    // 요소 미존재 시 잠깐 retry — 5번 시도(약 500ms)까지.
     var rightEl  = document.querySelector('.scm-topbar__right');
     var avatarEl = document.querySelector('.scm-topbar__avatar');
     var nameEl   = document.querySelector('.scm-topbar__name-first');
-    if (!rightEl || !avatarEl || !nameEl) return;
+    if (!rightEl || !avatarEl || !nameEl) {
+      var retries = init._retries = (init._retries || 0) + 1;
+      if (retries <= 5) {
+        setTimeout(function () { init(user); }, 100);
+      }
+      return;
+    }
+    init._retries = 0;
 
     var displayName = (user.name || user.email || '사용자').trim();
     var firstChar   = displayName ? displayName.charAt(0) : '?';
