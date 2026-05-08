@@ -1,0 +1,23 @@
+/* scm-date-card-row — restock 페이지 상단 날짜 정보 3-카드 row */
+.scm-date-card-row {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  padding: 12px 0;
+}
+.scm-date-card {
+  flex: 1;
+  min-width: 0;
+  background: #F5F5F5;
+  border-radius: 4px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.scm-date-card--multi { flex: 2; }
+.scm-date-card__label { font-size: 13px; font-weight: 500; color: #666; line-height: 19.5px; }
+.scm-date-card__value { font-size: 18px; font-weight: 600; color: #000; line-height: 24.48px; font-variant-numeric: tabular-nums; }
+.scm-date-card__value--muted { color: #8A8A8A; font-weight: 400; }
+.scm-date-card__cells { display: flex; gap: 24px; }
+.scm-date-card__cells > .scm-date-card__cell { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }

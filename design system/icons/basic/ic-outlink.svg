@@ -1,0 +1,38 @@
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="basic/ic-outlink">
+<g id="weight=light, filled=false" clip-path="url(#clip0_4210_1135)">
+<g id="UI Icon">
+<path id="Vector" d="M7 5H14.7C14.8657 5 15 5.13431 15 5.3V13M15 5L5 15" stroke="currentColor"/>
+</g>
+</g>
+<g id="weight=regular, filled=false" clip-path="url(#clip1_4210_1135)">
+<g id="UI Icon_2">
+<path id="Vector_2" d="M43 5H50.7C50.8657 5 51 5.13431 51 5.3V13M51 5L41 15" stroke="currentColor" stroke-width="1.4"/>
+</g>
+</g>
+<g id="weight=bold, filled=false" clip-path="url(#clip2_4210_1135)">
+<g id="UI Icon_3">
+<path id="Vector_3" d="M79 5H86.7C86.8657 5 87 5.13431 87 5.3V13M87 5L77 15" stroke="currentColor" stroke-width="2"/>
+</g>
+</g>
+<g id="weight=regular, filled=true" clip-path="url(#clip3_4210_1135)">
+<g id="UI Icon_4">
+<path id="Vector_4" d="M122.405 4.19727C122.957 4.19737 123.405 4.64514 123.405 5.19727V12.8975H122.005V6.58789L113.2 15.3926L112.21 14.4023L121.015 5.59766H114.705V4.19727H122.405Z" fill="currentColor"/>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_4210_1135">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+<clipPath id="clip1_4210_1135">
+<rect width="20" height="20" fill="white" transform="translate(36)"/>
+</clipPath>
+<clipPath id="clip2_4210_1135">
+<rect width="20" height="20" fill="white" transform="translate(72)"/>
+</clipPath>
+<clipPath id="clip3_4210_1135">
+<rect width="20" height="20" fill="white" transform="translate(108)"/>
+</clipPath>
+</defs>
+</svg>

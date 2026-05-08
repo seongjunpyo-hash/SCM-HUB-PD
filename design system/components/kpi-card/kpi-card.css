@@ -1,0 +1,20 @@
+/* scm-kpi-card — 대시보드 KPI 카드 */
+.scm-kpi-card {
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-sizing: border-box;
+}
+.scm-kpi-card__head { display: flex; align-items: center; justify-content: space-between; }
+.scm-kpi-card__label { font-size: 14px; font-weight: 500; color: #666; line-height: 19.6px; }
+.scm-kpi-card__body { display: flex; flex-direction: column; gap: 8px; }
+.scm-kpi-card__value { font-size: 32px; font-weight: 600; line-height: 1.2; color: #000; font-variant-numeric: tabular-nums; }
+.scm-kpi-card__meta { display: flex; align-items: center; gap: 8px; font-size: 14px; line-height: 19.6px; }
+.scm-kpi-card__delta { display: inline-flex; align-items: center; gap: 2px; font-weight: 600; }
+.scm-kpi-card__delta--up   { color: #1EA514; }
+.scm-kpi-card__delta--down { color: #F31110; }
+.scm-kpi-card__meta-text { color: #666; }

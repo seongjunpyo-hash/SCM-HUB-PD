@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1440" />
+  <title>SCM-Hub · 무탠 전개상품 관리 (Pilot · scm-* 모듈 기반)</title>
+  <script src="/auth-gate.js"></script>
+  <script src="/voc/comment-overlay.js" defer></script>
+  <script src="/dev-export.js" defer></script>
+
+  <!-- Pretendard -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <!-- LayerDesktop Design System -->
+  <link rel="stylesheet" href="../design%20system/layer-desktop.css" />
+
+  <!-- ====== SCM Components — Stage 1~8 (43 modules) ====== -->
+  <link rel="stylesheet" href="../design%20system/components/backdrop/backdrop.css" />
+  <link rel="stylesheet" href="../design%20system/components/icon-box/icon-box.css" />
+  <link rel="stylesheet" href="../design%20system/components/checkbox/checkbox.css" />
+  <link rel="stylesheet" href="../design%20system/components/tag/tag.css" />
+  <link rel="stylesheet" href="../design%20system/components/color-chip/color-chip.css" />
+  <link rel="stylesheet" href="../design%20system/components/state-text/state-text.css" />
+  <link rel="stylesheet" href="../design%20system/components/platform-tag/platform-tag.css" />
+  <link rel="stylesheet" href="../design%20system/components/toggle/toggle.css" />
+  <link rel="stylesheet" href="../design%20system/components/empty-hint/empty-hint.css" />
+  <link rel="stylesheet" href="../design%20system/components/empty-state/empty-state.css" />
+  <link rel="stylesheet" href="../design%20system/components/toast/toast.css" />
+  <link rel="stylesheet" href="../design%20system/components/section-count/section-count.css" />
+  <link rel="stylesheet" href="../design%20system/components/button/button.css" />
+  <link rel="stylesheet" href="../design%20system/components/input/input.css" />
+  <link rel="stylesheet" href="../design%20system/components/select/select.css" />
+  <link rel="stylesheet" href="../design%20system/components/radio/radio.css" />
+  <link rel="stylesheet" href="../design%20system/components/back-btn/back-btn.css" />
+  <link rel="stylesheet" href="../design%20system/components/search-btn/search-btn.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-reset-btn/filter-reset-btn.css" />
+  <link rel="stylesheet" href="../design%20system/components/download-btn/download-btn.css" />
+  <link rel="stylesheet" href="../design%20system/components/form-row/form-row.css" />
+  <link rel="stylesheet" href="../design%20system/components/pager/pager.css" />
+  <link rel="stylesheet" href="../design%20system/components/pgsize-select/pgsize-select.css" />
+  <link rel="stylesheet" href="../design%20system/components/mini-action/mini-action.css" />
+  <link rel="stylesheet" href="../design%20system/components/page-section/page-section.css" />
+  <link rel="stylesheet" href="../design%20system/components/card/card.css" />
+  <link rel="stylesheet" href="../design%20system/components/info-table/info-table.css" />
+  <link rel="stylesheet" href="../design%20system/components/info-banner/info-banner.css" />
+  <link rel="stylesheet" href="../design%20system/components/tabs/tabs.css" />
+  <link rel="stylesheet" href="../design%20system/components/collapsible-card/collapsible-card.css" />
+  <link rel="stylesheet" href="../design%20system/components/code-link/code-link.css" />
+  <link rel="stylesheet" href="../design%20system/components/code-popover/code-popover.css" />
+  <link rel="stylesheet" href="../design%20system/components/deploy-pill/deploy-pill.css" />
+  <link rel="stylesheet" href="../design%20system/components/deploy-popover/deploy-popover.css" />
+  <link rel="stylesheet" href="../design%20system/components/sizeset-btn/sizeset-btn.css" />
+  <link rel="stylesheet" href="../design%20system/components/confirm-modal/confirm-modal.css" />
+  <link rel="stylesheet" href="../design%20system/components/side-drawer/side-drawer.css" />
+  <link rel="stylesheet" href="../design%20system/components/bulk-upload-modal/bulk-upload-modal.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-chip/filter-chip.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-select/filter-select.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-popover/filter-popover.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-bar/filter-bar.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-drawer/filter-drawer.css" />
+  <link rel="stylesheet" href="../design%20system/components/stat/stat.css" />
+  <link rel="stylesheet" href="../design%20system/components/stats-bar/stats-bar.css" />
+  <link rel="stylesheet" href="../design%20system/components/page-head/page-head.css" />
+  <link rel="stylesheet" href="../design%20system/components/scm-table/scm-table.css" />
+  <link rel="stylesheet" href="../design%20system/components/scm-table/column-more-menu.css" />
+  <link rel="stylesheet" href="../design%20system/components/scm-table/column-filter-popover.css" />
+  <!-- 공용 셸 (GNB + LNB) -->
+  <link rel="stylesheet" href="../design%20system/components/topbar/topbar.css" />
+  <link rel="stylesheet" href="../design%20system/components/lnb/lnb.css" />
+
+  <!-- 페이지 전용 — app shell + 페이지 specific layout -->
+  <style>
+    /* CSS variables — sticky/lnb */
+    :root {
+      --scm-lnb-width: 56px;
+      --scm-sticky-gnb: 64px;
+      --scm-sticky-filter: 76px;     /* filter-bar 높이 */
+      --scm-sticky-stats: 60px;      /* stats-bar 높이 */
+    }
+    html.is-lnb-open { --scm-lnb-width: 260px; }
+
+    body {
+      margin: 0;
+      font-family: var(--ld-font-family-base);
+      color: var(--ld-fg);
+      background: #fff;
+      min-width: 1440px;
+    }
+
+    /* App grid */
+    .app { display: grid; grid-template-columns: var(--scm-lnb-width) minmax(0, 1fr); transition: grid-template-columns 0.2s ease; }
+
+    /* Main content */
+    main { min-width: 0; padding: 0 28px 40px; }
+
+    /* sticky stack offsets */
+    .scm-filter-bar { top: var(--scm-sticky-gnb); }
+    .scm-stats-bar--sticky { top: calc(var(--scm-sticky-gnb) + var(--scm-sticky-filter)); }
+
+    /* 일괄 업로드 버튼 — sticky 제거, page-head 안의 일반 flow → 스크롤하면 자연스럽게 사라짐 */
+
+    /* mp-table 영역 (Stage 9 마이그레이션 대상 — scm-table.css 가 mp-* 클래스 정의 보유)
+       margin-top 은 0 (10px 갭은 mp-thead-sticky 의 padding-top 으로 처리, 스크롤 시 데이터 비침 방지) */
+    .mp-table-host { margin-top: 0; }
+
+    /* 데모용 sticky 점검 spacer */
+    main > .demo-spacer { height: 600px; padding: 24px 0; color: #8A8A8A; font-size: 13px; }
+
+    /* ====== 사이즈 개별 설정 drawer 내부 — scm-side-drawer 외 컨텐츠 layout (legacy 포팅) ====== */
+    .sd-name { margin:0 0 16px; padding:6px 0; font-size:22px; font-weight:600; line-height:30.8px; color:#000; }
+    .sd-thumbs { display:flex; gap:8px; margin-bottom:16px; }
+    .sd-thumb { width:96px; height:116px; border-radius:4px; background:#F5F5F5 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 116' fill='none'%3E%3Cpath d='M26 78L42 60L52 70L66 56L78 67' stroke='%23CCC' stroke-width='1.5' fill='none'/%3E%3Ccircle cx='35' cy='44' r='5' fill='%23CCC'/%3E%3C/svg%3E") center/cover; flex-shrink:0; }
+    .sd-stats { display:flex; align-items:center; gap:0; padding:12px 0; flex-wrap:wrap; }
+    .sd-stat { display:inline-flex; align-items:center; gap:4px; padding:8px; font-size:15px; line-height:20.4px; color:#000; }
+    .sd-stat--all { padding-left:0; }
+    .sd-stat strong { font-weight:600; }
+    .sd-stat--deployed strong { color:#245EFF; }
+    .sd-stat-divider { width:4px; height:4px; border-radius:50%; background:#CCC; flex-shrink:0; }
+    .sd-stats-gap { width:12px; flex-shrink:0; }
+    /* drawer 안의 테이블 — mp-table-scroll 과 동일한 thead::before 1.5px
+       검정 라인 패턴으로 통일 (border-top 1.5px 는 sub-pixel 으로 두껍게
+       렌더되는 사례가 있어 절대 위치 1.5px 박스로 대체). */
+    .sd-table-wrap .mp-table { width: 100%; }
+    .sd-table-wrap > .mp-table > thead { position: relative; isolation: isolate; }
+    .sd-table-wrap > .mp-table > thead::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1.5px;
+      background: #000;
+      z-index: 10;
+    }
+    /* 사이즈 태그 (drawer 고유) */
+    .sd-size-tag {
+      display: inline-flex;
+      align-items: center;
+      height: 28px;
+      padding: 4px 8px;
+      background: rgba(138, 138, 138, 0.10);
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 19.6px;
+      color: #000;
+    }
+  </style>
+
+  <!-- LNB 상태 복원 -->
+  <script>
+    try { if (localStorage.getItem('scm-lnb-open') === '1') document.documentElement.classList.add('is-lnb-open'); } catch(_) {}
+  </script>
+</head>
+<body>
+
+<!-- ============== Legacy SVG sprite ============== -->
+<svg width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+<defs>
+  <symbol id="ic-menu" viewBox="0 0 24 24"><path d="M4 12H20.0714M4 6H20.0714M4 18H20.0714" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="ic-nav-dashboard" viewBox="0 0 24 24"><rect x="3.6" y="3.6" width="7.2" height="7.2" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><rect x="13.2" y="3.6" width="7.2" height="4.8" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><rect x="3.6" y="13.2" width="7.2" height="7.2" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><rect x="13.2" y="10.8" width="7.2" height="9.6" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
+  <symbol id="ic-nav-store" viewBox="0 0 24 24"><path d="M4.5 13.0864V19.5C4.5 19.6989 4.57902 19.8897 4.71967 20.0303C4.86032 20.171 5.05109 20.25 5.25 20.25H18.75C18.9489 20.25 19.1397 20.171 19.2803 20.0303C19.421 19.8897 19.5 19.6989 19.5 19.5V13.0865M5.06573 3.75H18.9343C19.0973 3.75 19.2558 3.80309 19.3859 3.90124C19.516 3.99939 19.6106 4.13725 19.6554 4.29396L21 9H3L4.34458 4.29396C4.38936 4.13725 4.48396 3.99939 4.61408 3.90124C4.7442 3.80309 4.90274 3.75 5.06573 3.75ZM9 9V10.5C9 11.2956 8.68393 12.0587 8.12132 12.6213C7.55871 13.1839 6.79565 13.5 6 13.5C5.20435 13.5 4.44129 13.1839 3.87868 12.6213C3.31607 12.0587 3 11.2956 3 10.5V9M15 9V10.5C15 11.2956 14.6839 12.0587 14.1213 12.6213C13.5587 13.1839 12.7956 13.5 12 13.5C11.2044 13.5 10.4413 13.1839 9.87868 12.6213C9.31607 12.0587 9 11.2956 9 10.5V9M21 9V10.5C21 11.2956 20.6839 12.0587 20.1213 12.6213C19.5587 13.1839 18.7956 13.5 18 13.5C17.2044 13.5 16.4413 13.1839 15.8787 12.6213C15.3161 12.0587 15 11.2956 15 10.5V9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="ic-nav-hanger" viewBox="0 0 24 24"><path d="M9 6.5V7.1C9 8.75685 10.3431 10.1 12 10.1C13.6569 10.1 15 8.75685 15 7.1V6.5M9 6.5H8.51537C8.44034 6.5 8.36718 6.52344 8.30613 6.56706L4.27987 9.44295C4.22758 9.4803 4.18624 9.53097 4.16014 9.58969L1.94818 14.5666C1.86666 14.75 1.95087 14.9647 2.13534 15.0437L6 16.7M9 6.5H15M15 6.5H15.4846C15.5597 6.5 15.6328 6.52344 15.6939 6.56706L19.7201 9.44295C19.7724 9.4803 19.8138 9.53097 19.8399 9.58969L22.0518 14.5666C22.1333 14.75 22.0491 14.9647 21.8647 15.0437L18 16.7M18 12.8V16.7M18 16.7V21.74C18 21.9388 17.8388 22.1 17.64 22.1H6.36C6.16118 22.1 6 21.9388 6 21.74V16.7M6 16.7V12.8M10.4 3.18C10.4 2.25216 11.1522 1.5 12.08 1.5C13.0079 1.5 13.76 2.25216 13.76 3.18C13.76 4.10784 13.0079 4.86 12.08 4.86V6.5" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
+  <symbol id="ic-funnel" viewBox="0 0 20 20"><path d="M6.14286 10H13.8571M4 6L16 6M8.28571 14L11.7143 14" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
+  <symbol id="ic-filter" viewBox="0 0 20 20"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="round"><path d="M10.625 13.4375L3.125 13.4375"/><path d="M16.875 13.4375L13.125 13.4375"/><path d="M5.625 6.56257L3.125 6.5625"/><path d="M16.875 6.5625L8.125 6.56257"/><path d="M8.125 4.6875V8.4375"/><path d="M13.125 15.3125V11.5625"/></g></symbol>
+  <symbol id="ic-checkCircle-filled" viewBox="0 0 20 20"><path d="M10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2ZM13.7071 8.20711L9.41421 12.5L6.29289 9.37868L7.70711 7.96447L9.41421 9.67157L12.2929 6.79289L13.7071 8.20711Z" fill="currentColor"/></symbol>
+  <symbol id="ic-chevronDown16" viewBox="0 0 16 16"><path d="M3 6L8 11L13 6" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="ic-refresh" viewBox="0 0 20 20"><path d="M16.5 4V8H12.5M3.5 16V12H7.5M5.07 8C5.5 6.46 6.4 5.1 7.65 4.16C8.91 3.21 10.45 2.7 12.04 2.7C13.62 2.7 15.16 3.21 16.42 4.16C17.67 5.1 18.58 6.46 19 8M3 12C3.42 13.54 4.33 14.9 5.58 15.84C6.84 16.79 8.38 17.3 9.96 17.3C11.55 17.3 13.09 16.79 14.35 15.84C15.6 14.9 16.5 13.54 16.93 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="ic-download" viewBox="0 0 20 20"><path d="M3 16.5H17M10 13.5V3.5M10 13.5L14 9.5M10 13.5L6 9.5" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="ic-chevronLeft" viewBox="0 0 20 20"><path d="M12.5 16L6.71213 10.212C6.59497 10.0948 6.59498 9.90486 6.71213 9.7877L12.5 4" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="ic-chevronRight" viewBox="0 0 20 20"><path d="M7.5 16L13.2879 10.2121C13.405 10.095 13.405 9.90503 13.2879 9.78787L7.5 4" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="ic-arrowUpDown" viewBox="0 0 16 16"><path d="M5.23 2.76l0-.65l-1.3 0l0 .65l.65 0l.65 0ZM3.93 13.24c0 .36.29.65.65.65c.36 0 .65-.29.65-.65l-.65 0l-.65 0ZM4.58 2.76l-.65 0l0 10.49l.65 0l.65 0l0-10.49l-.65 0Z" fill="currentColor"/><path d="M10.77 13.24l0 .65l1.3 0l0-.65l-.65 0l-.65 0ZM12.07 2.76c0-.36-.29-.65-.65-.65c-.36 0-.65.29-.65.65l.65 0l.65 0ZM11.42 13.24l.65 0l0-10.49l-.65 0l-.65 0l0 10.49l.65 0Z" fill="currentColor"/><path d="M2.14 10.81L4.57 13.24L7.01 10.81" stroke="currentColor" stroke-width="1.3" stroke-linecap="square" stroke-linejoin="round" fill="none"/><path d="M13.86 5.19L11.43 2.76L9 5.19" stroke="currentColor" stroke-width="1.3" stroke-linecap="square" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="ic-sort-asc" viewBox="0 0 16 16"><path d="M7.25 13.43V14.18H8.75V13.43H8H7.25ZM8.75 2.94c0-.41-.34-.75-.75-.75c-.41 0-.75.34-.75.75H8H8.75ZM8 13.43H8.75L8.75 2.94H8H7.25L7.25 13.43H8Z" fill="currentColor"/><path d="M11.15 6.09L8 2.94L4.85 6.09" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="ic-sort-desc" viewBox="0 0 16 16"><path d="M8.75 2.57L8.75 1.82L7.25 1.82L7.25 2.57L8 2.57L8.75 2.57ZM7.25 13.06c0 .41.34.75.75.75c.41 0 .75-.34.75-.75L8 13.06L7.25 13.06ZM8 2.57L7.25 2.57L7.25 13.06L8 13.06L8.75 13.06L8.75 2.57L8 2.57Z" fill="currentColor"/><path d="M4.85 9.91L8 13.06L11.15 9.91" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="ic-more-vertical" viewBox="0 0 16 16"><circle cx="8" cy="3" r="1.4" fill="currentColor"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/><circle cx="8" cy="13" r="1.4" fill="currentColor"/></symbol>
+  <symbol id="ic-eye" viewBox="0 0 20 20"><path d="M10 4.5C6.06 4.5 3.09 7.41 2.05 9.89c-.03.07-.03.15 0 .22C3.09 12.59 6.06 15.5 10 15.5c3.94 0 6.91-2.91 7.95-5.39c.03-.07.03-.15 0-.22C16.91 7.41 13.94 4.5 10 4.5Z" stroke="currentColor" stroke-width="1.4" fill="none"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
+  <symbol id="ic-eye-off" viewBox="0 0 20 20"><path d="M3 3l14 14M17 7c-.88 2.22-3.5 5-7 5s-6.13-2.78-7-5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></symbol>
+  <symbol id="ic-pin-left" viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="14" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><line x1="7" y1="3" x2="7" y2="17" stroke="currentColor" stroke-width="1.4"/></symbol>
+  <symbol id="ic-pin-right" viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="14" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><line x1="13" y1="3" x2="13" y2="17" stroke="currentColor" stroke-width="1.4"/></symbol>
+  <symbol id="ic-close" viewBox="0 0 20 20"><path d="M5 5L15 15M15 5L5 15" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="ic-alertTriangle" viewBox="0 0 20 20"><path d="M10 14.7499V12.8832M10 11.9499V7.28322M2.30694 16.4999H17.6931C17.9272 16.4999 18.0711 16.2437 17.9493 16.0438L10.2562 3.42025C10.1393 3.22841 9.86077 3.22841 9.74386 3.42025L2.05076 16.0438C1.92893 16.2437 2.07283 16.4999 2.30694 16.4999Z" stroke="currentColor" fill="none"/></symbol>
+</defs>
+</svg>
+
+<!-- ============== Topbar (scm-topbar 모듈) ============== -->
+<header class="scm-topbar" role="banner">
+  <div class="scm-topbar__left">
+    <button class="scm-topbar__menu-btn" type="button" data-scm-lnb-toggle aria-label="메뉴 열기/닫기">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 12H20.0714M4 6H20.0714M4 18H20.0714" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" stroke-linejoin="round" fill="none"/>
+      </svg>
+    </button>
+    <a class="scm-topbar__logo" href="dashboard.html" aria-label="SCM-Hub 홈">
+      <svg viewBox="0 0 96 18" aria-hidden="true">
+        <path d="M85.3496 1.61133V6.90625C85.7984 6.47277 86.9465 5.55859 88.8203 5.55859C91.9664 5.55882 94.2324 8.02321 94.2324 11.1191C94.2323 14.215 91.9663 16.6785 88.8203 16.6787C86.817 16.6787 85.6764 15.6848 85.2168 15.1523L84.6914 16.4482L84.666 16.5107H83.1973V1.61133H85.3496ZM88.6729 7.62793C86.6351 7.62794 85.3076 9.19315 85.3076 11.1191C85.3077 13.045 86.6351 14.6103 88.6729 14.6104C90.7106 14.6104 92.038 13.045 92.0381 11.1191C92.0381 9.19314 90.7107 7.62793 88.6729 7.62793Z" fill="currentColor"/>
+        <path d="M74.9072 5.81055V12.5674C74.9073 13.4123 75.113 13.9079 75.4238 14.2188C75.7602 14.5551 76.2172 14.7353 76.7393 14.7354C77.2613 14.7354 77.7183 14.5551 78.0547 14.2188C78.3658 13.9077 78.5713 13.4329 78.5713 12.5674V5.81055H80.7451V16.5098H79.2812L78.9209 15.7891C78.5897 16.1418 77.7942 16.7411 76.3408 16.7412C74.3798 16.7412 72.7129 15.3361 72.7129 13.1338V5.81055H74.9072Z" fill="currentColor"/>
+        <path d="M59.9746 1.61133V7.78516H67.6074V1.61133H69.9287V16.5107H67.6074V10.0635H59.9746V16.5107H57.6543V1.61133H59.9746Z" fill="currentColor"/>
+        <path d="M55.085 9.69727V11.9971H48.9004V9.69727H55.085Z" fill="currentColor"/>
+        <path d="M33.2148 1.61133L33.2441 1.6582L38.4297 10.0664L43.6367 1.6582L43.666 1.61133H46.3213V16.5107H44.0215V5.16895L39.4814 12.4941L39.4521 12.542H37.4082L37.3789 12.4941L32.8604 5.1709V16.5107H30.5605V1.61133H33.2148Z" fill="currentColor"/>
+        <path d="M20.8125 1.40039C24.402 1.40039 27.1131 3.42106 27.9238 6.51465L27.9561 6.63965H25.4473L25.4238 6.5752C24.7679 4.833 23.1271 3.6582 20.8125 3.6582C17.6172 3.65842 15.4953 6.02401 15.4951 9.05957C15.4951 12.0935 17.6362 14.4617 20.9385 14.4619C23.2565 14.4619 25.0415 13.2841 25.6963 11.5449L25.7207 11.4805H28.2295L28.1963 11.6055C27.3849 14.7011 24.5254 16.7197 20.9385 16.7197C16.3491 16.7195 13.1113 13.5053 13.1113 9.05957C13.1115 4.61571 16.2847 1.4006 20.8125 1.40039Z" fill="currentColor"/>
+        <path d="M6.58008 1.40039C8.00725 1.40041 9.16335 1.8319 9.96289 2.61523C10.7625 3.39871 11.1952 4.52346 11.1953 5.88867V5.98926H8.76855V5.61621C8.76855 4.9693 8.54277 4.47783 8.16309 4.14746C7.78158 3.81556 7.23461 3.63673 6.58008 3.63672C5.91491 3.63672 5.3783 3.81593 5.00977 4.12988C4.64309 4.44242 4.43268 4.89677 4.43262 5.46875C4.43262 5.97 4.57135 6.33564 4.92578 6.66309C5.28822 6.99784 5.88072 7.29742 6.80371 7.64355L7.64453 7.95801C8.9502 8.44273 9.74471 8.86969 10.3906 9.55859C11.0368 10.2478 11.4258 11.0278 11.4258 12.252C11.4258 14.6421 9.42384 16.7197 6.60059 16.7197C5.21506 16.7196 3.97684 16.2828 3.08398 15.46C2.18996 14.6359 1.65039 13.4321 1.65039 11.916V11.8164H4.07617V12.126C4.07617 12.8674 4.33961 13.4538 4.78125 13.8555C5.2239 14.258 5.85415 14.4833 6.60059 14.4834C7.34821 14.4834 7.94765 14.2683 8.3584 13.8975C8.76809 13.5275 9 12.9936 9 12.3359C8.99999 11.9579 8.93955 11.6633 8.82812 11.4238C8.71705 11.1853 8.55272 10.9951 8.33398 10.8301C7.88946 10.4948 7.23524 10.27 6.37695 9.95215L5.36914 9.57324C4.25265 9.15193 3.47465 8.74531 2.91113 8.05176C2.35254 7.36415 2.00684 6.58617 2.00684 5.51074C2.0069 4.54201 2.3672 3.51388 3.12109 2.72754C3.87671 1.93954 5.02247 1.40039 6.58008 1.40039Z" fill="currentColor"/>
+      </svg>
+    </a>
+    <span class="scm-topbar__demo-tag" aria-label="데모 환경">DEMO</span>
+  </div>
+  <div class="scm-topbar__right" role="button" tabindex="0">
+    <span class="scm-topbar__avatar">홍</span>
+    <div class="scm-topbar__name-group">
+      <span class="scm-topbar__name">
+        <span class="scm-topbar__name-first">홍길동</span>
+        <span class="scm-topbar__name-suffix">님</span>
+      </span>
+      <span class="scm-topbar__chev">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 6L8 11L13 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+    </div>
+  </div>
+</header>
+
+<div class="app">
+  <!-- ============== LNB (scm-lnb 모듈) ============== -->
+<nav class="scm-lnb" aria-label="주메뉴">
+
+  <!-- 대시보드 (L1만, sub 없음) -->
+  <div class="scm-lnb-item" data-key="dashboard">
+    <a class="scm-lnb-row" href="dashboard.html">
+      <span class="scm-lnb-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3.6" y="3.6" width="7.2" height="7.2" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <rect x="13.2" y="3.6" width="7.2" height="4.8" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <rect x="3.6" y="13.2" width="7.2" height="7.2" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <rect x="13.2" y="10.8" width="7.2" height="9.6" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
+        </svg>
+      </span>
+      <span class="scm-lnb-label">대시보드</span>
+    </a>
+  </div>
+
+  <!-- 스토어 -->
+  <div class="scm-lnb-item is-open" data-key="store">
+    <button class="scm-lnb-row" type="button" data-nav-toggle>
+      <span class="scm-lnb-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4.5 13.0864V19.5C4.5 19.6989 4.57902 19.8897 4.71967 20.0303C4.86032 20.171 5.05109 20.25 5.25 20.25H18.75C18.9489 20.25 19.1397 20.171 19.2803 20.0303C19.421 19.8897 19.5 19.6989 19.5 19.5V13.0865M5.06573 3.75H18.9343C19.0973 3.75 19.2558 3.80309 19.3859 3.90124C19.516 3.99939 19.6106 4.13725 19.6554 4.29396L21 9H3L4.34458 4.29396C4.38936 4.13725 4.48396 3.99939 4.61408 3.90124C4.7442 3.80309 4.90274 3.75 5.06573 3.75ZM9 9V10.5C9 11.2956 8.68393 12.0587 8.12132 12.6213C7.55871 13.1839 6.79565 13.5 6 13.5C5.20435 13.5 4.44129 13.1839 3.87868 12.6213C3.31607 12.0587 3 11.2956 3 10.5V9M15 9V10.5C15 11.2956 14.6839 12.0587 14.1213 12.6213C13.5587 13.1839 12.7956 13.5 12 13.5C11.2044 13.5 10.4413 13.1839 9.87868 12.6213C9.31607 12.0587 9 11.2956 9 10.5V9M21 9V10.5C21 11.2956 20.6839 12.0587 20.1213 12.6213C19.5587 13.1839 18.7956 13.5 18 13.5C17.2044 13.5 16.4413 13.1839 15.8787 12.6213C15.3161 12.0587 15 11.2956 15 10.5V9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+      <span class="scm-lnb-label">스토어</span>
+      <span class="scm-lnb-chev">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+    </button>
+    <div class="scm-lnb-l2-list">
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">무탠 재고 보충 현황</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">무탠 재고 보충 요청</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+      <a class="scm-lnb-l2" href="index.html" data-key="index"><span class="scm-lnb-l2-text">무탠 전개상품 관리</span><span class="scm-lnb-tag scm-lnb-tag--new">NEW</span></a>
+      <a class="scm-lnb-l2" href="editshop-restock-status.html" data-key="editshop-status"><span class="scm-lnb-l2-text">편집샵 재고 보충 현황</span><span class="scm-lnb-tag scm-lnb-tag--new">NEW</span></a>
+      <a class="scm-lnb-l2" href="editshop-restock-request.html" data-key="editshop-request"><span class="scm-lnb-l2-text">편집샵 재고 보충 요청</span><span class="scm-lnb-tag scm-lnb-tag--new">NEW</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">편집샵 전개상품 관리</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+    </div>
+  </div>
+
+  <!-- 상품 관리 -->
+  <div class="scm-lnb-item is-open" data-key="hanger">
+    <button class="scm-lnb-row" type="button" data-nav-toggle>
+      <span class="scm-lnb-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 6.5V7.1C9 8.75685 10.3431 10.1 12 10.1C13.6569 10.1 15 8.75685 15 7.1V6.5M9 6.5H8.51537C8.44034 6.5 8.36718 6.52344 8.30613 6.56706L4.27987 9.44295C4.22758 9.4803 4.18624 9.53097 4.16014 9.58969L1.94818 14.5666C1.86666 14.75 1.95087 14.9647 2.13534 15.0437L6 16.7M9 6.5H15M15 6.5H15.4846C15.5597 6.5 15.6328 6.52344 15.6939 6.56706L19.7201 9.44295C19.7724 9.4803 19.8138 9.53097 19.8399 9.58969L22.0518 14.5666C22.1333 14.75 22.0491 14.9647 21.8647 15.0437L18 16.7M18 12.8V16.7M18 16.7V21.74C18 21.9388 17.8388 22.1 17.64 22.1H6.36C6.16118 22.1 6 21.9388 6 21.74V16.7M6 16.7V12.8M10.4 3.18C10.4 2.25216 11.1522 1.5 12.08 1.5C13.0079 1.5 13.76 2.25216 13.76 3.18C13.76 4.10784 13.0079 4.86 12.08 4.86V6.5" stroke="currentColor" stroke-width="1.4" fill="none"/>
+        </svg>
+      </span>
+      <span class="scm-lnb-label">상품 관리</span>
+      <span class="scm-lnb-chev">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+    </button>
+    <div class="scm-lnb-l2-list">
+      <a class="scm-lnb-l2" href="sku-management.html" data-key="sku-management"><span class="scm-lnb-l2-text">SKU 관리</span><span class="scm-lnb-tag scm-lnb-tag--new">NEW</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">위탁 상품 미매핑 관리</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+    </div>
+  </div>
+
+  <!-- 발주/입고 관리 -->
+  <div class="scm-lnb-item is-open" data-key="order">
+    <button class="scm-lnb-row" type="button" data-nav-toggle>
+      <span class="scm-lnb-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="5" y="5" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <rect x="9" y="3" width="6" height="3" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <path d="M9 13l2.2 2.2L15 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+      <span class="scm-lnb-label">발주/입고 관리</span>
+      <span class="scm-lnb-chev">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+    </button>
+    <div class="scm-lnb-l2-list">
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">위탁 상품 입고 승인</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">위탁 상품 입고 현황</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">PB 상품 입고 검토</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">PB 상품 ASN 등록/확정</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+      <a class="scm-lnb-l2" href="otb-budget.html" data-key="otb-budget"><span class="scm-lnb-l2-text">OTB 예산 관리</span><span class="scm-lnb-tag scm-lnb-tag--new">NEW</span></a>
+    </div>
+  </div>
+
+  <!-- 재고 관리 -->
+  <div class="scm-lnb-item is-open" data-key="stock">
+    <button class="scm-lnb-row" type="button" data-nav-toggle>
+      <span class="scm-lnb-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20.4 7.4769L17.2661 3.71622C17.2047 3.64256 17.1138 3.59998 17.0179 3.59998H12M20.4 7.4769V20.0769C20.4 20.2553 20.2553 20.4 20.0769 20.4H3.92305C3.74462 20.4 3.59998 20.2553 3.59998 20.0769V7.4769M20.4 7.4769H12M3.59998 7.4769L6.73387 3.71622C6.79525 3.64256 6.88618 3.59998 6.98207 3.59998H12M3.59998 7.4769H12M12 3.59998V7.4769" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+      <span class="scm-lnb-label">재고 관리</span>
+      <span class="scm-lnb-chev">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+    </button>
+    <div class="scm-lnb-l2-list">
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">재고내역 조회</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">재고이동</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">불량/정상 전환</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+    </div>
+  </div>
+
+  <!-- 운영 설정 -->
+  <div class="scm-lnb-item is-open" data-key="control">
+    <button class="scm-lnb-row" type="button" data-nav-toggle>
+      <span class="scm-lnb-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M8.39998 5.99998V12M8.39998 12C7.40586 12 6.59998 12.8059 6.59998 13.8C6.59998 14.7941 7.40586 15.6 8.39998 15.6M8.39998 12C9.39409 12 10.2 12.8059 10.2 13.8C10.2 14.7941 9.39409 15.6 8.39998 15.6M8.39998 15.6V18M15.6 12V18M15.6 12C16.5941 12 17.4 11.1941 17.4 10.2C17.4 9.20586 16.5941 8.39998 15.6 8.39998M15.6 12C14.6059 12 13.8 11.1941 13.8 10.2C13.8 9.20586 14.6059 8.39998 15.6 8.39998M15.6 5.99998V8.39998M3.89998 20.4H20.1C20.2657 20.4 20.4 20.2657 20.4 20.1V3.89998C20.4 3.73429 20.2657 3.59998 20.1 3.59998H3.89998C3.73429 3.59998 3.59998 3.73429 3.59998 3.89998V20.1C3.59998 20.2657 3.73429 20.4 3.89998 20.4Z" stroke="currentColor" stroke-width="1.4" fill="none"/>
+        </svg>
+      </span>
+      <span class="scm-lnb-label">운영 설정</span>
+      <span class="scm-lnb-chev">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+    </button>
+    <div class="scm-lnb-l2-list">
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">수기 재고 조정</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">운영 정책 설정</span></a>
+    </div>
+  </div>
+
+  <!-- 관리자 -->
+  <div class="scm-lnb-item is-open" data-key="setting">
+    <button class="scm-lnb-row" type="button" data-nav-toggle>
+      <span class="scm-lnb-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M10.7206 3.59998H13.2795C13.3327 3.59998 13.3796 3.63508 13.3946 3.68619L14.0781 6.01563C14.0888 6.05203 14.1161 6.08117 14.1516 6.09468C14.8012 6.34221 15.3991 6.6986 15.9238 7.14216C15.9533 7.16713 15.993 7.17678 16.0306 7.1677L18.3426 6.60887C18.3947 6.59627 18.4489 6.6198 18.4753 6.66651L19.7571 8.93636C19.7827 8.98171 19.7761 9.0384 19.7408 9.07669L18.1072 10.8491C18.0819 10.8765 18.0709 10.9141 18.0769 10.951C18.1328 11.2921 18.1619 11.6426 18.1619 12C18.1619 12.3574 18.1328 12.7078 18.0769 13.049C18.0709 13.0858 18.0819 13.1234 18.1072 13.1509L19.7408 14.9233C19.7761 14.9615 19.7827 15.0182 19.7571 15.0636L18.4753 17.3334C18.4489 17.3802 18.3947 17.4037 18.3426 17.3911L16.0306 16.8323C15.993 16.8232 15.9533 16.8328 15.9238 16.8578C15.3991 17.3013 14.8013 17.6577 14.1516 17.9053C14.1161 17.9188 14.0888 17.9479 14.0781 17.9843L13.3946 20.3138C13.3796 20.3649 13.3327 20.4 13.2795 20.4H10.7206C10.6673 20.4 10.6204 20.3649 10.6054 20.3138L9.9219 17.9843C9.91122 17.9479 9.88392 17.9188 9.84846 17.9053C9.1988 17.6577 8.60099 17.3013 8.07625 16.8578C8.04671 16.8328 8.00709 16.8232 7.96949 16.8323L5.65745 17.3911C5.60531 17.4037 5.55114 17.3802 5.52476 17.3334L4.24299 15.0636C4.21738 15.0182 4.22395 14.9616 4.25924 14.9233L5.89289 13.1509C5.91817 13.1234 5.92919 13.0858 5.92315 13.049C5.86723 12.7078 5.83812 12.3574 5.83812 12C5.83812 11.6426 5.86723 11.2921 5.92315 10.951C5.92919 10.9141 5.91817 10.8765 5.89289 10.8491L4.25924 9.07669C4.22395 9.0384 4.21738 8.98171 4.24299 8.93636L5.52476 6.66651C5.55114 6.6198 5.60531 6.59627 5.65745 6.60887L7.96949 7.1677C8.00709 7.17678 8.04671 7.16713 8.07625 7.14216C8.60099 6.6986 9.1988 6.34221 9.84846 6.09468C9.88392 6.08117 9.91122 6.05203 9.9219 6.01563L10.6054 3.68619C10.6204 3.63508 10.6673 3.59998 10.7206 3.59998Z" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <path d="M14.4 12C14.4 13.3255 13.3255 14.4 12 14.4C10.6745 14.4 9.60002 13.3255 9.60002 12C9.60002 10.6745 10.6745 9.59998 12 9.59998C13.3255 9.59998 14.4 10.6745 14.4 12Z" stroke="currentColor" stroke-width="1.4" fill="none"/>
+        </svg>
+      </span>
+      <span class="scm-lnb-label">관리자</span>
+      <span class="scm-lnb-chev">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+    </button>
+    <div class="scm-lnb-l2-list">
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">계정 관리</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">권한 관리</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">로그 조회</span></a>
+    </div>
+  </div>
+
+</nav>
+
+  <main>
+    <!-- ============== Page head (--list) — actions 영역만 viewport fixed (CSS) ============== -->
+    <div class="scm-page-head scm-page-head--list" id="page-head">
+      <h1 class="scm-page-head__title">무탠 전개상품 관리</h1>
+      <div class="scm-page-head__actions">
+        <button class="scm-button" type="button" id="bu-open-btn">일괄 업로드</button>
+      </div>
+    </div>
+
+    <!-- ============== Filter bar ============== -->
+    <div class="scm-filter-bar" id="filter-bar">
+      <button class="scm-filter-chip" type="button" id="filter-drawer-open">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><use href="#ic-filter"/></svg>
+        <span>전체 필터</span>
+        <span class="scm-filter-chip__count" id="filter-count">3</span>
+      </button>
+
+      <div class="scm-filter-overflow">
+        <div class="scm-filter-overflow__track">
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="season"><span class="scm-filter-select__label">시즌</span><span class="scm-filter-select__value">시즌</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="style"><span class="scm-filter-select__label">대표스타일</span><span class="scm-filter-select__value">대표스타일</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="color"><span class="scm-filter-select__label">컬러</span><span class="scm-filter-select__value">컬러</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="category"><span class="scm-filter-select__label">카테고리</span><span class="scm-filter-select__value">카테고리</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="uid"><span class="scm-filter-select__label">UID</span><span class="scm-filter-select__value">UID</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="sku"><span class="scm-filter-select__label">SKU번호</span><span class="scm-filter-select__value">SKU번호</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="deploy"><span class="scm-filter-select__label">스토어 전개 여부</span><span class="scm-filter-select__value">스토어 전개 여부</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+        </div>
+        <div class="scm-filter-overflow__fade scm-filter-overflow__fade--left" style="opacity:0;"></div>
+        <div class="scm-filter-overflow__fade scm-filter-overflow__fade--right" style="opacity:0;"></div>
+      </div>
+
+      <div class="scm-filter-actions">
+        <button class="scm-search-btn" type="button" id="search-btn">검색</button>
+        <button class="scm-filter-reset-btn" type="button" id="reset-btn">
+          <svg viewBox="0 0 20 20"><use href="#ic-refresh"/></svg>
+          <span>초기화</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ============== Stats bar ============== -->
+    <div class="scm-stats-bar scm-stats-bar--sticky" id="stats-bar">
+      <div class="scm-stats-bar__left">
+        <div class="scm-stats-bar__counts-wrap">
+          <div class="scm-stats-bar__counts">
+            <span class="scm-stat scm-stat--all"><span class="scm-stat__label">전체</span> <span class="scm-stat__num">12</span></span>
+            <span class="scm-stat-divider"></span>
+            <span class="scm-stat scm-stat--deployed"><span class="scm-stat__label">전개중</span> <span class="scm-stat__num">8</span></span>
+            <span class="scm-stat-divider"></span>
+            <span class="scm-stat scm-stat--undeployed"><span class="scm-stat__label">미전개</span> <span class="scm-stat__num">4</span></span>
+          </div>
+        </div>
+        <div class="scm-stats-bar__mini-actions">
+          <span class="scm-mini-wrap" id="copy-wrap">
+            <button class="scm-mini-action" type="button" aria-haspopup="listbox" aria-expanded="false">
+              코드 복사
+              <svg viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+            </button>
+            <ul class="scm-mini-popup" role="listbox">
+              <li data-key="rep">대표스타일 복사 (12)</li>
+              <li data-key="sku">SKU번호 복사 (12)</li>
+              <li data-key="barcode">바코드 복사 (12)</li>
+            </ul>
+          </span>
+          <span class="scm-mini-wrap" id="deploy-wrap">
+            <button class="scm-mini-action" type="button" aria-haspopup="listbox" aria-expanded="false" id="deploy-action-btn" disabled>
+              전개 여부 변경
+              <svg viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+            </button>
+            <ul class="scm-mini-popup" role="listbox">
+              <li data-key="deployed"><strong style="font-weight:700;">전개중</strong> 일괄 변경</li>
+              <li data-key="undeployed"><strong style="font-weight:700;">미전개</strong> 일괄 변경</li>
+            </ul>
+          </span>
+          <button class="scm-mini-action" type="button" id="deselect-btn" disabled>선택 해제</button>
+        </div>
+      </div>
+      <div class="scm-stats-bar__right">
+        <span class="scm-stats-bar__ts">25.10.24 12:00 업데이트</span>
+        <button class="scm-download-btn" type="button">
+          <svg viewBox="0 0 20 20"><use href="#ic-download"/></svg>
+          <span>전체 엑셀 다운로드</span>
+        </button>
+        <span class="scm-stats-bar__v-divider"></span>
+        <span class="scm-pager" id="pager">
+          <strong class="scm-pager__current">1</strong>
+          <span class="scm-pager__total">/ <span>1</span> 페이지</span>
+          <button class="scm-pager-btn" type="button" aria-label="이전 페이지" disabled><svg viewBox="0 0 20 20"><use href="#ic-chevronLeft"/></svg></button>
+          <button class="scm-pager-btn" type="button" aria-label="다음 페이지" disabled><svg viewBox="0 0 20 20"><use href="#ic-chevronRight"/></svg></button>
+        </span>
+        <span class="scm-pgsize-wrap" id="pgsize">
+          <button class="scm-pgsize" type="button" aria-haspopup="listbox" aria-expanded="false">
+            <span class="scm-pgsize__label">100개씩</span>
+            <svg class="scm-pgsize__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+          <ul class="scm-pgsize-popup" role="listbox" aria-label="페이지당 행 수"></ul>
+        </span>
+      </div>
+    </div>
+
+    <!-- ============== Data table — legacy 16 컬럼 + spacer 구조 그대로 ============== -->
+    <div class="mp-table-host">
+      <div class="mp-thead-sticky"><div class="mp-thead-scroll"></div></div>
+      <div class="mp-table-scroll">
+        <table class="mp-table is-cell-selectable" id="mp-table">
+          <thead>
+            <tr>
+              <th class="cb-header col-frozen-1" colspan="2" title="전체 선택">
+                <span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" id="mp-cb-all" aria-label="전체 선택"></span>
+                <span class="cb-header-label">전체</span>
+              </th>
+              <th class="col-auto col-frozen-3">대표스타일 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="col-auto col-frozen-4">컬러 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="col-auto col-frozen-5">스토어 전개 여부 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="col-auto col-frozen-6" data-pad="full">사이즈 개별 설정</th>
+              <th class="col-large" data-pad="full"><div class="cell-clamp">스타일명</div></th>
+              <th class="col-auto">출시연도</th>
+              <th class="col-medium"><div class="cell-clamp">시즌</div></th>
+              <th class="col-medium"><div class="cell-clamp">카테고리</div></th>
+              <th class="col-auto">UID <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="col-auto">SKU번호</th>
+              <th class="col-auto">바코드</th>
+              <th class="col-auto" data-pad="full">스타일넘버</th>
+              <th class="col-auto">처리일시</th>
+              <th class="col-auto">처리자</th>
+              <th class="col-spacer" aria-hidden="true"></th>
+            </tr>
+          </thead>
+          <tbody id="data-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 데모용 — sticky stack 확인 (스크롤해서 page-head / filter-bar / stats-bar 가 sticky 되는지 보기) -->
+    <div class="demo-spacer">↓ 스크롤하면 위 filter-bar / stats-bar 가 topbar 아래 sticky 로 붙는지 확인</div>
+  </main>
+</div>
+
+<!-- ============== Filter popover root (single / multi / codeinput 공용) ============== -->
+<div class="scm-filter-popover-root" id="filter-popover-root" role="dialog" aria-hidden="true"></div>
+
+<!-- ============== Filter drawer (전체 필터) ============== -->
+<div class="scm-filter-drawer-backdrop" id="fd-backdrop" hidden></div>
+<aside class="scm-filter-drawer" id="filter-drawer" hidden role="dialog" aria-label="전체 필터">
+  <header class="scm-filter-drawer__header">
+    <h2>전체 필터</h2>
+    <button class="scm-filter-drawer__close" type="button" aria-label="닫기">
+      <svg viewBox="0 0 20 20"><use href="#ic-close"/></svg>
+    </button>
+  </header>
+  <!-- 본문은 SCM.filterPopoverModes.init 시 REGISTRY 기반으로 자동 생성 -->
+  <div class="scm-filter-drawer__body"></div>
+  <footer class="scm-filter-drawer__footer">
+    <button class="scm-filter-drawer__reset" type="button">
+      <svg viewBox="0 0 20 20"><use href="#ic-refresh"/></svg>
+      <span>전체 초기화</span>
+    </button>
+    <button class="scm-filter-drawer__apply" type="button">검색 적용</button>
+  </footer>
+</aside>
+
+<!-- ============== 사이즈 개별 설정 drawer (Figma 764-8335) — scm-side-drawer 기반 ============== -->
+<div class="scm-side-drawer-backdrop" id="sd-backdrop" hidden></div>
+<aside class="scm-side-drawer" id="sd-drawer" hidden role="dialog" aria-label="사이즈 개별 설정">
+  <header class="scm-side-drawer__head">
+    <span class="scm-side-drawer__head-meta" id="sd-style-code">MMJTS6Z19</span>
+    <button class="scm-side-drawer__close" id="sd-close" type="button" aria-label="닫기">
+      <svg viewBox="0 0 20 20" fill="none"><path d="M5 5L15 15M15 5L5 15" stroke="#000" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+  </header>
+  <div class="scm-side-drawer__body">
+    <h3 class="sd-name" id="sd-name">[시티 레저] 벨티드 데님 파라슈트 팬츠 [미디엄 인디고]</h3>
+    <div class="sd-thumbs" id="sd-thumbs">
+      <div class="sd-thumb"></div><div class="sd-thumb"></div><div class="sd-thumb"></div><div class="sd-thumb"></div>
+    </div>
+    <div class="sd-stats">
+      <span class="sd-stat sd-stat--all">전체 <strong id="sd-cnt-all">9</strong></span>
+      <span class="sd-stat-divider"></span>
+      <span class="sd-stat sd-stat--deployed">전개 <strong id="sd-cnt-deployed">5</strong></span>
+      <span class="sd-stat-divider"></span>
+      <span class="sd-stat sd-stat--undeployed">미전개 <strong id="sd-cnt-undeployed">4</strong></span>
+      <span class="sd-stats-gap"></span>
+      <button class="scm-mini-action" id="sd-bulk-deploy" type="button" disabled>전개</button>
+      <button class="scm-mini-action" id="sd-bulk-undeploy" type="button" disabled>미전개</button>
+    </div>
+    <div class="sd-table-wrap">
+      <table class="mp-table sd-table">
+        <thead>
+          <tr>
+            <th class="cb-col"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" id="sd-cb-all" aria-label="전체 선택"></span></th>
+            <th class="col-auto col-no">No</th>
+            <th class="col-auto">사이즈</th>
+            <th class="col-auto">사이즈 운영 여부</th>
+            <th class="col-auto">SKU번호</th>
+            <th class="col-auto">바코드</th>
+            <th class="col-spacer" aria-hidden="true"></th>
+          </tr>
+        </thead>
+        <tbody id="sd-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+  <footer class="scm-side-drawer__footer">
+    <button class="scm-button" id="sd-cancel" type="button">닫기</button>
+    <button class="scm-button scm-button--primary" id="sd-save" type="button" disabled>저장</button>
+  </footer>
+</aside>
+
+<!-- ============== Bulk upload modal ============== -->
+<div class="scm-bu-backdrop" id="bu-backdrop"></div>
+<div class="scm-bu-modal" id="bu-modal" role="dialog" aria-labelledby="bu-title">
+  <header class="scm-bu-header">
+    <h2 id="bu-title">일괄 업로드</h2>
+    <button class="scm-bu-close" type="button" aria-label="닫기">
+      <svg viewBox="0 0 20 20"><use href="#ic-close"/></svg>
+    </button>
+  </header>
+  <div class="scm-bu-body">
+    <div class="scm-bu-warning">
+      <div class="scm-bu-warning__head">
+        <svg class="scm-bu-warning__icon" viewBox="0 0 20 20"><use href="#ic-alertTriangle"/></svg>
+        <div class="scm-bu-warning__head-body">
+          <div class="scm-bu-warning__title">일괄 업로드 시 유의사항</div>
+          <ul class="scm-bu-warning__list">
+            <li>업로드 후 적용에 약 5–30분이 소요될 수 있습니다.</li>
+            <li>같은 SKU 가 여러 행에 있을 경우 마지막 행의 값이 적용됩니다.</li>
+            <li class="is-critical">템플릿을 변경하지 마세요. 컬럼 순서가 바뀌면 처리가 실패할 수 있습니다.</li>
+          </ul>
+        </div>
+        <button class="scm-bu-warning__toggle" type="button" aria-label="접기">
+          <svg viewBox="0 0 16 16"><use href="#ic-chevronDown16"/></svg>
+        </button>
+      </div>
+    </div>
+    <!-- 양식 다운로드 (무탠 — 단일 type, 업로드 유형 없음) -->
+    <div class="scm-bu-type-section">
+      <div class="scm-bu-type-row">
+        <span class="scm-bu-type-label">템플릿</span>
+        <div class="scm-bu-type-controls">
+          <div class="scm-bu-type-controls__row" style="gap:16px;">
+            <button class="scm-bu-template-btn" type="button" id="bu-template-dl">
+              <svg viewBox="0 0 16 16"><path d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              양식 다운로드
+            </button>
+            <div class="scm-bu-type-hint" style="margin:0;">※ 양식을 다운로드 받아 작성 후 업로드해 주세요.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 요청 이력 -->
+    <section class="scm-bu-history-section">
+      <h3 class="scm-bu-history-title">요청 이력</h3>
+      <table class="mp-table scm-bu-history-table" data-scm-no-sticky data-scm-frozen="0">
+        <colgroup>
+          <col style="width:60px"/>
+          <col style="width:112px"/>
+          <col style="width:280px"/>
+          <col style="width:400px"/>
+          <col style="width:160px"/>
+          <col style="width:170px"/>
+        </colgroup>
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>상태</th>
+            <th>파일명</th>
+            <th>처리결과/실패건 다운로드</th>
+            <th>요청일시</th>
+            <th>요청자</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td><span class="scm-bu-status-pill" data-state="processing">처리중</span></td>
+            <td>20260221_무탠 전개상품.xlsx</td>
+            <td class="scm-bu-result-cell">-</td>
+            <td>2026.02.21. 11:00</td>
+            <td>guji@musinsa.com</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td><span class="scm-bu-status-pill" data-state="done">처리완료</span></td>
+            <td>20260220_무탠 전개상품_001.xlsx</td>
+            <td class="scm-bu-result-cell">
+              <span class="scm-bu-result">
+                <span class="scm-bu-result-group scm-bu-result-group--success">성공 <em>599,900</em></span>
+                <span class="scm-bu-result-divider" aria-hidden="true"></span>
+                <span class="scm-bu-result-group scm-bu-result-group--fail">실패 <em>0</em></span>
+              </span>
+            </td>
+            <td>2026.02.20. 10:11</td>
+            <td>jun@musinsa.com</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td><span class="scm-bu-status-pill" data-state="partial">부분완료</span></td>
+            <td>20260219_무탠 전개상품.xlsx</td>
+            <td class="scm-bu-result-cell">
+              <span class="scm-bu-result">
+                <span class="scm-bu-result-group scm-bu-result-group--success">성공 <em>599,900</em></span>
+                <button class="scm-bu-result-dl" type="button">다운로드</button>
+                <span class="scm-bu-result-divider" aria-hidden="true"></span>
+                <span class="scm-bu-result-group scm-bu-result-group--fail">실패 <em>99,100</em></span>
+                <button class="scm-bu-result-dl" type="button">다운로드</button>
+              </span>
+            </td>
+            <td>2026.02.19. 10:11</td>
+            <td>jun@musinsa.com</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td><span class="scm-bu-status-pill" data-state="partial">부분완료</span></td>
+            <td>20260221_무탠 전개상품.xlsx</td>
+            <td class="scm-bu-result-cell">
+              <span class="scm-bu-result">
+                <span class="scm-bu-result-group scm-bu-result-group--success">성공 <em>1,000</em></span>
+                <button class="scm-bu-result-dl" type="button">다운로드</button>
+                <span class="scm-bu-result-divider" aria-hidden="true"></span>
+                <span class="scm-bu-result-group scm-bu-result-group--fail">실패 <em>99,100</em></span>
+                <button class="scm-bu-result-dl" type="button">다운로드</button>
+              </span>
+            </td>
+            <td>2026.02.21. 11:00</td>
+            <td>guji@musinsa.com</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+  <footer class="scm-bu-footer">
+    <button class="scm-button" type="button" id="bu-cancel">닫기</button>
+    <button class="scm-button scm-button--primary" type="button" id="bu-submit">
+      <svg viewBox="0 0 16 16" fill="none" style="width:16px;height:16px;margin-right:6px;vertical-align:-3px;"><path d="M8 14V3M8 3L4 7M8 3L12 7M2 2H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      엑셀 업로드(요청시작)
+    </button>
+  </footer>
+</div>
+
+<!-- ============== SCM Module JS (Stage 1~8) ============== -->
+<script src="../design%20system/components/scroll-lock/scroll-lock.js"></script>
+<script src="../design%20system/components/backdrop/backdrop.js"></script>
+<script src="../design%20system/components/icon-box/icon-box.js"></script>
+<script src="../design%20system/components/checkbox/checkbox.js"></script>
+<script src="../design%20system/components/tag/tag.js"></script>
+<script src="../design%20system/components/color-chip/color-chip.js"></script>
+<script src="../design%20system/components/state-text/state-text.js"></script>
+<script src="../design%20system/components/platform-tag/platform-tag.js"></script>
+<script src="../design%20system/components/toggle/toggle.js"></script>
+<script src="../design%20system/components/empty-hint/empty-hint.js"></script>
+<script src="../design%20system/components/empty-state/empty-state.js"></script>
+<script src="../design%20system/components/toast/toast.js"></script>
+<script src="../design%20system/components/section-count/section-count.js"></script>
+<script src="../design%20system/components/button/button.js"></script>
+<script src="../design%20system/components/input/input.js"></script>
+<script src="../design%20system/components/select/select.js"></script>
+<script src="../design%20system/components/radio/radio.js"></script>
+<script src="../design%20system/components/back-btn/back-btn.js"></script>
+<script src="../design%20system/components/search-btn/search-btn.js"></script>
+<script src="../design%20system/components/filter-reset-btn/filter-reset-btn.js"></script>
+<script src="../design%20system/components/download-btn/download-btn.js"></script>
+<script src="../design%20system/components/form-row/form-row.js"></script>
+<script src="../design%20system/components/pager/pager.js"></script>
+<script src="../design%20system/components/pgsize-select/pgsize-select.js"></script>
+<script src="../design%20system/components/mini-action/mini-action.js"></script>
+<script src="../design%20system/components/page-section/page-section.js"></script>
+<script src="../design%20system/components/card/card.js"></script>
+<script src="../design%20system/components/info-table/info-table.js"></script>
+<script src="../design%20system/components/info-banner/info-banner.js"></script>
+<script src="../design%20system/components/tabs/tabs.js"></script>
+<script src="../design%20system/components/collapsible-card/collapsible-card.js"></script>
+<script src="../design%20system/components/code-link/code-link.js"></script>
+<script src="../design%20system/components/code-popover/code-popover.js"></script>
+<script src="../design%20system/components/deploy-pill/deploy-pill.js"></script>
+<script src="../design%20system/components/deploy-popover/deploy-popover.js"></script>
+<script src="../design%20system/components/sizeset-btn/sizeset-btn.js"></script>
+<script src="../design%20system/components/confirm-modal/confirm-modal.js"></script>
+<script src="../design%20system/components/side-drawer/side-drawer.js"></script>
+<script src="../design%20system/components/bulk-upload-modal/bulk-upload-modal.js"></script>
+<script src="../design%20system/components/filter-chip/filter-chip.js"></script>
+<script src="../design%20system/components/filter-select/filter-select.js"></script>
+<script src="../design%20system/components/filter-popover/filter-popover.js"></script>
+<script src="../design%20system/components/filter-popover/filter-popover-modes.js"></script>
+<script src="../design%20system/components/filter-bar/filter-bar.js"></script>
+<script src="../design%20system/components/filter-drawer/filter-drawer.js"></script>
+<script src="../design%20system/components/stat/stat.js"></script>
+<script src="../design%20system/components/stats-bar/stats-bar.js"></script>
+<script src="../design%20system/components/page-head/page-head.js"></script>
+<script src="../design%20system/components/scm-table/scm-table.js"></script>
+<script src="../design%20system/components/scm-table/table-sort.js"></script>
+<script src="../design%20system/components/scm-table/column-more-menu.js"></script>
+<script src="../design%20system/components/scm-table/column-filter-popover.js"></script>
+
+<!-- 공용 셸 (LNB 먼저 — topbar 의 onLnbToggle 가 SCM.lnb.toggle 을 호출) -->
+<script src="../design%20system/components/lnb/lnb.js"></script>
+<script src="../design%20system/components/topbar/topbar.js"></script>
+
+<!-- ============== Page logic ============== -->
+<script>
+(function () {
+  // ------------------- Demo data (legacy 12 행 그대로) -------------------
+  const ROWS = [
+    { rep:'MMJTS6Z19',  group:true,  color:'미디엄 인디고', deploy:'deployed',   sizeUsed:5, sizeTotal:9, sizeAll:false, name:'[시티 레저] 벨티드 데님 파라슈트 팬츠', year:'2023', seasons:['26-SS','26-FW'], category:'상의 > 니트/스웨터 > 크루넥 니트', uid:'383827', uidExtra:0, sku:'S000001 외 6',  barcode:'881K/13029/EFGH 외 6',  styleNo:'MMJTS6Z19-BK 외 6',  dt:'2025.10.01 10:00:00', user:'juji@musinsa.com' },
+    { rep:'MMJTS6Z19',  group:false, color:'워시드 블랙',   deploy:'deployed',   sizeUsed:6, sizeTotal:9, sizeAll:false, name:'[시티 레저] 벨티드 데님 파라슈트 팬츠', year:'2023', seasons:['26-SS','26-FW'], category:'상의 > 니트/스웨터 > 크루넥 니트', uid:'383827', uidExtra:0, sku:'S000002 외 6',  barcode:'882K/13029/EFGH 외 6',  styleNo:'MMJTS6Z19-WH 외 6',  dt:'2025.10.01 10:00:00', user:'juji@musinsa.com' },
+    { rep:'MMJTS6Z19',  group:false, color:'딥 인디고',     deploy:'deployed',   sizeUsed:5, sizeTotal:9, sizeAll:false, name:'[시티 레저] 벨티드 데님 파라슈트 팬츠', year:'2023', seasons:['26-SS','26-FW'], category:'상의 > 니트/스웨터 > 크루넥 니트', uid:'383827', uidExtra:0, sku:'S000003 외 6',  barcode:'883K/13029/EFGH 외 6',  styleNo:'MMJTS6Z19-GY 외 6',  dt:'2025.10.01 10:00:00', user:'juji@musinsa.com' },
+    { rep:'MMJTS6Z19',  group:false, color:'크림',          deploy:'deployed',   sizeUsed:6, sizeTotal:9, sizeAll:false, name:'[시티 레저] 벨티드 데님 파라슈트 팬츠', year:'2023', seasons:['26-SS','26-FW'], category:'상의 > 니트/스웨터 > 크루넥 니트', uid:'383827', uidExtra:0, sku:'S000004 외 6',  barcode:'884K/13029/EFGH 외 6',  styleNo:'MMJTS6Z19-NA 외 6',  dt:'2025.10.01 10:00:00', user:'juji@musinsa.com' },
+    { rep:'DQ5201-012', group:true,  color:'블랙',          deploy:'undeployed', sizeUsed:0, sizeTotal:0, sizeAll:true,  name:'프로스트 다잉 오버사이즈 후디드 스웨트셔츠 [블랙]',  year:'2023', seasons:['26-SS'], category:'상의 > 니트/스웨터 > 크루넥 니트', uid:'383828', uidExtra:0, sku:'S000005 외 8',  barcode:'885K/13029/EFGH 외 8',  styleNo:'MMJTS6Z20-BK 외 6',  dt:'2025.10.01 10:00:00', user:'juji@musinsa.com' },
+    { rep:'DQ5201-012', group:false, color:'그레이',        deploy:'undeployed', sizeUsed:0, sizeTotal:0, sizeAll:true,  name:'프로스트 다잉 오버사이즈 후디드 스웨트셔츠 [그레이]',  year:'2023', seasons:['26-SS'], category:'상의 > 니트/스웨터 > 크루넥 니트', uid:'383828', uidExtra:0, sku:'S000006 외 8',  barcode:'886K/13029/EFGH 외 8',  styleNo:'MMJTS6Z20-GY 외 6',  dt:'2025.10.01 10:00:00', user:'juji@musinsa.com' },
+    { rep:'DQ5201-012', group:false, color:'레드',          deploy:'undeployed', sizeUsed:0, sizeTotal:0, sizeAll:true,  name:'프로스트 다잉 오버사이즈 후디드 스웨트셔츠 [레드]',  year:'2023', seasons:['26-SS'], category:'상의 > 니트/스웨터 > 크루넥 니트', uid:'383828', uidExtra:0, sku:'S000007 외 8',  barcode:'887K/13029/EFGH 외 8',  styleNo:'MMJTS6Z20-WH 외 6',  dt:'2025.10.01 10:00:00', user:'juji@musinsa.com' },
+    { rep:'DQ5201-012', group:false, color:'블루',          deploy:'undeployed', sizeUsed:0, sizeTotal:0, sizeAll:true,  name:'프로스트 다잉 오버사이즈 후디드 스웨트셔츠 [블루]',  year:'2023', seasons:['26-SS'], category:'상의 > 니트/스웨터 > 크루넥 니트', uid:'383828', uidExtra:0, sku:'S000008 외 8',  barcode:'888K/13029/EFGH 외 8',  styleNo:'MMJTS6Z20-NA 외 6',  dt:'2025.10.01 10:00:00', user:'juji@musinsa.com' },
+    { rep:'DQ5201-013', group:true,  color:'블랙',          deploy:'deployed',   sizeUsed:6, sizeTotal:9, sizeAll:false, name:'[이도현 PICK]레귤러 크롭 티셔츠 (8 colors)', year:'2023', seasons:['26-SS'], category:'상의 > 니트/스웨터 > 크루넥 니트', uid:'383829', uidExtra:1, sku:'S000009 외 10', barcode:'889K/13029/EFGH 외 10', styleNo:'MMJTS6Z14-BK 외 12', dt:'2025.10.01 10:00:00', user:'juji@musinsa.com' },
+    { rep:'DQ5201-013', group:false, color:'그레이',        deploy:'deployed',   sizeUsed:3, sizeTotal:9, sizeAll:false, name:'[이도현 PICK]레귤러 크롭 티셔츠 (8 colors)', year:'2023', seasons:['26-SS'], category:'상의 > 니트/스웨터 > 크루넥 니트', uid:'383829', uidExtra:1, sku:'S000011 외 10', barcode:'810K/13029/EFGH 외 10', styleNo:'MMJTS6Z14-WH 외 12', dt:'2025.10.01 10:00:00', user:'juji@musinsa.com' },
+    { rep:'DQ5201-013', group:false, color:'레드',          deploy:'deployed',   sizeUsed:8, sizeTotal:9, sizeAll:false, name:'[이도현 PICK]레귤러 크롭 티셔츠 (8 colors)', year:'2023', seasons:['26-SS'], category:'상의 > 니트/스웨터 > 크루넥 니트', uid:'383',    uidExtra:0, sku:'',                barcode:'',                       styleNo:'MMJTS6Z14-GY 외 12', dt:'2025.10.01 10:00:00', user:'juji@musinsa.com' },
+    { rep:'DQ5201-013', group:false, color:'블루',          deploy:'deployed',   sizeUsed:6, sizeTotal:9, sizeAll:false, name:'[이도현 PICK]레귤러 크롭 티셔츠 (8 colors)', year:'2023', seasons:['26-SS'], category:'상의 > 니트/스웨터 > 크루넥 니트', uid:'383',    uidExtra:0, sku:'',                barcode:'13029/EFGH 외 10',       styleNo:'MMJTS6Z14-NA 외 12', dt:'2025.10.01 10:00:00', user:'juji@musinsa.com' },
+  ];
+
+  const DEPLOY_LABEL = { deployed:'전개중', undeployed:'미전개' };
+
+  // ------------------- Render table rows -------------------
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  // null / undefined / 빈문자열 → '-' 로 셀 표기
+  function dash(v) { return (v === null || v === undefined || v === '') ? '-' : v; }
+  function escDash(s) { return (s === null || s === undefined || s === '') ? '-' : escapeHtml(s); }
+
+  // sizeset 버튼 — 'sizeAll' 케이스는 "전체 전개", 그 외엔 N/M 표시
+  function sizeSetHtml(r) {
+    if (r.sizeAll) {
+      return `<button class="scm-sizeset-btn" type="button" data-rep="${escapeHtml(r.rep)}"><span>전체 전개</span></button>`;
+    }
+    return `<button class="scm-sizeset-btn" type="button" data-rep="${escapeHtml(r.rep)}"><span>전개</span><span class="scm-sizeset-btn__num"><em>${r.sizeUsed}</em><span class="divider">/</span><span class="total">${r.sizeTotal}</span></span></button>`;
+  }
+
+  function uidHtml(r) {
+    if (!r.uid) return '';
+    const linkedRaw = r.uidExtra ? [r.uid, '384892'] : [r.uid];
+    const linked = JSON.stringify(linkedRaw).replace(/"/g, '&quot;');
+    const extra = r.uidExtra
+      ? `<a class="scm-code-link__extra" data-uids="${linked}" data-anchor="1">외 ${r.uidExtra}</a>`
+      : '';
+    return `<a class="scm-code-link" data-code-type="uid" data-uids="${linked}">${escapeHtml(r.uid)}</a>${extra}`;
+  }
+
+  function rowHtml(r) {
+    const dCls = r.deploy === 'deployed' ? 'scm-deploy-pill--deployed' : 'scm-deploy-pill--undeployed';
+    const dLabel = DEPLOY_LABEL[r.deploy];
+    // 1열 = 상품 단위 (대표스타일 그룹의 첫 행에만) / 2열 = SKU 옵션 단위 (모든 행)
+    const productCb = r.group
+      ? `<span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="상품 단위 선택"></span>`
+      : '';
+    return `
+      <tr data-deploy="${r.deploy}" data-group="${r.group ? 'true' : 'false'}">
+        <td class="cb-col col-frozen-1" title="상품 단위 선택">${productCb}</td>
+        <td class="cb-col2 col-frozen-2" title="SKU 옵션 단위 선택"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="SKU 옵션 단위 선택"></span></td>
+        <td class="col-auto col-frozen-3" style="font-weight:500;">${escDash(r.rep)}</td>
+        <td class="col-auto col-frozen-4">${r.color ? `<span class="scm-color-chip">${escapeHtml(r.color)}</span>` : '-'}</td>
+        <td class="col-auto col-frozen-5 scm-deploy-cell">
+          <div class="scm-deploy-pill ${dCls}">
+            <span class="scm-deploy-pill__pill"><span class="scm-deploy-pill__dot"></span>${dLabel}</span>
+            <button class="scm-deploy-pill__chev" type="button" aria-label="스토어 전개 여부 변경">
+              <svg viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+            </button>
+          </div>
+        </td>
+        <td class="col-auto col-frozen-6">${sizeSetHtml(r)}</td>
+        <td class="col-large"><div class="cell-clamp">${escDash(r.name)}</div></td>
+        <td class="col-auto">${escDash(r.year)}</td>
+        <td class="col-medium">${(r.seasons && r.seasons.length) ? `<span class="scm-tag-stack">${r.seasons.map(s => `<span class="scm-tag">${escapeHtml(s)}</span>`).join('')}</span>` : '-'}</td>
+        <td class="col-medium"><div class="cell-clamp">${escDash(r.category)}</div></td>
+        <td class="col-auto">${r.uid ? uidHtml(r) : '-'}</td>
+        <td class="col-auto">${r.sku ? `<a class="scm-code-link" data-code-type="sku" style="font-weight:600;">${escapeHtml(r.sku)}</a>` : '-'}</td>
+        <td class="col-auto">${r.barcode ? escapeHtml(r.barcode) : '-'}</td>
+        <td class="col-auto">${r.styleNo ? `<a class="scm-code-link" data-code-type="styleNo">${escapeHtml(r.styleNo)}</a>` : '-'}</td>
+        <td class="col-auto">${escDash(r.dt)}</td>
+        <td class="col-auto">${escDash(r.user)}</td>
+        <td class="col-spacer" aria-hidden="true"></td>
+      </tr>
+    `;
+  }
+
+  function renderTable() {
+    document.getElementById('data-tbody').innerHTML = ROWS.map(rowHtml).join('');
+  }
+  renderTable();
+
+  // ------------------- SCM Table 인터랙션 init -------------------
+  // sticky thead, frozen columns, cell selection, resize, Cmd+C TSV 복사
+  // frozenCount=6: cb-col(1) + cb-col2(2) + 대표스타일(3) + 컬러(4) + 전개(5) + 사이즈(6)
+  if (window.SCMTable) {
+    try { window.SCMTable.init({ root: document, frozenCount: 6 }); } catch (e) { console.warn('SCMTable init failed:', e); }
+  }
+  // 정렬 (sort-ic 클릭 → asc/desc/default 토글 + tbody 재정렬)
+  if (window.SCM && SCM.tableSort) SCM.tableSort.mount({ tableSelector: '.mp-table-scroll .mp-table' });
+  // 더보기 메뉴 (more-ic ⋮ 클릭 → 정렬/고정/숨김 액션 popover)
+  if (window.SCM && SCM.columnMoreMenu) SCM.columnMoreMenu.mount({ tableSelector: '.mp-table-scroll .mp-table' });
+  // 컬럼 필터 (filter-ic ⏷ 클릭 → 코드 입력 popover)
+  if (window.SCM && SCM.columnFilterPopover) SCM.columnFilterPopover.mount({ tableSelector: '.mp-table-scroll .mp-table' });
+
+  // sticky 변수 (filter-bar / stats-bar 높이) 측정 — thead sticky top 계산
+  function syncStickyVars() {
+    const root = document.documentElement;
+    const fb = document.getElementById('filter-bar');
+    const sb = document.querySelector('.scm-stats-bar');
+    if (fb) root.style.setProperty('--scm-sticky-filter', fb.offsetHeight + 'px');
+    if (sb) root.style.setProperty('--scm-sticky-stats',  sb.offsetHeight + 'px');
+  }
+  syncStickyVars();
+  if (typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(syncStickyVars);
+    document.querySelectorAll('#filter-bar, .scm-stats-bar').forEach(el => ro.observe(el));
+  }
+  window.addEventListener('resize', syncStickyVars);
+
+
+  // ------------------- Module mounts -------------------
+
+  // GNB + LNB
+  if (window.SCM && SCM.lnb)    SCM.lnb.mount(document.querySelector('.scm-lnb'), { active: 'index' });
+  if (window.SCM && SCM.topbar) SCM.topbar.mount(document.querySelector('.scm-topbar'));
+
+  // Filter bar (fade gradient 자동 동기화)
+  if (window.SCM && SCM.filterBar) SCM.filterBar.mount(document.getElementById('filter-bar'));
+
+  // Filter drawer
+  if (window.SCM && SCM.filterDrawer) {
+    const fd = SCM.filterDrawer.mount(document.getElementById('filter-drawer'), {
+      backdrop: document.getElementById('fd-backdrop'),
+    });
+    document.getElementById('filter-drawer-open').addEventListener('click', fd.open);
+  }
+
+  // Search/reset 버튼 동작은 SCM.filterPopoverModes 의 onSearch / onReset 콜백으로 통합 (아래 init 호출 참조).
+
+  // Pgsize-select
+  if (window.SCM && SCM.pgsizeSelect) SCM.pgsizeSelect.mount(document.getElementById('pgsize'), { value: 100 });
+
+  // ------------------- 체크박스 ↔ 액션바 동기화 -------------------
+  // 선택 단위: cb-col2 (SKU 옵션 단위) — 각 row 1개씩 존재. cb-col (상품 단위)는 group head 행에만 존재 (보조).
+  // 헤더 mp-cb-all 은 전체 토글 (mixed/all/none 상태 반영).
+  // headerWasAll / productWasAll: '전체 선택' 했었는지 추적. 전체→부분 해제 시에만 'mixed' 표시.
+  let headerWasAll = false;
+  const productWasAll = new WeakSet();
+  function getRowCheckboxes() {
+    return document.querySelectorAll('.mp-table tbody td.cb-col2 .scm-checkbox');
+  }
+  function getProductCheckboxes() {
+    return document.querySelectorAll('.mp-table tbody td.cb-col .scm-checkbox');
+  }
+  function getSelectedCount() {
+    return Array.from(getRowCheckboxes()).filter(cb => cb.getAttribute('aria-checked') === 'true').length;
+  }
+  function getSelectedRows() {
+    const out = [];
+    document.querySelectorAll('.mp-table tbody tr').forEach((tr, i) => {
+      const cb = tr.querySelector('td.cb-col2 .scm-checkbox');
+      if (cb && cb.getAttribute('aria-checked') === 'true') {
+        const r = ROWS[i];
+        if (r) out.push(r);
+      }
+    });
+    return out;
+  }
+  // 헤더 cb 동기화 (선택된 row 수에 따라 true / false / mixed)
+  function syncHeaderCb() {
+    const headerCb = document.getElementById('mp-cb-all');
+    if (!headerCb) return;
+    const rowCbs = getRowCheckboxes();
+    if (rowCbs.length === 0) { headerCb.setAttribute('aria-checked', 'false'); headerWasAll = false; return; }
+    const checkedN = Array.from(rowCbs).filter(c => c.getAttribute('aria-checked') === 'true').length;
+    // 전체 선택 → 'true', 미선택 → 'false', 부분 선택 → headerWasAll(전체→부분 해제)일 때만 'mixed'
+    if (checkedN === rowCbs.length) {
+      headerCb.setAttribute('aria-checked', 'true');
+      headerWasAll = true;
+    } else if (checkedN === 0) {
+      headerCb.setAttribute('aria-checked', 'false');
+      headerWasAll = false;
+    } else {
+      headerCb.setAttribute('aria-checked', headerWasAll ? 'mixed' : 'false');
+    }
+  }
+  // group head row 의 cb-col 동기화 (대표스타일 그룹 내 모든 cb-col2 가 체크되면 cb-col 도 체크)
+  function syncProductCbs() {
+    const trs = document.querySelectorAll('.mp-table tbody tr');
+    let groupTr = null;
+    let groupChecked = 0;
+    let groupTotal = 0;
+    function flushGroup() {
+      if (!groupTr) return;
+      const pcb = groupTr.querySelector('td.cb-col .scm-checkbox');
+      if (!pcb) return;
+      if (groupTotal === 0) {
+        pcb.setAttribute('aria-checked', 'false');
+        productWasAll.delete(pcb);
+      } else if (groupChecked === groupTotal) {
+        pcb.setAttribute('aria-checked', 'true');
+        productWasAll.add(pcb);
+      } else if (groupChecked === 0) {
+        pcb.setAttribute('aria-checked', 'false');
+        productWasAll.delete(pcb);
+      } else {
+        // 그룹 cb 가 'wasAll' (전체 선택했었음) 상태일 때만 mixed 표시
+        pcb.setAttribute('aria-checked', productWasAll.has(pcb) ? 'mixed' : 'false');
+      }
+    }
+    trs.forEach(tr => {
+      if (tr.getAttribute('data-group') === 'true') {
+        flushGroup();
+        groupTr = tr;
+        groupChecked = 0;
+        groupTotal = 0;
+      }
+      const c2 = tr.querySelector('td.cb-col2 .scm-checkbox');
+      if (c2) {
+        groupTotal++;
+        if (c2.getAttribute('aria-checked') === 'true') groupChecked++;
+      }
+    });
+    flushGroup();
+  }
+  // 액션바 동기화 (stats 카운트 + popup 라벨 + 전개버튼 활성/비활성)
+  function syncActions() {
+    const cnt = getSelectedCount();
+    const total = ROWS.length;
+    const noSel = cnt === 0;
+
+    // 1) stats 카운트 — 미선택: "전체 12" / 선택: "선택됨 3 / 12"
+    const statEl = document.querySelector('.scm-stats-bar__counts .scm-stat');
+    if (statEl) {
+      if (noSel) {
+        statEl.classList.remove('scm-stat--selected');
+        statEl.classList.add('scm-stat--all');
+        statEl.innerHTML = `<span class="scm-stat__label">전체</span> <span class="scm-stat__num">${total}</span>`;
+      } else {
+        statEl.classList.remove('scm-stat--all');
+        statEl.classList.add('scm-stat--selected');
+        statEl.innerHTML = `<span class="scm-stat__label">선택됨</span> <span class="scm-stat__num">${cnt}</span> <span class="scm-stat__label" style="color:#8A8A8A;font-weight:400;">/ ${total}</span>`;
+      }
+    }
+
+    // 2) 코드 복사 popup 라벨 — 선택 N 또는 전체
+    const copyPopup = document.querySelector('#copy-wrap .scm-mini-popup');
+    if (copyPopup) {
+      const lis = copyPopup.querySelectorAll('li');
+      const labelMap = { rep: '대표스타일', sku: 'SKU번호', barcode: '바코드' };
+      const n = noSel ? total : cnt;
+      lis.forEach(li => {
+        const key = li.getAttribute('data-key');
+        if (labelMap[key]) li.textContent = `${labelMap[key]} 복사 (${n})`;
+      });
+    }
+
+    // 3) 전개 여부 변경 버튼 — 선택 0 이면 disabled
+    const deployBtn = document.getElementById('deploy-action-btn');
+    if (deployBtn) {
+      if (noSel) deployBtn.setAttribute('disabled', '');
+      else deployBtn.removeAttribute('disabled');
+    }
+
+    // 4) 선택 해제 버튼 — 선택 0 이면 disabled
+    const deselectBtn = document.getElementById('deselect-btn');
+    if (deselectBtn) {
+      if (noSel) deselectBtn.setAttribute('disabled', '');
+      else deselectBtn.removeAttribute('disabled');
+    }
+  }
+
+  // 선택 해제 버튼 클릭 → 모든 cb 해제 + actionbar 동기화
+  const _deselectBtn = document.getElementById('deselect-btn');
+  if (_deselectBtn) {
+    _deselectBtn.addEventListener('click', () => {
+      if (_deselectBtn.disabled) return;
+      const headerCb = document.getElementById('mp-cb-all');
+      if (headerCb) headerCb.setAttribute('aria-checked', 'false');
+      getRowCheckboxes().forEach(c => c.setAttribute('aria-checked', 'false'));
+      getProductCheckboxes().forEach(c => {
+        c.setAttribute('aria-checked', 'false');
+        productWasAll.delete(c);
+      });
+      headerWasAll = false;
+      syncActions();
+    });
+  }
+
+  // 체크박스 클릭 (delegated) — 헤더 / 상품단위 / SKU옵션단위 모두 처리
+  document.addEventListener('click', (e) => {
+    const cb = e.target.closest('.mp-table .scm-checkbox, #mp-cb-all');
+    if (!cb) return;
+    if (cb.classList.contains('is-disabled')) return;
+    e.preventDefault();
+    const cur = cb.getAttribute('aria-checked');
+    // 헤더/상품(group) cb 는 mixed → false (전체 해제), 일반 cb-col2 는 true ↔ false 토글
+    const isHeaderLike = cb.id === 'mp-cb-all' || !!cb.closest('td.cb-col');
+    let next;
+    if (isHeaderLike) {
+      next = (cur === 'true' || cur === 'mixed') ? 'false' : 'true';
+    } else {
+      next = cur === 'true' ? 'false' : 'true';
+    }
+
+    if (cb.id === 'mp-cb-all') {
+      // 헤더 → 모든 row cb-col2 + cb-col 토글
+      cb.setAttribute('aria-checked', next);
+      getRowCheckboxes().forEach(c => c.setAttribute('aria-checked', next));
+      getProductCheckboxes().forEach(c => {
+        c.setAttribute('aria-checked', next);
+        if (next === 'true') productWasAll.add(c);
+        else productWasAll.delete(c);
+      });
+      headerWasAll = (next === 'true');  // 헤더로 전체 선택 시 플래그 set
+    } else if (cb.closest('td.cb-col')) {
+      // 상품 단위 cb (group head row 의 cb-col) → 같은 그룹 내 cb-col2 모두 토글
+      cb.setAttribute('aria-checked', next);
+      if (next === 'true') productWasAll.add(cb);
+      else productWasAll.delete(cb);
+      const tr = cb.closest('tr');
+      // 그룹 시작 행부터 다음 group 행 직전까지의 모든 cb-col2 토글
+      let cur2 = tr;
+      const groupCbs = [];
+      while (cur2) {
+        const c2 = cur2.querySelector('td.cb-col2 .scm-checkbox');
+        if (c2) groupCbs.push(c2);
+        cur2 = cur2.nextElementSibling;
+        if (cur2 && cur2.getAttribute('data-group') === 'true') break;
+      }
+      groupCbs.forEach(c => c.setAttribute('aria-checked', next));
+      syncHeaderCb();
+    } else {
+      // cb-col2 (SKU 옵션 단위) → 토글 + 헤더/상품cb 동기화
+      cb.setAttribute('aria-checked', next);
+      syncProductCbs();
+      syncHeaderCb();
+    }
+    syncActions();
+  });
+
+  // Mini-action dropdowns
+  if (window.SCM && SCM.miniAction) {
+    SCM.miniAction.mount(document.getElementById('copy-wrap'), {
+      onSelect: (key) => {
+        const labels = { rep: '대표스타일', sku: 'SKU번호', barcode: '바코드' };
+        const cnt = getSelectedCount();
+        const n = cnt === 0 ? ROWS.length : cnt;
+        const scope = cnt === 0 ? '전체' : '선택된';
+        SCM.toast.show({ variant: 'success', title: `${labels[key]} 복사 완료`, desc: `${scope} ${n}개가 복사되었습니다.` });
+      },
+    });
+    SCM.miniAction.mount(document.getElementById('deploy-wrap'), {
+      onSelect: (key) => {
+        const cnt = getSelectedCount();
+        if (cnt === 0) return;  // 안전장치: 선택 0 이면 no-op (버튼은 disabled 상태)
+        SCM.confirmModal.open({
+          title: `${cnt}건 스토어 전개 여부 변경`,
+          descHtml: `선택하신 상품의 스토어 전개 여부를 <strong class="accent">'${DEPLOY_LABEL[key]}'</strong>(으)로 일괄 변경합니다.<br/>계속 진행하시겠습니까?`,
+          confirmLabel: '변경',
+          onConfirm: () => SCM.toast.show({ variant: 'success', title: '전개 여부 변경 완료', desc: `${cnt}건이 ${DEPLOY_LABEL[key]}로 변경되었습니다.` }),
+        });
+      },
+    });
+  }
+
+  // 초기 액션바 상태 (선택 0)
+  syncActions();
+
+  // Bulk upload modal
+  if (window.SCM && SCM.bulkUploadModal) {
+    const bm = SCM.bulkUploadModal.mount({
+      modal: document.getElementById('bu-modal'),
+      backdrop: document.getElementById('bu-backdrop'),
+    });
+    document.getElementById('bu-open-btn').addEventListener('click', bm.open);
+    document.getElementById('bu-cancel').addEventListener('click', bm.close);
+  }
+
+  // ------------------- 사이즈 개별 설정 drawer (Figma 764-8335) -------------------
+  // scm-side-drawer 모듈로 mount + 본 페이지 전용 table render / save / bulk deploy 로직
+  (function initSizeDetailDrawer() {
+    const SIZE_NAMES = ['XXXS','XXS','XS','S','M','L','XL','XXL','XXXL','4XL','5XL','6XL'];
+    const drawer = document.getElementById('sd-drawer');
+    const backdrop = document.getElementById('sd-backdrop');
+    const tbody = document.getElementById('sd-tbody');
+    const cntAll = document.getElementById('sd-cnt-all');
+    const cntDep = document.getElementById('sd-cnt-deployed');
+    const cntUn = document.getElementById('sd-cnt-undeployed');
+    const cbAll = document.getElementById('sd-cb-all');
+    const bulkDeployBtn = document.getElementById('sd-bulk-deploy');
+    const bulkUndeployBtn = document.getElementById('sd-bulk-undeploy');
+    const styleCodeEl = document.getElementById('sd-style-code');
+    const nameEl = document.getElementById('sd-name');
+    const cancelBtn = document.getElementById('sd-cancel');
+    const saveBtn = document.getElementById('sd-save');
+    if (!drawer || !window.SCM || !SCM.sideDrawer) return;
+
+    let state = { rows: [], dirty: false };
+
+    // scm-side-drawer 모듈로 open/close 위임
+    const dr = SCM.sideDrawer.mount(drawer, {
+      backdrop: backdrop,
+      onClose: () => { /* state 정리 필요 시 */ },
+    });
+
+    function tryClose() {
+      if (state.dirty) {
+        if (!confirm('저장되지 않은 변경 사항이 있습니다. 닫으시겠습니까?')) return;
+      }
+      dr.close();
+    }
+    // close 버튼/백드롭은 module 이 처리하지만 dirty check 가 필요하므로 capture 단계에서 가로채기
+    const closeBtn = drawer.querySelector('.scm-side-drawer__close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', (e) => {
+        if (state.dirty) {
+          e.stopImmediatePropagation();
+          tryClose();
+        }
+      }, true);
+    }
+    if (backdrop) {
+      backdrop.addEventListener('click', (e) => {
+        if (state.dirty) {
+          e.stopImmediatePropagation();
+          tryClose();
+        }
+      }, true);
+    }
+    if (cancelBtn) cancelBtn.addEventListener('click', tryClose);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !drawer.hidden) {
+        e.preventDefault();
+        tryClose();
+      }
+    });
+
+    function escapeHtml(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function renderRows() {
+      tbody.innerHTML = state.rows.map((r, i) => `
+        <tr data-idx="${i}">
+          <td class="cb-col"><span class="scm-checkbox sd-row-cb" role="checkbox" aria-checked="${r.checked ? 'true' : 'false'}" tabindex="0" aria-label="선택"></span></td>
+          <td class="col-auto col-no sku-num">${r.idx}</td>
+          <td class="col-auto"><span class="sd-size-tag">${escapeHtml(r.size)}</span></td>
+          <td class="col-auto">
+            <label class="scm-toggle-cell">
+              <span class="scm-toggle">
+                <input type="checkbox" class="scm-toggle-input sd-toggle-input" ${r.deployed ? 'checked' : ''}/>
+                <span class="scm-toggle-track"></span>
+                <span class="scm-toggle-knob"></span>
+              </span>
+              <span class="scm-toggle-label sd-toggle-label ${r.deployed ? '' : 'is-off'}">${r.deployed ? '전개' : '미전개'}</span>
+            </label>
+          </td>
+          <td class="col-auto"><a class="scm-code-link">${escapeHtml(r.sku)}</a></td>
+          <td class="col-auto">${escapeHtml(r.barcode)}</td>
+          <td class="col-spacer" aria-hidden="true"></td>
+        </tr>
+      `).join('');
+    }
+
+    function syncCounts() {
+      const total = state.rows.length;
+      const dep = state.rows.filter(r => r.deployed).length;
+      if (cntAll) cntAll.textContent = total;
+      if (cntDep) cntDep.textContent = dep;
+      if (cntUn) cntUn.textContent = total - dep;
+    }
+    function syncSaveBtn() { if (saveBtn) saveBtn.disabled = !state.dirty; }
+    function syncBulkBtn() {
+      const anyChecked = state.rows.some(r => r.checked);
+      if (bulkDeployBtn) bulkDeployBtn.disabled = !anyChecked;
+      if (bulkUndeployBtn) bulkUndeployBtn.disabled = !anyChecked;
+    }
+    function syncCbAll() {
+      if (!cbAll) return;
+      const total = state.rows.length;
+      const checked = state.rows.filter(r => r.checked).length;
+      cbAll.setAttribute('aria-checked', checked > 0 && checked === total ? 'true' : 'false');
+    }
+
+    // 토글 클릭
+    tbody.addEventListener('change', (e) => {
+      const input = e.target.closest('.sd-toggle-input');
+      if (!input) return;
+      const tr = input.closest('tr');
+      const idx = parseInt(tr.dataset.idx, 10);
+      const row = state.rows[idx];
+      row.deployed = input.checked;
+      state.dirty = true;
+      const label = tr.querySelector('.sd-toggle-label');
+      if (label) {
+        label.textContent = row.deployed ? '전개' : '미전개';
+        label.classList.toggle('is-off', !row.deployed);
+      }
+      syncCounts();
+      syncSaveBtn();
+    });
+
+    // 행 cb 클릭 — 외부 page-level cb 핸들러 와 충돌 방지 위해 stopPropagation
+    tbody.addEventListener('click', (e) => {
+      const cb = e.target.closest('.sd-row-cb');
+      if (!cb) return;
+      e.stopPropagation();
+      const tr = cb.closest('tr');
+      const idx = parseInt(tr.dataset.idx, 10);
+      const row = state.rows[idx];
+      row.checked = !row.checked;
+      cb.setAttribute('aria-checked', row.checked ? 'true' : 'false');
+      syncBulkBtn();
+      syncCbAll();
+    });
+
+    // 헤더 cb 전체 토글
+    if (cbAll) {
+      cbAll.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const next = cbAll.getAttribute('aria-checked') !== 'true';
+        cbAll.setAttribute('aria-checked', next ? 'true' : 'false');
+        state.rows.forEach(r => r.checked = next);
+        tbody.querySelectorAll('.sd-row-cb').forEach(cb => cb.setAttribute('aria-checked', next ? 'true' : 'false'));
+        syncBulkBtn();
+      });
+    }
+
+    // 일괄 전개/미전개
+    function bulkApply(next) {
+      state.rows.forEach((r) => {
+        if (r.checked && r.deployed !== next) {
+          r.deployed = next;
+          state.dirty = true;
+        }
+      });
+      tbody.querySelectorAll('tr').forEach((tr, i) => {
+        const r = state.rows[i];
+        if (!r) return;
+        const input = tr.querySelector('.sd-toggle-input');
+        const label = tr.querySelector('.sd-toggle-label');
+        if (input) input.checked = r.deployed;
+        if (label) {
+          label.textContent = r.deployed ? '전개' : '미전개';
+          label.classList.toggle('is-off', !r.deployed);
+        }
+      });
+      syncCounts();
+      syncSaveBtn();
+    }
+    if (bulkDeployBtn) bulkDeployBtn.addEventListener('click', () => { if (!bulkDeployBtn.disabled) bulkApply(true); });
+    if (bulkUndeployBtn) bulkUndeployBtn.addEventListener('click', () => { if (!bulkUndeployBtn.disabled) bulkApply(false); });
+
+    // 저장
+    if (saveBtn) saveBtn.addEventListener('click', () => {
+      if (saveBtn.disabled) return;
+      state.dirty = false;
+      syncSaveBtn();
+      if (window.SCM && SCM.toast) {
+        SCM.toast.show({ variant: 'success', title: '사이즈 운영 여부 저장', desc: '변경사항이 적용됐습니다.' });
+      }
+      dr.close();
+    });
+
+    // 외부에서 호출 — sizeset 버튼 클릭 시 row 데이터로 drawer 오픈
+    window.openSizeDetailDrawer = function (row) {
+      if (!row) return;
+      if (styleCodeEl) styleCodeEl.textContent = row.rep || '';
+      if (nameEl) nameEl.textContent = (row.name || '') + (row.color ? ' [' + row.color + ']' : '');
+      const total = row.sizeAll ? 9 : (row.sizeTotal || 9);
+      const used = row.sizeAll ? total : (row.sizeUsed || 0);
+      state.rows = [];
+      for (let i = 0; i < total; i++) {
+        state.rows.push({
+          idx: i + 1,
+          size: SIZE_NAMES[i] || ('SIZE' + (i + 1)),
+          deployed: i < used,
+          sku: 'S' + String(99999999991 + i).slice(-12),
+          barcode: '1.5M/' + String(19000 + i) + '/EFGH',
+          checked: false,
+        });
+      }
+      state.dirty = false;
+      renderRows();
+      syncCounts();
+      syncSaveBtn();
+      syncBulkBtn();
+      syncCbAll();
+      dr.open();
+    };
+  })();
+
+  // Deploy cell — 셀 전체 클릭 시 popover 표시 (chevron 만이 아닌 전체 영역)
+  document.getElementById('data-tbody').addEventListener('click', (e) => {
+    // 셀 자체 (또는 셀 내 어디든) 클릭 — code-link, checkbox 등 다른 인터랙션 요소가 아닌 한
+    const deployCell = e.target.closest('td.scm-deploy-cell');
+    if (deployCell && !e.target.closest('a, .scm-checkbox, .scm-code-link, .scm-code-link__extra')) {
+      e.stopPropagation();
+      const tr = deployCell.closest('tr');
+      deployCell.classList.add('is-open');
+      SCM.deployPopover.open({
+        anchorEl: deployCell,
+        options: [
+          { state: 'deployed', label: '전개중' },
+          { state: 'undeployed', label: '미전개' },
+        ],
+        current: tr.getAttribute('data-deploy'),
+        onSelect: (next) => {
+          tr.setAttribute('data-deploy', next);
+          // pill 갱신
+          const pill = tr.querySelector('.scm-deploy-pill');
+          pill.classList.remove('scm-deploy-pill--deployed', 'scm-deploy-pill--undeployed');
+          pill.classList.add('scm-deploy-pill--' + next);
+          pill.querySelector('.scm-deploy-pill__pill').innerHTML = '<span class="scm-deploy-pill__dot"></span>' + DEPLOY_LABEL[next];
+          deployCell.classList.remove('is-open');
+          SCM.toast.show({ variant: 'success', title: '전개 여부 변경 완료', desc: `${DEPLOY_LABEL[next]}로 변경되었습니다.` });
+        },
+      });
+      return;
+    }
+
+    // code link → SKU번호는 상세 페이지 이동 / 그 외 type 은 code-popover
+    const link = e.target.closest('.scm-code-link, .scm-code-link__extra');
+    if (link) {
+      e.preventDefault();
+      const type = link.getAttribute('data-code-type') || link.closest('[data-code-type]')?.getAttribute('data-code-type') || 'uid';
+      if (type === 'sku') {
+        const sku = link.textContent.trim();
+        if (sku) window.location.href = 'sku-detail.html?sku=' + encodeURIComponent(sku);
+        return;
+      }
+      const titles      = { uid: '연결된 UID번호 확인', sku: 'SKU번호 확인',  barcode: '바코드 확인',  styleNo: '스타일넘버 확인' };
+      const copyLabels  = { uid: 'UID 복사',          sku: 'SKU번호 복사', barcode: '바코드 복사', styleNo: '스타일넘버 복사' };
+      // demo items — UID 의 경우 data-uids attr 에서 파싱, 그 외엔 link 자체 텍스트
+      let items;
+      const uidsAttr = link.getAttribute('data-uids');
+      if (uidsAttr) {
+        try { items = JSON.parse(uidsAttr); } catch (_) { items = ['383827', '383828', '383829']; }
+      } else {
+        items = [link.textContent.trim()];
+      }
+      SCM.codePopover.open({
+        title: titles[type] || '코드 확인',
+        items: items,
+        copyLabel: copyLabels[type] || '복사',
+        anchorEl: link,
+        onCopy: () => SCM.toast.show({ variant: 'success', title: (copyLabels[type] || '복사') + ' 완료', desc: items.length + '개 복사되었습니다.' }),
+      });
+      return;
+    }
+
+    // sizeset → 사이즈 개별 설정 drawer (Figma 764-8335)
+    const sb = e.target.closest('.scm-sizeset-btn');
+    if (sb && !sb.disabled) {
+      // 클릭한 버튼이 있는 row 의 데이터(ROWS 인덱스) 추출
+      const tr = sb.closest('tr');
+      const allTrs = Array.from(document.querySelectorAll('.mp-table tbody tr'));
+      const idx = allTrs.indexOf(tr);
+      const r = ROWS[idx];
+      if (r && window.openSizeDetailDrawer) {
+        window.openSizeDetailDrawer(r);
+      }
+    }
+  });
+
+  // ------------------- 필터 popover (글로벌 REGISTRY 기반) -------------------
+  // 같은 key 의 chip 은 어느 페이지에 있든 동일 mode/option 으로 동작 (캐노니컬 단일 source of truth).
+  // 검색 클릭 시 실제 ROWS 를 chip 값에 맞춰 필터링 → tbody 행 display:none 으로 숨김.
+  let filterModeInstance = null;
+
+  // 행 단위 매칭 — 활성화된 필터 키별 매칭 룰
+  function matchesFilters(r, active) {
+    // 시즌 (multi-like — row.seasons 는 배열)
+    if (active.season && !(r.seasons && r.seasons.some(s => active.season.includes(s)))) return false;
+    // 컬러 (multi)
+    if (active.color && !active.color.includes(r.color)) return false;
+    // 카테고리 (multi)
+    if (active.category && !active.category.includes(r.category)) return false;
+    // 스토어 전개 여부 (single, label '전개중'/'미전개' → row.deploy 'deployed'/'undeployed')
+    if (active.deploy) {
+      const deployMap = { '전개중': 'deployed', '미전개': 'undeployed' };
+      const targets = active.deploy.map(l => deployMap[l] || l);
+      if (!targets.includes(r.deploy)) return false;
+    }
+    // 대표스타일 (codeinput — 부분 매치 OR)
+    if (active.style && !active.style.some(v => r.rep && r.rep.toLowerCase().includes(v.toLowerCase()))) return false;
+    // UID (codeinput — 부분 매치)
+    if (active.uid && !active.uid.some(v => r.uid && r.uid.toLowerCase().includes(v.toLowerCase()))) return false;
+    // SKU번호 (codeinput — 부분 매치, r.sku 는 'S000001 외 6' 형식이라 첫 코드 매치)
+    if (active.sku && !active.sku.some(v => r.sku && r.sku.toLowerCase().includes(v.toLowerCase()))) return false;
+    return true;
+  }
+
+  // 필터 적용 — tbody 의 각 tr 에 대해 display:none 토글, stats 갱신
+  function applyDataFilter() {
+    if (!filterModeInstance) return;
+    const active = filterModeInstance.getActiveFilters();
+    const tbody = document.getElementById('data-tbody');
+    if (!tbody) return;
+    let visibleCount = 0;
+    let deployedCount = 0;
+    let undeployedCount = 0;
+    Array.from(tbody.children).forEach((tr, i) => {
+      const r = ROWS[i];
+      if (!r) return;
+      const visible = matchesFilters(r, active);
+      tr.style.display = visible ? '' : 'none';
+      if (visible) {
+        visibleCount++;
+        if (r.deploy === 'deployed')   deployedCount++;
+        else if (r.deploy === 'undeployed') undeployedCount++;
+      }
+    });
+    // stats 카운트 갱신 — 선택 0 일 때만 (선택됨 N 표시 중이면 그대로 둠)
+    if (getSelectedCount() === 0) {
+      const statEl = document.querySelector('.scm-stats-bar__counts .scm-stat--all');
+      if (statEl) statEl.querySelector('.scm-stat__num').textContent = visibleCount;
+      const dEl = document.querySelector('.scm-stats-bar__counts .scm-stat--deployed .scm-stat__num');
+      if (dEl) dEl.textContent = deployedCount;
+      const uEl = document.querySelector('.scm-stats-bar__counts .scm-stat--undeployed .scm-stat__num');
+      if (uEl) uEl.textContent = undeployedCount;
+    }
+    return visibleCount;
+  }
+
+  if (window.SCM && SCM.filterPopoverModes) {
+    filterModeInstance = SCM.filterPopoverModes.init({
+      rootEl: document.getElementById('filter-popover-root'),
+      filterBarEl: document.getElementById('filter-bar'),
+      onSearch: () => {
+        applyDataFilter();
+      },
+      onReset: () => {
+        applyDataFilter(); // 모든 chip placeholder → active 빈 객체 → 전체 노출
+        if (SCM.toast) SCM.toast.show({ variant: 'info', title: '필터 초기화 완료' });
+      },
+    });
+  }
+})();
+</script>
+</body>
+</html>

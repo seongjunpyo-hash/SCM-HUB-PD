@@ -1,0 +1,73 @@
+/* ============================================================
+ * scm-form-row — 폼 한 줄 (label + control)
+ * ------------------------------------------------------------
+ * 폼 페이지의 라벨/컨트롤 페어. label-width 와 control-width 변형
+ * 으로 다양한 폼 레이아웃 지원.
+ *
+ * Marker:
+ *   <div class="scm-form-row">
+ *     <label class="scm-form-label scm-form-label--w140">
+ *       이름 <span class="scm-form-row-req"></span>
+ *     </label>
+ *     <div class="scm-form-control scm-form-control--w320">
+ *       <input class="scm-input" />
+ *     </div>
+ *   </div>
+ *
+ * Label widths:
+ *   기본          가변
+ *   --w60         60
+ *   --w120        120
+ *   --w140        140
+ *
+ * Control widths:
+ *   기본          가변 (min-width:0)
+ *   --w320        320 fixed
+ *   --w360        360 fixed
+ *   --full        flex 1, min-width 0
+ *
+ * Sub:
+ *   .scm-form-row-req     필수 표시 도트 (4×4 파랑)
+ * ============================================================ */
+
+.scm-form-row {
+  display: flex;
+  align-items: center;     /* 라벨 ↔ 컨트롤 세로 가운데 정렬 (공통) */
+  padding: 12px 0;
+  gap: 16px;
+}
+
+.scm-form-label {
+  flex-shrink: 0;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 19.6px;
+  color: #000;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Label widths */
+.scm-form-label--w60  { width: 60px; }
+.scm-form-label--w120 { width: 120px; }
+.scm-form-label--w140 { width: 140px; }
+
+/* Required dot */
+.scm-form-row-req {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #245EFF;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* Control */
+.scm-form-control {
+  min-width: 0;
+}
+.scm-form-control--w320 { width: 320px; flex-shrink: 0; }
+.scm-form-control--w360 { width: 360px; flex-shrink: 0; }
+.scm-form-control--full { flex: 1; min-width: 0; }

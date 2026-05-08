@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>scm-cell-input — preview</title>
+<link rel="stylesheet" href="../../layer-desktop.css" />
+<link rel="stylesheet" href="../scm-table/scm-table.css" />
+<link rel="stylesheet" href="./cell-input.css" />
+<style>
+  body { padding: 24px; font-family: var(--ld-font-family-base); }
+  h1 { font-size: 18px; margin: 0 0 16px; }
+  p { font-size: 13px; color: var(--ld-fg-low); margin: 0 0 16px; }
+  .demo { max-width: 720px; }
+</style>
+</head>
+<body>
+<h1>scm-cell-input</h1>
+<p>mp-table 셀 안에 들어가는 직접 입력 인풋. <code>td.cell-input &gt; input</code> 패턴.</p>
+
+<div class="demo">
+  <div class="mp-table-host">
+    <div class="mp-table-scroll">
+      <table class="mp-table">
+        <thead>
+          <tr>
+            <th class="col-medium" style="text-align:left;">브랜드</th>
+            <th class="col-medium cell-numeric">기초재고</th>
+            <th class="col-medium cell-numeric">입고재고(OTB)</th>
+            <th class="col-medium cell-numeric">GMV</th>
+            <th class="col-medium cell-numeric">출고원가</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>폴로 랄프 로렌</td>
+            <td class="cell-numeric">16,054</td>
+            <td class="cell-input cell-numeric"><input type="number" value="5454" /></td>
+            <td class="cell-input cell-numeric"><input type="number" value="23616" /></td>
+            <td class="cell-input cell-numeric"><input type="number" value="12237" /></td>
+          </tr>
+          <tr>
+            <td>메종 마르지엘라</td>
+            <td class="cell-numeric">1,054</td>
+            <td class="cell-input cell-numeric"><input type="number" value="1600" /></td>
+            <td class="cell-input cell-numeric"><input type="number" value="2171" /></td>
+            <td class="cell-input cell-numeric"><input type="number" value="1697" /></td>
+          </tr>
+          <tr>
+            <td>마르니 (disabled)</td>
+            <td class="cell-numeric">417</td>
+            <td class="cell-input cell-numeric"><input type="number" value="100" disabled /></td>
+            <td class="cell-input cell-numeric"><input type="number" value="430" disabled /></td>
+            <td class="cell-input cell-numeric"><input type="number" value="351" disabled /></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

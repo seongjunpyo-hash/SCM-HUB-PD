@@ -1,0 +1,40 @@
+<!-- ============================================================
+     scm-select — canonical markers (트리거 시각)
+     실제 드롭다운 popup 은 별도 모듈 또는 호출처 책임.
+     ============================================================ -->
+
+<!-- 기본 (placeholder) -->
+<button class="scm-select" type="button" data-state="placeholder" aria-expanded="false" aria-haspopup="listbox">
+  <span class="scm-select__value">선택하세요</span>
+  <svg class="scm-select__chev" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
+
+<!-- 선택됨 (filled) -->
+<button class="scm-select" type="button" data-state="filled" aria-expanded="false">
+  <span class="scm-select__value">옵션 1</span>
+  <svg class="scm-select__chev" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
+
+<!-- 도트 prefix (sku-detail 의 운영상태 셀렉트 mock) -->
+<button class="scm-select" type="button" data-state="filled">
+  <span class="scm-select__dot scm-select__dot--accent"></span>
+  <span class="scm-select__value">활성</span>
+  <svg class="scm-select__chev" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
+</button>
+
+<!-- Disabled -->
+<button class="scm-select is-disabled" type="button" data-state="placeholder" disabled>
+  <span class="scm-select__value">선택 불가</span>
+  <svg class="scm-select__chev" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
+</button>
+
+<!-- Sizes -->
+<button class="scm-select scm-select--sm" type="button" data-state="placeholder">
+  <span class="scm-select__value">Small</span>
+  <svg class="scm-select__chev" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
+</button>
+
+<button class="scm-select scm-select--bu" type="button" data-state="placeholder">
+  <span class="scm-select__value">Bulk upload modal 톤</span>
+  <svg class="scm-select__chev" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
+</button>

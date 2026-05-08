@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<!--
+  dashboard-page.html — 대시보드 템플릿
+  ============================================================
+  KPI grid + chart section + activity list + quick links.
+============================================================ -->
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1440" />
+  <title>{{TITLE}}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <link rel="stylesheet" href="../layer-desktop.css" />
+  {{MODULE_CSS_LINKS}}
+  <style>
+    .db-shell { padding: 0 28px 40px; }
+    .db-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .db-2col { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+    .db-quick-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  </style>
+</head>
+<body>
+  <header class="topbar">{{TOPBAR}}</header>
+  <div class="app">
+    <nav class="lnb" aria-label="주메뉴">{{LNB}}</nav>
+    <main class="db-shell">
+      <!-- Page head (title + sub + period tabs) -->
+      <div class="scm-page-head scm-page-head--dashboard">
+        <div class="scm-page-head__titles">
+          <h1 class="scm-page-head__title">{{TITLE}}</h1>
+          <p class="scm-page-head__sub">{{SUBTITLE}}</p>
+        </div>
+        <div class="scm-page-head__actions">
+          {{PERIOD_TABS}}
+        </div>
+      </div>
+
+      <!-- KPI grid (4 cards) -->
+      <div class="db-kpi-grid" style="margin-top:16px;">
+        {{KPI_CARDS}}
+      </div>
+
+      <!-- Section: chart + activity list -->
+      <section class="scm-page-section">
+        <header class="scm-page-section-head">
+          <h2 class="scm-page-section-title">{{SECTION_1_TITLE}}</h2>
+        </header>
+        <div class="db-2col">
+          <article class="scm-card">
+            <header class="scm-card-head"><h3 class="scm-card-title">{{CHART_TITLE}}</h3></header>
+            <div class="scm-card-body">{{CHART}}</div>
+          </article>
+          <article class="scm-card">
+            <header class="scm-card-head">
+              <h3 class="scm-card-title">{{ACTIVITY_TITLE}}</h3>
+              <a class="scm-card-link" href="#">전체 보기 →</a>
+            </header>
+            <div class="scm-card-body scm-card-body--flush">{{ACTIVITY_ITEMS}}</div>
+          </article>
+        </div>
+      </section>
+
+      <!-- Section: Quick links -->
+      <section class="scm-page-section">
+        <header class="scm-page-section-head">
+          <h2 class="scm-page-section-title">{{QUICK_LINKS_TITLE}}</h2>
+        </header>
+        <div class="db-quick-grid">{{QUICK_LINKS}}</div>
+      </section>
+    </main>
+  </div>
+
+  {{MODULE_JS_SCRIPTS}}
+  <script>{{PAGE_SCRIPT}}</script>
+</body>
+</html>

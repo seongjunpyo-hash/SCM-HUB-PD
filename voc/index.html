@@ -1,0 +1,3012 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SCM HUB · 협업 VOC (작업자)</title>
+  <script src="/auth-gate.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <style>
+    :root {
+      --bg:        #0E0E14;
+      --surface:   #15151D;
+      --surface-h: #1B1B25;
+      --line:      #25252F;
+      --line-2:    #34344A;
+      --fg:        #FFFFFF;
+      --fg-mute:   rgba(255,255,255,0.62);
+      --fg-dim:    rgba(255,255,255,0.40);
+      --accent:    #6E6BFF;
+      --accent-bg: rgba(110,107,255,0.14);
+      --accent-2:  #5754ff;
+      --ok:        #34D399;
+      --ok-bg:     rgba(52,211,153,0.14);
+      --warn:      #F59E0B;
+      --warn-bg:   rgba(245,158,11,0.14);
+      --danger:    #F87171;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body {
+      /* mid-light gray — sits brighter than the browser frame (#5C5F65)
+         so the frame reads as a slightly darker card inset on a light
+         graphite desktop. */
+      background: #6E7177; color: var(--fg);
+      font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+      letter-spacing: -0.01em;
+      overflow: hidden;
+      min-width: 1280px;
+    }
+    button { font-family: inherit; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+    [hidden] { display: none !important; }
+
+    /* ============ Top header ============ */
+    .topbar {
+      position: relative; z-index: 50;
+      display: flex; align-items: center; gap: 12px;
+      height: 56px; padding: 0 20px;
+      background: var(--surface); border-bottom: 1px solid var(--line);
+    }
+    .brand { font-weight: 700; font-size: 14px; color: var(--fg); letter-spacing: 0.4px; white-space: nowrap; }
+    .brand .dot { display: inline-block; width: 6px; height: 6px; border-radius: 999px; background: var(--accent); margin: 0 8px 1px; vertical-align: middle; }
+    .brand .role-tag {
+      display: inline-block; margin-left: 8px;
+      padding: 2px 7px; border-radius: 999px;
+      background: var(--warn-bg); color: var(--warn);
+      font-size: 10px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
+    }
+    .topbar__sep { width: 1px; height: 20px; background: var(--line); }
+
+    .page-select {
+      background: var(--bg); color: var(--fg);
+      border: 1px solid var(--line); border-radius: 8px;
+      font-family: inherit; font-size: 13px;
+      padding: 7px 30px 7px 12px; outline: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999' stroke-width='1.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+      cursor: pointer; min-width: 220px;
+    }
+    .page-select:hover { border-color: var(--line-2); }
+    .page-select:focus { border-color: var(--accent); }
+    .page-select.menu-l2 { min-width: 200px; }
+
+    /* L1 menu chips (depth 1) */
+    .menu-l1 {
+      display: inline-flex; gap: 2px;
+      padding: 3px;
+      background: var(--bg); border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    .menu-l1__chip {
+      padding: 5px 12px;
+      background: transparent; color: var(--fg-mute); border: 0;
+      border-radius: 6px;
+      font-family: inherit; font-size: 13px; font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+    .menu-l1__chip:hover { color: var(--fg); }
+    .menu-l1__chip.is-active { background: var(--accent); color: #fff; }
+    .menu-arrow { color: var(--fg-dim); font-size: 16px; user-select: none; }
+
+    .icon-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px;
+      background: transparent; color: var(--fg-mute);
+      border: 1px solid var(--line); border-radius: 8px;
+      transition: all 0.12s ease;
+    }
+    .icon-btn:hover { color: var(--fg); border-color: var(--line-2); background: var(--surface-h); }
+    .icon-btn svg { width: 14px; height: 14px; }
+
+    .sim-status {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 11px;
+      background: var(--warn-bg); color: var(--warn);
+      border: 1px solid rgba(245,158,11,0.4); border-radius: 999px;
+      font-size: 12px; font-weight: 600;
+    }
+    .sim-status .dot { width: 6px; height: 6px; border-radius: 999px; background: currentColor; animation: simPulse 1.4s infinite; }
+    @keyframes simPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .sim-status button {
+      background: transparent; border: 0; color: currentColor;
+      font-size: 11px; font-weight: 600; padding: 0 0 0 4px; cursor: pointer;
+    }
+    .sim-status button:hover { text-decoration: underline; }
+
+    .topbar__spacer { flex: 1; }
+    .topbar__user { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--fg-mute); }
+    .topbar__role {
+      display: inline-block; padding: 2px 8px; border-radius: 999px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+      background: var(--accent-bg); color: var(--accent);
+    }
+    .topbar__back {
+      font-size: 12px; padding: 6px 12px;
+      border: 1px solid var(--line); border-radius: 999px;
+      color: var(--fg-mute); transition: all 0.12s ease;
+    }
+    .topbar__back:hover { color: var(--fg); border-color: var(--line-2); }
+
+    /* ============ Layout ============ */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 440px;
+      height: calc(100vh - 56px);
+    }
+    @media (min-width: 1680px) {
+      .layout { grid-template-columns: 1fr 480px; }
+    }
+
+    /* ============ Browser window ============ */
+    .stage {
+      padding: 18px;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      min-width: 0;
+    }
+    /* Browser frame — slightly darker than body bg, just enough contrast
+       for the window to read as a recessed card on the graphite desktop. */
+    .browser {
+      flex: 1; min-height: 0;
+      display: flex; flex-direction: column;
+      background: #62656B; border: 1px solid #74777C;
+      border-radius: 12px; overflow: hidden;
+      box-shadow: 0 24px 48px -16px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04);
+      position: relative;
+    }
+    .browser__chrome {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px;
+      background: #525559;
+      border-bottom: 1px solid #74777C;
+      flex-shrink: 0;
+    }
+    .traffic { display: inline-flex; gap: 6px; }
+    .traffic span { width: 11px; height: 11px; border-radius: 999px; }
+    .traffic span:nth-child(1) { background: #FF5F57; }
+    .traffic span:nth-child(2) { background: #FEBC2E; }
+    .traffic span:nth-child(3) { background: #28C840; }
+    .urlbar {
+      flex: 1; height: 28px; padding: 0 14px;
+      background: #525559; border: 1px solid #74777C;
+      border-radius: 999px;
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 11.5px; color: #E5E7EB;
+      overflow: hidden;
+    }
+    .urlbar .lock { color: #34D399; flex-shrink: 0; }
+    .urlbar .url { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .urlbar__open {
+      flex-shrink: 0; font-size: 11px; color: #B5B8BD; padding: 2px 8px; border-radius: 4px;
+    }
+    .urlbar__open:hover { color: #fff; background: rgba(255,255,255,0.1); }
+
+    .browser__body { flex: 1; min-height: 0; position: relative; background: #fff; }
+    .browser__body iframe { width: 100%; height: 100%; border: 0; display: block; }
+    .browser__loading {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(14, 14, 20, 0.6);
+      color: var(--fg-mute); font-size: 13px;
+      pointer-events: none; opacity: 0; transition: opacity 0.15s ease;
+    }
+    .browser__loading.is-on { opacity: 1; }
+
+    /* ============ Sidebar ============ */
+    .sidebar {
+      display: flex; flex-direction: column;
+      background: var(--surface); border-left: 1px solid var(--line);
+      min-height: 0;
+      overflow: hidden;
+    }
+    .sidebar__view {
+      flex: 1; min-height: 0;
+      display: flex; flex-direction: column;
+    }
+
+    /* ---- LIST VIEW ---- */
+    .side__head {
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+    .side__title {
+      display: flex; align-items: baseline; gap: 8px;
+      font-size: 14px; font-weight: 700; color: var(--fg);
+      margin: 0 0 10px;
+    }
+    .side__title .count {
+      font-size: 12px; font-weight: 600; color: var(--fg-mute);
+      padding: 2px 8px; border-radius: 999px;
+      background: var(--bg); border: 1px solid var(--line);
+    }
+    .side__filters { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 10px;
+      background: transparent; border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 12px; color: var(--fg-mute);
+      transition: all 0.12s ease;
+    }
+    .chip:hover { color: var(--fg); border-color: var(--line-2); }
+    .chip.is-active { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
+    .chip .num { font-size: 11px; font-weight: 600; opacity: 0.7; }
+
+    .side__list {
+      flex: 1; min-height: 0;
+      overflow-y: auto;
+      padding: 12px;
+    }
+    .side__list::-webkit-scrollbar { width: 6px; }
+    .side__list::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 999px; }
+
+    .side__empty {
+      padding: 60px 20px; text-align: center;
+      color: var(--fg-dim); font-size: 13px; line-height: 1.7;
+    }
+    .side__empty .em { font-size: 32px; margin-bottom: 12px; opacity: 0.6; }
+    .side__empty .accent { color: var(--accent); }
+
+    .cmt {
+      background: var(--bg); border: 1px solid var(--line);
+      border-radius: 10px; padding: 12px 14px;
+      margin-bottom: 8px;
+      transition: border-color 0.12s ease, background 0.12s ease;
+      cursor: pointer;
+      position: relative;
+    }
+    .cmt:hover { border-color: var(--line-2); background: var(--surface-h); }
+    .cmt.is-resolved { opacity: 0.55; }
+    .cmt.is-other-page { opacity: 0.55; }
+    .cmt.has-proposal {
+      border-left: 3px solid var(--accent);
+      padding-left: 12px;
+    }
+    .cmt.is-sim-active {
+      border-color: var(--warn);
+      box-shadow: 0 0 0 1px var(--warn-bg);
+    }
+
+    .cmt__head {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 6px;
+    }
+    .cmt__num {
+      width: 22px; height: 22px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--accent); color: #fff;
+      border-radius: 999px;
+      font-size: 11px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .cmt.is-resolved .cmt__num { background: var(--ok); }
+    .cmt__target {
+      flex: 1; min-width: 0;
+      font-size: 11px; color: var(--fg-dim);
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .cmt__status {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
+      padding: 2px 6px; border-radius: 4px;
+      background: var(--accent-bg); color: var(--accent);
+      flex-shrink: 0;
+    }
+    .cmt.is-resolved .cmt__status { background: var(--ok-bg); color: var(--ok); }
+    .cmt__page {
+      font-size: 10.5px; color: var(--fg-dim);
+      margin-bottom: 6px;
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    }
+    .cmt__body {
+      font-size: 13px; color: var(--fg); line-height: 1.55;
+      white-space: pre-wrap; word-break: break-word;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .cmt__meta {
+      margin-top: 6px;
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11px; color: var(--fg-dim);
+    }
+    .cmt__meta .author { color: var(--fg-mute); }
+    .cmt__replies { margin-left: 4px; color: var(--accent); display: inline-flex; align-items: center; gap: 4px; }
+    .cmt__sim {
+      margin-left: auto; font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
+      padding: 2px 6px; border-radius: 4px;
+      background: var(--warn-bg); color: var(--warn);
+    }
+    .cmt__proposal-flag {
+      margin-left: 4px;
+      font-size: 10.5px; color: var(--accent); font-weight: 700;
+    }
+
+    /* ---- DETAIL VIEW ---- */
+    .detail__head {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+    .detail__back {
+      background: transparent; color: var(--fg-mute);
+      border: 1px solid var(--line); border-radius: 8px;
+      height: 30px; padding: 0 12px;
+      font-size: 12px; transition: all 0.12s ease;
+    }
+    .detail__back:hover { color: var(--fg); border-color: var(--line-2); }
+    .detail__num {
+      width: 26px; height: 26px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--accent); color: #fff; border-radius: 999px;
+      font-size: 12px; font-weight: 700;
+    }
+    .detail__num.is-resolved { background: var(--ok); }
+    .detail__head__page { flex: 1; min-width: 0; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px; color: var(--fg-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .detail__status {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
+      padding: 3px 8px; border-radius: 4px;
+      background: var(--accent-bg); color: var(--accent);
+    }
+    .detail__status.is-resolved { background: var(--ok-bg); color: var(--ok); }
+
+    .detail__body {
+      flex: 1; min-height: 0;
+      overflow-y: auto;
+      padding: 18px 20px 24px;
+    }
+    .detail__body::-webkit-scrollbar { width: 6px; }
+    .detail__body::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 999px; }
+
+    .sec { margin-bottom: 22px; }
+    .sec__lab {
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase;
+      color: var(--fg-mute);
+      margin-bottom: 8px;
+    }
+    .sec__lab__act {
+      background: transparent; border: 0; color: var(--accent);
+      font-size: 11px; font-weight: 600; cursor: pointer; letter-spacing: 0;
+      padding: 2px 6px; border-radius: 4px;
+    }
+    .sec__lab__act:hover { background: var(--accent-bg); }
+
+    .loc {
+      background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .loc__row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+    .loc__row:last-child { margin-bottom: 0; }
+    .loc__k { width: 56px; flex-shrink: 0; font-size: 11px; color: var(--fg-dim); }
+    .loc__v { color: var(--fg); font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11.5px; word-break: break-all; }
+    .loc__v.text { font-family: inherit; font-size: 13px; }
+
+    .replies { display: flex; flex-direction: column; gap: 8px; }
+    .reply {
+      background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .reply__meta {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11px; color: var(--fg-dim); margin-bottom: 4px;
+    }
+    .reply__author { color: var(--fg); font-weight: 600; font-size: 12px; }
+    .reply__del {
+      margin-left: auto; background: transparent; border: 0; color: var(--fg-dim);
+      font-size: 11px; padding: 2px 4px; cursor: pointer;
+    }
+    .reply__del:hover { color: var(--danger); }
+    .reply__body {
+      font-size: 13px; color: var(--fg); line-height: 1.6;
+      white-space: pre-wrap; word-break: break-word;
+    }
+
+    .compose { margin-top: 10px; }
+    .compose textarea {
+      width: 100%;
+      background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+      color: var(--fg);
+      font-family: inherit; font-size: 13px; line-height: 1.55;
+      padding: 10px 12px; resize: vertical; min-height: 64px;
+      outline: none;
+      transition: border-color 0.12s ease;
+    }
+    .compose textarea:focus { border-color: var(--accent); }
+    .compose textarea::placeholder { color: var(--fg-dim); }
+    .compose__row {
+      display: flex; align-items: center; gap: 8px; margin-top: 8px;
+    }
+    .compose__hint { flex: 1; font-size: 11px; color: var(--fg-dim); }
+
+    .proposal__row { display: flex; flex-direction: column; gap: 10px; }
+    .proposal__field { display: flex; flex-direction: column; gap: 6px; }
+    .proposal__field label {
+      font-size: 11px; color: var(--fg-mute); font-weight: 600;
+    }
+    .proposal__note, .proposal__css {
+      background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+      color: var(--fg);
+      padding: 10px 12px; resize: vertical;
+      outline: none;
+      transition: border-color 0.12s ease;
+    }
+    .proposal__note {
+      font-family: inherit; font-size: 13px; line-height: 1.55;
+      min-height: 56px;
+    }
+    .proposal__css {
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 12px; line-height: 1.5;
+      min-height: 110px;
+      tab-size: 2;
+    }
+    .proposal__note:focus, .proposal__css:focus { border-color: var(--accent); }
+    .proposal__hint {
+      font-size: 11px; color: var(--fg-dim); line-height: 1.6;
+      padding: 8px 10px; background: var(--bg); border: 1px dashed var(--line);
+      border-radius: 6px; margin-top: 4px;
+    }
+    .proposal__hint code {
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 11px; color: var(--accent);
+      padding: 1px 4px; border-radius: 3px; background: var(--accent-bg);
+    }
+
+    .row-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+    .btn {
+      height: 32px; padding: 0 14px;
+      border: 0; border-radius: 7px;
+      font-family: inherit; font-size: 12.5px; font-weight: 600;
+      transition: all 0.12s ease;
+    }
+    .btn--ghost { background: transparent; color: var(--fg-mute); border: 1px solid var(--line); }
+    .btn--ghost:hover { color: var(--fg); border-color: var(--line-2); }
+    .btn--primary { background: var(--accent); color: #fff; }
+    .btn--primary:hover { background: var(--accent-2); }
+    .btn--ok { background: var(--ok); color: #062b21; }
+    .btn--ok:hover { background: #2bc78c; }
+    .btn--warn { background: var(--warn); color: #3a2700; }
+    .btn--warn:hover { background: #e58a06; }
+    .btn--danger { background: transparent; color: var(--danger); border: 1px solid rgba(248,113,113,0.4); }
+    .btn--danger:hover { background: rgba(248,113,113,0.12); border-color: var(--danger); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .saved-note {
+      font-size: 11px; color: var(--ok);
+      opacity: 0; transition: opacity 0.2s ease;
+    }
+    .saved-note.is-on { opacity: 1; }
+
+    /* Toast */
+    .toast {
+      position: fixed; left: 50%; bottom: 32px;
+      transform: translateX(-50%) translateY(20px);
+      z-index: 200;
+      background: var(--surface); color: var(--fg);
+      border: 1px solid var(--line-2); border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 13px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+      opacity: 0; pointer-events: none;
+      transition: all 0.2s ease;
+    }
+    .toast.is-on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ============================================================
+     * Light theme — only the GNB topbar + the right comment sidebar
+     * flip to white. The browser-frame stage stays dark.
+     * Done by re-scoping the CSS variables on those two roots, so
+     * existing rules using var(--bg) / var(--surface) etc. inherit
+     * the new values automatically.
+     * ============================================================ */
+    .topbar, .sidebar {
+      --bg:        #fff;
+      --surface:   #fff;
+      --surface-h: #F9FAFB;
+      --line:      #E5E7EB;
+      --line-2:    #1A1A1A;
+      --fg:        #1A1A1A;
+      --fg-mute:   #6B7280;
+      --fg-dim:    #9CA3AF;
+      --accent:    #4F46E5;
+      --accent-bg: #EEF2FF;
+      --accent-2:  #4338CA;
+      --warn:      #C2710C;
+      --warn-bg:   #FFF4E5;
+      --ok:        #0E8A47;
+      --ok-bg:     #E6F7EE;
+      --danger:    #DC2626;
+    }
+    .topbar { background: #fff; border-bottom: 1px solid #E5E5E5; box-shadow: 0 1px 0 rgba(0,0,0,0.02); }
+    .sidebar { background: #fff; border-left: 1px solid #E5E5E5; }
+    /* page-select chevron needs a darker arrow on white */
+    .topbar .page-select {
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236B7280' stroke-width='1.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    }
+    /* keep simStatus warn-toned even on light */
+    .topbar .sim-status { background: #FFF4E5; border-color: #F8DDB1; color: #C2710C; }
+
+    /* ============================================================
+     * Sidebar tabs — split [코멘트] / [편집] above the panes.
+     * ============================================================ */
+    .side-tabs {
+      display: flex;
+      border-bottom: 1px solid #E5E7EB;
+      flex-shrink: 0;
+      background: #fff;
+    }
+    .side-tab {
+      flex: 1;
+      height: 44px; padding: 0;
+      background: transparent;
+      border: 0; border-bottom: 2px solid transparent;
+      font-family: inherit;
+      font-size: 13px; font-weight: 600;
+      color: #6B7280;
+      cursor: pointer;
+      transition: color 0.12s, border-color 0.12s;
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 6px;
+    }
+    .side-tab:hover { color: #1A1A1A; }
+    .side-tab.is-active {
+      color: #4F46E5;
+      border-bottom-color: #4F46E5;
+    }
+    .side-pane { display: none; flex: 1; min-height: 0; flex-direction: column; }
+    .side-pane.is-active { display: flex; }
+
+    /* ============================================================
+     * Edit pane
+     * ============================================================ */
+    .edit-head {
+      padding: 14px 20px;
+      border-bottom: 1px solid #E5E7EB;
+      flex-shrink: 0;
+    }
+    .edit-hint {
+      margin: 0; font-size: 12px; color: #6B7280; line-height: 1.6;
+    }
+    .edit-body {
+      flex: 1; min-height: 0;
+      overflow-y: auto;
+      padding: 6px 12px 18px;
+    }
+    .edit-body::-webkit-scrollbar { width: 6px; }
+    .edit-body::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 999px; }
+    .edit-sec { margin-top: 14px; }
+    .edit-sec__head {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 8px;
+      font-size: 12.5px; font-weight: 700; color: #1A1A1A;
+    }
+    .edit-sec__head h4 { margin: 0; font-size: inherit; font-weight: inherit; }
+    .edit-sec__count {
+      font-size: 11px; font-weight: 600; color: #6B7280;
+      background: #F3F4F6; border-radius: 999px;
+      padding: 2px 7px;
+    }
+    .edit-list {
+      display: flex; flex-direction: column;
+      background: #FAFBFC; border: 1px solid #EBEEF2; border-radius: 8px;
+      overflow: hidden;
+    }
+    .edit-list:empty::after {
+      content: '감지된 항목이 없습니다.';
+      display: block; padding: 14px; text-align: center;
+      font-size: 12px; color: #9CA3AF;
+    }
+    .edit-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      border-top: 1px solid #EFF1F4;
+      font-size: 12.5px; color: #1A1A1A;
+      cursor: pointer;
+      user-select: none;
+    }
+    .edit-row:first-child { border-top: 0; }
+    .edit-row:hover { background: #F3F4F6; }
+    .edit-row__check {
+      width: 16px; height: 16px;
+      flex-shrink: 0;
+      accent-color: #4F46E5;
+      cursor: pointer;
+    }
+    .edit-row__label {
+      flex: 1; min-width: 0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .edit-row.is-hidden .edit-row__label {
+      color: #9CA3AF; text-decoration: line-through;
+    }
+    .edit-row.is-added { background: #FAF5FF; }
+    /* Drag-and-drop reorder for added rows */
+    .edit-row[draggable="true"] { cursor: grab; }
+    .edit-row[draggable="true"]:active { cursor: grabbing; }
+    .edit-row.is-dragging { opacity: 0.4; }
+    .edit-row.is-drop-above { box-shadow: inset 0 2px 0 #4F46E5; }
+    .edit-row.is-drop-below { box-shadow: inset 0 -2px 0 #4F46E5; }
+    .edit-row__grip {
+      flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 12px; height: 16px;
+      color: #9CA3AF;
+      user-select: none;
+      cursor: grab;
+    }
+    .edit-row__grip svg { width: 6px; height: 12px; display: block; }
+    .edit-row__grip:hover { color: #4F46E5; }
+    .edit-row__icon-toggle {
+      height: 22px; padding: 0 8px;
+      background: #fff; border: 1px solid #E5E7EB;
+      border-radius: 999px;
+      font-family: inherit; font-size: 10.5px; font-weight: 600;
+      color: #6B7280; cursor: pointer;
+      transition: all 0.12s ease;
+      flex-shrink: 0;
+    }
+    .edit-row__icon-toggle.is-on {
+      background: #EEF2FF; color: #4F46E5; border-color: #4F46E5;
+    }
+    .edit-row__icon-toggle:hover { border-color: #1A1A1A; color: #1A1A1A; }
+    .edit-row__icon-toggle.is-on:hover { border-color: #4F46E5; color: #4F46E5; }
+    .edit-row__locate {
+      background: transparent; border: 0; cursor: pointer;
+      font-size: 11px; color: #4F46E5; padding: 2px 6px; border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .edit-row__locate:hover { background: #EEF2FF; }
+    .edit-row__del {
+      background: transparent; border: 0; cursor: pointer;
+      font-size: 14px; color: #9CA3AF; padding: 2px 4px; border-radius: 4px;
+      flex-shrink: 0; line-height: 1;
+    }
+    .edit-row__del:hover { color: #DC2626; background: #FEE2E2; }
+    /* 2-level column rows */
+    .edit-row.is-group {
+      background: #F8F9FB;
+      font-weight: 600;
+      color: #1A1A1A;
+    }
+    .edit-row.is-group:hover { background: #EEF1F5; }
+    .edit-row.is-leaf {
+      padding-left: 28px;
+      background: #FFFFFF;
+    }
+    .edit-row.is-anchor {
+      color: #6B7280;
+      cursor: default;
+    }
+    .edit-row.is-anchor:hover { background: transparent; }
+    .edit-row__check--placeholder {
+      width: 16px; height: 16px;
+      flex-shrink: 0;
+      display: inline-block;
+    }
+    .edit-row__group-count {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 22px; height: 18px; padding: 0 6px;
+      border-radius: 999px;
+      background: #E5E7EB; color: #4B5563;
+      font-size: 10.5px; font-weight: 600;
+      flex-shrink: 0;
+    }
+    .edit-row__grip--locked {
+      cursor: default; color: #D1D5DB;
+      font-size: 9px; line-height: 1;
+    }
+
+    .edit-add {
+      padding: 8px 10px 10px;
+    }
+    .edit-add-row {
+      display: flex; gap: 6px; align-items: stretch;
+    }
+    .edit-add-btn {
+      flex: 1; padding: 9px;
+      background: #fff; border: 1px dashed #D1D5DB; border-radius: 8px;
+      color: #4F46E5; font-family: inherit; font-size: 12.5px; font-weight: 600;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+    .edit-add-btn:hover { background: #EEF2FF; border-color: #4F46E5; }
+    .edit-apply-btn {
+      flex-shrink: 0;
+      padding: 9px 16px;
+      background: #4F46E5; color: #fff;
+      border: 0; border-radius: 8px;
+      font-family: inherit; font-size: 12.5px; font-weight: 600;
+      cursor: pointer;
+      transition: background 0.12s ease, opacity 0.12s ease;
+    }
+    .edit-apply-btn:hover:not(:disabled) { background: #4338CA; }
+    .edit-apply-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .edit-add-form {
+      display: none; flex-direction: column; gap: 8px;
+      padding: 12px; margin-top: 8px;
+      background: #fff; border: 1px solid #4F46E5; border-radius: 8px;
+    }
+    .edit-add-form.is-open { display: flex; }
+    .edit-add-form input,
+    .edit-add-form select {
+      padding: 8px 10px;
+      background: #fff; color: #1A1A1A;
+      border: 1px solid #E5E7EB; border-radius: 6px;
+      font-family: inherit; font-size: 13px;
+      outline: none;
+    }
+    .edit-add-form input:focus, .edit-add-form select:focus { border-color: #4F46E5; }
+    .edit-add-form__row { display: flex; gap: 6px; }
+    .edit-add-form__row > * { flex: 1; }
+    .edit-add-form__actions { display: flex; gap: 6px; justify-content: flex-end; margin-top: 4px; }
+    .edit-add-form__btn {
+      padding: 7px 14px; border-radius: 6px;
+      font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .edit-add-form__btn--primary { background: #4F46E5; color: #fff; border: 0; }
+    .edit-add-form__btn--primary:hover { background: #4338CA; }
+    .edit-add-form__btn--ghost {
+      background: #fff; color: #6B7280; border: 1px solid #E5E7EB;
+    }
+    .edit-add-form__btn--ghost:hover { color: #1A1A1A; border-color: #1A1A1A; }
+    .edit-row__type {
+      flex-shrink: 0;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.2px;
+      padding: 2px 6px; border-radius: 4px;
+      background: #EEF2FF; color: #4F46E5;
+    }
+    .edit-row__type-select {
+      flex-shrink: 0;
+      height: 22px; padding: 0 22px 0 8px;
+      background: #fff; color: #1A1A1A;
+      border: 1px solid #E5E7EB; border-radius: 4px;
+      font-family: inherit; font-size: 11px; font-weight: 600;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='8' height='5' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l3 3 3-3' stroke='%236B7280' stroke-width='1.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 6px center;
+    }
+    .edit-row__type-select:hover  { border-color: #4F46E5; }
+    .edit-row__type-select:focus  { outline: none; border-color: #4F46E5; }
+
+    /* Edit pane sticky footer (save / revert) */
+    .side-pane[data-pane="edit"] { display: none; flex-direction: column; }
+    .side-pane[data-pane="edit"].is-active { display: flex; }
+    .edit-foot {
+      flex-shrink: 0;
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 16px;
+      border-top: 1px solid #E5E7EB;
+      background: #F9FAFB;
+    }
+    .edit-foot__status {
+      flex: 1; min-width: 0;
+      font-size: 11.5px; color: #6B7280;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .edit-foot__status.is-dirty { color: #C2710C; font-weight: 600; }
+    .edit-foot__btn-revert,
+    .edit-foot__btn-save {
+      height: 32px; padding: 0 14px; border-radius: 6px;
+      font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+      transition: all 0.12s ease;
+    }
+    .edit-foot__btn-revert {
+      background: #fff; color: #6B7280; border: 1px solid #E5E7EB;
+    }
+    .edit-foot__btn-revert:hover:not(:disabled) { color: #1A1A1A; border-color: #1A1A1A; }
+    .edit-foot__btn-save {
+      background: #4F46E5; color: #fff; border: 0;
+    }
+    .edit-foot__btn-save:hover:not(:disabled) { background: #4338CA; }
+    .edit-foot__btn-save:disabled,
+    .edit-foot__btn-revert:disabled { opacity: 0.45; cursor: not-allowed; }
+    .edit-empty {
+      padding: 32px 20px; text-align: center;
+      color: #9CA3AF; font-size: 12.5px; line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <span class="brand">SCM HUB<span class="dot"></span>협업 VOC<span class="role-tag">작업자</span></span>
+    <span class="topbar__sep"></span>
+    <div class="menu-l1" id="menuL1"></div>
+    <span class="menu-arrow">›</span>
+    <select class="page-select menu-l2" id="l2Select"></select>
+    <button class="icon-btn" id="reloadBtn" title="새로고침">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 0 1 15.3-6.4L21 8M21 4v4h-4M21 12a9 9 0 0 1-15.3 6.4L3 16M3 20v-4h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <span id="simStatus" class="sim-status" hidden>
+      <span class="dot"></span><span>시뮬 적용 중 <span id="simStatusCount">0</span></span>
+      <button id="simResetAll">모두 해제</button>
+    </span>
+    <span class="topbar__spacer"></span>
+    <span class="topbar__user">
+      <span id="userName">—</span>
+      <span class="topbar__role" id="userRole" style="display:none;">—</span>
+    </span>
+    <a class="topbar__back" href="/index.html">← Workspace</a>
+  </header>
+
+  <div class="layout">
+    <section class="stage">
+      <div class="browser" id="browser">
+        <div class="browser__chrome">
+          <span class="traffic"><span></span><span></span><span></span></span>
+          <span class="urlbar">
+            <svg class="lock" width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M6 11V8a6 6 0 0 1 12 0v3M5 11h14v10H5V11z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="url" id="urlText">/demo/dashboard.html</span>
+            <a class="urlbar__open" id="urlOpen" href="#" target="_blank" rel="noopener" title="새 탭에서 열기">↗</a>
+          </span>
+        </div>
+        <div class="browser__body" id="browserBody">
+          <div class="browser__loading is-on" id="browserLoading">불러오는 중…</div>
+          <iframe id="demoFrame" src="about:blank"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <aside class="sidebar">
+      <!-- TAB NAV -->
+      <div class="side-tabs" id="sideTabs">
+        <button type="button" class="side-tab is-active" data-tab="comments">💬 코멘트</button>
+        <button type="button" class="side-tab" data-tab="edit">✏️ 편집</button>
+      </div>
+
+      <!-- COMMENTS PANE (existing list + detail) -->
+      <div class="side-pane is-active" data-pane="comments">
+      <!-- LIST VIEW -->
+      <div class="sidebar__view" id="listView">
+        <div class="side__head">
+          <h3 class="side__title">코멘트 <span class="count" id="cmtCount">0</span></h3>
+          <div class="side__filters" id="filters">
+            <button class="chip is-active" data-filter="page">이 페이지 <span class="num" id="cntPage">0</span></button>
+            <button class="chip" data-filter="open">미해결 <span class="num" id="cntOpen">0</span></button>
+            <button class="chip" data-filter="resolved">해결됨 <span class="num" id="cntResolved">0</span></button>
+            <button class="chip" data-filter="all">전체 <span class="num" id="cntAll">0</span></button>
+          </div>
+        </div>
+        <div class="side__list" id="cmtList"></div>
+      </div>
+
+      <!-- DETAIL VIEW -->
+      <div class="sidebar__view" id="detailView" hidden>
+        <div class="detail__head">
+          <button class="detail__back" id="detailBack">← 목록</button>
+          <span class="detail__num" id="dNum">1</span>
+          <span class="detail__head__page" id="dPage"></span>
+          <span class="detail__status" id="dStatus">미해결</span>
+        </div>
+        <div class="detail__body">
+          <!-- Location -->
+          <section class="sec">
+            <div class="sec__lab">
+              <span>📍 위치</span>
+              <button class="sec__lab__act" id="dLocate">위치로 이동 ↗</button>
+            </div>
+            <div class="loc">
+              <div class="loc__row"><span class="loc__k">엘리먼트</span><span class="loc__v" id="dTag">—</span></div>
+              <div class="loc__row"><span class="loc__k">텍스트</span><span class="loc__v text" id="dText">—</span></div>
+              <div class="loc__row"><span class="loc__k">셀렉터</span><span class="loc__v" id="dSel">—</span></div>
+              <div class="loc__row"><span class="loc__k">좌표</span><span class="loc__v" id="dCoord">—</span></div>
+            </div>
+          </section>
+
+          <!-- Thread -->
+          <section class="sec">
+            <div class="sec__lab"><span>💬 스레드</span></div>
+            <div class="replies" id="dReplies"></div>
+            <div class="compose">
+              <textarea id="dReply" placeholder="답글을 남기거나 추가 질문을 작성…"></textarea>
+              <div class="compose__row">
+                <span class="compose__hint">⌘/Ctrl + Enter 전송</span>
+                <button class="btn btn--primary" id="dReplySend">답글 등록</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Proposal + simulate -->
+          <section class="sec">
+            <div class="sec__lab">
+              <span>💡 개선안 / 시뮬레이션</span>
+              <span class="saved-note" id="dSaved">저장됨</span>
+            </div>
+            <div class="proposal__row">
+              <div class="proposal__field">
+                <label>개선안 메모</label>
+                <textarea class="proposal__note" id="dNote" placeholder="이 컴포넌트를 어떻게 고칠지 설명…"></textarea>
+              </div>
+              <div class="proposal__field">
+                <label>CSS 오버라이드 (시뮬레이션용)</label>
+                <textarea class="proposal__css" id="dCss" spellcheck="false" placeholder="예: .btn--primary { background: #DC2626; color: #fff; }"></textarea>
+                <div class="proposal__hint">
+                  💡 <code id="dSelHint">selector</code> 가 자동으로 채워졌습니다. 값을 바꾼 뒤 <b>시뮬레이션 적용</b> 을 누르면 실제 데모에 즉시 반영돼서 결과를 미리 볼 수 있습니다.
+                </div>
+              </div>
+              <div class="row-btns">
+                <button class="btn btn--warn" id="simApplyBtn">▶ 시뮬레이션 적용</button>
+                <button class="btn btn--ghost" id="simResetBtn">↺ 시뮬 해제</button>
+                <button class="btn btn--ghost" id="proposalSaveBtn">💾 저장</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Status / actions -->
+          <section class="sec">
+            <div class="sec__lab"><span>⚙️ 상태</span></div>
+            <div class="row-btns">
+              <button class="btn btn--ok" id="dResolveBtn">✓ 해결됨으로 표시</button>
+              <button class="btn btn--danger" id="dDeleteBtn">핀 삭제</button>
+            </div>
+          </section>
+        </div>
+      </div>
+      </div><!-- /side-pane comments -->
+
+      <!-- EDIT PANE -->
+      <div class="side-pane" data-pane="edit">
+        <div class="edit-head">
+          <p class="edit-hint">현재 화면의 요소를 숨기거나 표시할 수 있습니다. 변경 사항은 자동 저장되며, 페이지를 새로고침해도 유지됩니다.</p>
+        </div>
+        <div class="edit-body">
+          <section class="edit-sec">
+            <header class="edit-sec__head">
+              <h4>🔍 필터</h4>
+              <span class="edit-sec__count" id="editFilterCount">0</span>
+            </header>
+            <div class="edit-list" id="editFilterList"></div>
+            <div class="edit-add">
+              <div class="edit-add-row">
+                <button type="button" class="edit-add-btn" data-add="filter">+ 필터 추가</button>
+                <button type="button" class="edit-apply-btn" data-apply="filter" title="현재 편집 사항을 좌측 데모 화면에 반영">적용</button>
+              </div>
+              <div class="edit-add-form" id="addFilterForm">
+                <input type="text" id="addFilterLabel" placeholder="필터 라벨 (예: 출고처)" maxlength="20" />
+                <select id="addFilterType">
+                  <option value="single">싱글 — 하나만 선택</option>
+                  <option value="multi">멀티 — 다중 선택</option>
+                  <option value="code">코드 — 입력형</option>
+                </select>
+                <div class="edit-add-form__actions">
+                  <button type="button" class="edit-add-form__btn edit-add-form__btn--ghost" data-cancel="filter">취소</button>
+                  <button type="button" class="edit-add-form__btn edit-add-form__btn--primary" data-submit="filter">추가</button>
+                </div>
+              </div>
+            </div>
+          </section>
+          <section class="edit-sec">
+            <header class="edit-sec__head">
+              <h4>📊 테이블 컬럼</h4>
+              <span class="edit-sec__count" id="editColumnCount">0</span>
+            </header>
+            <div class="edit-list" id="editColumnList"></div>
+            <div class="edit-add">
+              <div class="edit-add-row">
+                <button type="button" class="edit-add-btn" data-add="column">+ 컬럼 추가</button>
+                <button type="button" class="edit-apply-btn" data-apply="column" title="현재 편집 사항을 좌측 데모 화면에 반영">적용</button>
+              </div>
+              <div class="edit-add-form" id="addColumnForm">
+                <input type="text" id="addColumnLabel" placeholder="컬럼 라벨 (예: 비고)" maxlength="20" />
+                <div class="edit-add-form__actions">
+                  <button type="button" class="edit-add-form__btn edit-add-form__btn--ghost" data-cancel="column">취소</button>
+                  <button type="button" class="edit-add-form__btn edit-add-form__btn--primary" data-submit="column">추가</button>
+                </div>
+              </div>
+            </div>
+          </section>
+          <section class="edit-sec">
+            <header class="edit-sec__head">
+              <h4>🧩 컴포넌트</h4>
+              <span class="edit-sec__count" id="editComponentCount">0</span>
+            </header>
+            <div class="edit-list" id="editComponentList"></div>
+          </section>
+        </div>
+        <footer class="edit-foot">
+          <span class="edit-foot__status" id="editStatus">저장됨 · 데모와 동기화</span>
+          <button type="button" class="edit-foot__btn-revert" id="editRevertBtn" disabled>되돌리기</button>
+          <button type="button" class="edit-foot__btn-save"   id="editSaveBtn"   disabled>저장됨</button>
+        </footer>
+      </div>
+    </aside>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+  (function () {
+    'use strict';
+    const STORAGE_KEY  = 'scm:voc:comments:v1';
+    const EDIT_KEY     = 'scm:voc:edits:v1';
+    const DRAFT_KEY    = 'scm:voc:edits:draft:v1';
+    // Two-depth menu mirroring the demo's LNB structure.
+    const MENU = [
+      { l1: 'dashboard', label: '대시보드', children: [
+        { path: '/demo/dashboard.html', label: '대시보드' },
+      ]},
+      { l1: 'store', label: '스토어', children: [
+        { path: '/demo/index.html',                    label: '무탠 전개상품 관리' },
+        { path: '/demo/editshop-restock-request.html', label: '편집샵 보충 요청' },
+        { path: '/demo/editshop-restock-status.html',  label: '편집샵 보충 현황' },
+      ]},
+      { l1: 'hanger', label: '상품 관리', children: [
+        { path: '/demo/sku-management.html', label: 'SKU 관리' },
+        { path: '/demo/sku-register.html',   label: 'SKU 등록' },
+        { path: '/demo/sku-detail.html',     label: 'SKU 상세' },
+      ]},
+    ];
+    // Flat list — preserved for label lookups (sidebar 'pageLabel(path)').
+    const PAGES = MENU.flatMap((m) => m.children);
+    function findMenuByPath(path) {
+      for (const m of MENU) {
+        const c = m.children.find((x) => x.path === path);
+        if (c) return { l1: m, l2: c };
+      }
+      return null;
+    }
+
+    const state = {
+      comments: load(),
+      // edit pane uses two parallel maps:
+      //   applied = what's currently injected into the iframe (and persisted)
+      //   draft   = what the user is configuring; iframe only updates on Save
+      applied: {},
+      draft: {},
+      filter: 'page',
+      currentPage: PAGES[0].path,
+      iframeReady: false,
+      view: 'list',            // 'list' | 'detail'
+      selectedId: null,
+      simActive: new Set(),    // ids whose CSS sim is currently injected in iframe
+      saveTimer: null,
+      user: { email: 'guest@local', name: '게스트' },
+    };
+
+    function load() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr : [];
+      } catch { return []; }
+    }
+    // 권한 키 → 화면 표기. DB/API 키는 그대로.
+    const ROLE_LABEL_KO = {
+      super: '최고 어드민',
+      admin: '어드민',
+      biz:   '현업',
+      pm:    'PM',
+      dev:   '개발팀',
+      pd:    'PD',
+    };
+    // Pin/badge color per role — mirrors comment-overlay.js. Keep in sync.
+    const ROLE_COLORS = {
+      super: '#F59E0B',
+      admin: '#6E6BFF',
+      biz:   '#10B981',
+      pm:    '#9CA3AF',
+      dev:   '#9CA3AF',
+      pd:    '#9CA3AF',
+    };
+    const FALLBACK_COLORS = [
+      '#6E6BFF', '#34D399', '#F59E0B', '#EC4899',
+      '#3B82F6', '#A855F7', '#F43F5E', '#14B8A6',
+      '#FB923C', '#22D3EE', '#84CC16', '#F97316',
+    ];
+    function roleColor(role, fallbackEmail) {
+      if (role && ROLE_COLORS[role]) return ROLE_COLORS[role];
+      const s = String(fallbackEmail || 'guest');
+      let h = 0;
+      for (let i = 0; i < s.length; i++) h = ((h * 31) + s.charCodeAt(i)) >>> 0;
+      return FALLBACK_COLORS[h % FALLBACK_COLORS.length];
+    }
+    function persist() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.comments)); }
+      catch (e) { console.warn('voc: save failed', e); }
+    }
+    function uid(p) { return p + '_' + Math.random().toString(36).slice(2, 10); }
+    function now() { return Date.now(); }
+    function escapeHtml(s) {
+      return String(s == null ? '' : s)
+        .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+    }
+    function relTime(t) {
+      const d = (Date.now() - t) / 1000;
+      if (d < 60)        return '방금';
+      if (d < 3600)      return Math.floor(d / 60) + '분 전';
+      if (d < 86400)     return Math.floor(d / 3600) + '시간 전';
+      if (d < 86400 * 7) return Math.floor(d / 86400) + '일 전';
+      const dt = new Date(t);
+      return `${dt.getMonth() + 1}/${dt.getDate()}`;
+    }
+    function pageLabel(p) {
+      const f = PAGES.find((x) => x.path === p);
+      return f ? f.label : p;
+    }
+    function shortTarget(c) {
+      if (!c) return '';
+      const tag = (c.elementTag || '').toLowerCase();
+      const txt = (c.elementText || '').replace(/\s+/g, ' ').trim();
+      if (txt) return `<${tag || 'el'}> "${txt.length > 36 ? txt.slice(0, 36) + '…' : txt}"`;
+      return c.selector || `<${tag}>`;
+    }
+    function indexOfInPage(c) {
+      const sorted = state.comments
+        .filter((x) => x.page === c.page)
+        .sort((a, b) => a.createdAt - b.createdAt);
+      return sorted.findIndex((x) => x.id === c.id) + 1;
+    }
+    function findById(id) { return state.comments.find((x) => x.id === id); }
+    function defaultCssTemplate(c) {
+      const sel = c.selector || 'body';
+      return `${sel} {\n  /* 여기에 변경할 CSS 작성 */\n}\n`;
+    }
+
+    const $ = (s) => document.querySelector(s);
+    const menuL1 = $('#menuL1');
+    const l2Select = $('#l2Select');
+    const reloadBtn = $('#reloadBtn');
+    const iframe = $('#demoFrame');
+    const urlText = $('#urlText');
+    const urlOpen = $('#urlOpen');
+    const browserLoading = $('#browserLoading');
+    const cmtList = $('#cmtList');
+    const cmtCount = $('#cmtCount');
+    const filters = $('#filters');
+    const listView = $('#listView');
+    const detailView = $('#detailView');
+    const dNum = $('#dNum');
+    const dPage = $('#dPage');
+    const dStatus = $('#dStatus');
+    const dTag = $('#dTag');
+    const dText = $('#dText');
+    const dSel = $('#dSel');
+    const dCoord = $('#dCoord');
+    const dSelHint = $('#dSelHint');
+    const dReplies = $('#dReplies');
+    const dReply = $('#dReply');
+    const dNote = $('#dNote');
+    const dCss = $('#dCss');
+    const dSaved = $('#dSaved');
+    const simStatusEl = $('#simStatus');
+    const simStatusCount = $('#simStatusCount');
+    const toastEl = $('#toast');
+
+    // ====================================================
+    // Init
+    // ====================================================
+    function init() {
+      // load edit state — applied (persisted, injected) + draft (pending UI changes)
+      state.applied = loadJsonKey(EDIT_KEY);
+      state.draft   = loadJsonKey(DRAFT_KEY);
+      if (!state.draft || !Object.keys(state.draft).length) {
+        state.draft = JSON.parse(JSON.stringify(state.applied || {}));
+      }
+      // L1 chips
+      menuL1.innerHTML = MENU.map((m) => `<button type="button" class="menu-l1__chip" data-l1="${m.l1}">${escapeHtml(m.label)}</button>`).join('');
+      menuL1.addEventListener('click', (e) => {
+        const btn = e.target.closest('.menu-l1__chip');
+        if (!btn) return;
+        const target = selectL1(btn.dataset.l1);
+        if (target !== state.currentPage) navigateTo(target);
+      });
+      l2Select.addEventListener('change', () => navigateTo(l2Select.value));
+
+      urlText.textContent = state.currentPage;
+      urlOpen.href = state.currentPage;
+      // initial render — set up the menu UI then explicitly navigate so
+      // the iframe actually loads (iframe.src starts at about:blank).
+      const initialMatch = findMenuByPath(state.currentPage) || { l1: MENU[0], l2: MENU[0].children[0] };
+      const initialPath = selectL1(initialMatch.l1.l1, initialMatch.l2.path);
+      navigateTo(initialPath);
+
+      reloadBtn.addEventListener('click', () => {
+        if (!iframe.contentWindow) return;
+        showLoading(true);
+        try { iframe.contentWindow.location.reload(); }
+        catch { iframe.src = state.currentPage; }
+      });
+
+      iframe.addEventListener('load', () => {
+        showLoading(false);
+        try {
+          const path = iframe.contentWindow.location.pathname;
+          if (path && path !== 'about:blank') {
+            state.currentPage = path;
+            urlText.textContent = path;
+            urlOpen.href = path;
+            syncMenuFromPath(path);
+          }
+        } catch {}
+        // page change resets sim tracking (style tags died with previous doc)
+        state.simActive.clear();
+        updateSimStatus();
+        renderList();
+        // edit pane: replay user-added items, reorder, types, then CSS, then re-scan
+        applyAddedDom();
+        applyFilterOrderToIframe();
+        applyColumnOrderToIframe();
+        applyFilterTypesToIframe();
+        applyEditCss();
+        renderEditPane();
+      });
+
+      // sidebar tab switching
+      document.getElementById('sideTabs').addEventListener('click', (e) => {
+        const btn = e.target.closest('.side-tab');
+        if (!btn) return;
+        const tab = btn.dataset.tab;
+        document.querySelectorAll('.side-tab').forEach((b) => b.classList.toggle('is-active', b === btn));
+        document.querySelectorAll('.side-pane').forEach((p) => p.classList.toggle('is-active', p.dataset.pane === tab));
+        if (tab === 'edit') renderEditPane();
+      });
+
+      // edit pane footer
+      document.getElementById('editSaveBtn').addEventListener('click', () => { if (isDirty()) commitDraft(); });
+      document.getElementById('editRevertBtn').addEventListener('click', () => {
+        if (!isDirty()) return;
+        if (confirm('저장하지 않은 변경 사항이 모두 사라집니다. 되돌릴까요?')) revertDraft();
+      });
+
+      filters.addEventListener('click', onFilterClick);
+
+      $('#detailBack').addEventListener('click', () => goList());
+      $('#dLocate').addEventListener('click', onLocate);
+      $('#dReplySend').addEventListener('click', onReply);
+      dReply.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); onReply(); }
+      });
+
+      $('#simApplyBtn').addEventListener('click', onSimApply);
+      $('#simResetBtn').addEventListener('click', onSimReset);
+      $('#proposalSaveBtn').addEventListener('click', () => saveProposal(true));
+      $('#simResetAll').addEventListener('click', onSimResetAll);
+
+      $('#dResolveBtn').addEventListener('click', onResolveToggle);
+      $('#dDeleteBtn').addEventListener('click', onDelete);
+
+      // Auto-save proposal as worker types (debounced)
+      [dNote, dCss].forEach((el) => {
+        el.addEventListener('input', () => {
+          if (state.saveTimer) clearTimeout(state.saveTimer);
+          state.saveTimer = setTimeout(() => saveProposal(false), 600);
+        });
+      });
+
+      // overlay messages
+      window.addEventListener('message', (e) => {
+        const d = e && e.data;
+        if (!d || typeof d !== 'object') return;
+        if (d.type === 'voc-ready') {
+          state.iframeReady = true;
+          // VOC iframe → permanently lock GNB/LNB (no nav, no hover-expand).
+          postIframe({ type: 'voc-worker-mode', on: true });
+          // re-apply any sims we know about (in case of nav-back to same page)
+          state.simActive.forEach((id) => {
+            const c = findById(id);
+            if (c && c.page === state.currentPage && c.proposal && c.proposal.css) {
+              postIframe({ type: 'voc-sim-apply', id, css: c.proposal.css });
+            }
+          });
+          updateSimStatus();
+        } else if (d.type === 'voc-changed') {
+          state.comments = load();
+          // refresh detail if same id still present
+          if (state.view === 'detail' && state.selectedId) {
+            const c = findById(state.selectedId);
+            if (c) renderDetail(c);
+            else goList();
+          }
+          renderList();
+        }
+      });
+      window.addEventListener('storage', (e) => {
+        if (e.key !== STORAGE_KEY) return;
+        state.comments = load();
+        if (state.view === 'detail' && state.selectedId) {
+          const c = findById(state.selectedId);
+          if (c) renderDetail(c);
+        }
+        renderList();
+      });
+      document.addEventListener('scm:auth-ready', (e) => {
+        const u = e.detail && e.detail.user;
+        if (!u) return;
+        state.user.email = u.email;
+        state.user.name  = u.name || u.email;
+        $('#userName').textContent = u.name || u.email;
+        const roleEl = $('#userRole');
+        roleEl.textContent = ROLE_LABEL_KO[u.role] || u.role;
+        roleEl.dataset.role = u.role;
+        roleEl.style.display = '';
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && state.view === 'detail') { goList(); }
+      });
+
+      renderList();
+      // ensure save / apply / revert buttons reflect dirty state from the
+      // moment the page mounts (before iframe load fires).
+      refreshSaveBtn();
+    }
+
+    function navigateTo(path) {
+      state.currentPage = path;
+      urlText.textContent = path;
+      urlOpen.href = path;
+      syncMenuFromPath(path);
+      state.iframeReady = false;
+      showLoading(true);
+      iframe.src = path;
+    }
+    function showLoading(on) { browserLoading.classList.toggle('is-on', !!on); }
+
+    // Activate an L1 chip — repopulates L2 select and navigates to either
+    // the requested L2 path, the current page if it lives under that L1,
+    // or the L1's first child by default.
+    // Pure UI update — picks the appropriate L2 path and returns it.
+    // Caller decides whether to actually navigate.
+    function selectL1(l1id, preferL2Path) {
+      const item = MENU.find((m) => m.l1 === l1id) || MENU[0];
+      menuL1.querySelectorAll('.menu-l1__chip').forEach((b) => {
+        b.classList.toggle('is-active', b.dataset.l1 === item.l1);
+      });
+      l2Select.innerHTML = item.children
+        .map((c) => `<option value="${c.path}">${escapeHtml(c.label)}</option>`).join('');
+      l2Select.disabled = item.children.length <= 1;
+      let target;
+      if (preferL2Path && item.children.some((c) => c.path === preferL2Path)) target = preferL2Path;
+      else if (item.children.some((c) => c.path === state.currentPage))      target = state.currentPage;
+      else                                                                   target = item.children[0].path;
+      l2Select.value = target;
+      return target;
+    }
+    // Reflect a path change (iframe internal nav, sidebar jump, etc.)
+    // back into the menu UI without triggering navigation.
+    function syncMenuFromPath(path) {
+      const m = findMenuByPath(path);
+      if (!m) return;
+      menuL1.querySelectorAll('.menu-l1__chip').forEach((b) => {
+        b.classList.toggle('is-active', b.dataset.l1 === m.l1.l1);
+      });
+      // rebuild L2 options if the L1 group changed
+      const currentValues = Array.from(l2Select.options).map((o) => o.value);
+      const expected = m.l1.children.map((c) => c.path);
+      const same = currentValues.length === expected.length && currentValues.every((v, i) => v === expected[i]);
+      if (!same) {
+        l2Select.innerHTML = m.l1.children
+          .map((c) => `<option value="${c.path}">${escapeHtml(c.label)}</option>`).join('');
+        l2Select.disabled = m.l1.children.length <= 1;
+      }
+      l2Select.value = path;
+    }
+
+    function postIframe(msg) {
+      try { iframe.contentWindow && iframe.contentWindow.postMessage(msg, '*'); }
+      catch {}
+    }
+
+    // ====================================================
+    // Edit pane — visibility editing of iframe elements
+    // ====================================================
+    function loadJsonKey(key) {
+      try { const v = JSON.parse(localStorage.getItem(key)); return v && typeof v === 'object' ? v : {}; }
+      catch { return {}; }
+    }
+    function persistApplied() { try { localStorage.setItem(EDIT_KEY,  JSON.stringify(state.applied)); } catch {} }
+    function persistDraft()   { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(state.draft));   } catch {} }
+    function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
+
+    // Returns the page slot for either 'applied' or 'draft'. For the draft
+    // slot, falls back to a deep-clone of the applied slot so a freshly
+    // visited page has draft == applied (no spurious dirty state).
+    function pageOf(scope) {
+      const obj = scope === 'applied' ? state.applied : state.draft;
+      let e = obj[state.currentPage];
+      if (!e) {
+        if (scope === 'draft' && state.applied[state.currentPage]) {
+          e = obj[state.currentPage] = deepClone(state.applied[state.currentPage]);
+        } else {
+          e = obj[state.currentPage] = {};
+        }
+      }
+      // legacy cleanup — old schema used noSort/noFilter (default ON), new
+      // schema uses showSort/showFilter (default OFF).
+      delete e.noSort; delete e.noFilter;
+      e.hidden      = Array.isArray(e.hidden)      ? e.hidden      : [];
+      e.showSort    = Array.isArray(e.showSort)    ? e.showSort    : [];
+      e.showFilter  = Array.isArray(e.showFilter)  ? e.showFilter  : [];
+      e.filterOrder = Array.isArray(e.filterOrder) ? e.filterOrder : [];
+      e.columnOrder = Array.isArray(e.columnOrder) ? e.columnOrder : [];
+      // 2-row tables (e.g. SKU 관리): per-group leaf order. Empty {} means
+      // "use natural scan order" — we never auto-populate it, so initial
+      // dirty state stays clean.
+      e.columnLeafOrder = (e.columnLeafOrder && typeof e.columnLeafOrder === 'object' && !Array.isArray(e.columnLeafOrder)) ? e.columnLeafOrder : {};
+      e.filterTypes = (e.filterTypes && typeof e.filterTypes === 'object' && !Array.isArray(e.filterTypes)) ? e.filterTypes : {};
+      if (!e.added) e.added = {};
+      e.added.filters = Array.isArray(e.added.filters) ? e.added.filters : [];
+      e.added.columns = Array.isArray(e.added.columns) ? e.added.columns : [];
+      return e;
+    }
+    function pageDraft()   { return pageOf('draft'); }
+    function pageApplied() { return pageOf('applied'); }
+
+    // ---- mutators (all touch DRAFT only — iframe untouched until Save) ----
+    // ---- Apply helpers ----
+    // applyAllToIframe is the catch-all (Save uses this). Per-section
+    // helpers are used by [적용] buttons so they only touch the relevant
+    // DOM bits.
+    function applyAllToIframe() {
+      rebuildAddedDom();
+      applyFilterOrderToIframe();
+      applyColumnOrderToIframe();
+      applyFilterTypesToIframe();
+      applyEditCss();
+    }
+    function rebuildAddedFiltersOnly() {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      doc.querySelectorAll('.scm-voc-added-filter').forEach((el) => el.remove());
+      applyAddedDom();   // idempotent for columns (id check); reinjects filters
+    }
+    function rebuildAddedColumnsOnly() {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      doc.querySelectorAll('[class*="voc-added-col-"]').forEach((el) => el.remove());
+      applyAddedDom();
+    }
+    function applyFilterSectionToIframe() {
+      rebuildAddedFiltersOnly();
+      applyFilterOrderToIframe();
+      applyFilterTypesToIframe();
+      applyEditCss();
+    }
+    function applyColumnSectionToIframe() {
+      rebuildAddedColumnsOnly();
+      applyColumnOrderToIframe();
+      applyEditCss();
+    }
+
+    function setHidden(selector, hide) {
+      const d = pageDraft();
+      const s = new Set(d.hidden);
+      hide ? s.add(selector) : s.delete(selector);
+      d.hidden = [...s];
+      persistDraft();
+      refreshSaveBtn();
+    }
+    function setIconShown(selector, kind, show) {
+      const d = pageDraft();
+      const arrName = kind === 'sort' ? 'showSort' : 'showFilter';
+      const s = new Set(d[arrName]);
+      show ? s.add(selector) : s.delete(selector);
+      d[arrName] = [...s];
+      persistDraft();
+      refreshSaveBtn();
+    }
+    function addFilter(label, type) {
+      const d = pageDraft();
+      d.added.filters.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+        label, type: type || 'single',
+      });
+      persistDraft();
+      renderEditPane();
+      refreshSaveBtn();
+    }
+    function addColumn(label) {
+      const d = pageDraft();
+      d.added.columns.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+        label,
+      });
+      persistDraft();
+      renderEditPane();
+      refreshSaveBtn();
+    }
+    function removeAddedFilter(id) {
+      const d = pageDraft();
+      d.added.filters = d.added.filters.filter((f) => f.id !== id);
+      const sel = `#voc-added-filter-${id}`;
+      d.hidden     = d.hidden.filter((s) => s !== sel);
+      d.showSort   = d.showSort.filter((s) => s !== sel);
+      d.showFilter = d.showFilter.filter((s) => s !== sel);
+      d.filterOrder = d.filterOrder.filter((s) => s !== sel);
+      persistDraft();
+      renderEditPane();
+      refreshSaveBtn();
+    }
+    function removeAddedColumn(id) {
+      const d = pageDraft();
+      d.added.columns = d.added.columns.filter((c) => c.id !== id);
+      const sel = `#voc-added-col-${id}`;
+      d.hidden     = d.hidden.filter((s) => s !== sel);
+      d.showSort   = d.showSort.filter((s) => s !== sel);
+      d.showFilter = d.showFilter.filter((s) => s !== sel);
+      d.columnOrder = d.columnOrder.filter((s) => s !== sel);
+      persistDraft();
+      renderEditPane();
+      refreshSaveBtn();
+    }
+    function updateAddedFilterType(id, type) {
+      const d = pageDraft();
+      const f = d.added.filters.find((x) => x.id === id);
+      if (f) { f.type = type; persistDraft(); refreshSaveBtn(); }
+    }
+    // Set filter type (singular/multi/code) for a NATIVE filter chip via
+    // a per-page filterTypes map. Added filters use updateAddedFilterType.
+    function setFilterType(selector, type) {
+      const d = pageDraft();
+      if (!type || type === 'single') delete d.filterTypes[selector];
+      else d.filterTypes[selector] = type;
+      persistDraft();
+      refreshSaveBtn();
+    }
+    // Sync an order array with current scan + added items: drops stale
+    // selectors (e.g., from a previous session that used the old class+nth
+    // format before voc-key) and appends any missing current items at the
+    // end. Returns a NEW array (caller assigns).
+    // Sync an order array with the current scan: purge stale selectors and
+    // append new items at the end. Returns the array reference (caller
+    // assigns). For columns this only touches the TOP-LEVEL array; per-group
+    // leaf orders are synced separately via syncLeafOrderArr.
+    function syncOrderArr(kind, parent) {
+      const d = pageDraft();
+      const targets = scanEditTargets();
+      if (kind === 'filter') {
+        const natives = targets.filters.map((it) => it.selector);
+        const added   = d.added.filters.map((it) => `#voc-added-filter-${it.id}`);
+        const all = new Set([...natives, ...added]);
+        const cleaned = (d.filterOrder || []).filter((s) => all.has(s));
+        const inArr = new Set(cleaned);
+        [...natives, ...added].forEach((s) => { if (!inArr.has(s)) cleaned.push(s); });
+        d.filterOrder = cleaned;
+        return cleaned;
+      }
+      // ---- columns: top-level OR per-group ----
+      if (parent) {
+        // per-group leaf order: prev cleaned + scan order appended
+        const leafSels = targets.columns
+          .filter((c) => c.parent === parent)
+          .map((c) => c.selector);
+        const all = new Set(leafSels);
+        const prev = Array.isArray(d.columnLeafOrder[parent]) ? d.columnLeafOrder[parent] : [];
+        const cleaned = prev.filter((s) => all.has(s));
+        const inArr = new Set(cleaned);
+        leafSels.forEach((s) => { if (!inArr.has(s)) cleaned.push(s); });
+        d.columnLeafOrder[parent] = cleaned;
+        return cleaned;
+      }
+      // top-level: groups + ungrouped natives + added cols
+      const top = targets.topOrder.slice();
+      const added = d.added.columns.map((c) => `#voc-added-col-${c.id}`);
+      const all = new Set([...top, ...added]);
+      const cleaned = (d.columnOrder || []).filter((s) => all.has(s));
+      const inArr = new Set(cleaned);
+      [...top, ...added].forEach((s) => { if (!inArr.has(s)) cleaned.push(s); });
+      d.columnOrder = cleaned;
+      return cleaned;
+    }
+
+    // Unified reorder for filter / column rows.
+    //   parent (column only):
+    //     - falsy → mutate top-level columnOrder (groups + ungrouped + added)
+    //     - groupSel → mutate columnLeafOrder[groupSel] (within-group leaves)
+    function moveItem(kind, fromKey, toKey, above, parent) {
+      const d = pageDraft();
+      // Sync target arr first — drops stale selectors so fromKey/toKey
+      // lookups actually find them instead of silently appending.
+      const arr = syncOrderArr(kind, parent);
+      const fromIdx = arr.indexOf(fromKey);
+      if (fromIdx >= 0) arr.splice(fromIdx, 1);
+      let toIdx = arr.indexOf(toKey);
+      if (toIdx < 0) {
+        arr.push(fromKey);
+      } else {
+        if (!above) toIdx += 1;
+        arr.splice(toIdx, 0, fromKey);
+      }
+      persistDraft();
+      renderEditPane();
+      refreshSaveBtn();
+    }
+
+    // ---- inject CSS / DOM into iframe (read APPLIED only) ----
+    function applyEditCss() {
+      const doc = iframe.contentDocument;
+      if (!doc || !doc.head) return;
+      let style = doc.getElementById('scm-voc-edit-css');
+      if (!style) {
+        style = doc.createElement('style');
+        style.id = 'scm-voc-edit-css';
+        doc.head.appendChild(style);
+      }
+      const a = pageDraft();   // live preview: read draft so iframe reflects pending changes
+      const lines = [];
+      a.hidden.forEach((s) => lines.push(`${s} { display: none !important; }`));
+      // Default: ALL sort + filter icons hidden. Reveal selectively.
+      lines.push(`.mp-table thead th .sort-ic, .mp-table thead th .scm-th-sort { display: none !important; }`);
+      lines.push(`.mp-table thead th .filter-ic { display: none !important; }`);
+      // Use the demo's intended `inline-block` for sort-ic / filter-ic so
+      // the show-override matches the original layout. The `.mp-table thead`
+      // prefix is essential — without it the show rule has lower specificity
+      // than the default hide rule (which has 2 elements + 2 classes), and
+      // !important alone doesn't decide ties.
+      a.showSort.forEach((s)   => lines.push(`.mp-table thead ${s} .sort-ic, .mp-table thead ${s} .scm-th-sort { display: inline-block !important; }`));
+      a.showFilter.forEach((s) => lines.push(`.mp-table thead ${s} .filter-ic { display: inline-block !important; }`));
+      // marker styles for added items
+      lines.push(`
+        .scm-voc-added-filter,
+        .scm-voc-added-col {
+          background: #FAF5FF !important;
+          box-shadow: inset 0 0 0 1px #C4B5FD !important;
+        }
+        td.scm-voc-added-col { color: #6B7280; }
+        .scm-filter-select[data-voc-filter-type="multi"]::after {
+          content: 'M'; margin-left: 4px;
+          font-size: 9px; font-weight: 700; color: #4F46E5;
+          background: #EEF2FF; padding: 1px 4px; border-radius: 3px;
+        }
+        .scm-filter-select[data-voc-filter-type="code"]::after {
+          content: 'C'; margin-left: 4px;
+          font-size: 9px; font-weight: 700; color: #4F46E5;
+          background: #EEF2FF; padding: 1px 4px; border-radius: 3px;
+        }
+      `);
+      style.textContent = lines.join('\n');
+    }
+
+    function applyAddedDom() {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      const a = pageDraft();   // live preview: read draft so iframe reflects pending changes
+      // ---- Filters ----
+      const filterBar = doc.querySelector('.scm-filter-bar');
+      if (filterBar && a.added.filters.length) {
+        // pick the wrapper that already contains real chips so layout matches
+        const realChip = filterBar.querySelector(
+          '.scm-filter-select[data-mp-filter]:not(.scm-voc-added-filter)'
+        );
+        const wrapper = (realChip && realChip.parentElement) || filterBar.firstElementChild || filterBar;
+        const resetBtn = wrapper.querySelector(':scope > .scm-filter-reset-btn');
+        a.added.filters.forEach((f) => {
+          const id = `voc-added-filter-${f.id}`;
+          if (doc.getElementById(id)) return;
+          const btn = doc.createElement('button');
+          btn.id = id;
+          btn.type = 'button';
+          btn.className = 'scm-filter-select scm-voc-added-filter';
+          btn.dataset.state = 'placeholder';
+          btn.dataset.mpFilter = `voc-added-${f.id}`;
+          btn.dataset.vocFilterType = f.type || 'single';
+          btn.innerHTML = `
+            <span class="scm-filter-select__label">${escapeHtml(f.label)}</span>
+            <span class="scm-filter-select__value">${escapeHtml(f.label)}</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          `;
+          if (resetBtn && resetBtn.parentNode === wrapper) {
+            wrapper.insertBefore(btn, resetBtn);
+          } else {
+            wrapper.appendChild(btn);
+          }
+        });
+      }
+      // ---- Columns ----
+      // We inject into BOTH the sticky-clone .mp-table (which carries the
+      // thead) AND the body .mp-table (which carries tbody). Each may also
+      // have a colgroup we need to keep in sync so scm-table's reorder API
+      // (moveColumn) can find a matching <col> at the same leaf index.
+      const allTables = [...doc.querySelectorAll('.mp-table')];
+      // Pick any table for the source-of-truth thead / tbody — they live in
+      // separate .mp-table elements when sticky thead is enabled, so collect
+      // both and inject independently.
+      const cellStyle = 'min-width:120px;width:120px;padding:12px 16px;';
+      a.added.columns.forEach((c) => {
+        const id = `voc-added-col-${c.id}`;
+        if (doc.getElementById(id)) return;
+        const klass = `voc-added-col-${c.id}`;
+        // 1) thead (sticky clone or original) — row1 placeholder + row2 leaf
+        allTables.forEach((tbl) => {
+          const thead = tbl.querySelector('thead');
+          if (!thead) return;
+          const trs = thead.querySelectorAll('tr');
+          const colTr = trs[trs.length - 1];
+          const groupTr = trs.length > 1 ? trs[0] : null;
+          const th = doc.createElement('th');
+          th.id = id;
+          th.className = `col-auto scm-voc-added-col ${klass}`;
+          th.textContent = c.label;
+          th.setAttribute('style', cellStyle);
+          const colSpacer = colTr.querySelector('.col-spacer');
+          colTr.insertBefore(th, colSpacer || null);
+          if (groupTr) {
+            const gth = doc.createElement('th');
+            gth.className = `scm-voc-added-col ${klass}`;
+            gth.setAttribute('style', cellStyle);
+            const gSpacer = groupTr.querySelector('.col-spacer');
+            groupTr.insertBefore(gth, gSpacer || null);
+          }
+        });
+        // 2) tbody — one td per row, just before col-spacer
+        allTables.forEach((tbl) => {
+          const tbody = tbl.querySelector('tbody');
+          if (!tbody) return;
+          tbody.querySelectorAll('tr').forEach((tr) => {
+            const td = doc.createElement('td');
+            td.className = `scm-voc-added-col ${klass}`;
+            td.textContent = '—';
+            td.setAttribute('style', cellStyle);
+            const tdSpacer = tr.querySelector('.col-spacer, [data-empty="true"]');
+            tr.insertBefore(td, tdSpacer || null);
+          });
+        });
+        // 3) colgroup — add a <col> matching cell width so scm-table's
+        // moveColumn can keep colgroup-aligned with the leaf row.
+        allTables.forEach((tbl) => {
+          tbl.querySelectorAll(':scope > colgroup').forEach((cg) => {
+            // skip if a col for this added col already exists
+            if (cg.querySelector(`col.${klass}`)) return;
+            const col = doc.createElement('col');
+            col.className = `scm-voc-added-col ${klass}`;
+            col.style.width = '120px';
+            // place before the spacer col (last child if spacer exists)
+            const spacerCol = cg.querySelector('col.col-spacer') || cg.lastElementChild;
+            cg.insertBefore(col, spacerCol);
+          });
+        });
+      });
+    }
+    // Wipe injected DOM and re-inject from applied — used after Save when
+    // the applied state may have lost an entry that was previously on disk.
+    function rebuildAddedDom() {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      doc.querySelectorAll('.scm-voc-added-filter').forEach((el) => el.remove());
+      doc.querySelectorAll('[class*="voc-added-col-"]').forEach((el) => el.remove());
+      applyAddedDom();
+    }
+
+    // ---- save / revert ----
+    function isDirty() {
+      return JSON.stringify(state.draft[state.currentPage] || null)
+          !== JSON.stringify(state.applied[state.currentPage] || null);
+    }
+    function _isFilterSel(s) { return /^\[data-voc-key="flt-/.test(s) || /^#voc-added-filter-/.test(s); }
+    function _isColumnSel(s) { return /^\[data-voc-key="(col|grp)-/.test(s) || /^#voc-added-col-/.test(s); }
+    function _filterSlice(p) {
+      return JSON.stringify({
+        filterOrder: p.filterOrder || [],
+        filterTypes: p.filterTypes || {},
+        added:       (p.added && p.added.filters) || [],
+        hidden:      (p.hidden || []).filter(_isFilterSel),
+      });
+    }
+    function _columnSlice(p) {
+      return JSON.stringify({
+        columnOrder:       p.columnOrder || [],
+        columnLeafOrder:   p.columnLeafOrder || {},
+        showSort:          p.showSort || [],
+        showFilter:        p.showFilter || [],
+        added:             (p.added && p.added.columns) || [],
+        hidden:            (p.hidden || []).filter(_isColumnSel),
+      });
+    }
+    function isFilterDirty() { return _filterSlice(pageDraft()) !== _filterSlice(pageApplied()); }
+    function isColumnDirty() { return _columnSlice(pageDraft()) !== _columnSlice(pageApplied()); }
+    function commitDraft() {
+      // Save also pushes to iframe (in case user hadn't clicked the
+      // section apply buttons yet) so the new baseline is visible.
+      applyAllToIframe();
+      state.applied[state.currentPage] = deepClone(pageDraft());
+      persistApplied();
+      refreshSaveBtn();
+      showToast('저장 완료 — 화면 적용 + baseline');
+    }
+
+    // Move filter chips inside the iframe to match a.filterOrder.
+    // The demo's filter bar splits chips across multiple wrapper divs; to
+    // honor a global order we consolidate every reorderable chip into the
+    // wrapper that already hosts a real native chip, slotting before its
+    // reset button if present.
+    function applyFilterOrderToIframe() {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      const a = pageDraft();   // live preview: read draft so iframe reflects pending changes
+      if (!a.filterOrder || !a.filterOrder.length) return;
+      const filterBar = doc.querySelector('.scm-filter-bar');
+      if (!filterBar) return;
+      const realChip = filterBar.querySelector(
+        '.scm-filter-select[data-mp-filter]:not(.scm-voc-added-filter)'
+      );
+      const wrapper = (realChip && realChip.parentElement) || filterBar.firstElementChild || filterBar;
+      const resetBtn = wrapper.querySelector(':scope > .scm-filter-reset-btn');
+      a.filterOrder.forEach((sel) => {
+        try {
+          const el = doc.querySelector(sel);
+          if (!el) return;
+          if (resetBtn && resetBtn.parentNode === wrapper) wrapper.insertBefore(el, resetBtn);
+          else wrapper.appendChild(el);
+        } catch {}
+      });
+    }
+
+    // Move <th> + corresponding <td>s in the iframe table to match a.columnOrder.
+    // Tagging a temporary data-voc-col-pos correlates header position with
+    // tbody column position even when group rowspan cells (cb / No) shift
+    // the tbody indices. Cleaned up after.
+    // Apply the saved column order to the iframe table. Uses scm-table's own
+    // reorder API (`table._scmReorder`, exposed by setupTableInteractions)
+    // when available — that way we get correct row1+row2+colgroup+tbody+frozen
+    // class handling for free. Falls back to a flat row2/tbody reorder when
+    // the API isn't there (e.g., uninitialized modal sub-tables).
+    function applyColumnOrderToIframe() {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      const a = pageDraft();
+      const hasTopOrder  = Array.isArray(a.columnOrder)   && a.columnOrder.length;
+      const hasLeafOrder = a.columnLeafOrder && Object.keys(a.columnLeafOrder).length;
+      if (!hasTopOrder && !hasLeafOrder) return;
+      // pick the first table that has scm-table API attached
+      const tables = [...doc.querySelectorAll('.mp-table')];
+      const reorderApi = tables.map((t) => t._scmReorder).find(Boolean);
+      if (reorderApi) {
+        applyOrderViaScmTable(reorderApi, a, doc);
+      } else {
+        applyOrderFlat(doc, a);
+      }
+    }
+
+    // ----- scm-table-driven apply (preferred) -----
+    function applyOrderViaScmTable(reorderApi, a, doc) {
+      const model = reorderApi.model;
+      // 1) top-level order: row1 group cells + ungrouped row1 leaves.
+      //    For 1-row tables this is the leaf order itself.
+      if (Array.isArray(a.columnOrder) && a.columnOrder.length) {
+        if (model.isTwoRow) {
+          apply2RowTopOrder(reorderApi, a.columnOrder);
+        } else {
+          apply1RowOrder(reorderApi, a.columnOrder);
+        }
+      }
+      // 2) leaf-within-group order (2-row only)
+      if (model.isTwoRow && a.columnLeafOrder) {
+        Object.keys(a.columnLeafOrder).forEach((groupSel) => {
+          const leaves = a.columnLeafOrder[groupSel];
+          if (!leaves || !leaves.length) return;
+          apply2RowLeafOrder(reorderApi, groupSel, leaves);
+        });
+      }
+      // 3) recompute col-frozen-N classes + --frozen-lN offsets so sticky
+      //    positioning matches the new visual column layout.
+      reorderApi.refreshFrozenClassesAndOffsets();
+    }
+
+    // 1-row tables: drive moveColumn(from, to) per desired leaf position.
+    function apply1RowOrder(reorderApi, desired) {
+      const model = reorderApi.model;
+      // Walk desired leaves L→R; for each, ensure leaf at idx i matches.
+      // Skip non-existent selectors and entries that don't correspond to a
+      // model leaf (e.g., user-added cols that aren't injected yet).
+      let placedCount = 0;
+      desired.forEach((sel) => {
+        const th = _findCell(model.leafTr, sel);
+        if (!th) return;
+        const curIdx = model.thLeafIdx(th);
+        if (curIdx < 0) return;
+        if (curIdx === placedCount) { placedCount++; return; }
+        reorderApi.moveColumn(curIdx, placedCount);
+        placedCount++;
+      });
+    }
+
+    // 2-row tables: row1 reorder. Walk desired top-order; at the i-th
+    // movable row1 position, swap in the desired cell via moveRow1Group.
+    function apply2RowTopOrder(reorderApi, desired) {
+      const row1 = reorderApi.model.row1;
+      if (!row1) return;
+      const isMovable = (c) => {
+        if (!c) return false;
+        if (c.classList.contains('col-spacer') || c.classList.contains('cb-col')) return false;
+        return (parseInt(c.getAttribute('rowspan') || '1', 10) || 1) < 2;
+      };
+      // Filter desired to selectors that map to a movable row1 cell.
+      const movableDesired = desired.filter((sel) => {
+        const c = _findCell(row1, sel);
+        return isMovable(c);
+      });
+      for (let i = 0; i < movableDesired.length; i++) {
+        const desiredSel = movableDesired[i];
+        // i-th movable cell in current DOM
+        let cellAtI = null, count = -1;
+        for (let j = 0; j < row1.children.length; j++) {
+          if (!isMovable(row1.children[j])) continue;
+          count++;
+          if (count === i) { cellAtI = row1.children[j]; break; }
+        }
+        if (!cellAtI) break;
+        const cellAtISel = _selOf(cellAtI);
+        if (cellAtISel === desiredSel) continue;
+        const desiredCell = _findCell(row1, desiredSel);
+        if (!desiredCell || desiredCell === cellAtI) continue;
+        // desiredCell is somewhere AFTER cellAtI (earlier positions already
+        // match), so moveRow1Group → !movingForward → src lands right BEFORE
+        // tgt — i.e. exactly at position i. tgt cellAtI shifts to i+1.
+        reorderApi.moveRow1Group(desiredCell, cellAtI);
+      }
+    }
+
+    // 2-row tables: per-group leaf reorder via moveColumn at absolute leaf idx.
+    function apply2RowLeafOrder(reorderApi, groupSel, desired) {
+      const model = reorderApi.model;
+      const groupCell = _findCell(model.row1, groupSel);
+      if (!groupCell) return;
+      const range = model.row1CellLeafRange(groupCell);
+      if (!range) return;
+      // Walk desired L→R; place each leaf at its absolute leafIdx.
+      for (let i = 0; i < desired.length && i < range.count; i++) {
+        const targetIdx = range.start + i;
+        const desiredTh = _findCell(model.leafTr, desired[i]);
+        if (!desiredTh) continue;
+        const curIdx = model.thLeafIdx(desiredTh);
+        if (curIdx < 0 || curIdx === targetIdx) continue;
+        reorderApi.moveColumn(curIdx, targetIdx);
+      }
+    }
+
+    // Helper: find a th/td inside a parent matching one of our selector forms
+    // (`[data-voc-key="..."]` or `#voc-added-col-...`). Wrapped in try/catch
+    // because ifrCssPath has occasionally produced selectors with characters
+    // CSS doesn't accept; we'd rather skip than throw.
+    function _findCell(parent, sel) {
+      if (!parent || !sel) return null;
+      try { return parent.querySelector(sel); } catch { return null; }
+    }
+    function _selOf(cell) {
+      if (!cell) return null;
+      if (cell.id && cell.id.startsWith('voc-added-col-')) return `#${cell.id}`;
+      if (cell.dataset && cell.dataset.vocKey) return `[data-voc-key="${cell.dataset.vocKey}"]`;
+      return null;
+    }
+
+    // ----- Fallback (no scm-table API) -----
+    // Older flat behavior — only touches row2 + tbody. Kept for sub-tables
+    // that haven't been initialized through scm-table.
+    function applyOrderFlat(doc, a) {
+      if (!Array.isArray(a.columnOrder) || !a.columnOrder.length) return;
+      const thead = doc.querySelector('.mp-table thead');
+      const tbody = doc.querySelector('.mp-table tbody');
+      if (!thead || !tbody) return;
+      const trs = thead.querySelectorAll('tr');
+      const colTr = trs[trs.length - 1];
+      const groupTr = trs.length > 1 ? trs[0] : null;
+      let rowspanOffset = 0;
+      if (groupTr) {
+        [...groupTr.children].forEach((c) => {
+          if (parseInt(c.getAttribute('rowspan') || '1', 10) > 1) rowspanOffset++;
+        });
+      }
+      const ths = [...colTr.children].filter((th) =>
+        th.tagName === 'TH' && !th.classList.contains('col-spacer')
+      );
+      if (!ths.length) return;
+      ths.forEach((th, i) => { th.dataset.vocColPos = String(i); });
+      const tbodyRows = tbody.querySelectorAll('tr');
+      tbodyRows.forEach((tr) => {
+        const tds = [...tr.children].filter((c) => c.tagName === 'TD' && !c.classList.contains('col-spacer'));
+        const dataTds = tds.slice(rowspanOffset);
+        dataTds.forEach((td, i) => { td.dataset.vocColPos = String(i); });
+      });
+      const sortedThs = [];
+      a.columnOrder.forEach((sel) => {
+        try {
+          const th = ths.find((t) => t.matches(sel) && !sortedThs.includes(t));
+          if (th) sortedThs.push(th);
+        } catch {}
+      });
+      ths.forEach((th) => { if (!sortedThs.includes(th)) sortedThs.push(th); });
+      const spacer = colTr.querySelector('.col-spacer');
+      sortedThs.forEach((th) => colTr.insertBefore(th, spacer || null));
+      tbodyRows.forEach((tr) => {
+        const tdSpacer = tr.querySelector('.col-spacer');
+        sortedThs.forEach((th) => {
+          const pos = th.dataset.vocColPos;
+          const td = tr.querySelector(`td[data-voc-col-pos="${pos}"]`);
+          if (td) tr.insertBefore(td, tdSpacer || null);
+        });
+      });
+      ths.forEach((th) => delete th.dataset.vocColPos);
+      tbodyRows.forEach((tr) => {
+        tr.querySelectorAll('[data-voc-col-pos]').forEach((td) => delete td.dataset.vocColPos);
+      });
+    }
+
+    // Stamp data-voc-filter-type on native filter chips (CSS attaches the
+    // M / C badge based on this attribute). Strips the attribute first so
+    // a removed override is reflected.
+    function applyFilterTypesToIframe() {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      const a = pageDraft();   // live preview: read draft so iframe reflects pending changes
+      doc.querySelectorAll('.scm-filter-select[data-mp-filter]').forEach((el) => {
+        if (!el.classList.contains('scm-voc-added-filter')) {
+          delete el.dataset.vocFilterType;
+        }
+      });
+      Object.entries(a.filterTypes || {}).forEach(([sel, type]) => {
+        try {
+          const el = doc.querySelector(sel);
+          if (el && !el.classList.contains('scm-voc-added-filter')) {
+            el.dataset.vocFilterType = type;
+          }
+        } catch {}
+      });
+    }
+    function revertDraft() {
+      // throw away draft for this page; copy applied → draft. Iframe was
+      // showing the (now-discarded) draft state, so re-apply.
+      state.draft[state.currentPage] = state.applied[state.currentPage]
+        ? deepClone(state.applied[state.currentPage]) : {};
+      persistDraft();
+      applyAllToIframe();
+      renderEditPane();
+      refreshSaveBtn();
+      showToast('변경 사항 되돌림');
+    }
+    function refreshSaveBtn() {
+      const dirty       = isDirty();
+      const filterDirty = isFilterDirty();
+      const columnDirty = isColumnDirty();
+      const saveBtn   = document.getElementById('editSaveBtn');
+      const revertBtn = document.getElementById('editRevertBtn');
+      const status    = document.getElementById('editStatus');
+      if (saveBtn)   { saveBtn.disabled   = !dirty; saveBtn.textContent = dirty ? '저장 (데모에 적용)' : '저장됨'; }
+      if (revertBtn)   revertBtn.disabled = !dirty;
+      if (status)    {
+        status.classList.toggle('is-dirty', dirty);
+        status.textContent = dirty ? '저장하지 않은 변경 사항' : '저장됨 · 데모와 동기화';
+      }
+      // Each section's [적용] button enables only when THAT section has
+      // pending edits — filter changes don't enable the column apply etc.
+      document.querySelectorAll('.edit-apply-btn').forEach((b) => {
+        const which = b.dataset.apply;
+        b.disabled = which === 'filter' ? !filterDirty : !columnDirty;
+      });
+    }
+
+    // Stable CSS path for an iframe element (no temp ids).
+    // Stamp a stable, deterministic key on a scanned element so the
+    // selector for it stays valid through reorders. The key is
+    // position-based (`flt-3`, `col-7`) so a page reload re-keys
+    // identically as long as the source DOM order hasn't changed.
+    function ensureVocKey(el, prefix, idx) {
+      if (!el || !el.dataset) return null;
+      if (!el.dataset.vocKey) el.dataset.vocKey = `${prefix}-${idx}`;
+      return el.dataset.vocKey;
+    }
+    function ifrCssPath(el) {
+      if (!el || el.nodeType !== 1) return '';
+      const doc = el.ownerDocument;
+      // Prefer the stamped voc-key — survives reorder, identical across reloads.
+      if (el.dataset && el.dataset.vocKey) {
+        return `[data-voc-key="${el.dataset.vocKey}"]`;
+      }
+      if (el.id && doc.querySelectorAll('#' + CSS.escape(el.id)).length === 1) {
+        return '#' + CSS.escape(el.id);
+      }
+      const parts = [];
+      let cur = el, depth = 0;
+      while (cur && cur.nodeType === 1 && cur.tagName !== 'HTML' && depth < 8) {
+        let part = cur.tagName.toLowerCase();
+        if (cur.id && doc.querySelectorAll('#' + CSS.escape(cur.id)).length === 1) {
+          parts.unshift('#' + CSS.escape(cur.id));
+          break;
+        }
+        const cls = [...cur.classList]
+          .filter((c) => !c.startsWith('scm-voc-'))
+          .slice(0, 2);
+        if (cls.length) part += '.' + cls.map((c) => CSS.escape(c)).join('.');
+        let nth = 1, sib = cur;
+        while ((sib = sib.previousElementSibling)) {
+          if (sib.tagName === cur.tagName) nth++;
+        }
+        if (nth > 1) part += `:nth-of-type(${nth})`;
+        parts.unshift(part);
+        cur = cur.parentElement;
+        depth++;
+      }
+      return parts.join(' > ');
+    }
+
+    function pickLabel(el) {
+      const head = el.querySelector('.scm-card-title, .scm-page-section__title, .scm-page-head__title, h1, h2, h3, h4, .scm-filter-select__label');
+      if (head && head.textContent.trim()) return head.textContent.trim().replace(/\s+/g, ' ').slice(0, 40);
+      const t = (el.getAttribute('aria-label') || el.title || '').trim();
+      if (t) return t.slice(0, 40);
+      const txt = (el.textContent || '').trim().replace(/\s+/g, ' ');
+      if (txt) return txt.slice(0, 40);
+      // fall back to leading class name
+      const cls = [...el.classList].find((c) => c.startsWith('scm-') || c.startsWith('db-')) || el.tagName.toLowerCase();
+      return cls;
+    }
+
+    // Scan iframe for editable filters / columns / components.
+    function scanEditTargets() {
+      // groups + topOrder are populated only for 2-row scm-tables. For
+      // 1-row tables (most demos) groups stays [] and columns get parent=null,
+      // and topOrder mirrors the flat column scan.
+      const out = { filters: [], columns: [], groups: [], topOrder: [], components: [] };
+      const doc = iframe.contentDocument;
+      if (!doc) return out;
+      const main = doc.querySelector('main') || doc.body;
+
+      // Filters — every .scm-filter-select chip with a data-mp-filter
+      // (data-mp-filter is the marker for "real" filter chips; search box,
+      // reset button, "전체 필터" launcher don't carry it, so they're
+      // automatically excluded). User-added chips carry .scm-voc-added-filter
+      // and are surfaced separately from the draft list, so we skip them
+      // here to avoid duplicates in the edit pane.
+      const filterEls = main.querySelectorAll(
+        '.scm-filter-bar .scm-filter-select[data-mp-filter]:not(.scm-voc-added-filter)'
+      );
+      const filterSeen = new Set();
+      filterEls.forEach((el, i) => {
+        ensureVocKey(el, 'flt', i);
+        const sel = ifrCssPath(el);
+        if (filterSeen.has(sel)) return;
+        filterSeen.add(sel);
+        const labEl = el.querySelector('.scm-filter-select__label');
+        const valEl = el.querySelector('.scm-filter-select__value');
+        let label = (labEl && labEl.textContent.trim())
+                 || (valEl && valEl.textContent.trim())
+                 || el.dataset.mpFilter || '필터';
+        label = label.replace(/\s+/g, ' ').slice(0, 28);
+        out.filters.push({ label, selector: sel });
+      });
+
+      // Table columns — pick the FIRST .mp-table thead (sticky clone if
+      // present; otherwise the original). scm-table moves the original
+      // thead into a sticky clone, so usually the first match is the clone.
+      // We walk row 0 (group row, if any) to detect groups + their parent
+      // mapping, then row 1 (leaves). For 1-row tables row 0 == row 1 and
+      // every leaf is "ungrouped" (parent: null).
+      const colSeen = new Set();
+      let colCounter = 0;
+      let grpCounter = 0;
+      const theads = [...main.querySelectorAll('.mp-table thead')];
+      const primaryThead = theads[0] || null;
+      if (primaryThead) {
+        const trAll = [...primaryThead.querySelectorAll('tr')];
+        const groupTr = trAll.length > 1 ? trAll[0] : null;
+        const leafTr  = trAll[trAll.length - 1] || null;
+        // leafChildIdx-aligned parent map (built when groupTr exists).
+        const leafParentByPos = [];
+        if (groupTr) {
+          let leafIdx = 0;
+          [...groupTr.children].forEach((cell) => {
+            if (cell.classList.contains('col-spacer')) return;
+            if (cell.classList.contains('scm-voc-added-col')) return;
+            const colspan = parseInt(cell.getAttribute('colspan') || '1', 10);
+            const rowspan = parseInt(cell.getAttribute('rowspan') || '1', 10);
+            if (rowspan > 1) {
+              // ungrouped row1 leaf (rs=2): cell IS the leaf. We surface
+              // it in `columns` with parent=null + draggable=false (scm-table
+              // refuses to drop on rs>=2 cells, so it can't be reordered
+              // anyway — render-side just disables drag/grip).
+              if (cell.classList.contains('cb-col')) return;
+              ensureVocKey(cell, 'col', colCounter++);
+              const sel = ifrCssPath(cell);
+              if (!colSeen.has(sel)) {
+                colSeen.add(sel);
+                let label = (cell.textContent || '').trim().replace(/\s+/g, ' ');
+                if (!label) label = '(빈 컬럼)';
+                if (label.length > 28) label = label.slice(0, 28) + '…';
+                out.columns.push({ label, selector: sel, parent: null, draggable: false, anchor: true });
+                out.topOrder.push(sel);
+              }
+            } else if (colspan > 1) {
+              // native group — stamp grp-N. Children below in row 2 get
+              // parent = this group's selector (one entry per leafIdx).
+              ensureVocKey(cell, 'grp', grpCounter++);
+              const gsel = ifrCssPath(cell);
+              let glabel = (cell.textContent || '').trim().replace(/\s+/g, ' ');
+              if (!glabel) glabel = '(그룹)';
+              if (glabel.length > 28) glabel = glabel.slice(0, 28) + '…';
+              out.groups.push({ label: glabel, selector: gsel });
+              out.topOrder.push(gsel);
+              for (let i = 0; i < colspan; i++) leafParentByPos[leafIdx + i] = gsel;
+              leafIdx += colspan;
+            } else {
+              // colspan=1 + rowspan=1 in row 1 (rare): ungrouped row1 leaf
+              ensureVocKey(cell, 'col', colCounter++);
+              const sel = ifrCssPath(cell);
+              if (!colSeen.has(sel)) {
+                colSeen.add(sel);
+                let label = (cell.textContent || '').trim().replace(/\s+/g, ' ');
+                if (!label) label = '(빈 컬럼)';
+                if (label.length > 28) label = label.slice(0, 28) + '…';
+                out.columns.push({ label, selector: sel, parent: null, draggable: true, anchor: false });
+                out.topOrder.push(sel);
+              }
+            }
+          });
+        }
+        // Walk the leaf row. For 1-row tables, this is the only row and
+        // we hit every leaf here; parent stays null. For 2-row tables the
+        // group row above already populated leafParentByPos.
+        if (leafTr) {
+          let leafChildIdx = 0;
+          [...leafTr.children].forEach((th) => {
+            if (th.classList.contains('col-spacer') || th.classList.contains('cb-col')) return;
+            if (th.classList.contains('scm-voc-added-col')) return;
+            const colspan = parseInt(th.getAttribute('colspan') || '1', 10);
+            if (colspan > 1) {
+              // group cell already handled above (only happens when groupTr
+              // === leafTr, i.e. 1-row tables — but then colspan>1 is rare;
+              // skip it the same way the old code did)
+              leafChildIdx += colspan;
+              return;
+            }
+            const parent = groupTr ? (leafParentByPos[leafChildIdx] || null) : null;
+            ensureVocKey(th, 'col', colCounter++);
+            const sel = ifrCssPath(th);
+            leafChildIdx += 1;
+            if (colSeen.has(sel)) return;
+            colSeen.add(sel);
+            let label = (th.textContent || '').trim().replace(/\s+/g, ' ');
+            if (!label) label = '(빈 컬럼)';
+            if (label.length > 28) label = label.slice(0, 28) + '…';
+            out.columns.push({ label, selector: sel, parent, draggable: true, anchor: false });
+            // 1-row tables: every leaf is also a top-level entry.
+            // 2-row tables: leaves under groups belong to columnLeafOrder, NOT topOrder.
+            if (!groupTr) out.topOrder.push(sel);
+          });
+        }
+      }
+
+      // Components — top-level scm-card / scm-page-section / scm-kpi-card / etc.
+      const compSel = '.scm-card, .scm-page-section, .scm-kpi-card, .scm-bar-chart, .db-pending-list, .db-schedule-list, .db-quick-grid';
+      const compEls = main.querySelectorAll(compSel);
+      const taken = new Set();
+      compEls.forEach((el) => {
+        // skip if a parent of `el` is also a detected component
+        for (const t of taken) { if (t.contains(el)) return; }
+        taken.add(el);
+        out.components.push({ label: pickLabel(el), selector: ifrCssPath(el) });
+      });
+
+      return out;
+    }
+
+    // Reorder a flat row list to match a saved order array.
+    // Items missing from order are appended at the end (e.g., newly added).
+    function orderRows(rows, orderArr) {
+      if (!orderArr || !orderArr.length) return rows;
+      const map = new Map(rows.map((r) => [r.selector, r]));
+      const ordered = [];
+      orderArr.forEach((sel) => {
+        if (map.has(sel)) { ordered.push(map.get(sel)); map.delete(sel); }
+      });
+      for (const r of map.values()) ordered.push(r);
+      return ordered;
+    }
+
+    function renderEditPane() {
+      const targets = scanEditTargets();
+      const d = pageDraft();
+      const hidden     = new Set(d.hidden);
+      const showSort   = new Set(d.showSort);
+      const showFilter = new Set(d.showFilter);
+
+      // merge native + user-added items, then sort by saved order
+      const filterRowsRaw = [
+        ...targets.filters.map((it) => ({ ...it, kind: 'filter' })),
+        ...d.added.filters.map((f) => ({
+          label: f.label, kind: 'filter',
+          selector: `#voc-added-filter-${f.id}`,
+          added: f, type: f.type,
+        })),
+      ];
+      // ---- 2-level column rows ----
+      // Top-level: groups + ungrouped row1 leaves (e.g. "No") + user-added cols.
+      // Below each native group, indent its leaves (depth=1) per
+      // columnLeafOrder[groupSel] OR (when empty) the natural scan order.
+      const groupBySel = Object.fromEntries((targets.groups || []).map((g) => [g.selector, g]));
+      const colBySel   = Object.fromEntries((targets.columns || []).map((c) => [c.selector, c]));
+      const naturalLeavesByGroup = {};
+      (targets.columns || []).forEach((c) => {
+        if (!c.parent) return;
+        (naturalLeavesByGroup[c.parent] = naturalLeavesByGroup[c.parent] || []).push(c.selector);
+      });
+      const addedColMeta = d.added.columns.map((c) => ({
+        label: c.label, kind: 'column',
+        selector: `#voc-added-col-${c.id}`,
+        added: c, parent: null, draggable: true, anchor: false,
+      }));
+      const addedBySel = Object.fromEntries(addedColMeta.map((c) => [c.selector, c]));
+      // Effective top-level order: user's saved columnOrder, falling back to
+      // natural topOrder when empty. Append any items missing from saved
+      // order (e.g. user-added cols added since save) at the end.
+      const naturalTop = (targets.topOrder || []).slice();
+      const allTop = [...naturalTop, ...addedColMeta.map((c) => c.selector)];
+      const allTopSet = new Set(allTop);
+      const savedTop = (d.columnOrder || []).filter((s) => allTopSet.has(s));
+      const savedSet = new Set(savedTop);
+      const effectiveTop = savedTop.length
+        ? [...savedTop, ...allTop.filter((s) => !savedSet.has(s))]
+        : allTop;
+      const columnRows = [];
+      effectiveTop.forEach((sel) => {
+        const grp = groupBySel[sel];
+        if (grp) {
+          // group header row
+          const naturalLeaves = naturalLeavesByGroup[sel] || [];
+          const savedLeaves = (d.columnLeafOrder && d.columnLeafOrder[sel]) || [];
+          const validSavedLeaves = savedLeaves.filter((s) => naturalLeaves.includes(s));
+          const validSet = new Set(validSavedLeaves);
+          const leafOrder = validSavedLeaves.length
+            ? [...validSavedLeaves, ...naturalLeaves.filter((s) => !validSet.has(s))]
+            : naturalLeaves;
+          columnRows.push({
+            kind: 'column', isGroup: true, depth: 0,
+            label: grp.label, selector: sel,
+            childCount: naturalLeaves.length,
+            parent: null, draggable: true,
+          });
+          leafOrder.forEach((lsel) => {
+            const leaf = colBySel[lsel];
+            if (!leaf) return;
+            columnRows.push({ ...leaf, kind: 'column', depth: 1 });
+          });
+          return;
+        }
+        // top-level leaf (ungrouped native, e.g. "No") or user-added col
+        const native = colBySel[sel];
+        if (native) {
+          columnRows.push({ ...native, kind: 'column', depth: 0 });
+          return;
+        }
+        const added = addedBySel[sel];
+        if (added) {
+          columnRows.push({ ...added, kind: 'column', depth: 0 });
+          return;
+        }
+      });
+      const filterRows    = orderRows(filterRowsRaw, d.filterOrder);
+      const componentRows = targets.components.map((it) => ({ ...it, kind: 'component' }));
+
+      const renderList = (containerId, countId, items) => {
+        const cnt = document.getElementById(countId);
+        const list = document.getElementById(containerId);
+        if (cnt) cnt.textContent = String(items.length);
+        if (!list) return;
+        list.innerHTML = items.map((it) => {
+          const isHidden = hidden.has(it.selector);
+          const cls = ['edit-row'];
+          if (isHidden)  cls.push('is-hidden');
+          if (it.added)  cls.push('is-added');
+          if (it.isGroup)  cls.push('is-group');
+          if (it.depth === 1) cls.push('is-leaf');
+          if (it.anchor) cls.push('is-anchor');
+          const sel = escapeHtml(it.selector);
+          let middle = '';
+          if (it.kind === 'column' && !it.added && !it.isGroup) {
+            // leaf column gets sort/filter icon toggles (group + added skip)
+            const sortOn   = showSort.has(it.selector);
+            const filterOn = showFilter.has(it.selector);
+            middle = `
+              <button type="button" class="edit-row__icon-toggle ${sortOn ? 'is-on' : ''}"   data-toggle-icon="sort"   data-selector="${sel}" title="컬럼 정렬 아이콘 표시/숨김">정렬</button>
+              <button type="button" class="edit-row__icon-toggle ${filterOn ? 'is-on' : ''}" data-toggle-icon="filter" data-selector="${sel}" title="컬럼 필터 아이콘 표시/숨김">필터</button>`;
+          } else if (it.isGroup) {
+            // group header — show the leaf-count badge for orientation
+            middle = `<span class="edit-row__group-count" title="이 그룹의 컬럼 수">${it.childCount}</span>`;
+          } else if (it.kind === 'filter') {
+            // EVERY filter row (native + added) gets the type select
+            const currentType = it.added ? (it.type || 'single') : (d.filterTypes[it.selector] || 'single');
+            const source = it.added ? 'added' : 'native';
+            const key    = it.added ? escapeHtml(it.added.id) : sel;
+            middle = `
+              <select class="edit-row__type-select" data-filter-type-source="${source}" data-filter-type-key="${key}" title="필터 타입 변경">
+                <option value="single" ${currentType === 'single' ? 'selected' : ''}>싱글</option>
+                <option value="multi"  ${currentType === 'multi'  ? 'selected' : ''}>멀티</option>
+                <option value="code"   ${currentType === 'code'   ? 'selected' : ''}>코드</option>
+              </select>`;
+          }
+          const del = it.added
+            ? `<button type="button" class="edit-row__del" data-del-${it.kind}="${escapeHtml(it.added.id)}" title="삭제">×</button>`
+            : '';
+          // Reorderable iff kind is filter/column AND it.draggable !== false.
+          // Anchor row1 cells (rs>=2 like "No") have draggable=false — we
+          // surface them in the list (so the user sees them) but disallow
+          // drag because scm-table itself rejects drops on rs>=2 cells.
+          const isAnchor = it.kind === 'column' && it.draggable === false;
+          const reorderable = (it.kind === 'filter' || it.kind === 'column') && !isAnchor;
+          const depth = it.kind === 'column' ? (it.depth | 0) : 0;
+          const dragParent = (it.kind === 'column' && depth === 1 && it.parent) ? it.parent : '';
+          const dragAttrs = reorderable
+            ? ` draggable="true" data-drag-id="${sel}" data-drag-kind="${it.kind}" data-drag-depth="${depth}" data-drag-parent="${escapeHtml(dragParent)}"`
+            : '';
+          const grip = reorderable
+            ? '<span class="edit-row__grip" aria-hidden="true" title="드래그하여 순서 변경"><svg viewBox="0 0 6 12" fill="currentColor"><circle cx="1.25" cy="2" r="1"/><circle cx="4.75" cy="2" r="1"/><circle cx="1.25" cy="6" r="1"/><circle cx="4.75" cy="6" r="1"/><circle cx="1.25" cy="10" r="1"/><circle cx="4.75" cy="10" r="1"/></svg></span>'
+            : (it.kind === 'column' ? '<span class="edit-row__grip edit-row__grip--locked" aria-hidden="true" title="고정 컬럼 — 이동 불가">🔒</span>' : '');
+          if (it.isGroup) {
+            // group header — no checkbox (groups aren't hidable as a unit)
+            return `
+              <div class="${cls.join(' ')}"${dragAttrs}>
+                ${grip}
+                <span class="edit-row__check edit-row__check--placeholder" aria-hidden="true"></span>
+                <span class="edit-row__label">${escapeHtml(it.label)}</span>
+                ${middle}
+              </div>`;
+          }
+          return `
+            <label class="${cls.join(' ')}"${dragAttrs}>
+              ${grip}
+              <input type="checkbox" class="edit-row__check" data-selector="${sel}" ${isHidden ? '' : 'checked'} />
+              <span class="edit-row__label">${escapeHtml(it.label)}</span>
+              ${middle}
+              <button type="button" class="edit-row__locate" data-locate="${sel}" title="화면에서 위치 확인">↗</button>
+              ${del}
+            </label>`;
+        }).join('');
+      };
+
+      renderList('editFilterList',    'editFilterCount',    filterRows);
+      renderList('editColumnList',    'editColumnCount',    columnRows);
+      renderList('editComponentList', 'editComponentCount', componentRows);
+      refreshSaveBtn();
+    }
+
+    // ----- delegated handlers for the edit pane -----
+    // ----- drag-and-drop reorder -----
+    // Drop is valid only when (kind, depth, parent) all match — this enforces
+    // "groups reorder among groups" + "leaves reorder within their own group".
+    let _dragState = null;
+    function _dropOk(row) {
+      if (!_dragState) return false;
+      if (row.dataset.dragKind   !== _dragState.kind)   return false;
+      if ((row.dataset.dragDepth  || '0') !== _dragState.depth)  return false;
+      if ((row.dataset.dragParent || '') !== _dragState.parent) return false;
+      if (row.dataset.dragId     === _dragState.id)     return false;
+      return true;
+    }
+    document.addEventListener('dragstart', (e) => {
+      const row = e.target.closest && e.target.closest('.edit-row[data-drag-id]');
+      if (!row) return;
+      _dragState = {
+        kind:   row.dataset.dragKind,
+        id:     row.dataset.dragId,
+        depth:  row.dataset.dragDepth  || '0',
+        parent: row.dataset.dragParent || '',
+      };
+      row.classList.add('is-dragging');
+      try {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', row.dataset.dragId);
+      } catch {}
+    });
+    document.addEventListener('dragover', (e) => {
+      if (!_dragState) return;
+      const row = e.target.closest && e.target.closest('.edit-row[data-drag-id]');
+      if (!row || !_dropOk(row)) return;
+      e.preventDefault();
+      try { e.dataTransfer.dropEffect = 'move'; } catch {}
+      const r = row.getBoundingClientRect();
+      const above = (e.clientY - r.top) < r.height / 2;
+      document.querySelectorAll('.edit-row.is-drop-above, .edit-row.is-drop-below')
+        .forEach((el) => el.classList.remove('is-drop-above', 'is-drop-below'));
+      row.classList.add(above ? 'is-drop-above' : 'is-drop-below');
+    });
+    document.addEventListener('dragleave', (e) => {
+      const row = e.target.closest && e.target.closest('.edit-row[data-drag-id]');
+      if (row) row.classList.remove('is-drop-above', 'is-drop-below');
+    });
+    document.addEventListener('drop', (e) => {
+      if (!_dragState) return;
+      const row = e.target.closest && e.target.closest('.edit-row[data-drag-id]');
+      if (!row || !_dropOk(row)) return;
+      e.preventDefault();
+      const above = row.classList.contains('is-drop-above');
+      // depth=1 with non-empty parent → mutate columnLeafOrder[parent].
+      // depth=0 → mutate top-level columnOrder.
+      const parent = (_dragState.kind === 'column' && _dragState.depth === '1' && _dragState.parent)
+        ? _dragState.parent : null;
+      moveItem(_dragState.kind, _dragState.id, row.dataset.dragId, above, parent);
+      _dragState = null;
+    });
+    document.addEventListener('dragend', () => {
+      document.querySelectorAll('.is-dragging, .is-drop-above, .is-drop-below')
+        .forEach((el) => el.classList.remove('is-dragging', 'is-drop-above', 'is-drop-below'));
+      _dragState = null;
+    });
+
+    document.addEventListener('change', (e) => {
+      const t = e.target;
+      const cb = t.closest && t.closest('.edit-row__check');
+      if (cb) {
+        const sel = cb.dataset.selector;
+        if (sel) {
+          setHidden(sel, !cb.checked);
+          cb.closest('.edit-row').classList.toggle('is-hidden', !cb.checked);
+        }
+        return;
+      }
+      const ts = t.closest && t.closest('[data-filter-type-key]');
+      if (ts) {
+        if (ts.dataset.filterTypeSource === 'added') {
+          updateAddedFilterType(ts.dataset.filterTypeKey, ts.value);
+        } else {
+          setFilterType(ts.dataset.filterTypeKey, ts.value);
+        }
+        return;
+      }
+    });
+    document.addEventListener('click', (e) => {
+      const t = e.target;
+      // locate
+      const lo = t.closest && t.closest('.edit-row__locate');
+      if (lo) {
+        e.preventDefault();
+        const sel = lo.dataset.locate;
+        if (sel) postIframe({ type: 'voc-flash', selector: sel });
+        return;
+      }
+      // sort/filter icon toggle
+      const tg = t.closest && t.closest('.edit-row__icon-toggle');
+      if (tg) {
+        e.preventDefault();
+        const sel = tg.dataset.selector;
+        const kind = tg.dataset.toggleIcon;
+        const wasOn = tg.classList.contains('is-on');
+        setIconShown(sel, kind, !wasOn);  // turning ON = add to showSort/showFilter
+        tg.classList.toggle('is-on', !wasOn);
+        return;
+      }
+      // delete added filter / column
+      const dF = t.closest && t.closest('[data-del-filter]');
+      if (dF) {
+        e.preventDefault();
+        if (confirm('이 추가 항목을 삭제할까요?')) removeAddedFilter(dF.dataset.delFilter);
+        return;
+      }
+      const dC = t.closest && t.closest('[data-del-column]');
+      if (dC) {
+        e.preventDefault();
+        if (confirm('이 추가 컬럼을 삭제할까요?')) removeAddedColumn(dC.dataset.delColumn);
+        return;
+      }
+      // section apply — push current draft to the left-side iframe (preview).
+      // Save still does the same push + persists the baseline.
+      const applyBtn = t.closest && t.closest('.edit-apply-btn');
+      if (applyBtn) {
+        e.preventDefault();
+        if (applyBtn.disabled) return;
+        const which = applyBtn.dataset.apply;
+        if (which === 'filter') applyFilterSectionToIframe();
+        else if (which === 'column') applyColumnSectionToIframe();
+        else applyAllToIframe();
+        showToast('편집 내용이 좌측 데모에 반영됐습니다');
+        return;
+      }
+      // open / cancel / submit add forms
+      const addBtn = t.closest && t.closest('.edit-add-btn');
+      if (addBtn) {
+        e.preventDefault();
+        const which = addBtn.dataset.add;
+        const form = document.getElementById(which === 'filter' ? 'addFilterForm' : 'addColumnForm');
+        if (form) {
+          form.classList.add('is-open');
+          addBtn.style.display = 'none';
+          setTimeout(() => { const inp = form.querySelector('input'); inp && inp.focus(); }, 0);
+        }
+        return;
+      }
+      const cancel = t.closest && t.closest('[data-cancel]');
+      if (cancel) {
+        e.preventDefault();
+        const which = cancel.dataset.cancel;
+        const form = document.getElementById(which === 'filter' ? 'addFilterForm' : 'addColumnForm');
+        if (form) {
+          form.classList.remove('is-open');
+          form.querySelectorAll('input').forEach((i) => (i.value = ''));
+          const btn = form.parentElement.querySelector('.edit-add-btn');
+          if (btn) btn.style.display = '';
+        }
+        return;
+      }
+      const submit = t.closest && t.closest('[data-submit]');
+      if (submit) {
+        e.preventDefault();
+        const which = submit.dataset.submit;
+        if (which === 'filter') {
+          const label = (document.getElementById('addFilterLabel').value || '').trim();
+          const type  = document.getElementById('addFilterType').value || 'single';
+          if (!label) { document.getElementById('addFilterLabel').focus(); return; }
+          addFilter(label, type);
+          document.getElementById('addFilterLabel').value = '';
+          document.getElementById('addFilterForm').classList.remove('is-open');
+          document.querySelector('.edit-add-btn[data-add="filter"]').style.display = '';
+        } else {
+          const label = (document.getElementById('addColumnLabel').value || '').trim();
+          if (!label) { document.getElementById('addColumnLabel').focus(); return; }
+          addColumn(label);
+          document.getElementById('addColumnLabel').value = '';
+          document.getElementById('addColumnForm').classList.remove('is-open');
+          document.querySelector('.edit-add-btn[data-add="column"]').style.display = '';
+        }
+        return;
+      }
+    });
+
+    // ====================================================
+    // List
+    // ====================================================
+    function renderList() {
+      const all = state.comments;
+      const onPage = all.filter((c) => c.page === state.currentPage);
+      const open   = all.filter((c) => c.status !== 'resolved');
+      const done   = all.filter((c) => c.status === 'resolved');
+
+      $('#cntAll').textContent = all.length;
+      $('#cntPage').textContent = onPage.length;
+      $('#cntOpen').textContent = open.length;
+      $('#cntResolved').textContent = done.length;
+
+      let list;
+      if (state.filter === 'page') list = onPage;
+      else if (state.filter === 'open') list = open;
+      else if (state.filter === 'resolved') list = done;
+      else list = all;
+
+      list = [...list].sort((a, b) => {
+        const ap = a.page === state.currentPage ? 0 : 1;
+        const bp = b.page === state.currentPage ? 0 : 1;
+        if (ap !== bp) return ap - bp;
+        return b.createdAt - a.createdAt;
+      });
+
+      cmtCount.textContent = list.length;
+
+      if (list.length === 0) {
+        cmtList.innerHTML = `
+          <div class="side__empty">
+            <div class="em">💭</div>
+            <div>${state.filter === 'page'
+              ? '이 페이지에 코멘트가 없습니다.<br/>데모의 <span class="accent">우하단 💬 버튼</span>으로<br/>현업이 의견을 남기면 여기에 표시됩니다.'
+              : '조건에 맞는 코멘트가 없습니다.'}</div>
+          </div>`;
+        return;
+      }
+
+      const idxByPage = new Map();
+      [...state.comments].sort((a, b) => a.createdAt - b.createdAt).forEach((c) => {
+        const arr = idxByPage.get(c.page) || [];
+        arr.push(c.id);
+        idxByPage.set(c.page, arr);
+      });
+      const idxOf = (c) => (idxByPage.get(c.page) || []).indexOf(c.id) + 1;
+
+      cmtList.innerHTML = list.map((c) => {
+        const last = c.thread[c.thread.length - 1];
+        const cls = ['cmt'];
+        if (c.status === 'resolved') cls.push('is-resolved');
+        if (c.page !== state.currentPage) cls.push('is-other-page');
+        if (c.proposal && (c.proposal.note || c.proposal.css)) cls.push('has-proposal');
+        if (state.simActive.has(c.id)) cls.push('is-sim-active');
+        return `
+          <div class="${cls.join(' ')}" data-cmt-id="${c.id}">
+            <div class="cmt__head">
+              <span class="cmt__num" style="background:${roleColor(c.authorRole, c.author)};">${idxOf(c)}</span>
+              <span class="cmt__target">${escapeHtml(shortTarget(c))}</span>
+              ${state.simActive.has(c.id) ? '<span class="cmt__sim">SIM</span>' : ''}
+              <span class="cmt__status">${c.status === 'resolved' ? '해결됨' : '미해결'}</span>
+            </div>
+            <div class="cmt__page">📄 ${escapeHtml(pageLabel(c.page))}</div>
+            <div class="cmt__body">${escapeHtml(last ? last.text : '')}</div>
+            <div class="cmt__meta">
+              <span class="author">${escapeHtml(c.author || '익명')}</span>
+              <span>·</span>
+              <span>${relTime(c.createdAt)}</span>
+              ${c.thread.length > 1 ? `<span class="cmt__replies">💬 ${c.thread.length}</span>` : ''}
+              ${c.proposal && (c.proposal.note || c.proposal.css) ? '<span class="cmt__proposal-flag">· 개선안 있음</span>' : ''}
+            </div>
+          </div>`;
+      }).join('');
+
+      cmtList.querySelectorAll('.cmt').forEach((el) => {
+        el.addEventListener('click', () => openDetail(el.dataset.cmtId));
+      });
+    }
+
+    function onFilterClick(e) {
+      const btn = e.target.closest('.chip');
+      if (!btn) return;
+      filters.querySelectorAll('.chip').forEach((b) => b.classList.toggle('is-active', b === btn));
+      state.filter = btn.dataset.filter;
+      renderList();
+    }
+
+    // ====================================================
+    // Detail
+    // ====================================================
+    function openDetail(id) {
+      const c = findById(id);
+      if (!c) return;
+
+      // If comment is on a different page, switch iframe first then open detail.
+      if (c.page !== state.currentPage) {
+        state.selectedId = id;
+        navigateTo(c.page);
+        // wait until iframe ready, then locate + render
+        const onReady = (e) => {
+          if (!e.data || e.data.type !== 'voc-ready') return;
+          window.removeEventListener('message', onReady);
+          renderDetail(c);
+          showDetail();
+          flashLocate(c);
+        };
+        window.addEventListener('message', onReady);
+        return;
+      }
+
+      state.selectedId = id;
+      renderDetail(c);
+      showDetail();
+      flashLocate(c);
+    }
+
+    function showDetail() {
+      state.view = 'detail';
+      listView.hidden = true;
+      detailView.hidden = false;
+    }
+    function goList() {
+      state.view = 'list';
+      state.selectedId = null;
+      listView.hidden = false;
+      detailView.hidden = true;
+      renderList();
+    }
+
+    function renderDetail(c) {
+      const idx = indexOfInPage(c);
+      dNum.textContent = String(idx);
+      dNum.classList.toggle('is-resolved', c.status === 'resolved');
+      // resolved keeps the green badge; otherwise tint by author color
+      dNum.style.background = c.status === 'resolved' ? '' : roleColor(c.authorRole, c.author);
+      dPage.textContent = c.page;
+      dStatus.textContent = c.status === 'resolved' ? '해결됨' : '미해결';
+      dStatus.classList.toggle('is-resolved', c.status === 'resolved');
+
+      dTag.textContent = '<' + (c.elementTag || '').toLowerCase() + '>';
+      dText.textContent = c.elementText || '(텍스트 없음)';
+      dSel.textContent = c.selector || '—';
+      dCoord.textContent = `x: ${c.x}, y: ${c.y}`;
+      dSelHint.textContent = c.selector || '<selector>';
+
+      // Replies
+      dReplies.innerHTML = c.thread.map((r) => `
+        <div class="reply" data-reply-id="${r.id}">
+          <div class="reply__meta">
+            <span class="reply__author">${escapeHtml(r.author || '익명')}</span>
+            <span>·</span>
+            <span>${relTime(r.createdAt)}</span>
+            ${r.author === state.user.email ? `<button class="reply__del" data-del="${r.id}" title="삭제">삭제</button>` : ''}
+          </div>
+          <div class="reply__body">${escapeHtml(r.text)}</div>
+        </div>
+      `).join('');
+      dReplies.querySelectorAll('[data-del]').forEach((b) => {
+        b.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteReply(c.id, b.dataset.del);
+        });
+      });
+
+      dReply.value = '';
+
+      // Proposal
+      const p = c.proposal || {};
+      dNote.value = p.note || '';
+      dCss.value  = p.css  || defaultCssTemplate(c);
+
+      // Resolve button label
+      $('#dResolveBtn').textContent = c.status === 'resolved' ? '↩ 미해결로 되돌리기' : '✓ 해결됨으로 표시';
+      // Sim button label
+      const isSim = state.simActive.has(c.id);
+      const simBtn = $('#simApplyBtn');
+      simBtn.textContent = isSim ? '🔄 시뮬 다시 적용' : '▶ 시뮬레이션 적용';
+      $('#simResetBtn').disabled = !isSim;
+
+      flashSavedLabel(false);
+    }
+
+    function flashSavedLabel(on) {
+      dSaved.classList.toggle('is-on', !!on);
+      if (on) setTimeout(() => dSaved.classList.remove('is-on'), 1400);
+    }
+
+    // ====================================================
+    // Mutations
+    // ====================================================
+    function onReply() {
+      const c = findById(state.selectedId);
+      if (!c) return;
+      const text = dReply.value.trim();
+      if (!text) { dReply.focus(); return; }
+      c.thread.push({ id: uid('r'), author: state.user.email, text, createdAt: now() });
+      persist();
+      renderDetail(c);
+      renderList();
+      showToast('답글 등록');
+    }
+
+    function deleteReply(commentId, replyId) {
+      const c = findById(commentId);
+      if (!c) return;
+      if (c.thread.length === 1) {
+        if (!confirm('마지막 코멘트입니다. 핀 전체가 삭제됩니다. 계속할까요?')) return;
+        return doDelete(c.id);
+      }
+      c.thread = c.thread.filter((r) => r.id !== replyId);
+      persist();
+      renderDetail(c);
+      renderList();
+    }
+
+    function saveProposal(announce) {
+      const c = findById(state.selectedId);
+      if (!c) return;
+      const note = dNote.value;
+      const css  = dCss.value;
+      const had = c.proposal;
+      c.proposal = {
+        note,
+        css,
+        updatedAt: now(),
+        updatedBy: state.user.email,
+      };
+      // if note + css are both empty/default, clear proposal
+      if (!note.trim() && (!css.trim() || css.trim() === defaultCssTemplate(c).trim())) {
+        delete c.proposal;
+      }
+      persist();
+      renderList();
+      flashSavedLabel(true);
+      if (announce) showToast(c.proposal ? '개선안 저장' : '개선안 비움');
+      // if a sim is currently applied for this comment, refresh it with new CSS
+      if (state.simActive.has(c.id) && c.proposal) {
+        postIframe({ type: 'voc-sim-apply', id: c.id, css: c.proposal.css });
+      }
+    }
+
+    function onSimApply() {
+      const c = findById(state.selectedId);
+      if (!c) return;
+      // Make sure latest CSS is saved
+      saveProposal(false);
+      const css = (c.proposal && c.proposal.css) || dCss.value || '';
+      if (!css.trim()) { showToast('CSS 가 비어있습니다'); return; }
+
+      // Sim only works on current page.
+      if (c.page !== state.currentPage) {
+        navigateTo(c.page);
+        const onReady = (e) => {
+          if (!e.data || e.data.type !== 'voc-ready') return;
+          window.removeEventListener('message', onReady);
+          postIframe({ type: 'voc-sim-apply', id: c.id, css });
+          state.simActive.add(c.id);
+          updateSimStatus();
+          renderDetail(c);
+          renderList();
+          flashLocate(c);
+        };
+        window.addEventListener('message', onReady);
+        return;
+      }
+      postIframe({ type: 'voc-sim-apply', id: c.id, css });
+      state.simActive.add(c.id);
+      updateSimStatus();
+      renderDetail(c);
+      renderList();
+      flashLocate(c);
+      showToast('시뮬레이션 적용 — 데모에 즉시 반영됨');
+    }
+
+    function onSimReset() {
+      const c = findById(state.selectedId);
+      if (!c) return;
+      postIframe({ type: 'voc-sim-reset', id: c.id });
+      state.simActive.delete(c.id);
+      updateSimStatus();
+      renderDetail(c);
+      renderList();
+      showToast('시뮬 해제');
+    }
+    function onSimResetAll() {
+      postIframe({ type: 'voc-sim-reset-all' });
+      state.simActive.clear();
+      updateSimStatus();
+      if (state.view === 'detail') {
+        const c = findById(state.selectedId);
+        if (c) renderDetail(c);
+      }
+      renderList();
+      showToast('모든 시뮬 해제');
+    }
+    function updateSimStatus() {
+      const n = state.simActive.size;
+      simStatusEl.hidden = n === 0;
+      simStatusCount.textContent = String(n);
+    }
+
+    function onResolveToggle() {
+      const c = findById(state.selectedId);
+      if (!c) return;
+      c.status = c.status === 'resolved' ? 'open' : 'resolved';
+      persist();
+      renderDetail(c);
+      renderList();
+      showToast(c.status === 'resolved' ? '해결됨으로 표시' : '미해결로 되돌림');
+    }
+    function onDelete() {
+      const c = findById(state.selectedId);
+      if (!c) return;
+      if (!confirm('이 핀과 모든 코멘트를 삭제할까요?')) return;
+      doDelete(c.id);
+    }
+    function doDelete(id) {
+      // also reset sim if active
+      if (state.simActive.has(id)) {
+        postIframe({ type: 'voc-sim-reset', id });
+        state.simActive.delete(id);
+      }
+      state.comments = state.comments.filter((x) => x.id !== id);
+      persist();
+      goList();
+      renderList();
+      updateSimStatus();
+      showToast('핀 삭제됨');
+    }
+
+    function onLocate() {
+      const c = findById(state.selectedId);
+      if (!c) return;
+      flashLocate(c);
+    }
+    function flashLocate(c) {
+      if (c.page !== state.currentPage) return;
+      postIframe({ type: 'voc-flash', selector: c.selector, x: c.x, y: c.y });
+    }
+
+    // ====================================================
+    // Toast
+    // ====================================================
+    let toastTimer = null;
+    function showToast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add('is-on');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove('is-on'), 1800);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+  </script>
+</body>
+</html>

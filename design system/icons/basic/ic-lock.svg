@@ -1,0 +1,41 @@
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="basic/ic-lock" clip-path="url(#clip0_108_208)">
+<g id="weight=light, filled=false" clip-path="url(#clip1_108_208)">
+<g id="UIIcon">
+<path id="Vector" d="M7.5 7.5V5.5C7.5 4.11929 8.61929 3 10 3C11.3807 3 12.5 4.11929 12.5 5.5V7.5M16 7.71429V16.2857C16 16.4041 15.9041 16.5 15.7857 16.5H4.21429C4.09594 16.5 4 16.4041 4 16.2857V7.71429C4 7.59594 4.09594 7.5 4.21429 7.5H15.7857C15.9041 7.5 16 7.59594 16 7.71429Z" stroke="currentColor"/>
+</g>
+</g>
+<g id="weight=regualr, filled=false" clip-path="url(#clip2_108_208)">
+<g id="UIIcon_2">
+<path id="Vector_2" d="M43.5 7.5V5.5C43.5 4.11929 44.6193 3 46 3C47.3807 3 48.5 4.11929 48.5 5.5V7.5M52 7.71429V16.2857C52 16.4041 51.9041 16.5 51.7857 16.5H40.2143C40.0959 16.5 40 16.4041 40 16.2857V7.71429C40 7.59594 40.0959 7.5 40.2143 7.5H51.7857C51.9041 7.5 52 7.59594 52 7.71429Z" stroke="currentColor" stroke-width="1.4"/>
+</g>
+</g>
+<g id="weight=bold, filled=false" clip-path="url(#clip3_108_208)">
+<g id="UIIcon_3">
+<path id="Vector_3" d="M79.5 7.5V5.5C79.5 4.11929 80.6193 3 82 3C83.3807 3 84.5 4.11929 84.5 5.5V7.5M88 7.71429V16.2857C88 16.4041 87.9041 16.5 87.7857 16.5H76.2143C76.0959 16.5 76 16.4041 76 16.2857V7.71429C76 7.59594 76.0959 7.5 76.2143 7.5H87.7857C87.9041 7.5 88 7.59594 88 7.71429Z" stroke="currentColor" stroke-width="2"/>
+</g>
+</g>
+<g id="weight=light, filled=true" clip-path="url(#clip4_108_208)">
+<g id="UIIcon_4">
+<path id="Vector_4" d="M120 5.5C120 4.39543 119.105 3.5 118 3.5C116.895 3.5 116 4.39543 116 5.5V7H120V5.5ZM121 7H123.786C124.18 7.00023 124.5 7.31971 124.5 7.71387V16.2861C124.5 16.6803 124.18 16.9998 123.786 17H112.214C111.82 16.9998 111.5 16.6803 111.5 16.2861V7.71387C111.5 7.31971 111.82 7.00023 112.214 7H115V5.5C115 3.84315 116.343 2.5 118 2.5C119.657 2.5 121 3.84315 121 5.5V7Z" fill="currentColor"/>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_108_208">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+<clipPath id="clip1_108_208">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+<clipPath id="clip2_108_208">
+<rect width="20" height="20" fill="white" transform="translate(36)"/>
+</clipPath>
+<clipPath id="clip3_108_208">
+<rect width="20" height="20" fill="white" transform="translate(72)"/>
+</clipPath>
+<clipPath id="clip4_108_208">
+<rect width="20" height="20" fill="white" transform="translate(108)"/>
+</clipPath>
+</defs>
+</svg>

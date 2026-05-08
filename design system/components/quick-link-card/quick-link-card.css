@@ -1,0 +1,21 @@
+/* scm-quick-link-card — 대시보드 빠른 링크 카드 */
+.scm-quick-link-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.scm-quick-link-card:hover {
+  border-color: #245EFF;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.04);
+}
+.scm-quick-link-card__title { font-size: 15px; font-weight: 600; color: #000; line-height: 21px; }
+.scm-quick-link-card__desc  { font-size: 13px; font-weight: 400; color: #666; line-height: 18.2px; }

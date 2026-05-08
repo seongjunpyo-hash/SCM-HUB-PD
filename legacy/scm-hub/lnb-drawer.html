@@ -1,0 +1,128 @@
+<!--
+  ============================================================
+  Expanded LNB drawer — Figma 8002:67543 (isCollapsed=false)
+  ============================================================
+  사용법: 모든 SCM Hub 페이지에서
+  1) <head> 의 <style> 안에 lnb-drawer.css 의 내용 복붙
+  2) <body> 닫기 직전에 lnb-drawer.html 의 markup 복붙
+  3) <script> 안에 lnb-drawer.js 의 init 코드 복붙
+  4) topbar 의 .menu-btn 클릭 → lnbDrawer.open() 호출
+
+  본 파일은 reference. 실제 적용은 각 페이지에 인라인.
+-->
+<aside class="lnb-drawer" id="lnb-drawer" hidden role="navigation" aria-label="SCM-Hub 메뉴">
+  <header class="lnb-drawer-head">
+    <div class="lnb-drawer-logo">
+      <svg class="lnb-logo" viewBox="0 0 96 18"><use href="#logo-scm-hub"/></svg>
+    </div>
+    <button class="lnb-drawer-collapse" type="button" id="lnb-drawer-collapse" aria-label="사이드바 접기">
+      <svg viewBox="0 0 20 20"><use href="#ic-sidebar-collapse"/></svg>
+    </button>
+  </header>
+
+  <!-- Profile -->
+  <div class="lnb-profile">
+    <div class="lnb-profile-row">
+      <span class="lnb-profile-avatar">
+        <svg viewBox="0 0 28 28"><use href="#ic-user"/></svg>
+      </span>
+      <span class="lnb-profile-email" id="lnb-profile-email">pbo-design@musinsa.com</span>
+      <button class="lnb-profile-more" type="button" id="lnb-profile-more" aria-haspopup="menu" aria-expanded="false" aria-label="프로필 메뉴">
+        <svg viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg>
+      </button>
+      <div class="lnb-profile-menu" id="lnb-profile-menu" role="menu" hidden>
+        <button class="lnb-profile-menu-item" type="button" role="menuitem">로그아웃</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="lnb-divider"></div>
+
+  <!-- Nav scrollable area -->
+  <div class="lnb-scroll">
+    <nav class="lnb-nav-group">
+      <!-- 홈 — 단일 (no sub) — active -->
+      <a class="lnb-nav-item lnb-nav-l1 is-active" href="#" data-nav="home">
+        <span class="lnb-nav-icon"><svg viewBox="0 0 24 24"><use href="#ic-nav-home"/></svg></span>
+        <span class="lnb-nav-label">홈</span>
+      </a>
+
+      <!-- 스토어 -->
+      <div class="lnb-nav-group-item is-open">
+        <button class="lnb-nav-item lnb-nav-l1" type="button" data-nav-toggle>
+          <span class="lnb-nav-icon"><svg viewBox="0 0 24 24"><use href="#ic-nav-store"/></svg></span>
+          <span class="lnb-nav-label">스토어</span>
+          <span class="lnb-nav-chev"><svg viewBox="0 0 16 16"><use href="#ic-chevronUp16"/></svg></span>
+        </button>
+        <div class="lnb-nav-l2-list">
+          <a class="lnb-nav-item lnb-nav-l2" href="#" data-nav="muten-restock-status">무탠 재고 보충 현황</a>
+          <a class="lnb-nav-item lnb-nav-l2" href="#" data-nav="muten-restock-request">무탠 재고 보충 요청</a>
+          <a class="lnb-nav-item lnb-nav-l2" href="#" data-nav="editshop-restock-status">편집샵 재고 보충 현황</a>
+          <a class="lnb-nav-item lnb-nav-l2" href="#" data-nav="editshop-restock-request">편집샵 재고 보충 요청</a>
+          <a class="lnb-nav-item lnb-nav-l2" href="index.html" data-nav="muten-deploy">전개상품 관리</a>
+        </div>
+      </div>
+
+      <!-- 상품관리 -->
+      <div class="lnb-nav-group-item is-open">
+        <button class="lnb-nav-item lnb-nav-l1" type="button" data-nav-toggle>
+          <span class="lnb-nav-icon"><svg viewBox="0 0 24 24"><use href="#ic-nav-hanger"/></svg></span>
+          <span class="lnb-nav-label">상품관리</span>
+          <span class="lnb-nav-chev"><svg viewBox="0 0 16 16"><use href="#ic-chevronUp16"/></svg></span>
+        </button>
+        <div class="lnb-nav-l2-list">
+          <a class="lnb-nav-item lnb-nav-l2" href="#" data-nav="unmapped">미매핑 상품 관리</a>
+          <a class="lnb-nav-item lnb-nav-l2" href="sku-management.html" data-nav="sku-management">SKU 관리</a>
+        </div>
+      </div>
+
+      <!-- 발주·입고 관리 -->
+      <div class="lnb-nav-group-item is-open">
+        <button class="lnb-nav-item lnb-nav-l1" type="button" data-nav-toggle>
+          <span class="lnb-nav-icon"><svg viewBox="0 0 24 24"><use href="#ic-nav-order"/></svg></span>
+          <span class="lnb-nav-label">발주·입고 관리</span>
+          <span class="lnb-nav-chev"><svg viewBox="0 0 16 16"><use href="#ic-chevronUp16"/></svg></span>
+        </button>
+        <div class="lnb-nav-l2-list">
+          <a class="lnb-nav-item lnb-nav-l2" href="#" data-nav="consign-approve">위탁 상품 입고 승인</a>
+          <a class="lnb-nav-item lnb-nav-l2" href="#" data-nav="consign-status">위탁 상품 입고 현황</a>
+        </div>
+      </div>
+
+      <!-- 재고관리 -->
+      <div class="lnb-nav-group-item is-open">
+        <button class="lnb-nav-item lnb-nav-l1" type="button" data-nav-toggle>
+          <span class="lnb-nav-icon"><svg viewBox="0 0 24 24"><use href="#ic-nav-stock"/></svg></span>
+          <span class="lnb-nav-label">재고관리</span>
+          <span class="lnb-nav-chev"><svg viewBox="0 0 16 16"><use href="#ic-chevronUp16"/></svg></span>
+        </button>
+        <div class="lnb-nav-l2-list">
+          <a class="lnb-nav-item lnb-nav-l2" href="#" data-nav="stock-list">재고내역 조회</a>
+          <a class="lnb-nav-item lnb-nav-l2" href="#" data-nav="stock-move">재고이동</a>
+          <a class="lnb-nav-item lnb-nav-l2" href="#" data-nav="stock-defect">불량/정상 전환</a>
+        </div>
+      </div>
+
+      <!-- 관리자 -->
+      <div class="lnb-nav-group-item is-open">
+        <button class="lnb-nav-item lnb-nav-l1" type="button" data-nav-toggle>
+          <span class="lnb-nav-icon"><svg viewBox="0 0 24 24"><use href="#ic-nav-setting"/></svg></span>
+          <span class="lnb-nav-label">관리자</span>
+          <span class="lnb-nav-chev"><svg viewBox="0 0 16 16"><use href="#ic-chevronUp16"/></svg></span>
+        </button>
+        <div class="lnb-nav-l2-list">
+          <a class="lnb-nav-item lnb-nav-l2" href="#" data-nav="manual-stock">수기 재고 조정</a>
+          <a class="lnb-nav-item lnb-nav-l2" href="#" data-nav="account">계정 관리</a>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Footer action bar -->
+  <footer class="lnb-action-bar">
+    <button class="lnb-action-btn" type="button">초보 가이드</button>
+  </footer>
+</aside>
+
+<!-- backdrop (모달처럼 reduce-page-shift) -->
+<div class="lnb-drawer-backdrop" id="lnb-drawer-backdrop" hidden></div>

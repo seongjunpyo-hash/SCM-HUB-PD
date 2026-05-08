@@ -1,0 +1,162 @@
+{
+  "$schema": "../schema/schema.json",
+  "id": "modal",
+  "version": "2.26.0",
+  "displayName": "Modal",
+  "description": "확인/안내 모달. backdrop 위 fixed center. confirm 모드(취소+확정 버튼) 와 info 모드(확정만, hideCancel) 지원. 콜아웃 박스 슬롯 포함.",
+  "status": "stable",
+  "platforms": ["web"],
+  "tokens": {
+    "color": {
+      "backdrop":            "bg.transparent",
+      "background":          "bg.default",
+      "title.text":          "fg.default",
+      "description.text":    "fg.low",
+      "callout.background":  "bg.accent-low",
+      "callout.border":      "border.accent",
+      "callout.text":        "fg.default",
+      "shadow":              "border.low"
+    },
+    "typography": {
+      "title.size":         "fontSize.250",
+      "title.weight":       "fontWeight.semibold",
+      "title.lineHeight":   "lineHeight.136",
+      "description.size":   "fontSize.125",
+      "description.weight": "fontWeight.regular",
+      "description.lineHeight": "lineHeight.140"
+    },
+    "spacing": {
+      "padding":     "space.400",
+      "title.gap":   "space.200",
+      "body.gap":    "space.200",
+      "actions.gap": "space.150",
+      "callout.padding.x": "space.200",
+      "callout.padding.y": "space.150"
+    },
+    "border": {
+      "radius":         "radius.md",
+      "callout.radius": "radius.sm"
+    },
+    "size": {
+      "width.min":  "space.1500",
+      "width.max":  "space.1800"
+    },
+    "motion": {
+      "appear":    "duration.fast",
+      "backdrop":  "duration.fast"
+    }
+  },
+  "props": {
+    "mode": {
+      "type": "enum",
+      "description": "confirm = 취소 + 확정 버튼, info = 확정만 (hideCancel).",
+      "values": ["confirm", "info"],
+      "default": "confirm",
+      "tokenMapped": true
+    },
+    "title":        { "type": "string", "description": "Modal 제목.", "required": true },
+    "descHtml":     { "type": "string", "description": "본문 (HTML 허용 — <br> 줄바꿈 사용 가능)." },
+    "callout":      { "type": "string", "description": "본문 아래 강조 박스(연한 파란 배경) 텍스트. info 모드에서 자주 쓰임." },
+    "confirmLabel": { "type": "string", "description": "확정 버튼 라벨.", "default": "확인" },
+    "cancelLabel":  { "type": "string", "description": "취소 버튼 라벨.", "default": "취소" },
+    "hideCancel":   { "type": "boolean", "description": "true 면 취소 버튼 숨김 (info 모드에서 자동 true).", "default": false },
+    "open":         { "type": "boolean", "description": "open 상태 (controlled).", "default": false },
+    "onConfirm":    { "type": "function", "required": true },
+    "onCancel":     { "type": "function" },
+    "onClose":      { "type": "function" }
+  },
+  "states": ["closed", "open"],
+  "variants": [
+    {
+      "id": "confirm-default",
+      "props": {
+        "mode": "confirm",
+        "title": "선택한 항목을 매핑하시겠습니까?",
+        "descHtml": "5개 SKU가 매핑됩니다.",
+        "confirmLabel": "매핑",
+        "cancelLabel": "취소"
+      }
+    },
+    {
+      "id": "info-callout",
+      "props": {
+        "mode": "info",
+        "title": "상품 등록 후 매핑 안내",
+        "descHtml": "선택된 SKU 중 미매핑 상품을 먼저 등록한 후 매핑을 진행합니다.",
+        "callout": "상품 등록 후 매핑은 SKU 관리 > 상품 등록 후 매핑 메뉴에서 다시 확인할 수 있습니다.",
+        "confirmLabel": "확인",
+        "hideCancel": true
+      }
+    },
+    {
+      "id": "confirm-destructive",
+      "props": {
+        "mode": "confirm",
+        "title": "삭제 확인",
+        "descHtml": "삭제된 데이터는 복구할 수 없습니다.",
+        "confirmLabel": "삭제",
+        "cancelLabel": "취소"
+      }
+    }
+  ],
+  "composition": {
+    "slots": {
+      "backdrop": {
+        "description": "Click 시 onCancel 호출 (mode=confirm) 또는 onClose (info).",
+        "required": true
+      },
+      "panel": {
+        "description": "센터링된 카드.",
+        "required": true,
+        "children": {
+          "title":    { "type": "text", "figma": { "textProp": "title" } },
+          "desc":     { "type": "text", "figma": { "textProp": "descHtml" } },
+          "callout":  { "type": "ref",  "ref": "callout-box", "figma": { "visible": false, "booleanProp": "callout" } },
+          "actions": {
+            "type": "group",
+            "children": {
+              "cancel":  {
+                "type": "ref",
+                "ref": "button",
+                "figma": { "visible": false, "booleanProp": "showCancel", "instanceVariant": "secondary-md" }
+              },
+              "confirm": { "type": "ref", "ref": "button", "figma": { "instanceVariant": "primary-md" } }
+            }
+          }
+        }
+      }
+    }
+  },
+  "behavior": {
+    "focusable": true,
+    "trapFocus": true,
+    "keyboardShortcuts": [
+      { "key": "Escape", "action": "Close modal (calls onCancel or onClose)" },
+      { "key": "Enter",  "action": "Activate confirm button (when focused)" }
+    ]
+  },
+  "accessibility": {
+    "role": "dialog",
+    "labelSource": "prop",
+    "wcagLevel": "AA",
+    "ariaModal": true,
+    "ariaLabelledby": "title",
+    "ariaDescribedby": "desc"
+  },
+  "usage": {
+    "do": [
+      "Mode=info 는 정보 전달만 — '확인' 한 버튼.",
+      "Callout 은 본문 아래에서 추가 컨텍스트(어디서 다시 볼 수 있는지 등) 를 강조할 때만 사용.",
+      "한 번에 하나의 modal 만 열기."
+    ],
+    "dont": [
+      "Modal 안에 또 다른 modal 을 중첩하지 말 것.",
+      "확정 버튼 라벨로 'OK' 보다 동사형 ('매핑', '삭제', '저장') 이 권장.",
+      "Backdrop 클릭으로 destructive 작업이 자동 진행되게 하지 말 것 (취소로 매핑)."
+    ]
+  },
+  "changelog": [
+    { "version": "2.26.0", "date": "2026-04-29", "summary": "openConfirmModal API + hideCancel + callout 슬롯 추가." },
+    { "version": "2.20.0", "date": "2026-04-15", "summary": "Initial contract." }
+  ]
+}

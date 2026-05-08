@@ -1,0 +1,71 @@
+<!-- ============================================================
+     scm-filter-drawer — canonical marker (전체 필터 좌측 드로어)
+     ============================================================ -->
+
+<div class="scm-filter-drawer-backdrop" hidden></div>
+<aside class="scm-filter-drawer" hidden role="dialog" aria-label="전체 필터">
+  <header class="scm-filter-drawer__header">
+    <h2>전체 필터</h2>
+    <button class="scm-filter-drawer__close" type="button" aria-label="닫기">
+      <svg viewBox="0 0 20 20" fill="none">
+        <path d="M5 5L15 15M15 5L5 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </header>
+
+  <div class="scm-filter-drawer__body">
+    <!-- Section: chip variant (단일 선택) -->
+    <section class="scm-filter-drawer__section">
+      <h3>시즌 <span class="req-dot"></span></h3>
+      <div class="scm-filter-drawer__chips">
+        <button class="scm-filter-drawer__chip" type="button" data-selected="true">전체</button>
+        <button class="scm-filter-drawer__chip" type="button">26-SS</button>
+        <button class="scm-filter-drawer__chip" type="button">26-FW</button>
+      </div>
+    </section>
+
+    <!-- Section: search + list (다중 선택) -->
+    <section class="scm-filter-drawer__section">
+      <h3>컬러</h3>
+      <div class="scm-filter-drawer__search">
+        <svg viewBox="0 0 18 18" aria-hidden="true">
+          <circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <path d="M12 12l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <input type="text" placeholder="컬러 검색"/>
+        <button class="scm-filter-drawer__search-clear" type="button" aria-label="검색어 지우기">
+          <svg viewBox="0 0 18 18"><path d="M5 5l8 8M13 5l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="scm-filter-drawer__list">
+        <div class="scm-filter-drawer__row" data-selected="true">
+          <span class="pop-cb"></span>
+          <span class="label">미디엄 인디고</span>
+        </div>
+        <div class="scm-filter-drawer__row">
+          <span class="pop-cb"></span>
+          <span class="label">워시드 블랙</span>
+        </div>
+        <div class="scm-filter-drawer__row">
+          <span class="pop-cb"></span>
+          <span class="label">크림</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: textarea (코드 다중 입력) -->
+    <section class="scm-filter-drawer__section">
+      <h3>UID</h3>
+      <textarea class="scm-filter-drawer__textarea" placeholder="UID 코드를 한 줄에 하나씩 입력"></textarea>
+      <div class="scm-filter-drawer__counter"><strong>0</strong> / 100</div>
+    </section>
+  </div>
+
+  <footer class="scm-filter-drawer__footer">
+    <button class="scm-filter-drawer__reset" type="button">
+      <svg viewBox="0 0 20 20"><path d="M4 4V8H8M16 16V12H12M4 8C4.5 6 7 3 10 3C13 3 16 5 16 9M16 12C15.5 14 13 17 10 17C7 17 4 15 4 11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      <span>전체 초기화</span>
+    </button>
+    <button class="scm-filter-drawer__apply" type="button">검색 적용</button>
+  </footer>
+</aside>

@@ -1,0 +1,37 @@
+<!-- ============================================================
+     scm-mini-action — canonical markers
+     ============================================================ -->
+
+<!-- 드롭다운형 (popup 포함) -->
+<span class="scm-mini-wrap">
+  <button class="scm-mini-action" type="button" aria-haspopup="listbox" aria-expanded="false">
+    코드 복사
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+  <ul class="scm-mini-popup" role="listbox">
+    <li data-key="rep">대표스타일 복사 (<span class="copy-cnt">500</span>)</li>
+    <li data-key="sku">SKU번호 복사 (<span class="copy-cnt">500</span>)</li>
+    <li data-key="barcode">바코드 복사 (<span class="copy-cnt">500</span>)</li>
+  </ul>
+</span>
+
+<!-- Disabled -->
+<span class="scm-mini-wrap">
+  <button class="scm-mini-action" type="button" disabled>
+    전개 여부 변경
+    <svg viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
+  </button>
+</span>
+
+<!-- Primary variant -->
+<span class="scm-mini-wrap">
+  <button class="scm-mini-action scm-mini-action--primary" type="button" aria-haspopup="listbox" aria-expanded="false">
+    선택 변경
+    <svg viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
+  </button>
+</span>
+
+<!-- 단순 버튼 (popup 없음, 예: "선택 해제") -->
+<button class="scm-mini-action" type="button">선택 해제</button>

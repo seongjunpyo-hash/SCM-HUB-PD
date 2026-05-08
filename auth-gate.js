@@ -1,0 +1,41 @@
+/* ============================================================
+ * SCM HUB · auth-gate
+ * ------------------------------------------------------------
+ * 페이지 로드 시 /api/auth/me 호출 → 미인증이면 /login.html 로 리다이렉트.
+ * 인증되었으면 window.SCM_USER 에 사용자 객체 저장 + 'scm:auth-ready' 이벤트 발생.
+ *
+ * Usage:
+ *   <script src="/auth-gate.js"></script>
+ *   ...
+ *   document.addEventListener('scm:auth-ready', (e) => {
+ *     console.log(e.detail.user); // { id, email, name, role }
+ *   });
+ * ============================================================ */
+(function () {
+  // 로그인 / 초대수락 페이지 자체는 인증 필요 없음 — 게이트 스킵
+  var SKIP = ['/login.html', '/invite-accept.html'];
+  if (SKIP.indexOf(location.pathname) !== -1) return;
+
+  fetch('/api/auth/me', { credentials: 'same-origin', cache: 'no-store' })
+    .then(function (r) { return r.json().catch(function () { return {}; }); })
+    .then(function (data) {
+      if (!data || !data.user) {
+        location.replace('/login.html?next=' + encodeURIComponent(location.pathname + location.search));
+        return;
+      }
+      window.SCM_USER = data.user;
+      document.dispatchEvent(new CustomEvent('scm:auth-ready', { detail: { user: data.user } }));
+    })
+    .catch(function () {
+      // 네트워크 오류 시도 일단 로그인으로 — 잘못된 상태로 화면 노출 방지
+      location.replace('/login.html?next=' + encodeURIComponent(location.pathname + location.search));
+    });
+
+  // 전역 헬퍼 — 어느 페이지에서나 SCM.logout() 호출 가능
+  window.SCM = window.SCM || {};
+  window.SCM.logout = function () {
+    fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' })
+      .catch(function () {})
+      .then(function () { location.replace('/login.html'); });
+  };
+})();

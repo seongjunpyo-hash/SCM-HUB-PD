@@ -1,0 +1,47 @@
+<!-- ============================================================
+     scm-filter-select — canonical markers
+     ============================================================ -->
+
+<!-- placeholder (라벨 숨김, value 회색) -->
+<button class="scm-filter-select" type="button" data-state="placeholder" aria-expanded="false" aria-haspopup="listbox" data-mp-filter="deploy">
+  <span class="scm-filter-select__label">스토어 전개 여부</span>
+  <span class="scm-filter-select__value">스토어 전개 여부</span>
+  <svg class="scm-filter-select__chev" viewBox="0 0 16 16" aria-hidden="true">
+    <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
+
+<!-- filled (라벨 위로 떠서 표시, value 검정) -->
+<button class="scm-filter-select" type="button" data-state="filled" aria-expanded="false" aria-haspopup="listbox">
+  <span class="scm-filter-select__label">스토어 전개 여부</span>
+  <span class="scm-filter-select__value">전개중</span>
+  <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
+</button>
+
+<!-- 필수 (라벨에 도트) -->
+<button class="scm-filter-select" type="button" data-state="filled" aria-expanded="false">
+  <span class="scm-filter-select__label">시즌 <span class="scm-filter-select__req-dot"></span></span>
+  <span class="scm-filter-select__value">26-SS</span>
+  <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
+</button>
+
+<!-- aria-expanded=true (popover 열림) -->
+<button class="scm-filter-select" type="button" data-state="active" aria-expanded="true" aria-haspopup="listbox">
+  <span class="scm-filter-select__label">스토어 전개 여부</span>
+  <span class="scm-filter-select__value">전개중</span>
+  <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
+</button>
+
+<!-- 그룹 (인접 셀렉트, 보더 통합) -->
+<span class="scm-filter-group">
+  <button class="scm-filter-select" type="button" data-state="filled">
+    <span class="scm-filter-select__label">SKU번호</span>
+    <span class="scm-filter-select__value">S000001</span>
+    <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
+  </button>
+  <button class="scm-filter-select" type="button" data-state="filled">
+    <span class="scm-filter-select__label">바코드</span>
+    <span class="scm-filter-select__value">881K</span>
+    <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
+  </button>
+</span>

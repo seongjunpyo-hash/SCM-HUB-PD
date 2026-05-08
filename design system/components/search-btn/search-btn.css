@@ -1,0 +1,49 @@
+/* ============================================================
+ * scm-search-btn — 필터바 검색 버튼
+ * ------------------------------------------------------------
+ * disabled 가 기본 상태 (필터 미입력 시). :not(:disabled) 일 때
+ * 활성 톤. 4개 데이터리스트 페이지의 필터바에서 공용.
+ *
+ * Spec:
+ *   h44, min-width 84, padding 12 16, font 15/500
+ *   기본 (disabled-like) — 회색 톤
+ *   활성 (:not(:disabled)) — 검정 outlined
+ * ============================================================ */
+
+.scm-search-btn {
+  min-width: 84px;
+  height: 44px;
+  padding: 12px 16px;
+  background: rgba(138, 138, 138, 0.10);
+  border: 1px solid #EBEBEB;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 20.4px;
+  color: rgba(0, 0, 0, 0.20);
+  cursor: not-allowed;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+.scm-search-btn:not(:disabled) {
+  background: #fff;
+  border: 1px solid #000;
+  color: #000;
+  cursor: pointer;
+}
+
+.scm-search-btn:not(:disabled):hover {
+  background: var(--ld-bg-low, #FAFBFC);
+}
+
+.scm-search-btn[disabled] {
+  background: rgba(138, 138, 138, 0.10);
+  border-color: transparent;
+  color: rgba(0, 0, 0, 0.20);
+  cursor: not-allowed;
+}

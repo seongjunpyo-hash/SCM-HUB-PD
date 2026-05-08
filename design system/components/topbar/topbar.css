@@ -1,0 +1,152 @@
+/* ============================================================
+ * scm-topbar — global navigation bar (GNB)
+ * ------------------------------------------------------------
+ * 모든 SCM Hub 페이지 공통 상단 바.
+ * Spec
+ *   - position: sticky, top:0, z-index:20
+ *   - height 64px, border-bottom 1px #E5E5E5
+ *   - box-shadow: 0 1px 1px rgba(0,0,0,.08)
+ *   - 좌측: menu-btn(56x64, hover bg-low) + 로고 SVG(96×18) + DEMO 태그
+ *   - 우측: avatar(32x32) + 이름(홍길동 님) + 셰브론(16)
+ * 인접 LNB 와 함께 sticky stack 의 base.
+ * ============================================================ */
+
+.scm-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #fff;
+  border-bottom: 1px solid #E5E5E5;
+  padding: 0 12px 0 0;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  min-width: 1440px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08);
+}
+
+.scm-topbar__left {
+  min-width: 188px;
+  height: 64px;
+  padding: 0 24px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.scm-topbar__menu-btn {
+  background: transparent;
+  border: 0;
+  width: 56px;
+  height: 64px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 16px;
+  color: var(--ld-fg, #000);
+  box-sizing: border-box;
+}
+.scm-topbar__menu-btn:hover {
+  background: var(--ld-bg-low, #F5F5F5);
+}
+.scm-topbar__menu-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+.scm-topbar__logo {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  width: 96px;
+  color: #000;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.scm-topbar__logo svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.scm-topbar__demo-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 6px;
+  margin-left: -4px;
+  border-radius: 3px;
+  background: #1A1A1A;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.4px;
+  flex-shrink: 0;
+}
+
+.scm-topbar__right {
+  margin-left: auto;
+  padding: 8px 12px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.scm-topbar__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  background: #EEEEEE;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 32px;
+  color: #000;
+}
+
+.scm-topbar__name-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.scm-topbar__name {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.scm-topbar__name-first {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 20.4px;
+  color: #000;
+}
+
+.scm-topbar__name-suffix {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 17.64px;
+  color: #000;
+}
+
+.scm-topbar__chev {
+  width: 16px;
+  height: 16px;
+  color: #000;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.scm-topbar__chev svg {
+  width: 16px;
+  height: 16px;
+}

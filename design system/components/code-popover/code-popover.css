@@ -1,0 +1,106 @@
+/* ============================================================
+ * scm-code-popover — UID/SKU/바코드/스타일넘버 묶음 보기 popover
+ * ------------------------------------------------------------
+ * 데이터 리스트 셀의 코드 link 클릭 시 뜨는 popover. 묶음 코드를
+ * 한 번에 보여주고 복사 액션 제공.
+ *
+ * Marker (popover 본체):
+ *   <div class="scm-code-popover" role="dialog">
+ *     <h4>연결된 UID번호 확인</h4>
+ *     <ul>
+ *       <li class="linked">383827</li>
+ *       ...
+ *     </ul>
+ *     <div class="scm-code-popover__actions">
+ *       <button>복사 (3)</button>
+ *       <button class="primary">닫기</button>
+ *     </div>
+ *   </div>
+ *
+ * Marker (backdrop — 외부 클릭 차단용 투명 영역):
+ *   <div class="scm-code-popover-backdrop"></div>
+ *
+ * 또는 scm-backdrop 모듈 + --transparent variant 사용 가능.
+ * 여기선 자체 backdrop 도 함께 두어 자가포함성 유지.
+ *
+ * States:
+ *   .is-open       표시
+ * ============================================================ */
+
+.scm-code-popover {
+  position: fixed;
+  background: var(--ld-bg, #fff);
+  border: 1px solid var(--ld-border, #E0E0E0);
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+  padding: 16px 18px 12px;
+  min-width: 220px;
+  max-width: 280px;
+  font-size: 13px;
+  z-index: 50;
+  display: none;
+}
+
+.scm-code-popover.is-open { display: block; }
+
+.scm-code-popover h4 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ld-fg, #000);
+}
+
+.scm-code-popover ul {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.scm-code-popover li {
+  color: var(--ld-fg, #000);
+  padding: 4px 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.scm-code-popover li.linked {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.scm-code-popover__actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-start;
+  padding-top: 8px;
+}
+
+.scm-code-popover__actions button {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+  border-radius: 4px;
+  border: 1px solid var(--ld-border, #E0E0E0);
+  background: var(--ld-bg, #fff);
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--ld-fg, #000);
+}
+
+.scm-code-popover__actions button.primary {
+  background: var(--ld-fg, #000);
+  color: #fff;
+  border-color: var(--ld-fg, #000);
+}
+
+/* Backdrop (외부 클릭 dismissal — 투명) */
+.scm-code-popover-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 49;
+  display: none;
+  background: transparent;
+}
+
+.scm-code-popover-backdrop.is-open { display: block; }

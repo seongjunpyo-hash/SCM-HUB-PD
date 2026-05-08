@@ -1,0 +1,105 @@
+/* ============================================================
+ * scm-pgsize-select — 페이지 크기 선택 셀렉트
+ * ------------------------------------------------------------
+ * "100개씩" / "50개씩" 같은 페이지 행 수 선택. 트리거 버튼 +
+ * 위/아래 popup. h36, width 114, popup 우측 정렬.
+ *
+ * Marker:
+ *   <span class="scm-pgsize-wrap">
+ *     <button class="scm-pgsize" aria-haspopup="listbox" aria-expanded="false">
+ *       <span class="scm-pgsize__label">100개씩</span>
+ *       <svg class="scm-pgsize__chev">...</svg>
+ *     </button>
+ *     <ul class="scm-pgsize-popup" role="listbox">
+ *       <li>20개씩</li>
+ *       <li aria-selected="true">100개씩</li>
+ *       <li>300개씩</li>
+ *       <li>500개씩</li>
+ *       <li>1000개씩</li>
+ *     </ul>
+ *   </span>
+ * ============================================================ */
+
+.scm-pgsize-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.scm-pgsize {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 114px;
+  min-width: 100px;
+  height: 36px;
+  padding: 8px 12px;
+  border: 1px solid #E0E0E0;
+  border-radius: 4px;
+  background: #fff;
+  color: #000;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 19.6px;
+  cursor: pointer;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.scm-pgsize__chev {
+  width: 16px;
+  height: 16px;
+  color: #000;
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.scm-pgsize:hover {
+  background: var(--ld-bg-low, #FAFBFC);
+}
+
+.scm-pgsize[aria-expanded="true"] {
+  border-color: var(--ld-border-strong, #000);
+}
+
+.scm-pgsize[aria-expanded="true"] .scm-pgsize__chev {
+  transform: rotate(180deg);
+}
+
+.scm-pgsize-popup {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: var(--ld-bg, #fff);
+  border: 1px solid var(--ld-border, #E0E0E0);
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  list-style: none;
+  padding: 4px 0;
+  margin: 0;
+  min-width: 114px;       /* 트리거 버튼 width 와 동일 — popup 이 항상 트리거 폭 이상 */
+  display: none;
+  z-index: 30;
+}
+
+.scm-pgsize-popup.is-open {
+  display: block;
+}
+
+.scm-pgsize-popup li {
+  padding: 8px 14px;
+  font-size: 14px;
+  color: var(--ld-fg, #000);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.scm-pgsize-popup li:hover {
+  background: var(--ld-bg-low, #FAFBFC);
+}
+
+/* 선택된 값 — 검정 볼드 */
+.scm-pgsize-popup li[aria-selected="true"] {
+  color: #000;
+  font-weight: 700;
+}

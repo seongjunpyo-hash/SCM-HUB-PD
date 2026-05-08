@@ -1,0 +1,35 @@
+/* ============================================================
+ * scm-back-btn — 페이지 헤드 좌측 back 버튼
+ * ------------------------------------------------------------
+ * 36×36 ghost. arrow-left 24px 아이콘. hover 시 옅은 배경.
+ *
+ * 페이지 헤드 사용:
+ *   <button class="scm-back-btn" aria-label="뒤로">
+ *     <svg ...><use href="#ic-arrowLeft"/></svg>
+ *   </button>
+ * ============================================================ */
+
+.scm-back-btn {
+  width: 36px;
+  height: 36px;
+  padding: 6px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.scm-back-btn:hover {
+  background: var(--ld-bg-low, #FAFBFC);
+}
+
+.scm-back-btn svg {
+  width: 24px;
+  height: 24px;
+}

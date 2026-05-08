@@ -1,0 +1,145 @@
+/* ============================================================
+ * scm-filter-bar — 필터 컨테이너 + overflow scroll + sticky
+ * ------------------------------------------------------------
+ * 데이터 리스트 페이지 상단의 sticky 필터 바.
+ * 좌측 [전체 필터 칩] + 가로 스크롤 [개별 필터 셀렉트들] +
+ * 우측 [검색 / 초기화 버튼].
+ *
+ * Marker:
+ *   <div class="scm-filter-bar">
+ *     <button class="scm-filter-chip">...</button>
+ *     <div class="scm-filter-overflow">
+ *       <div class="scm-filter-overflow__track">
+ *         <button class="scm-filter-select">...</button>
+ *         <button class="scm-filter-select">...</button>
+ *         ...
+ *       </div>
+ *       <div class="scm-filter-overflow__fade scm-filter-overflow__fade--left"></div>
+ *       <div class="scm-filter-overflow__fade scm-filter-overflow__fade--right"></div>
+ *     </div>
+ *     <div class="scm-filter-actions">
+ *       <button class="scm-search-btn">검색</button>
+ *       <button class="scm-filter-reset-btn">초기화</button>
+ *     </div>
+ *   </div>
+ *
+ * 스티키:
+ *   top: var(--scm-sticky-gnb)  (페이지 정의 변수, 보통 64)
+ *   z-index: 12
+ *   bg: #fff
+ *   필터 자체는 세로 마진 0, 페이지의 좌우 padding 반대로 빼서
+ *   filter-bar 가 풀폭으로 sticky 되도록.
+ * ============================================================ */
+
+.scm-filter-bar {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: nowrap;
+  gap: 8px;
+  padding: 16px 28px;
+  position: sticky;
+  top: var(--scm-sticky-gnb, 64px);
+  z-index: 12;
+  background: #fff;
+  margin: 0 -28px;             /* 부모 padding 반대로 빼서 풀폭 sticky */
+}
+
+.scm-filter-bar > .scm-filter-chip {
+  flex-shrink: 0;
+}
+
+/* Overflow track — 가로 스크롤 영역 */
+.scm-filter-overflow {
+  flex: 0 1 auto;
+  min-width: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0 0;
+  margin-top: -12px;
+}
+
+.scm-filter-overflow__track {
+  flex: 0 1 auto;
+  min-width: 0;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  overflow-x: auto;
+  overflow-y: visible;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 12px 1px 1px;
+  margin-top: -12px;
+}
+
+.scm-filter-overflow__track::-webkit-scrollbar { display: none; }
+.scm-filter-overflow__track > * { flex-shrink: 0; }
+
+/* Fade gradient (좌우 끝) — scm-filter-overflow 박스 안으로 제한 (이전 -10/64 은 위로 6px 삐져나가 page-head 액션 버튼 영역과 겹침) */
+.scm-filter-overflow__fade {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 16px;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  z-index: 2;
+}
+.scm-filter-overflow__fade--left {
+  left: 0;
+  background: linear-gradient(90deg, #fff 0%, rgba(255, 255, 255, 0) 100%);
+}
+.scm-filter-overflow__fade--right {
+  right: 0;
+  background: linear-gradient(270deg, #fff 0%, rgba(255, 255, 255, 0) 100%);
+}
+
+/* Arrow pair — overflow 발생 시 좌/우 끝으로 스크롤 점프 */
+.scm-filter-arrow-pair {
+  display: inline-flex;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 3;
+}
+.scm-filter-arrow-pair .scm-filter-arrow-btn:first-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.scm-filter-arrow-pair .scm-filter-arrow-btn:last-child {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left-width: 0;
+}
+.scm-filter-arrow-btn {
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid #E0E0E0;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-family: inherit;
+  position: relative;
+  z-index: 3;
+}
+.scm-filter-arrow-btn svg {
+  width: 20px;
+  height: 20px;
+  color: #000;
+}
+.scm-filter-arrow-btn:hover { background: var(--ld-bg-low, #FAFAFA); }
+
+/* 우측 액션 (검색 / 초기화) */
+.scm-filter-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}

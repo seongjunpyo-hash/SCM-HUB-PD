@@ -1,0 +1,51 @@
+/* ============================================================
+ * scm-icon-box — 36×36 컬러 아이콘 박스
+ * ------------------------------------------------------------
+ * KPI 카드 / activity list 등에서 카테고리 / 톤을 시각적으로
+ * 구분하기 위한 정사각 컬러 박스. 안에 16-20px svg 아이콘 1개.
+ *
+ * Variants (modifier):
+ *   기본 (회색)
+ *   .scm-icon-box--blue
+ *   .scm-icon-box--green
+ *   .scm-icon-box--orange
+ *   .scm-icon-box--red
+ *
+ * Sizes:
+ *   기본 36×36 + 20px 아이콘
+ *   .scm-icon-box--sm  : 32×32 + 16px 아이콘 (activity list 용)
+ * ============================================================ */
+
+.scm-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #F5F5F5;
+  color: #1A1A1A;
+  flex-shrink: 0;
+}
+
+.scm-icon-box svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Variants — 색상 톤 */
+.scm-icon-box--blue   { background: #E2F1FF; color: #245EFF; }
+.scm-icon-box--green  { background: #ECFFEC; color: #1EA514; }
+.scm-icon-box--orange { background: #FFF4E5; color: #B7791F; }
+.scm-icon-box--red    { background: #FFECEC; color: #F31110; }
+
+/* Size — 작은 변형 (activity list 등) */
+.scm-icon-box--sm {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+}
+.scm-icon-box--sm svg {
+  width: 16px;
+  height: 16px;
+}

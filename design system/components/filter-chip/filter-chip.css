@@ -1,0 +1,55 @@
+/* ============================================================
+ * scm-filter-chip — "전체 필터" 칩
+ * ------------------------------------------------------------
+ * 필터바 좌측 끝에 위치. 클릭 시 전체 필터 드로어 (scm-filter-drawer) 트리거.
+ * 좌측 SVG (필터 아이콘) + "전체 필터" + 카운트 (파랑 강조).
+ *
+ * Marker:
+ *   <button class="scm-filter-chip" type="button">
+ *     <svg>...filter icon...</svg>
+ *     <span>전체 필터</span>
+ *     <span class="scm-filter-chip__count">3</span>
+ *   </button>
+ *
+ * Spec: h44 outlined, padding 12 16, gap 4, font 15/500.
+ * ============================================================ */
+
+.scm-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 56px;
+  height: 44px;
+  padding: 12px 16px;
+  background: #fff;
+  border: 1px solid #E0E0E0;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 20.4px;
+  color: #000;
+  cursor: pointer;
+  white-space: nowrap;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.scm-filter-chip:hover {
+  background: var(--ld-bg-low, #FAFBFC);
+}
+
+.scm-filter-chip svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.scm-filter-chip__count {
+  color: #245EFF;
+  font-weight: 600;
+  line-height: 20.4px;
+  font-variant-numeric: tabular-nums;
+}
+/* 카운트 0 또는 빈 값일 때 숨김 (인라인 텍스트 그대로) */
+.scm-filter-chip__count:empty { display: none; }

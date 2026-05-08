@@ -1,0 +1,29 @@
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="basic/ic-audio" clip-path="url(#clip0_3929_3512)">
+<g id="weight=light, filled=false">
+<g id="UIIcon">
+<path id="Vector" d="M10 13.5V17M10 13.5C12.4853 13.5 14.5 11.4853 14.5 9M10 13.5C7.51472 13.5 5.5 11.4853 5.5 9M6 17H14M10 11C8.89543 11 8 10.1046 8 9V5C8 3.89543 8.89543 3 10 3C11.1046 3 12 3.89543 12 5V9C12 10.1046 11.1046 11 10 11Z" stroke="currentColor"/>
+</g>
+</g>
+<g id="weight=regular, filled=false">
+<g id="UIIcon_2">
+<path id="Vector_2" d="M46 13.5V17M46 13.5C48.4853 13.5 50.5 11.4853 50.5 9M46 13.5C43.5147 13.5 41.5 11.4853 41.5 9M42 17H50M46 11C44.8954 11 44 10.1046 44 9V5C44 3.89543 44.8954 3 46 3C47.1046 3 48 3.89543 48 5V9C48 10.1046 47.1046 11 46 11Z" stroke="currentColor" stroke-width="1.4"/>
+</g>
+</g>
+<g id="weight=bold, filled=false">
+<g id="UIIcon_3">
+<path id="Vector_3" d="M82 13.5V17M82 13.5C84.4853 13.5 86.5 11.4853 86.5 9M82 13.5C79.5147 13.5 77.5 11.4853 77.5 9M78 17H86M82 11C80.8954 11 80 10.1046 80 9V5C80 3.89543 80.8954 3 82 3C83.1046 3 84 3.89543 84 5V9C84 10.1046 83.1046 11 82 11Z" stroke="currentColor" stroke-width="2"/>
+</g>
+</g>
+<g id="weight=regular, filled=true">
+<g id="UIIcon_4">
+<path id="Vector_4" d="M114.2 9C114.2 11.0987 115.901 12.7998 118 12.7998C120.099 12.7998 121.8 11.0987 121.8 9H123.2C123.2 11.6343 121.241 13.8083 118.7 14.1504V16.2998H122V17.7002H114V16.2998H117.3V14.1504C114.759 13.8083 112.8 11.6343 112.8 9H114.2ZM120.7 9C120.7 10.4912 119.491 11.7002 118 11.7002C116.509 11.7002 115.3 10.4912 115.3 9V5C115.3 3.50883 116.509 2.2998 118 2.2998C119.491 2.2998 120.7 3.50883 120.7 5V9Z" fill="currentColor"/>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_3929_3512">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+</defs>
+</svg>

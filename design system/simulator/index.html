@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>시뮬레이터 — SCM Hub Simulation System</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+
+  <style>
+    :root {
+      --bg:        #FAFAFB;
+      --surface:   #FFFFFF;
+      --line:      #E5E5E5;
+      --line-2:    #BFBFBF;
+      --fg:        #000000;
+      --fg-mute:   #555555;
+      --fg-dim:    #8A8A8A;
+      --accent:    #4F46E5;
+      --accent-bg: #EEF0FF;
+      --ok:        #1B9E4F;
+      --ok-bg:     #E5F4EA;
+      --warn:      #B7791F;
+      --err:       #DD3D3D;
+      --err-bg:    #FFECEC;
+      --soft:      #F5F5F7;
+      --soft-h:    #EEEEEE;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--fg);
+      font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+      letter-spacing: -0.01em;
+      font-size: 16px;
+      min-width: 1280px;
+    }
+    a { color: inherit; }
+
+    .shell { max-width: none; margin: 0 auto; padding: 20px 32px 40px; }
+
+    .top { display: flex; align-items: center; justify-content: space-between; padding: 8px 0 28px; font-size: 14px; color: var(--fg-mute); }
+    .top a { color: var(--fg-mute); text-decoration: none; }
+    .top a:hover { color: var(--fg); }
+    .top .sep { margin: 0 10px; color: var(--fg-dim); }
+
+    .hero { padding: 4px 0 16px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+    .hero__main { min-width: 0; }
+    .hero__eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: var(--accent); }
+    .hero__title { margin: 6px 0 0; font-size: 24px; font-weight: 700; letter-spacing: -0.4px; line-height: 1.2; }
+    .hero__sub  { margin: 4px 0 0; font-size: 13px; color: var(--fg-mute); max-width: 820px; line-height: 1.55; }
+    .hero__toggle {
+      flex-shrink: 0;
+      display: inline-flex; align-items: center; gap: 6px;
+      height: 36px; padding: 0 14px;
+      background: var(--surface); color: var(--fg-mute);
+      border: 1px solid var(--line); border-radius: 8px;
+      font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .hero__toggle:hover { background: var(--soft); color: var(--fg); }
+
+    .locked { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 56px 40px; text-align: center; max-width: 560px; margin: 80px auto; }
+    .locked__icon { width: 72px; height: 72px; margin: 0 auto 20px; background: var(--soft); color: var(--fg-mute); border-radius: 16px; display: flex; align-items: center; justify-content: center; }
+    .locked__icon svg { width: 32px; height: 32px; }
+    .locked h2 { margin: 0 0 10px; font-size: 22px; font-weight: 700; }
+    .locked p  { margin: 0 0 28px; font-size: 15px; color: var(--fg-mute); line-height: 1.6; }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      height: 48px; padding: 0 22px; border-radius: 8px;
+      font-family: inherit; font-size: 15px; font-weight: 600;
+      cursor: pointer; text-decoration: none; border: 1px solid transparent; white-space: nowrap;
+    }
+    .btn--primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn--primary:hover { background: #5C59E8; }
+    .btn--primary:disabled { background: var(--soft-h); color: var(--fg-dim); border-color: var(--line); cursor: not-allowed; }
+    .btn--ghost { background: transparent; color: var(--fg-mute); border-color: var(--line); }
+    .btn--ghost:hover { background: var(--soft); color: var(--fg); }
+    .btn svg { width: 16px; height: 16px; }
+    .btn .spin { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .layout { display: grid; grid-template-columns: 320px 1fr; gap: 16px; margin-top: 4px; align-items: start; transition: grid-template-columns 0.2s ease; }
+    .layout.is-collapsed { grid-template-columns: 0 1fr; gap: 0; }
+    .layout.is-collapsed > aside { display: none; }
+
+    .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 24px; position: sticky; top: 24px; }
+    .panel__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .panel__title { margin: 0; font-size: 16px; font-weight: 700; }
+    .panel__edit  { font-size: 13px; color: var(--accent); text-decoration: none; font-weight: 600; }
+    .panel__edit:hover { text-decoration: underline; }
+    .panel__row { display: flex; flex-direction: column; gap: 4px; padding: 12px 0; border-top: 1px solid var(--line); }
+    .panel__row:first-of-type { border-top: 0; padding-top: 0; }
+    .panel__row .k { font-size: 12px; color: var(--fg-dim); letter-spacing: 0.4px; font-weight: 600; text-transform: uppercase; }
+    .panel__row .v { font-size: 14px; color: var(--fg); word-break: break-word; line-height: 1.5; }
+    .panel__row .v small { color: var(--fg-mute); }
+
+    .work-tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; background: var(--accent-bg); color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: 0.3px; }
+
+    .panel__actions { margin-top: 22px; display: flex; flex-direction: column; gap: 10px; }
+    .panel__hint { margin-top: 14px; padding: 12px; border-radius: 8px; background: var(--soft); border: 1px solid var(--line); font-size: 12.5px; color: var(--fg-mute); line-height: 1.55; }
+    .panel__hint strong { color: var(--fg); font-weight: 700; }
+
+    .panel__ai { margin-top: 16px; padding: 16px; border-radius: 10px; background: var(--soft); border: 1px solid var(--line); }
+    .panel__ai-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+    .panel__ai-tag { font-size: 10.5px; padding: 2px 7px; border-radius: 999px; background: var(--accent-bg); color: var(--accent); font-weight: 700; letter-spacing: 0.4px; }
+    .panel__ai-hint { margin: 0 0 12px; font-size: 12px; color: var(--fg-mute); line-height: 1.55; }
+    .panel__ai-label { display: block; margin-top: 10px; margin-bottom: 5px; font-size: 12px; font-weight: 600; color: var(--fg-mute); }
+    .panel__ai .input { width: 100%; padding: 11px 13px; background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; font-family: ui-monospace, monospace; font-size: 13px; outline: none; }
+    .panel__ai .input:focus { border-color: var(--accent); }
+    .panel__ai-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 12px; font-weight: 600; color: var(--accent); text-decoration: none; }
+    .panel__ai-link:hover { text-decoration: underline; }
+    .panel__ai-small { display: block; margin-top: 5px; font-size: 11.5px; color: var(--fg-dim); line-height: 1.5; }
+    .panel__ai-or { display: flex; align-items: center; gap: 8px; margin: 14px 0 6px; font-size: 11px; font-weight: 600; color: var(--fg-dim); letter-spacing: 0.6px; }
+    .panel__ai-or::before, .panel__ai-or::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+    .panel__ai-status { margin-top: 12px; padding: 8px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; line-height: 1.5; }
+    .panel__ai-status--ok { background: var(--ok-bg); color: var(--ok); }
+    .panel__ai-status--warn { background: var(--err-bg); color: var(--err); }
+
+    /* Key 상태 (단순 한 줄) */
+    .panel__keystatus { margin-top: 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--fg-mute); }
+    .panel__keystatus__dot { display: inline-flex; align-items: center; gap: 6px; }
+    .panel__keystatus__dot::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+    .panel__keystatus.is-warn .panel__keystatus__dot::before { background: var(--err); }
+    .panel__keystatus__btn { background: transparent; border: 0; color: var(--accent); font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; padding: 0; }
+    .panel__keystatus__btn:hover { text-decoration: underline; }
+
+    /* AI 추출 spec 디버그 영역 */
+    .panel__spec {
+      margin-top: 14px; padding: 14px;
+      background: var(--accent-bg); border: 1px solid var(--line); border-radius: 10px;
+    }
+    .panel__spec-title {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 10px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .panel__spec-title::before { content: '🤖'; font-size: 14px; }
+    .panel__spec .panel__row { padding: 8px 0; }
+    .panel__spec .k { color: var(--fg-mute); }
+    .panel__spec .v { font-size: 13px; color: var(--fg); }
+    .panel__chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+    .panel__chip {
+      display: inline-flex; align-items: center;
+      height: 22px; padding: 0 8px;
+      background: var(--surface); color: var(--fg);
+      border: 1px solid var(--line); border-radius: 4px;
+      font-size: 11.5px; font-weight: 500;
+    }
+    .panel__chip--primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* 편집 가능 chip — 호버 시 강조, X 버튼 보임 */
+    .panel__chip--editable { cursor: pointer; padding-right: 4px; transition: background 0.15s ease, border-color 0.15s ease; }
+    .panel__chip--editable:hover { background: var(--accent-bg); border-color: var(--accent); }
+    .panel__chip__del {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 16px; height: 16px; margin-left: 4px;
+      background: transparent; color: var(--fg-dim);
+      border: 0; border-radius: 50%;
+      font-family: inherit; font-size: 13px; line-height: 1; cursor: pointer;
+      padding: 0; opacity: 0.5;
+    }
+    .panel__chip__del:hover { background: var(--err); color: #fff; opacity: 1; }
+    .panel__chip__add {
+      display: inline-flex; align-items: center;
+      height: 22px; padding: 0 8px; margin-left: 2px;
+      background: transparent; color: var(--accent);
+      border: 1px dashed var(--accent); border-radius: 4px;
+      font-family: inherit; font-size: 11.5px; font-weight: 600; cursor: pointer;
+    }
+    .panel__chip__add:hover { background: var(--accent); color: #fff; }
+    .panel__spec-rows {
+      margin-top: 4px; max-height: 120px; overflow: auto;
+      font-family: ui-monospace, monospace; font-size: 11px; line-height: 1.55;
+      color: var(--fg-mute); background: var(--surface);
+      border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px;
+      white-space: pre-wrap; word-break: break-word;
+    }
+
+    .preview { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; min-height: calc(100vh - 160px); }
+    .preview__head { display: flex; align-items: center; justify-content: space-between; padding: 16px 22px; border-bottom: 1px solid var(--line); background: var(--soft); }
+    .preview__head .meta { display: inline-flex; align-items: center; gap: 12px; font-size: 13px; color: var(--fg-mute); }
+    .preview__head .dots { display: inline-flex; gap: 6px; }
+    .preview__head .dots span { width: 11px; height: 11px; border-radius: 50%; }
+    .preview__head .dots span:nth-child(1) { background: #FF5F57; }
+    .preview__head .dots span:nth-child(2) { background: #FEBC2E; }
+    .preview__head .dots span:nth-child(3) { background: #28C840; }
+    .preview__head .actions { display: flex; gap: 6px; }
+    .preview__head .actions button { height: 32px; padding: 0 12px; font-size: 12.5px; font-weight: 600; background: var(--surface); color: var(--fg-mute); border: 1px solid var(--line); border-radius: 6px; cursor: pointer; font-family: inherit; }
+    .preview__head .actions button:hover { color: var(--fg); border-color: var(--line-2); }
+    .preview__head .actions button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* 데모 후보 chip */
+    .preview__variants { display: inline-flex; gap: 4px; margin-left: 12px; padding-left: 12px; border-left: 1px solid var(--line); }
+    .preview__variants:empty { display: none; }
+    .preview__variant {
+      height: 26px; padding: 0 11px;
+      background: var(--surface); color: var(--fg-mute);
+      border: 1px solid var(--line); border-radius: 999px;
+      font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 4px;
+      transition: all 0.15s ease;
+    }
+    .preview__variant:hover { color: var(--fg); border-color: var(--line-2); }
+    .preview__variant.is-active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    .preview__frame { flex: 1; background: #FFFFFF; position: relative; min-height: calc(100vh - 220px); }
+    .preview__frame iframe { width: 100%; height: 100%; border: 0; display: block; min-height: calc(100vh - 220px); }
+    .preview__empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--fg-dim); background: var(--soft); text-align: center; padding: 40px; }
+    .preview__empty svg { width: 56px; height: 56px; opacity: 0.5; margin-bottom: 16px; }
+    .preview__empty h3 { margin: 0 0 8px; font-size: 16px; color: var(--fg-mute); font-weight: 700; }
+    .preview__empty p  { margin: 0; font-size: 14px; line-height: 1.55; max-width: 360px; }
+    .preview__empty p strong { color: var(--accent); }
+    .preview__empty.is-hide { display: none; }
+
+    .preview__loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: rgba(255,255,255,0.92); backdrop-filter: blur(4px); z-index: 10; }
+    .preview__loading.is-hide { display: none; }
+    .preview__loading-ring { width: 48px; height: 48px; border: 3px solid var(--soft-h); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.9s linear infinite; }
+    .preview__loading h3 { margin: 0; font-size: 16px; font-weight: 700; color: var(--fg); }
+    .preview__loading p { margin: 0; font-size: 13px; color: var(--fg-mute); max-width: 360px; text-align: center; line-height: 1.55; }
+
+    .preview__error { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--err-bg); color: var(--err); padding: 40px; text-align: center; }
+    .preview__error.is-hide { display: none; }
+    .preview__error h3 { margin: 0 0 8px; font-size: 16px; font-weight: 700; }
+    .preview__error pre { margin: 8px 0 16px; font-size: 12px; color: var(--err); white-space: pre-wrap; max-width: 600px; line-height: 1.55; max-height: 200px; overflow: auto; }
+
+    .toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%) translateY(20px); background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 10px; padding: 14px 22px; font-size: 14px; font-weight: 500; box-shadow: 0 8px 24px rgba(0,0,0,0.10); opacity: 0; pointer-events: none; z-index: 100; transition: opacity 0.2s ease, transform 0.25s ease; }
+    .toast.is-show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast--ok  { border-color: rgba(27,158,79,0.40); }
+    .toast--err { border-color: rgba(221,61,61,0.40); }
+  </style>
+</head>
+<body>
+
+<div class="shell" id="shell">
+  <header class="top">
+    <span><a href="../">← 시뮬레이션 시스템</a> <span class="sep">/</span> 시뮬레이터</span>
+    <span>v0.4 · 디자인시스템 자동 조립</span>
+  </header>
+  <div id="root"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  /* ============================================================
+   * 상수 / 스토리지
+   * ============================================================ */
+  var STORAGE_FLAG = 'scm-prd-validated';
+  var STORAGE_DATA = 'scm-prd-data';
+  var STORAGE_TEXT = 'scm-prd-text';
+  var STORAGE_SUPP = 'scm-prd-supp';
+  var STORAGE_KEY  = 'scm-ai-key';
+  var STORAGE_HTML = 'scm-prd-wireframe-html';
+  var STORAGE_SPEC = 'scm-prd-wireframe-spec';
+  var STORAGE_PROXY = 'scm-proxy-url';
+
+  var PROXY_URL = '';
+  try { var sp = localStorage.getItem(STORAGE_PROXY); if (sp) PROXY_URL = sp; } catch (_) {}
+
+  function isValidated() { try { return localStorage.getItem(STORAGE_FLAG) === '1'; } catch (_) { return false; } }
+  function loadPrd()    { try { return JSON.parse(localStorage.getItem(STORAGE_DATA) || 'null'); } catch (_) { return null; } }
+  function loadText()   { try { return localStorage.getItem(STORAGE_TEXT) || ''; } catch (_) { return ''; } }
+  function loadSupp()   { try { return JSON.parse(localStorage.getItem(STORAGE_SUPP) || 'null'); } catch (_) { return null; } }
+  function loadCachedHtml() { try { return localStorage.getItem(STORAGE_HTML) || ''; } catch (_) { return ''; } }
+  function saveCachedHtml(h){ try { localStorage.setItem(STORAGE_HTML, h || ''); } catch (_) {} }
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+  function showToast(msg, variant) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast is-show ' + (variant === 'err' ? 'toast--err' : 'toast--ok');
+    setTimeout(function () { t.classList.remove('is-show'); }, 2400);
+  }
+
+  var CAT_LABEL = { dashboard: '대시보드', store: '스토어', hanger: '상품 관리', order: '발주/입고 관리', stock: '재고 관리', control: '운영 설정', setting: '관리자' };
+  var WORK_LABEL = { 'new': '신규', 'feature': '기능 추가', 'improve': '개선' };
+  var SOURCE_LABEL = { text: '텍스트', pdf: 'PDF', image: '이미지', url: 'URL' };
+
+  /* ============================================================
+   * Locked
+   * ============================================================ */
+  function renderLocked() {
+    document.getElementById('root').innerHTML =
+      '<div class="locked"><div class="locked__icon"><svg viewBox="0 0 24 24"><rect x="6" y="11" width="12" height="9" rx="2" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="currentColor" stroke-width="1.6" fill="none"/></svg></div>' +
+      '<h2>시뮬레이터 잠금 상태</h2><p>먼저 <strong>① PRD 검증</strong>을 통과해야 와이어프레임을 생성할 수 있습니다.</p>' +
+      '<a class="btn btn--primary" href="../prd-validate/">PRD 검증으로 이동 →</a></div>';
+  }
+
+  /* ============================================================
+   * Active
+   * ============================================================ */
+  function renderActive(prd, prdText, supp) {
+    var html =
+      '<section class="hero">' +
+        '<div class="hero__main">' +
+          '<span class="hero__eyebrow">Step 03 · Wireframe Auto-Assemble</span>' +
+          '<h1 class="hero__title">디자인시스템으로 자동 조립된 와이어프레임</h1>' +
+          '<p class="hero__sub">PRD → JSON → SCM Hub 실제 컴포넌트로 자동 마크업.</p>' +
+        '</div>' +
+        '<button class="hero__toggle" type="button" id="btn-panel-toggle">' +
+          '<svg viewBox="0 0 16 16" width="14" height="14"><path d="M3 4h10M3 8h10M3 12h10" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>' +
+          '<span id="panel-toggle-label">PRD 패널 숨기기</span>' +
+        '</button>' +
+      '</section>' +
+
+      '<div class="layout" id="layout">' +
+        '<aside><div class="panel">' +
+          '<div class="panel__head"><h3 class="panel__title">PRD 요약</h3><a class="panel__edit" href="../prd-validate/">편집 →</a></div>' +
+
+          '<div class="panel__row"><span class="k">작업 유형</span><span class="v"><span class="work-tag">' + (WORK_LABEL[prd.workType] || '-') + '</span></span></div>' +
+          '<div class="panel__row"><span class="k">페이지 / 기능</span><span class="v">' + esc(prd.name || '-') + ' <small>· ' + esc(prd.id || '-') + '</small></span></div>' +
+          '<div class="panel__row"><span class="k">LNB 위치</span><span class="v">' + (CAT_LABEL[prd.category] || '-') + ' › ' + esc(prd.menu || '-') + '</span></div>' +
+          '<div class="panel__row"><span class="k">주 사용자</span><span class="v">' + esc(prd.user || '-') + '</span></div>' +
+          '<div class="panel__row"><span class="k">PRD 본문</span><span class="v">' + (SOURCE_LABEL[prd.prdSource] || '-') + ' · ' + (prdText || '').length.toLocaleString() + ' 자' + '</span></div>' +
+
+          '<div class="panel__actions">' +
+            '<button class="btn btn--primary" id="btn-build">' +
+              '<svg viewBox="0 0 16 16"><path d="M8 1.5L9.7 5.6L14 6.3L11 9.4L11.7 13.7L8 11.7L4.3 13.7L5 9.4L2 6.3L6.3 5.6Z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/></svg>' +
+              'AI 와이어프레임 생성' +
+            '</button>' +
+            '<button class="btn btn--ghost" id="btn-copy" disabled>HTML 복사</button>' +
+          '</div>' +
+
+          '<div class="panel__hint"><strong>💡 작동 방식</strong><br/>AI 가 PRD 본문 + 도메인 표준 (SAP/Coupa/이커머스 SCM) 으로 컬럼·필터·dummy데이터 추출 → 데모 페이지에 직접 주입.</div>' +
+
+          '<div class="panel__spec" id="panel-spec" style="display:none;">' +
+            '<div class="panel__spec-title">AI 가 PRD 에서 추출한 구조</div>' +
+            '<div class="panel__row"><span class="k">서브타이틀</span><span class="v" id="spec-sub">-</span></div>' +
+            '<div class="panel__row"><span class="k">컬럼 (<span id="spec-cols-count">0</span>)</span><div class="panel__chips" id="spec-cols"></div></div>' +
+            '<div class="panel__row"><span class="k">필터 (<span id="spec-filters-count">0</span>)</span><div class="panel__chips" id="spec-filters"></div></div>' +
+            '<div class="panel__row"><span class="k">액션 (<span id="spec-actions-count">0</span>)</span><div class="panel__chips" id="spec-actions"></div></div>' +
+            '<div class="panel__row"><span class="k">샘플 데이터 (<span id="spec-rows-count">0</span>행)</span><div class="panel__spec-rows" id="spec-rows"></div></div>' +
+          '</div>' +
+
+          '<div class="panel__keystatus" id="key-status"></div>' +
+        '</div></aside>' +
+
+        '<section class="preview">' +
+          '<header class="preview__head">' +
+            '<span class="meta">' +
+              '<span class="dots"><span></span><span></span><span></span></span> ' +
+              esc(prd.name || 'wireframe') + ' · /' + esc(prd.id || '-') +
+              '<span class="preview__variants" id="preview-variants"></span>' +
+            '</span>' +
+            '<span class="actions">' +
+              '<button id="btn-rebuild" disabled>재생성</button>' +
+              '<button id="btn-fullscreen" disabled>전체화면</button>' +
+            '</span>' +
+          '</header>' +
+          '<div class="preview__frame" id="preview-frame">' +
+            '<div class="preview__empty" id="preview-empty">' +
+              '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M3 9h18M7 13h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>' +
+              '<h3>와이어프레임 미리보기</h3>' +
+              '<p>좌측 <strong>「AI 와이어프레임 생성」</strong> 버튼 클릭. 약 5~10초 후 진짜 디자인시스템 컴포넌트로 조립된 페이지가 나타납니다.</p>' +
+            '</div>' +
+            '<div class="preview__loading is-hide" id="preview-loading">' +
+              '<div class="preview__loading-ring"></div>' +
+              '<h3>구조 분석 중…</h3>' +
+              '<p>PRD 에서 페이지 구조를 추출하고 있습니다 (5~15초).</p>' +
+            '</div>' +
+            '<div class="preview__error is-hide" id="preview-error">' +
+              '<h3>와이어프레임 생성 실패</h3>' +
+              '<pre id="preview-error-msg"></pre>' +
+              '<button class="btn btn--ghost" type="button" id="btn-error-retry">다시 시도</button>' +
+            '</div>' +
+          '</div>' +
+        '</section>' +
+      '</div>';
+
+    document.getElementById('root').innerHTML = html;
+
+    // 키 상태 한 줄 + 변경 버튼
+    function getKey() { try { return localStorage.getItem(STORAGE_KEY) || ''; } catch (_) { return ''; } }
+    function refreshKeyStatus() {
+      var ks = document.getElementById('key-status');
+      var k = getKey();
+      var masked = k ? (k.slice(0, 7) + '••••' + k.slice(-4)) : '';
+      if (k) {
+        ks.classList.remove('is-warn');
+        ks.innerHTML = '<span class="panel__keystatus__dot">Anthropic 키 활성 · <code style="font-family:ui-monospace,monospace;">' + masked + '</code></span><button class="panel__keystatus__btn" id="btn-key-change">변경</button>';
+      } else {
+        ks.classList.add('is-warn');
+        ks.innerHTML = '<span class="panel__keystatus__dot">키 미설정</span><button class="panel__keystatus__btn" id="btn-key-change">키 입력</button>';
+      }
+      document.getElementById('btn-key-change').addEventListener('click', promptKey);
+    }
+    function promptKey() {
+      var cur = getKey();
+      var v = window.prompt('Anthropic API 키 입력 (sk-ant-...)\n\n키는 브라우저 로컬에만 저장되며 외부에 전송되지 않습니다.', cur);
+      if (v == null) return;
+      v = v.trim();
+      if (v && !/^sk-ant-/.test(v)) {
+        if (!confirm('키 형식이 sk-ant- 로 시작하지 않습니다. 그래도 저장할까요?')) return;
+      }
+      try { localStorage.setItem(STORAGE_KEY, v); } catch (_) {}
+      refreshKeyStatus();
+      if (v) {
+        showToast('키 저장됨 — 자동 빌드 시작', 'ok');
+        build(prd, prdText, supp);
+      }
+    }
+    refreshKeyStatus();
+
+    // 좌측 패널 접기/펼치기
+    var STORAGE_PANEL = 'scm-sim-panel';
+    var layoutEl = document.getElementById('layout');
+    var toggleLbl = document.getElementById('panel-toggle-label');
+    function applyPanelState(collapsed) {
+      layoutEl.classList.toggle('is-collapsed', collapsed);
+      toggleLbl.textContent = collapsed ? 'PRD 패널 펼치기' : 'PRD 패널 숨기기';
+      try { localStorage.setItem(STORAGE_PANEL, collapsed ? '1' : '0'); } catch (_) {}
+    }
+    document.getElementById('btn-panel-toggle').addEventListener('click', function () {
+      applyPanelState(!layoutEl.classList.contains('is-collapsed'));
+    });
+    try {
+      var savedPanel = localStorage.getItem(STORAGE_PANEL);
+      if (savedPanel === '1') applyPanelState(true);
+    } catch (_) {}
+
+    document.getElementById('btn-build').addEventListener('click', function () { build(prd, prdText, supp); });
+    document.getElementById('btn-rebuild').addEventListener('click', function () { build(prd, prdText, supp); });
+    document.getElementById('btn-error-retry').addEventListener('click', function () { build(prd, prdText, supp); });
+    document.getElementById('btn-fullscreen').addEventListener('click', function () {
+      var html = currentHtml || loadCachedHtml();
+      if (!html) { showToast('먼저 와이어프레임 생성', 'err'); return; }
+      var win = window.open('', '_blank');
+      if (win) { win.document.open(); win.document.write(html); win.document.close(); }
+    });
+    document.getElementById('btn-copy').addEventListener('click', function () {
+      var html = currentHtml || loadCachedHtml();
+      if (!html) return;
+      navigator.clipboard.writeText(html).then(function () {
+        showToast('HTML ' + html.length.toLocaleString() + ' chars 복사 완료', 'ok');
+      }, function () { showToast('복사 실패', 'err'); });
+    });
+
+    // 자동 흐름:
+    //   1) 캐시된 와이어프레임 있으면 즉시 표시
+    //   2) 그 외에는 키가 있으면 자동으로 build() 호출
+    // 페이지 진입 시 키 있으면 항상 새로 빌드 (캐시된 HTML 자동 복원 폐기 — reconcileSpec 적용 보장)
+    if (getKey()) {
+      console.log('[SCM Sim] 페이지 진입 — 자동 build() 호출');
+      build(prd, prdText, supp);
+    }
+  }
+
+  /* ============================================================
+   * Prompt — JSON 스키마로 페이지 구조만 받기
+   * ============================================================ */
+  var SCHEMA = {
+    type: 'OBJECT',
+    properties: {
+      pageHead: {
+        type: 'OBJECT',
+        properties: {
+          title: { type: 'STRING' },
+          sub: { type: 'STRING' },
+          actions: {
+            type: 'ARRAY',
+            items: {
+              type: 'OBJECT',
+              properties: {
+                label: { type: 'STRING' },
+                kind: { type: 'STRING', enum: ['primary', 'ghost', 'danger'] }
+              },
+              required: ['label']
+            }
+          }
+        },
+        required: ['title']
+      },
+      filters: {
+        type: 'ARRAY',
+        items: {
+          type: 'OBJECT',
+          properties: { label: { type: 'STRING' } },
+          required: ['label']
+        }
+      },
+      table: {
+        type: 'OBJECT',
+        properties: {
+          checkable: { type: 'BOOLEAN' },
+          columns: {
+            type: 'ARRAY',
+            items: {
+              type: 'OBJECT',
+              properties: {
+                label: { type: 'STRING' },
+                type: { type: 'STRING', enum: ['text', 'number', 'code-link', 'status-chip', 'kind-chip', 'platform-tag', 'product-name', 'tag', 'date'] },
+                width: { type: 'STRING', enum: ['auto', 'medium', 'large'] }
+              },
+              required: ['label', 'type']
+            }
+          }
+        },
+        required: ['columns']
+      },
+      empty: { type: 'STRING' }
+    },
+    required: ['pageHead', 'table']
+  };
+
+  function buildPrompt(prd, prdText, supp) {
+    var suppText = supp ? Object.keys(supp).map(function (k) { return supp[k] ? '[' + k + ']\n' + supp[k] : ''; }).filter(Boolean).join('\n\n') : '';
+    var workLabel = WORK_LABEL[prd.workType] || prd.workType;
+    var lnbLabel = (CAT_LABEL[prd.category] || prd.category) + ' › ' + (prd.menu || '');
+    return [
+      '당신은 SCM Hub 의 디자인시스템에 정통한 시니어 프론트엔드 엔지니어입니다.',
+      '아래 PRD 를 분석해서 페이지 구조를 JSON 으로 출력하세요. 사이트가 이 JSON 으로 디자인시스템 컴포넌트 마크업을 자동 조립합니다.',
+      '',
+      '[페이지 정보]',
+      '- 작업 유형: ' + workLabel,
+      '- 페이지/기능 이름: ' + (prd.name || ''),
+      '- LNB 위치: ' + lnbLabel,
+      '- 주 사용자: ' + (prd.user || ''),
+      '',
+      '[PRD 본문]',
+      (prdText || '(본문 없음)').substring(0, 6000),
+      suppText ? ('\n[보충]\n' + suppText) : '',
+      '',
+      '[출력 규칙]',
+      '- pageHead.title: 페이지 이름',
+      '- pageHead.sub: PRD에서 추론한 한 줄 서브타이틀 (40자 이내)',
+      '- pageHead.actions: 헤더 우측 버튼 1~3개. 첫번째 primary, 나머지 ghost.',
+      '- filters: 0~6개. 라벨만 (스토어 / 카테고리 / 상태 등).',
+      '- table.checkable: 일괄 액션이 필요하면 true (체크박스 컬럼 자동 추가).',
+      '- table.columns: 5~10개 추론. type 은 다음 중 하나:',
+      '    text         (일반 텍스트)',
+      '    number       (수량/가격)',
+      '    code-link    (SKU/UID/주문번호 등 코드 링크)',
+      '    status-chip  (운영상태/매핑상태 등 색 칩)',
+      '    kind-chip    (분류 칩)',
+      '    platform-tag (29CM/무신사 같은 플랫폼)',
+      '    product-name (썸네일+상품명)',
+      '    tag          (일반 태그)',
+      '    date         (날짜)',
+      '- column.width: 상품명/긴 텍스트는 large, 코드/날짜는 medium, 짧은 것 auto.',
+      '- empty: 빈 상태 안내 문구.',
+      '',
+      'JSON 만 출력. 다른 텍스트 출력 금지.',
+    ].filter(Boolean).join('\n');
+  }
+
+  /* ============================================================
+   * AI 호출
+   * ============================================================ */
+  var currentHtml = '';
+  // 편집용 — 현재 적용된 spec / prd 참조
+  var currentSpec = null;
+  var currentPrd = null;
+
+  // 응답에서 JSON 추출 (markdown / 앞뒤 텍스트 / prefill 케이스 모두 대응)
+  function extractJson(text) {
+    if (!text) return null;
+    // 1) markdown code block
+    var cb = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (cb) { try { return JSON.parse(cb[1]); } catch (_) {} }
+    // 2) full text
+    try { return JSON.parse(text); } catch (_) {}
+    // 3) first { ... last }
+    var s = text.indexOf('{');
+    var e = text.lastIndexOf('}');
+    if (s !== -1 && e !== -1 && e > s) {
+      try { return JSON.parse(text.substring(s, e + 1)); } catch (_) {}
+    }
+    return null;
+  }
+
+  function showLoading(on) {
+    document.getElementById('preview-empty').classList.toggle('is-hide', on);
+    document.getElementById('preview-loading').classList.toggle('is-hide', !on);
+  }
+  function showError(msg) {
+    document.getElementById('preview-empty').classList.add('is-hide');
+    document.getElementById('preview-loading').classList.add('is-hide');
+    document.getElementById('preview-error').classList.remove('is-hide');
+    document.getElementById('preview-error-msg').textContent = msg || '알 수 없는 오류';
+  }
+  function clearError() { document.getElementById('preview-error').classList.add('is-hide'); }
+  function enableActions() {
+    document.getElementById('btn-copy').disabled = false;
+    document.getElementById('btn-rebuild').disabled = false;
+    document.getElementById('btn-fullscreen').disabled = false;
+  }
+
+  /* ============================================================
+   * 데모 페이지 매핑 + iframe src 직접 로드 + PRD 정보 주입
+   * ============================================================ */
+
+  // 데모 페이지의 구조 정보 (AI prompt 에 힌트로 전달 → 컬럼 수 맞춰 spec 생성)
+  var DEMO_META = {
+    '../../demo/sku-management.html':          { cols: 8, filters: 4, actions: 2, kind: '리스트' },
+    '../../demo/sku-detail.html':              { cols: 0, filters: 0, actions: 3, kind: '상세' },
+    '../../demo/sku-register.html':            { cols: 0, filters: 0, actions: 2, kind: '등록 폼' },
+    '../../demo/editshop-restock-request.html':{ cols: 7, filters: 4, actions: 2, kind: '리스트' },
+    '../../demo/editshop-restock-status.html': { cols: 7, filters: 4, actions: 2, kind: '리스트' },
+    '../../demo/dashboard.html':               { cols: 0, filters: 0, actions: 0, kind: '대시보드' },
+  };
+
+  // 🆕 빈 와이어프레임 템플릿만 반환 — 데모 페이지 base 방식 폐기
+  // 모든 PRD 가 동일한 빈 셸 (topbar + lnb + page-head + filter-bar + scm-table 뼈대) 위에 그려짐
+  function pickDemoCandidates(prd) {
+    return [{ url: 'wireframe-template.html', label: '빈 와이어프레임' }];
+  }
+
+  function pickDemoUrl(prd) {
+    return pickDemoCandidates(prd)[0].url;
+  }
+
+  // td 안의 인라인 컴포넌트 (chip / product-name / link) 형식 보존하면서 텍스트만 치환
+  function setCellText(td, text) {
+    if (!td || text == null) return;
+    // product-name (thumb + text) — text 부분만
+    var pnText = td.querySelector('.scm-product-name__text');
+    if (pnText) { pnText.textContent = text; return; }
+    // chip 계열 (status-chip / tag / kind-chip / platform-tag / sku-status-pill)
+    var chip = td.querySelector('.scm-status-chip, .scm-tag, .scm-kind-chip, .scm-platform-tag, .sku-status-pill');
+    if (chip) {
+      // dot 같은 자식이 있으면 텍스트 노드만 변경 (마지막 텍스트만)
+      var dot = chip.querySelector('.dot');
+      if (dot) {
+        // dot 보존 + 그 다음 텍스트
+        chip.innerHTML = '<span class="dot"></span>' + escH(text);
+      } else {
+        chip.textContent = text;
+      }
+      return;
+    }
+    // code-link / 일반 a 태그
+    var link = td.querySelector('.scm-code-link, a');
+    if (link) { link.textContent = text; return; }
+    // 일반 td
+    td.textContent = text;
+  }
+
+  // 컬럼 type 별 인라인 마크업 (chip / link / product-name 등)
+  function renderTypedCellHTML(type, value, rowIdx) {
+    var v = String(value == null ? '' : value);
+    switch (type) {
+      case 'code-link': return '<a class="scm-code-link">' + escH(v) + '</a>';
+      case 'status-chip': {
+        var clss = ['scm-status-chip scm-status-chip--ok', 'scm-status-chip scm-status-chip--warn', 'scm-status-chip scm-status-chip--info', 'scm-status-chip scm-status-chip--err'];
+        return '<span class="' + clss[rowIdx % 4] + '">' + escH(v) + '</span>';
+      }
+      case 'kind-chip':    return '<span class="scm-kind-chip">' + escH(v) + '</span>';
+      case 'platform-tag': return '<span class="scm-platform-tag">' + escH(v) + '</span>';
+      case 'product-name':
+        return '<span class="scm-product-name">' +
+          '<span class="scm-product-name__thumb"></span>' +
+          '<span class="scm-product-name__text">' + escH(v) + '</span>' +
+        '</span>';
+      case 'tag': return '<span class="scm-tag">' + escH(v) + '</span>';
+      default:    return escH(v);
+    }
+  }
+
+  // wireframe-template.html 의 DOM 을 PRD spec 으로 강제 변형
+  function injectPrd(iframe, prd, spec) {
+    console.log('[SCM Sim] injectPrd 호출됨', { hasSpec: !!spec, prd: prd && prd.name, columns: spec && spec.table && spec.table.columns && spec.table.columns.length });
+    try {
+      var doc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
+      if (!doc) {
+        console.warn('[SCM Sim] iframe.contentDocument 접근 실패 — cross-origin 차단? URL:', iframe.src);
+        return false;
+      }
+      console.log('[SCM Sim] doc 접근 OK, title:', doc.title, '| body:', !!doc.body);
+
+      // === 1. <title> ===
+      if (prd.name) doc.title = prd.name + ' — SCM Hub';
+
+      // === 2. LNB 1뎁스 (아이콘 + 라벨) + 2뎁스 (메뉴 + NEW/개선중) ===
+      var l1Key = prd.category || 'dashboard';
+      var l1Label = CAT_LABEL[l1Key] || l1Key;
+      var l1IconHtml = L1_ICONS[l1Key] || L1_ICONS.dashboard;
+      var lnbIcon = doc.querySelector('[data-wf-lnb-icon]');
+      if (lnbIcon) lnbIcon.innerHTML = l1IconHtml;
+      var lnbLabel = doc.querySelector('[data-wf-lnb-label]') || doc.querySelector('.scm-lnb-item.is-active .scm-lnb-label');
+      if (lnbLabel) lnbLabel.textContent = l1Label;
+      var l2text = doc.querySelector('.scm-lnb-l2.is-active .scm-lnb-l2-text');
+      if (l2text && prd.menu) l2text.textContent = prd.menu;
+      var l2tag = doc.querySelector('.scm-lnb-l2.is-active .scm-lnb-tag');
+      if (l2tag) {
+        l2tag.classList.remove('scm-lnb-tag--new', 'scm-lnb-tag--wip');
+        if (prd.workType === 'improve') { l2tag.classList.add('scm-lnb-tag--wip'); l2tag.textContent = '개선중'; }
+        else                            { l2tag.classList.add('scm-lnb-tag--new'); l2tag.textContent = 'NEW'; }
+      }
+
+      // === 3. page-head title (sub 는 wireframe-template 에서 제거됨) ===
+      var h1 = doc.querySelector('.scm-page-head__title');
+      if (h1 && prd.name) h1.textContent = prd.name;
+
+      if (!spec) return true;
+
+      // === 4. page-head 액션 버튼 — 갯수 + 라벨 ===
+      var actionsContainer = doc.querySelector('.scm-page-head__actions');
+      if (actionsContainer && spec.pageHead && spec.pageHead.actions) {
+        actionsContainer.innerHTML = '';
+        spec.pageHead.actions.forEach(function (a) {
+          var btn = doc.createElement('button');
+          btn.type = 'button';
+          btn.className = a.kind === 'primary' ? 'scm-button scm-button--primary'
+                        : a.kind === 'danger'  ? 'scm-button scm-button--danger'
+                        : 'scm-button';
+          btn.textContent = a.label || '';
+          actionsContainer.appendChild(btn);
+        });
+      }
+
+      // === 5. 필터 — 갯수 + 라벨 ===
+      var filterTrack = doc.querySelector('.scm-filter-overflow__track');
+      if (filterTrack && spec.filters && spec.filters.length) {
+        filterTrack.innerHTML = '';
+        spec.filters.forEach(function (f) {
+          var label = (f && f.label) || f || '';
+          var filter = doc.createElement('button');
+          filter.type = 'button';
+          filter.className = 'scm-filter-select';
+          filter.setAttribute('data-state', 'placeholder');
+          filter.innerHTML = '<span class="scm-filter-select__label">' + escH(label) + '</span>' +
+            '<span class="scm-filter-select__value">' + escH(label) + '</span>' +
+            '<svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>';
+          filterTrack.appendChild(filter);
+        });
+      }
+
+      // === 6. stats-bar 의 "전체 N" ===
+      var statNum = doc.querySelector('.scm-stats-bar__counts .scm-stat__num');
+      var rowCount = (spec.table && spec.table.rowSamples && spec.table.rowSamples.length) || 5;
+      if (statNum) statNum.textContent = rowCount;
+
+      // === 7. 테이블 — cb-col + col-no + 데이터 컬럼 + col-spacer 구조 유지 ===
+      var thead = doc.querySelector('.mp-table thead tr');
+      var tbody = doc.querySelector('.mp-table tbody');
+      if (thead && tbody && spec.table && spec.table.columns) {
+        var newCols = spec.table.columns;
+        var rowSamples = spec.table.rowSamples || [];
+        var checkable = spec.table.checkable !== false;
+
+        // 체크박스 미노출 처리 (html.no-checkbox)
+        var html = doc.documentElement;
+        if (checkable) html.classList.remove('no-checkbox');
+        else           html.classList.add('no-checkbox');
+
+        // === thead: cb-col + col-no(frozen-2) + 새 데이터 컬럼들 + col-spacer ===
+        thead.innerHTML =
+          '<th class="cb-col col-frozen-1"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0"></span></th>' +
+          '<th class="col-auto col-no col-frozen-2">No</th>' +
+          newCols.map(function (col) {
+            var cls = col.width === 'large' ? 'col-large' : col.width === 'medium' ? 'col-medium' : 'col-auto';
+            return '<th class="' + cls + '">' + escH(col.label || '') + '</th>';
+          }).join('') +
+          '<th class="col-spacer" data-empty="true" aria-hidden="true"></th>';
+
+        // === tbody: 각 행마다 cb-col + col-no + 데이터 + col-spacer ===
+        var rows = Math.max(rowSamples.length, 5);
+        var tbodyHtml = '';
+        for (var r = 0; r < rows; r++) {
+          tbodyHtml += '<tr>' +
+            '<td class="cb-col col-frozen-1"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0"></span></td>' +
+            '<td class="col-auto col-no col-frozen-2">' + (r + 1) + '</td>' +
+            newCols.map(function (col, c) {
+              var cls = col.width === 'large' ? 'col-large' : col.width === 'medium' ? 'col-medium' : 'col-auto';
+              var sampleValue = (rowSamples[r] && rowSamples[r][c] != null) ? String(rowSamples[r][c]) : '';
+              return '<td class="' + cls + '">' + renderTypedCellHTML(col.type, sampleValue, r) + '</td>';
+            }).join('') +
+            '<td class="col-spacer" aria-hidden="true"></td>' +
+          '</tr>';
+        }
+        tbody.innerHTML = tbodyHtml;
+      }
+
+      // === 8. thead 첫 행 모든 th 에 검정 1.5px 라인 강제 (inline style — 모든 cascade 우선)
+      if (thead) {
+        var firstRowThs = thead.querySelectorAll('tr:first-child > th');
+        firstRowThs.forEach(function (th) {
+          th.style.borderTop = '1.5px solid #000';
+          th.style.position = 'relative';
+        });
+      }
+
+      // === 9. (sticky thead 시스템 비활성화로 SCMTable.init 호출 불필요)
+      return true;
+    } catch (e) {
+      console.warn('[SCM Sim] PRD 주입 실패 (cross-origin?):', e && e.message);
+      return false;
+    }
+  }
+
+  function renderIframe(prd, url, spec) {
+    // 캐시 무효화 — wireframe-template 가 변경될 때 옛 버전 로드 차단
+    var bustedUrl = url + (url.indexOf('?') === -1 ? '?' : '&') + 'ts=' + Date.now();
+    console.log('[SCM Sim] renderIframe 호출 — url:', bustedUrl, 'spec 있음:', !!spec);
+    var frame = document.getElementById('preview-frame');
+    var existing = document.getElementById('preview-iframe');
+    if (existing) existing.remove();
+    var ifr = document.createElement('iframe');
+    ifr.id = 'preview-iframe';
+    ifr.src = bustedUrl;
+    ifr.addEventListener('load', function () {
+      console.log('[SCM Sim] iframe load 이벤트 fire — injectPrd 호출 시작');
+      var ok = injectPrd(ifr, prd, spec);
+      console.log('[SCM Sim] injectPrd 결과:', ok);
+      if (!ok) {
+        showToast('주입 실패 — F12 콘솔 확인', 'err');
+      }
+    });
+    frame.appendChild(ifr);
+    document.getElementById('preview-empty').classList.add('is-hide');
+  }
+
+  async function build(prd, prdText, supp) {
+    clearError();
+    showLoading(true);
+
+    var byokKey = '';
+    try { byokKey = (localStorage.getItem(STORAGE_KEY) || '').trim(); } catch (_) {}
+    if (!byokKey || !/^sk-ant-/.test(byokKey)) {
+      showLoading(false);
+      showError('Anthropic 키가 설정되지 않았습니다.\n좌측 「키 입력」 버튼으로 sk-ant-... 키를 입력하세요.');
+      return;
+    }
+
+    // 1) 데모 페이지 매핑 — 가장 유사한 실제 데모를 base 로
+    var candidates = pickDemoCandidates(prd);
+    var demoUrl = candidates[0].url;
+
+    // 2) AI spec 받기 — PRD 의 진짜 구조
+    var spec = null;
+    try {
+      spec = await fetchSpec(byokKey, prd, prdText, supp);
+      try { localStorage.setItem(STORAGE_SPEC, JSON.stringify(spec)); } catch (_) {}
+    } catch (e) {
+      showLoading(false);
+      var em = (e && e.message) || String(e);
+      if (/401|invalid.*api.?key|authentication/i.test(em)) {
+        em = '🔑 API 키가 유효하지 않습니다. 좌측 「변경」 버튼으로 새 sk-ant-... 키 입력하세요.\n\n' + em;
+      }
+      showError(em);
+      showToast('AI 호출 실패', 'err');
+      return;
+    }
+
+    // 2-1) deep clone — alternatives 가 main spec 의 table/filters reference 공유 차단
+    spec = JSON.parse(JSON.stringify(spec));
+
+    // 3) AI 응답 검증/보강 — 필터 ↔ 컬럼 1:1 매칭 강제
+    reconcileSpec(spec);
+    console.log('[SCM Sim] reconcileSpec 후 — main columns:', ((spec.table && spec.table.columns) || []).map(function(c){return c.label;}));
+
+    // 3-1) 메인 spec + alternatives 를 variant 후보로 묶음
+    var allVariants = [{ label: '메인 (PRD 그대로)', spec: spec }];
+    if (spec.alternatives && spec.alternatives.length) {
+      spec.alternatives.forEach(function (alt) {
+        // alt 는 메인의 pageHead/empty 를 공유하되 filters/table 만 alt 자체
+        var altSpec = {
+          pageHead: spec.pageHead,
+          filters: alt.filters || spec.filters,
+          table: alt.table || spec.table,
+          empty: spec.empty,
+        };
+        allVariants.push({ label: alt.label || '변형', spec: altSpec });
+      });
+    }
+
+    // 4) 데모 페이지 iframe.src 직접 로드 → load 후 DOM 강제 변형
+    showLoading(false);
+    currentSpec = spec;
+    currentPrd = prd;
+    renderIframe(prd, demoUrl, spec);
+    renderVariantChipsForSpec(prd, allVariants, 0);
+    fillSpecPanel(spec);
+    enableActions();
+
+    // 5) 학습 history 저장
+    saveHistoryEntry(prd, spec, '메인 (PRD 그대로)');
+
+    var c = (spec.table && spec.table.columns && spec.table.columns.length) || 0;
+    var f = (spec.filters && spec.filters.length) || 0;
+    var a = (spec.pageHead && spec.pageHead.actions && spec.pageHead.actions.length) || 0;
+    var altCount = (spec.alternatives && spec.alternatives.length) || 0;
+    showToast('PRD 적용 · 컬럼 ' + c + ' · 필터 ' + f + ' · 액션 ' + a + (altCount ? ' · 변형 ' + altCount + '개' : ''), 'ok');
+  }
+
+  // 필터 라벨 → 컬럼 type 자동 추론
+  function inferColumnTypeFromLabel(label) {
+    var l = String(label || '').toLowerCase();
+    if (/상태|status/.test(l)) return 'status-chip';
+    if (/일자|날짜|date|등록일|수정일/.test(l)) return 'date';
+    if (/번호|코드|code\b|id\b|sku|po\b|uid/.test(l)) return 'code-link';
+    if (/플랫폼|platform|채널/.test(l)) return 'platform-tag';
+    if (/유형|kind|타입|분류|구분/.test(l)) return 'kind-chip';
+    if (/상품명|product|name/.test(l)) return 'product-name';
+    if (/수량|금액|가격|qty|price|amount/.test(l)) return 'number';
+    return 'text';
+  }
+
+  // 필터 라벨 → dummy 데이터 자동 추론
+  function inferDummyValue(label, rowIdx) {
+    var l = String(label || '').toLowerCase();
+    var r = rowIdx + 1;
+    if (/상태/.test(l)) return ['활성', '대기', '완료', '오류', '처리중'][rowIdx % 5];
+    if (/일자|날짜|date|등록일/.test(l)) return '2026-05-' + String(r * 3 + 1).padStart(2, '0');
+    if (/번호|코드/.test(l)) return 'CD-' + (1000 + r);
+    if (/플랫폼|platform/.test(l)) return ['29CM', '무신사', '하이버', 'SSF', '무탠다드'][rowIdx % 5];
+    if (/유형|타입|분류|구분/.test(l)) return ['일반', '특가', '신상', '시즌'][rowIdx % 4];
+    if (/매장/.test(l)) return ['무신사 스탠다드 홍대점', '29CM 성수점', '무탠다드 강남점'][rowIdx % 3];
+    if (/브랜드/.test(l)) return ['(주)무신사', '29CM', '무탠다드'][rowIdx % 3];
+    if (/MD|담당/.test(l)) return ['김민준 MD', '이서연 MD', '박지훈 MD'][rowIdx % 3];
+    if (/여부/.test(l)) return ['초도', '재입고'][rowIdx % 2];
+    return '샘플 ' + r;
+  }
+
+  // 라벨 정규화 — 공백/대소문자/특수문자 차이 무시
+  function normalizeLabel(s) {
+    return String(s || '').trim().toLowerCase()
+      .replace(/\s+/g, ' ')        // 다중 공백 → 1개
+      .replace(/[()[\]·.,/]/g, ''); // 흔한 특수문자 제거
+  }
+
+  // 필터 항목을 정규화된 라벨로 변환 (배열/객체/string 모두 처리)
+  function getFilterLabel(f) {
+    if (typeof f === 'string') return f;
+    if (f && typeof f === 'object') return f.label || f.name || '';
+    return '';
+  }
+
+  // 필터 ↔ 컬럼 매칭 보장 + alternatives 도 동일 처리
+  function reconcileSpec(spec) {
+    if (!spec) { console.warn('[SCM Sim] reconcileSpec: spec 없음'); return; }
+    var fixOne = function (s, tag) {
+      if (!s || !s.table) {
+        console.warn('[SCM Sim] reconcileSpec ' + tag + ': spec.table 없음');
+        return;
+      }
+      // filters 가 array 가 아니어도 처리 (가설 D)
+      if (!Array.isArray(s.filters)) {
+        console.warn('[SCM Sim] reconcileSpec ' + tag + ': filters 가 array 아님 — 빈 배열로 강제', s.filters);
+        s.filters = [];
+      }
+      s.table.columns = s.table.columns || [];
+      s.table.rowSamples = s.table.rowSamples || [];
+
+      // 정규화된 라벨로 매칭 (가설 B)
+      var existingNormalized = s.table.columns.map(function (c) { return normalizeLabel(c.label); });
+      var addedCount = 0;
+      var skippedSamples = [];
+
+      s.filters.forEach(function (f) {
+        var label = getFilterLabel(f);
+        if (!label) return;
+        var n = normalizeLabel(label);
+        if (existingNormalized.indexOf(n) !== -1) {
+          skippedSamples.push(label);
+          return;
+        }
+        var col = {
+          label: label,
+          type: inferColumnTypeFromLabel(label),
+          width: /상품명|product/.test(String(label).toLowerCase()) ? 'large' : 'auto',
+        };
+        s.table.columns.push(col);
+        existingNormalized.push(n);
+        var rowCount = Math.max(s.table.rowSamples.length, 5);
+        for (var r = 0; r < rowCount; r++) {
+          if (!s.table.rowSamples[r]) s.table.rowSamples[r] = [];
+          s.table.rowSamples[r].push(inferDummyValue(label, r));
+        }
+        addedCount++;
+      });
+      console.log('[SCM Sim] reconcileSpec ' + tag + ': filters=' + s.filters.length + ', columns 보강 전=' + (s.table.columns.length - addedCount) + ', 추가=' + addedCount + ', 보강 후=' + s.table.columns.length + (skippedSamples.length ? ', 이미매칭=[' + skippedSamples.join(', ') + ']' : ''));
+    };
+    fixOne(spec, 'main');
+    if (spec.alternatives) spec.alternatives.forEach(function (alt, i) {
+      // alt 가 일부만 override 하는 경우 deep clone 으로 main 과 분리
+      var altClone = JSON.parse(JSON.stringify({
+        filters: alt.filters || spec.filters,
+        table: alt.table || spec.table,
+      }));
+      fixOne(altClone, 'alt[' + i + '] ' + (alt.label || ''));
+      alt.filters = altClone.filters;
+      alt.table = altClone.table;
+    });
+  }
+
+  // 학습 history 저장 (최대 10개)
+  function saveHistoryEntry(prd, spec, selectedVariant) {
+    try {
+      var history = JSON.parse(localStorage.getItem('scm-prd-history') || '[]');
+      var entry = {
+        ts: Date.now(),
+        name: prd.name,
+        menu: prd.menu,
+        category: prd.category,
+        columns: ((spec.table && spec.table.columns) || []).map(function (c) { return c.label; }),
+        filters: (spec.filters || []).map(function (f) { return f.label || f; }),
+        actions: ((spec.pageHead && spec.pageHead.actions) || []).map(function (a) { return a.label; }),
+        selectedVariant: selectedVariant,
+      };
+      history.push(entry);
+      // 최대 10개만 유지
+      if (history.length > 10) history = history.slice(-10);
+      localStorage.setItem('scm-prd-history', JSON.stringify(history));
+    } catch (_) {}
+  }
+
+  // Variant chip — 메인 + alternatives 묶어서 노출
+  function renderVariantChipsForSpec(prd, variants, currentIdx) {
+    var container = document.getElementById('preview-variants');
+    if (!container) return;
+    if (!variants || variants.length <= 1) { container.innerHTML = ''; return; }
+
+    container.innerHTML = variants.map(function (v, i) {
+      var isActive = (i === currentIdx);
+      return '<button class="preview__variant' + (isActive ? ' is-active' : '') + '" type="button" data-idx="' + i + '">' + esc(v.label) + '</button>';
+    }).join('');
+
+    container.querySelectorAll('.preview__variant').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var idx = parseInt(btn.getAttribute('data-idx'), 10);
+        var v = variants[idx];
+        if (!v) return;
+        // active 갱신
+        container.querySelectorAll('.preview__variant').forEach(function (x) {
+          x.classList.toggle('is-active', x === btn);
+        });
+        // iframe 변형 (그대로 src 유지, contentDocument 만 다시 변형)
+        var ifr = document.getElementById('preview-iframe');
+        if (ifr) {
+          var ok = injectPrd(ifr, prd, v.spec);
+          if (ok) {
+            currentSpec = v.spec;
+            currentPrd = prd;
+            fillSpecPanel(v.spec);
+            saveHistoryEntry(prd, v.spec, v.label);
+            showToast('"' + v.label + '" 적용', 'ok');
+          }
+        }
+      });
+    });
+  }
+
+  // 좌측 패널의 "AI 추출 spec" — 편집 가능한 chip + 추가 버튼 (사용자가 직접 와이어프레임 다듬기)
+  function fillSpecPanel(spec) {
+    var box = document.getElementById('panel-spec');
+    if (!box) return;
+    if (!spec) { box.style.display = 'none'; return; }
+    box.style.display = 'block';
+
+    var pageSub = (spec.pageHead && spec.pageHead.sub) || '-';
+    document.getElementById('spec-sub').textContent = pageSub;
+
+    // 컬럼 — 편집 가능 chip + ＋ 추가 버튼
+    var cols = (spec.table && spec.table.columns) || [];
+    document.getElementById('spec-cols-count').textContent = cols.length;
+    document.getElementById('spec-cols').innerHTML =
+      cols.map(function (c, i) {
+        return '<span class="panel__chip panel__chip--editable" data-edit="col" data-idx="' + i + '" title="클릭하여 수정 / × 클릭하여 삭제">' +
+          esc(c.label) +
+          '<small style="opacity:0.6;margin-left:4px;">·' + esc(c.type || 'text') + '</small>' +
+          '<button class="panel__chip__del" data-del="col" data-idx="' + i + '" title="삭제">×</button>' +
+        '</span>';
+      }).join('') +
+      '<button class="panel__chip__add" data-add="col">＋ 컬럼</button>';
+
+    // 필터 — 편집 가능 chip + ＋ 추가 버튼
+    var filters = spec.filters || [];
+    document.getElementById('spec-filters-count').textContent = filters.length;
+    document.getElementById('spec-filters').innerHTML =
+      filters.map(function (f, i) {
+        var label = (f && f.label) || f || '';
+        return '<span class="panel__chip panel__chip--editable" data-edit="filter" data-idx="' + i + '" title="클릭 수정 / × 삭제">' +
+          esc(label) +
+          '<button class="panel__chip__del" data-del="filter" data-idx="' + i + '">×</button>' +
+        '</span>';
+      }).join('') +
+      '<button class="panel__chip__add" data-add="filter">＋ 필터</button>';
+
+    // 액션 — 편집 가능 chip + ＋ 추가 버튼
+    var actions = (spec.pageHead && spec.pageHead.actions) || [];
+    document.getElementById('spec-actions-count').textContent = actions.length;
+    document.getElementById('spec-actions').innerHTML =
+      actions.map(function (a, i) {
+        var cls = a.kind === 'primary' ? 'panel__chip panel__chip--primary panel__chip--editable' : 'panel__chip panel__chip--editable';
+        return '<span class="' + cls + '" data-edit="action" data-idx="' + i + '" title="클릭 수정 / × 삭제">' +
+          esc(a.label || '') +
+          '<button class="panel__chip__del" data-del="action" data-idx="' + i + '">×</button>' +
+        '</span>';
+      }).join('') +
+      '<button class="panel__chip__add" data-add="action">＋ 액션</button>';
+
+    var rows = (spec.table && spec.table.rowSamples) || [];
+    document.getElementById('spec-rows-count').textContent = rows.length;
+    document.getElementById('spec-rows').textContent = rows.length
+      ? rows.map(function (r) { return '· ' + (r || []).join(' | '); }).join('\n')
+      : '(없음)';
+
+    bindSpecPanelEdits();
+  }
+
+  // 편집 / 삭제 / 추가 핸들러 — chip 클릭 시 spec 갱신 → 즉시 iframe 재 inject + history 저장
+  function bindSpecPanelEdits() {
+    var box = document.getElementById('panel-spec');
+    if (!box) return;
+
+    // 삭제 (X 버튼) — bubbling 막기 위해 먼저 처리
+    box.querySelectorAll('[data-del]').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var type = btn.getAttribute('data-del');
+        var idx = parseInt(btn.getAttribute('data-idx'), 10);
+        deleteSpecItem(type, idx);
+      });
+    });
+    // 편집 (chip 자체 클릭)
+    box.querySelectorAll('[data-edit]').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        var type = chip.getAttribute('data-edit');
+        var idx = parseInt(chip.getAttribute('data-idx'), 10);
+        editSpecItem(type, idx);
+      });
+    });
+    // 추가
+    box.querySelectorAll('[data-add]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var type = btn.getAttribute('data-add');
+        addSpecItem(type);
+      });
+    });
+  }
+
+  function deleteSpecItem(type, idx) {
+    if (!currentSpec) return;
+    if (type === 'col') {
+      currentSpec.table.columns.splice(idx, 1);
+      // rowSamples 도 같은 컬럼 제거
+      (currentSpec.table.rowSamples || []).forEach(function (row) {
+        if (Array.isArray(row)) row.splice(idx, 1);
+      });
+    } else if (type === 'filter') {
+      currentSpec.filters.splice(idx, 1);
+    } else if (type === 'action') {
+      currentSpec.pageHead.actions.splice(idx, 1);
+    }
+    applyEditedSpec('삭제');
+  }
+
+  function editSpecItem(type, idx) {
+    if (!currentSpec) return;
+    if (type === 'col') {
+      var col = currentSpec.table.columns[idx];
+      var newLabel = window.prompt('컬럼 이름', col.label);
+      if (newLabel == null) return;
+      newLabel = newLabel.trim();
+      if (!newLabel) return;
+      var newType = window.prompt('컬럼 타입 (text/number/code-link/status-chip/kind-chip/platform-tag/product-name/tag/date)', col.type || 'text');
+      if (newType == null) return;
+      var newWidth = window.prompt('width (auto/medium/large)', col.width || 'auto');
+      if (newWidth == null) return;
+      col.label = newLabel;
+      col.type = newType.trim() || 'text';
+      col.width = newWidth.trim() || 'auto';
+    } else if (type === 'filter') {
+      var f = currentSpec.filters[idx];
+      var label = (f && f.label) || f || '';
+      var nv = window.prompt('필터 이름', label);
+      if (nv == null) return;
+      nv = nv.trim();
+      if (!nv) return;
+      currentSpec.filters[idx] = { label: nv };
+    } else if (type === 'action') {
+      var a = currentSpec.pageHead.actions[idx];
+      var nl = window.prompt('액션 라벨', a.label || '');
+      if (nl == null) return;
+      nl = nl.trim();
+      if (!nl) return;
+      var nk = window.prompt('kind (primary/ghost/danger)', a.kind || 'ghost');
+      if (nk == null) return;
+      a.label = nl;
+      a.kind = nk.trim() || 'ghost';
+    }
+    applyEditedSpec('수정');
+  }
+
+  function addSpecItem(type) {
+    if (!currentSpec) return;
+    if (type === 'col') {
+      var label = window.prompt('새 컬럼 이름');
+      if (label == null) return;
+      label = label.trim();
+      if (!label) return;
+      var t = window.prompt('타입 (text/number/code-link/status-chip/kind-chip/platform-tag/product-name/tag/date)', 'text');
+      if (t == null) return;
+      var w = window.prompt('width (auto/medium/large)', 'auto');
+      if (w == null) return;
+      currentSpec.table.columns.push({ label: label, type: t.trim() || 'text', width: w.trim() || 'auto' });
+      // rowSamples 도 새 컬럼 dummy 데이터 추가
+      (currentSpec.table.rowSamples || []).forEach(function (row, r) {
+        if (Array.isArray(row)) row.push(inferDummyValue(label, r));
+      });
+    } else if (type === 'filter') {
+      var fl = window.prompt('새 필터 이름');
+      if (fl == null) return;
+      fl = fl.trim();
+      if (!fl) return;
+      currentSpec.filters = currentSpec.filters || [];
+      currentSpec.filters.push({ label: fl });
+    } else if (type === 'action') {
+      var al = window.prompt('새 액션 라벨');
+      if (al == null) return;
+      al = al.trim();
+      if (!al) return;
+      var ak = window.prompt('kind (primary/ghost/danger)', 'ghost');
+      if (ak == null) return;
+      currentSpec.pageHead = currentSpec.pageHead || {};
+      currentSpec.pageHead.actions = currentSpec.pageHead.actions || [];
+      currentSpec.pageHead.actions.push({ label: al, kind: ak.trim() || 'ghost' });
+    }
+    applyEditedSpec('추가');
+  }
+
+  // spec 변경 후 iframe 재 inject + 좌측 패널 갱신 + history 저장
+  function applyEditedSpec(actionLabel) {
+    var ifr = document.getElementById('preview-iframe');
+    if (ifr && currentPrd && currentSpec) {
+      injectPrd(ifr, currentPrd, currentSpec);
+      fillSpecPanel(currentSpec);
+      try { localStorage.setItem(STORAGE_SPEC, JSON.stringify(currentSpec)); } catch (_) {}
+      saveHistoryEntry(currentPrd, currentSpec, '사용자 편집 — ' + actionLabel);
+      showToast(actionLabel + ' 완료 — 학습 history 에 누적됨', 'ok');
+    }
+  }
+
+  // 데모 후보 chip 렌더 + 클릭 시 iframe 전환
+  function renderVariantChips(prd, candidates, currentUrl, spec) {
+    var container = document.getElementById('preview-variants');
+    if (!container) return;
+    if (!candidates || candidates.length <= 1) { container.innerHTML = ''; return; }
+
+    container.innerHTML = candidates.map(function (c) {
+      var isActive = (c.url === currentUrl);
+      return '<button class="preview__variant' + (isActive ? ' is-active' : '') + '" type="button" data-url="' + c.url + '">' + esc(c.label) + '</button>';
+    }).join('');
+
+    container.querySelectorAll('.preview__variant').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var url = btn.getAttribute('data-url');
+        // active 갱신
+        container.querySelectorAll('.preview__variant').forEach(function (x) {
+          x.classList.toggle('is-active', x === btn);
+        });
+        // iframe 전환 (spec 그대로 재사용)
+        renderIframe(prd, url, spec);
+      });
+    });
+  }
+
+  async function fetchSpec(key, prd, prdText, supp) {
+    var suppText = supp ? Object.keys(supp).map(function (k) {
+      return supp[k] ? '[' + k + ']\n' + supp[k] : '';
+    }).filter(Boolean).join('\n\n') : '';
+
+    // 사용자 학습 history (이전에 선호한 패턴)
+    var historyText = '';
+    try {
+      var history = JSON.parse(localStorage.getItem('scm-prd-history') || '[]');
+      if (history.length) {
+        var recent = history.slice(-3);
+        historyText = '\n[사용자가 이전에 선호/선택한 패턴 — 참고]\n' +
+          recent.map(function (h, i) {
+            return '· ' + (i + 1) + '. PRD "' + (h.name || '?') + '" (' + (h.menu || '?') + ') — 컬럼: [' + (h.columns || []).slice(0, 8).join(', ') + '], 필터: [' + (h.filters || []).join(', ') + '], 선택: ' + (h.selectedVariant || 'default');
+          }).join('\n');
+      }
+    } catch (_) {}
+
+    var prompt = [
+      '당신은 SCM/이커머스 시스템에 정통한 시니어 PM 이자 인터랙션 디자이너입니다.',
+      'PRD 본문을 **줄 단위로 정독** 해서 페이지의 진짜 구조 (컬럼/필터/액션/dummy데이터) 를 추출하세요.',
+      '',
+      '[★ PRD 활용도 — 최우선]',
+      '1) PRD 본문에 명시된 항목은 **빠짐없이 모두** 추출. 누락 절대 X.',
+      '2) "컬럼:", "필터:", "조회 조건:", "테이블 항목:", "버튼:", "액션:", "기능:" 같은 키워드 주변을 특히 주목.',
+      '3) PRD 가 짧거나 모호하면 [LNB 카테고리 + 메뉴] 도메인 표준 (SAP MM, Coupa, Oracle EBS, 한국 이커머스 SCM 무신사/SSF/29CM/하이버) 으로 보충.',
+      '',
+      '[★ 컬럼 type → width 매핑 + 셀 콘텐츠 길이 같이 고려]',
+      '컬럼 width 는 type 가이드 + 실제 rowSamples 셀 콘텐츠 최대 길이 둘 다 보고 결정.',
+      '셀 콘텐츠가 잘려서는 안 됨 — 가장 긴 셀 데이터가 모두 보일 정도의 width.',
+      '- code-link (SKU번호/PO번호/UID/주문번호) → 보통 "medium" (긴 코드라면 large 도 가능)',
+      '- product-name (썸네일+상품명) → width "large"',
+      '- status-chip (운영/매핑/처리상태) → width "auto"',
+      '- kind-chip (분류/타입) → width "auto"',
+      '- platform-tag (29CM/무신사 등) → width "auto"',
+      '- date (2026-05-01 형식) → width "medium"',
+      '- number (수량/가격/금액 ₩12,500,000 같이 김) → 보통 "auto", 큰 금액이면 "medium"',
+      '- tag (일반 태그) → width "auto"',
+      '- text 짧음 (8자 이하: 브랜드/담당자) → width "auto"',
+      '- text 중간 (9~20자: 회사명/카테고리) → width "medium"',
+      '- text 긺 (20자 초과: 설명/메모/사유) → width "large"',
+      '셀 콘텐츠가 컬럼 라벨보다 더 길 가능성 우선 고려.',
+      '',
+      '[★★ 필터 ↔ 컬럼 매칭 규칙 — 반드시 보장]',
+      '필터에 있는 모든 항목은 테이블 컬럼에도 1:1 대응되는 컬럼이 존재해야 함.',
+      '- filter "스토어" → table.columns 에 "스토어" 또는 "스토어명" 컬럼 반드시 포함',
+      '- filter "운영상태" → "운영상태" 컬럼 반드시 포함',
+      '- filter "공급업체" → "공급업체" 컬럼 반드시 포함',
+      '필터로 조회 가능한데 결과 테이블에 없으면 사용자가 결과 확인 불가 — 절대 어긋나면 안 됨.',
+      '컬럼이 더 많은 건 OK (필터 없는 컬럼 허용). 단 필터에 있는데 컬럼에 없는 건 절대 X.',
+      'alternatives 의 각 variant 도 동일 규칙 적용 — 그 variant 의 filters 와 columns 도 매칭.',
+      '',
+      '[기본 출력 규칙]',
+      '- actions[0].kind = "primary", 그 외 = "ghost" (danger 의도적 시만)',
+      '- rowSamples = 5행 × columns.length, PRD 도메인 dummy:',
+      '  · 코드: SKU-2026-001 / PO-2026-001 / WH-001 / ES-2026-001',
+      '  · 날짜: 2026-05-01 형식',
+      '  · 회사: (주)무신사 / 29CM / 무탠다드',
+      '  · 상태값 다양 분포 (활성/대기/완료/오류/처리중/승인/반려)',
+      '  · 금액: ₩12,500,000 형식',
+      '  · 수량: 1,200 형식',
+      '- checkable: 일괄 처리/일괄 액션 필요 시 true',
+      '',
+      '[★★★ 변형 제안 (alternatives) — 매우 중요 ★★★]',
+      '메인 spec 외에 **2개의 다른 방향** 을 alternatives 에 반드시 포함.',
+      '예시 방향 (서로 다른 2개 선택):',
+      '  · "상세 정보 강조" — 컬럼 더 많이, 메모/설명/이력/감사로그 포함',
+      '  · "운영 효율 강조" — 일괄 액션 풍부, 통계 컬럼, 빠른 필터',
+      '  · "관리자 뷰" — 권한/승인/감사 메타 추가',
+      '  · "검색 우선" — 필터 더 많이, 컬럼 단순',
+      '  · "모바일 친화" — 컬럼 적게, 핵심 정보만',
+      '메인과 다른 컬럼/필터 조합으로 구성.',
+      '',
+      '[페이지 메타]',
+      '- 이름: ' + (prd.name || ''),
+      '- LNB: ' + ((CAT_LABEL[prd.category] || prd.category || '') + ' > ' + (prd.menu || '')),
+      '- 사용자: ' + (prd.user || ''),
+      '- 작업 유형: ' + (WORK_LABEL[prd.workType] || prd.workType || ''),
+      '',
+      '[PRD 본문 — 줄 단위로 정독]',
+      (prdText || '(없음)').substring(0, 8000),
+      suppText ? '\n[보충 입력]\n' + suppText : '',
+      historyText,
+      '',
+      '[출력 — JSON only, 다른 텍스트 금지]',
+      '{',
+      '  "pageHead": {',
+      '    "title": "페이지명",',
+      '    "actions": [{"label":"신규 등록","kind":"primary"},{"label":"일괄 업로드","kind":"ghost"}]',
+      '  },',
+      '  "filters": [{"label":"스토어"},{"label":"카테고리"},{"label":"상태"}],',
+      '  "table": {',
+      '    "checkable": true,',
+      '    "columns": [',
+      '      {"label":"SKU번호","type":"code-link","width":"medium"},',
+      '      {"label":"상품명","type":"product-name","width":"large"},',
+      '      {"label":"운영상태","type":"status-chip","width":"auto"}',
+      '    ],',
+      '    "rowSamples": [["SKU-2026-001","샘플 1","활성"],["SKU-2026-002","샘플 2","대기"],["SKU-2026-003","샘플 3","활성"],["SKU-2026-004","샘플 4","완료"],["SKU-2026-005","샘플 5","오류"]]',
+      '  },',
+      '  "empty": "등록된 항목이 없습니다",',
+      '  "alternatives": [',
+      '    {"label":"상세 정보 강조","filters":[{"label":"..."}],"table":{"checkable":true,"columns":[...],"rowSamples":[...]}},',
+      '    {"label":"운영 효율 강조","filters":[{"label":"..."}],"table":{"checkable":true,"columns":[...],"rowSamples":[...]}}',
+      '  ]',
+      '}',
+    ].filter(Boolean).join('\n');
+
+    var res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 8000,
+        system: '당신은 JSON 만 출력하는 API 입니다. 응답은 반드시 { 로 시작 } 로 끝. markdown 코드블록 / 설명 / 인사말 절대 금지. alternatives 는 반드시 2개 포함.',
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    if (!res.ok) {
+      var t = await res.text();
+      throw new Error(res.status + ': ' + t.substring(0, 200));
+    }
+    var data = await res.json();
+    var raw = (data.content && data.content[0] && data.content[0].text) || '';
+    if (!raw) throw new Error('빈 응답');
+    var spec = extractJson(raw);
+    if (!spec) throw new Error('JSON 파싱 실패: ' + raw.substring(0, 200));
+    // 진단용 raw spec dump — 사용자가 콘솔 펼치면 즉시 확인
+    console.log('[SCM Sim] AI 원본 spec — filters:', (spec.filters || []).map(function(f){return (f&&f.label)||f;}),
+      '| columns:', ((spec.table && spec.table.columns) || []).map(function(c){return c.label;}),
+      '| alternatives:', (spec.alternatives || []).length);
+    console.log('[SCM Sim] AI 원본 spec (전체)', spec);
+    return spec;
+  }
+
+  /* ============================================================
+   * Assemble — JSON spec → 디자인시스템 컴포넌트 마크업
+   * ============================================================ */
+  function escH(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+
+  function renderPageHead(ph) {
+    var actions = (ph.actions || []).map(function (a) {
+      var kind = a.kind === 'danger' ? 'scm-button scm-button--danger'
+              : a.kind === 'ghost'  ? 'scm-button scm-button--ghost'
+              : 'scm-button scm-button--primary';
+      return '<button class="' + kind + '" type="button">' + escH(a.label) + '</button>';
+    }).join('\n        ');
+    return '<div class="scm-page-head">\n' +
+      '  <div class="scm-page-head__titles">\n' +
+      '    <h1 class="scm-page-head__title">' + escH(ph.title) + '</h1>' +
+      (ph.sub ? '\n    <p class="scm-page-head__sub">' + escH(ph.sub) + '</p>' : '') +
+      '\n  </div>\n' +
+      (actions ? '  <div class="scm-page-head__actions">\n        ' + actions + '\n  </div>\n' : '') +
+      '</div>';
+  }
+
+  function renderFilterBar(filters) {
+    if (!filters || !filters.length) return '';
+    var chips = filters.map(function (f) {
+      return '<button class="scm-filter-select" type="button" data-state="placeholder">' +
+        '<span class="scm-filter-select__label">' + escH(f.label) + '</span>' +
+        '<span class="scm-filter-select__value">' + escH(f.label) + '</span>' +
+        '<svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>' +
+        '</button>';
+    }).join('\n      ');
+    return '<div class="scm-filter-bar">\n' +
+      '  <button class="scm-filter-chip" type="button">\n' +
+      '    <svg viewBox="0 0 20 20"><path d="M6 10h8M4 6h12M8 14h4" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>\n' +
+      '    <span>전체 필터</span>\n' +
+      '  </button>\n' +
+      '  <div class="scm-filter-overflow"><div class="scm-filter-overflow__track">\n      ' + chips + '\n  </div></div>\n' +
+      '</div>';
+  }
+
+  // 컬럼 type 별 dummy 셀 콘텐츠
+  function dummyCell(col, rowIdx) {
+    var r = rowIdx + 1;
+    switch (col.type) {
+      case 'number': return String(Math.floor(Math.random() * 999) + 1);
+      case 'code-link': return '<a class="scm-code-link">CODE-' + (1000 + r) + '</a>';
+      case 'status-chip': {
+        var stxs = ['활성', '대기', '완료', '오류'];
+        var clss = ['scm-status-chip scm-status-chip--ok', 'scm-status-chip scm-status-chip--warn', 'scm-status-chip scm-status-chip--info', 'scm-status-chip scm-status-chip--err'];
+        var i = (rowIdx) % 4;
+        return '<span class="' + clss[i] + '">' + stxs[i] + '</span>';
+      }
+      case 'kind-chip': {
+        var kinds = ['일반', '특가', '신상', '시즌'];
+        return '<span class="scm-kind-chip">' + kinds[rowIdx % 4] + '</span>';
+      }
+      case 'platform-tag': {
+        var pf = ['29CM', '무신사', '하이버', 'SSF'];
+        return '<span class="scm-platform-tag">' + pf[rowIdx % 4] + '</span>';
+      }
+      case 'product-name':
+        return '<span class="scm-product-name">' +
+          '<span class="scm-product-name__thumb"></span>' +
+          '<span class="scm-product-name__text">샘플 상품 ' + r + ' — 짧은 설명 텍스트가 들어갑니다</span>' +
+        '</span>';
+      case 'tag': return '<span class="scm-tag">태그' + r + '</span>';
+      case 'date': return '2026-05-' + String(r * 3 + 1).padStart(2, '0');
+      default: return escH(col.label) + ' ' + r;
+    }
+  }
+
+  // PRD 도메인 sample 값 → 컬럼 타입에 맞는 마크업으로 wrapping
+  function renderTypedCell(type, value, rowIdx) {
+    var v = String(value == null ? '' : value);
+    switch (type) {
+      case 'number':       return escH(v);
+      case 'code-link':    return '<a class="scm-code-link">' + escH(v) + '</a>';
+      case 'status-chip': {
+        var clss = ['scm-status-chip scm-status-chip--ok', 'scm-status-chip scm-status-chip--warn', 'scm-status-chip scm-status-chip--info', 'scm-status-chip scm-status-chip--err'];
+        return '<span class="' + clss[rowIdx % 4] + '">' + escH(v) + '</span>';
+      }
+      case 'kind-chip':    return '<span class="scm-kind-chip">' + escH(v) + '</span>';
+      case 'platform-tag': return '<span class="scm-platform-tag">' + escH(v) + '</span>';
+      case 'product-name':
+        return '<span class="scm-product-name">' +
+          '<span class="scm-product-name__thumb"></span>' +
+          '<span class="scm-product-name__text">' + escH(v) + '</span>' +
+        '</span>';
+      case 'tag':  return '<span class="scm-tag">' + escH(v) + '</span>';
+      case 'date': return escH(v);
+      default:     return escH(v);
+    }
+  }
+
+  function renderTable(table) {
+    var cols = table.columns || [];
+    var checkable = !!table.checkable;
+    var samples = table.rowSamples || [];
+
+    var thead = '';
+    var tbody = '';
+    var headerCells = [];
+    if (checkable) headerCells.push('<th class="cb-col col-frozen-1"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0"></span></th>');
+    cols.forEach(function (c) {
+      var cls = c.width === 'large' ? 'col-large' : c.width === 'medium' ? 'col-medium' : 'col-auto';
+      headerCells.push('<th class="' + cls + '">' + escH(c.label) + '</th>');
+    });
+    thead = '<tr>' + headerCells.join('') + '</tr>';
+
+    var rowCount = Math.max(samples.length, 5);
+    for (var r = 0; r < rowCount; r++) {
+      var cells = [];
+      if (checkable) cells.push('<td class="cb-col col-frozen-1"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0"></span></td>');
+      cols.forEach(function (c, i) {
+        var cls = c.width === 'large' ? 'col-large' : c.width === 'medium' ? 'col-medium' : 'col-auto';
+        // PRD 도메인 sample 우선, 없으면 fallback
+        var sampleValue = (samples[r] && samples[r][i] != null) ? samples[r][i] : null;
+        var content = sampleValue != null ? renderTypedCell(c.type, sampleValue, r) : dummyCell(c, r);
+        cells.push('<td class="' + cls + '">' + content + '</td>');
+      });
+      tbody += '<tr>' + cells.join('') + '</tr>';
+    }
+
+    return '<div class="mp-table-host">\n' +
+      '  <div class="mp-table-scroll">\n' +
+      '    <table class="mp-table is-cell-selectable">\n' +
+      '      <thead>' + thead + '</thead>\n' +
+      '      <tbody>' + tbody + '</tbody>\n' +
+      '    </table>\n' +
+      '  </div>\n' +
+      '</div>';
+  }
+
+  // 디자인시스템 핵심 CSS — sku-management.html 데모와 동일 레퍼토리 (테이블 라인/sticky/페이저/액션바 모두 포함)
+  var DS_CSS = [
+    // 셸
+    'topbar/topbar.css',
+    'lnb/lnb.css',
+    // 헤드 + 액션
+    'page-head/page-head.css',
+    'button/button.css',
+    'search-btn/search-btn.css',
+    'download-btn/download-btn.css',
+    'filter-reset-btn/filter-reset-btn.css',
+    'mini-action/mini-action.css',
+    // 필터 시스템
+    'filter-bar/filter-bar.css',
+    'filter-chip/filter-chip.css',
+    'filter-select/filter-select.css',
+    'filter-popover/filter-popover.css',
+    'filter-drawer/filter-drawer.css',
+    // 통계 영역
+    'stat/stat.css',
+    'stats-bar/stats-bar.css',
+    'info-banner/info-banner.css',
+    // 테이블 (★ 핵심 — 블랙 라인/sticky/cell-selectable 여기서)
+    'scm-table/scm-table.css',
+    'scm-table/column-more-menu.css',
+    'scm-table/column-filter-popover.css',
+    // 테이블 셀 컴포넌트
+    'checkbox/checkbox.css',
+    'tag/tag.css',
+    'status-chip/status-chip.css',
+    'kind-chip/kind-chip.css',
+    'platform-tag/platform-tag.css',
+    'product-name/product-name.css',
+    'code-link/code-link.css',
+    'code-popover/code-popover.css',
+    // 푸터
+    'pager/pager.css',
+    'pgsize-select/pgsize-select.css',
+    // 빈 상태 / 모달 / 토스트 (있어도 와이어프레임 비주얼에는 영향 X, 토큰 일관성 위해)
+    'empty-state/empty-state.css',
+    'toast/toast.css',
+    'backdrop/backdrop.css',
+  ];
+
+  // L1 카테고리별 LNB 아이콘 (간단한 인라인 SVG)
+  var L1_ICONS = {
+    dashboard: '<svg viewBox="0 0 24 24" width="20" height="20"><rect x="3" y="3" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="13" y="3" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="3" y="13" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="13" y="13" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>',
+    store:     '<svg viewBox="0 0 24 24" width="20" height="20"><path d="M3 8h18l-2 12H5z" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M9 8V4h6v4" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>',
+    hanger:    '<svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 4a2 2 0 1 1 2 2c-1 0-2 1-2 2v2M3 18l9-6 9 6v2H3z" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>',
+    order:     '<svg viewBox="0 0 24 24" width="20" height="20"><rect x="4" y="6" width="16" height="14" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M8 6V3M16 6V3M4 10h16" stroke="currentColor" stroke-width="1.6"/></svg>',
+    stock:     '<svg viewBox="0 0 24 24" width="20" height="20"><path d="M3 9l9-5 9 5v9l-9 5-9-5z" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M3 9l9 5 9-5M12 14v9" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>',
+    control:   '<svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M19 12a7 7 0 0 0-.1-1.2l2.1-1.6-2-3.5-2.5 1a7 7 0 0 0-2.1-1.2L14 3h-4l-.4 2.5a7 7 0 0 0-2.1 1.2l-2.5-1-2 3.5 2.1 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2.1 1.6 2 3.5 2.5-1a7 7 0 0 0 2.1 1.2L10 21h4l.4-2.5a7 7 0 0 0 2.1-1.2l2.5 1 2-3.5-2.1-1.6c.1-.4.1-.8.1-1.2z" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>',
+    setting:   '<svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M4 21v-1a8 8 0 0 1 16 0v1" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>',
+  };
+
+  function renderTopbar() {
+    return '<header class="scm-topbar" role="banner">' +
+      '<div class="scm-topbar__left">' +
+        '<button class="scm-topbar__menu-btn" type="button" data-scm-lnb-toggle aria-label="메뉴 열기/닫기">' +
+          '<svg viewBox="0 0 20 20" width="20" height="20"><path d="M3 6h14M3 10h14M3 14h14" stroke="currentColor" stroke-width="1.6"/></svg>' +
+        '</button>' +
+        '<a class="scm-topbar__logo" href="#" aria-label="SCM-Hub 홈">SCM-Hub</a>' +
+        '<span class="scm-topbar__demo-tag" aria-label="데모 환경">DEMO</span>' +
+      '</div>' +
+      '<div class="scm-topbar__right" role="button" tabindex="0">' +
+        '<span class="scm-topbar__avatar">홍</span>' +
+        '<div class="scm-topbar__name-group">' +
+          '<span class="scm-topbar__name"><span class="scm-topbar__name-first">홍길동</span><span class="scm-topbar__name-suffix">님</span></span>' +
+        '</div>' +
+      '</div>' +
+    '</header>';
+  }
+
+  function renderLnb(prd) {
+    var l1Key = prd.category || 'dashboard';
+    var l1Label = CAT_LABEL[l1Key] || l1Key;
+    var l2Label = prd.menu || prd.name || '새 메뉴';
+    var workType = prd.workType || 'new';
+    var tagClass = workType === 'improve' ? 'scm-lnb-tag scm-lnb-tag--wip' : 'scm-lnb-tag scm-lnb-tag--new';
+    var tagText  = workType === 'improve' ? '개선중' : 'NEW';
+    var icon = L1_ICONS[l1Key] || L1_ICONS.dashboard;
+
+    return '<nav class="scm-lnb" aria-label="주메뉴">' +
+      '<div class="scm-lnb-item is-open is-active" data-key="' + escH(l1Key) + '">' +
+        '<button class="scm-lnb-row" type="button">' +
+          '<span class="scm-lnb-icon">' + icon + '</span>' +
+          '<span class="scm-lnb-label">' + escH(l1Label) + '</span>' +
+          '<span class="scm-lnb-chev"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.4" fill="none"/></svg></span>' +
+        '</button>' +
+        '<div class="scm-lnb-l2-list">' +
+          '<a class="scm-lnb-l2 is-active" href="#" data-key="current">' +
+            '<span class="scm-lnb-l2-text">' + escH(l2Label) + '</span>' +
+            '<span class="' + tagClass + '">' + tagText + '</span>' +
+          '</a>' +
+        '</div>' +
+      '</div>' +
+    '</nav>';
+  }
+
+  function assemble(spec, prd) {
+    // 절대 URL 로 박아두면 iframe srcdoc + base href 의 quirk 회피 (특히 file:// 환경)
+    var baseHref = new URL('.', window.location.href).href;
+    var cssLinks = DS_CSS.map(function (p) {
+      return '  <link rel="stylesheet" href="' + baseHref + 'components/' + p + '" />';
+    }).join('\n');
+
+    return '<!DOCTYPE html>\n' +
+'<html lang="ko" class="is-lnb-open">\n' +
+'<head>\n' +
+'  <meta charset="UTF-8" />\n' +
+'  <meta name="viewport" content="width=1440" />\n' +
+'  <base href="' + baseHref + '" />\n' +
+'  <title>' + escH((spec.pageHead && spec.pageHead.title) || (prd && prd.name) || 'wireframe') + '</title>\n' +
+'  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />\n' +
+'  <link rel="stylesheet" href="' + baseHref + 'layer-desktop.css" />\n' +
+cssLinks + '\n' +
+'  <style>\n' +
+'    /* === 데모 페이지 (sku-management.html) 와 100% 동일한 셸 셋업 === */\n' +
+'    :root { --scm-lnb-width: 56px; --scm-sticky-gnb: 64px; --scm-sticky-filter: 76px; }\n' +
+'    html.is-lnb-open { --scm-lnb-width: 260px; }\n' +
+'    /* body 셀렉터 specificity 강화 (layer-desktop 의 body * override 차단) */\n' +
+'    html body { margin: 0; font-family: var(--ld-font-family-base, "Pretendard Variable", Pretendard, sans-serif); color: var(--ld-fg, #000); background: #fff; min-width: 1440px; }\n' +
+'    body > .app { display: grid; grid-template-columns: var(--scm-lnb-width) minmax(0, 1fr); transition: grid-template-columns 0.2s ease; }\n' +
+'    /* main 셀렉터 specificity 강화 — 다른 CSS 의 main padding 을 확실히 winner */\n' +
+'    body .app > main { min-width: 0; padding: 0 28px 40px; }\n' +
+'    /* sticky stack */\n' +
+'    .scm-filter-bar { top: var(--scm-sticky-gnb); }\n' +
+'    .scm-stats-bar--sticky { top: calc(var(--scm-sticky-gnb) + var(--scm-sticky-filter)); }\n' +
+'    .mp-table-host { margin-top: 0; }\n' +
+'    .mp-table .cell-numeric { font-variant-numeric: tabular-nums; text-align: right; }\n' +
+'    /* 와이어프레임 메타 푸터 */\n' +
+'    .ds-meta { margin-top: 28px; padding-top: 18px; border-top: 1px solid #E5E5E5; font-size: 12px; color: #8A8A8A; line-height: 1.55; }\n' +
+'  </style>\n' +
+'</head>\n' +
+'<body>\n' +
+renderTopbar() + '\n' +
+'<div class="app">\n' +
+renderLnb(prd) + '\n' +
+'<main>\n' +
+renderPageHead(spec.pageHead || { title: prd.name || 'Untitled' }) + '\n' +
+renderFilterBar(spec.filters) + '\n' +
+renderTable(spec.table || { columns: [] }) + '\n' +
+'<div class="ds-meta">※ AI 가 추출한 페이지 구조를 SCM Hub 디자인시스템(topbar + lnb + scm-table 등)에 자동 조립한 와이어프레임' + (spec.empty ? ' · 빈 상태: 「' + escH(spec.empty) + '」' : '') + '</div>\n' +
+'</main>\n' +
+'</div>\n' +
+'<' + 'script>\n' +
+'(function () {\n' +
+'  var btn = document.querySelector("[data-scm-lnb-toggle]");\n' +
+'  if (btn) btn.addEventListener("click", function () { document.documentElement.classList.toggle("is-lnb-open"); });\n' +
+'})();\n' +
+'<\/script>\n' +
+'</body>\n' +
+'</html>';
+  }
+
+  /* ============================================================
+   * 라우팅
+   * ============================================================ */
+  if (!isValidated()) { renderLocked(); return; }
+  var prd = loadPrd();
+  if (!prd || !prd.name) { renderLocked(); return; }
+  renderActive(prd, loadText(), loadSupp());
+})();
+</script>
+
+</body>
+</html>

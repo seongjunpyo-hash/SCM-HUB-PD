@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1440" />
+  <title>SCM-Hub · SKU 상세 (모듈 기반)</title>
+  <script src="/auth-gate.js"></script>
+  <script src="/voc/comment-overlay.js" defer></script>
+  <script src="/dev-export.js" defer></script>
+
+  <!-- Pretendard -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+
+  <!-- SCM Components — 상세 페이지 set -->
+  <link rel="stylesheet" href="../design%20system/components/backdrop/backdrop.css" />
+  <link rel="stylesheet" href="../design%20system/components/icon-box/icon-box.css" />
+  <link rel="stylesheet" href="../design%20system/components/checkbox/checkbox.css" />
+  <link rel="stylesheet" href="../design%20system/components/tag/tag.css" />
+  <link rel="stylesheet" href="../design%20system/components/state-text/state-text.css" />
+  <link rel="stylesheet" href="../design%20system/components/platform-tag/platform-tag.css" />
+  <link rel="stylesheet" href="../design%20system/components/toggle/toggle.css" />
+  <link rel="stylesheet" href="../design%20system/components/section-count/section-count.css" />
+  <link rel="stylesheet" href="../design%20system/components/toast/toast.css" />
+  <link rel="stylesheet" href="../design%20system/components/button/button.css" />
+  <link rel="stylesheet" href="../design%20system/components/input/input.css" />
+  <link rel="stylesheet" href="../design%20system/components/select/select.css" />
+  <link rel="stylesheet" href="../design%20system/components/back-btn/back-btn.css" />
+  <link rel="stylesheet" href="../design%20system/components/page-head/page-head.css" />
+  <link rel="stylesheet" href="../design%20system/components/page-section/page-section.css" />
+  <link rel="stylesheet" href="../design%20system/components/card/card.css" />
+  <link rel="stylesheet" href="../design%20system/components/info-table/info-table.css" />
+  <link rel="stylesheet" href="../design%20system/components/tabs/tabs.css" />
+  <link rel="stylesheet" href="../design%20system/components/collapsible-card/collapsible-card.css" />
+  <link rel="stylesheet" href="../design%20system/components/barcode-card/barcode-card.css" />
+  <link rel="stylesheet" href="../design%20system/components/code-link/code-link.css" />
+  <link rel="stylesheet" href="../design%20system/components/confirm-modal/confirm-modal.css" />
+  <link rel="stylesheet" href="../design%20system/components/sticky-bottom-bar/sticky-bottom-bar.css" />
+  <!-- 공용 셸 (GNB + LNB) -->
+  <link rel="stylesheet" href="../design%20system/components/topbar/topbar.css" />
+  <link rel="stylesheet" href="../design%20system/components/lnb/lnb.css" />
+
+  <style>
+    :root {
+      --scm-lnb-width: 56px;
+      --scm-sticky-gnb: 64px;
+    }
+    html.is-lnb-open { --scm-lnb-width: 260px; }
+
+    body { margin: 0; font-family: 'Pretendard Variable', -apple-system, BlinkMacSystemFont, sans-serif; color: #000; background: #fff; min-width: 1440px; padding-bottom: 96px; }
+
+    .app { display: grid; grid-template-columns: var(--scm-lnb-width) minmax(0, 1fr); transition: grid-template-columns 0.2s ease; }
+
+    main { min-width: 0; padding: 0 24px 24px; }
+
+    /* legacy spec: page-head sticky 처리 (SKU 상세 페이지 전용) */
+    .scm-page-head--detail {
+      position: sticky;
+      top: 64px;
+      z-index: 12;
+      background: #fff;
+      padding: 24px 0;
+    }
+    /* back-btn 의 6px 내부 padding 만큼 왼쪽으로 outdent 해서 아이콘이 컨텐츠 좌측 라인과 일치하도록 */
+    .scm-page-head--detail .scm-back-btn {
+      margin-left: -6px;
+    }
+
+    /* === Detail-specific layout === */
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      gap: 68px;
+      align-items: start;
+      padding: 16px 0 40px;
+    }
+    .detail-aside {
+      display: flex; flex-direction: column;
+      gap: 20px;
+      min-width: 0; width: 320px;
+    }
+    .detail-aside__cover {
+      width: 320px; height: 384px;
+      border-radius: 4px; overflow: hidden;
+      background: #F5F5F5;
+    }
+    .detail-aside__cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .detail-aside__breadcrumb {
+      font-size: 14px; font-weight: 400; line-height: 19.6px; color: #000;
+    }
+    .detail-aside__name-wrap { position: relative; display: flex; flex-direction: column; gap: 12px; }
+    .detail-aside__name {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
+      font-size: 18px; font-weight: 600; line-height: 24.48px; color: #000;
+    }
+    .detail-aside__name .edit-icon { width: 16px; height: 16px; cursor: pointer; color: #000; flex-shrink: 0; margin-top: 4px; }
+    .detail-aside__tags { display: inline-flex; gap: 8px; flex-wrap: wrap; }
+    .detail-aside__table {
+      display: flex; flex-direction: column; gap: 4px;
+      padding-top: 12px; border-top: 1px solid #EBEBEB;
+    }
+    .detail-aside__row { display: flex; align-items: center; gap: 20px; padding: 12px 0; }
+    .detail-aside__row .label { width: 134px; flex-shrink: 0; font-size: 15px; font-weight: 500; line-height: 20.4px; color: #666; }
+    .detail-aside__row .value { font-size: 15px; font-weight: 500; line-height: 20.4px; color: #000; display: flex; align-items: center; gap: 8px; }
+    .detail-aside__row .value.is-empty { color: #8A8A8A; }
+    .detail-aside__row .edit-icon { width: 16px; height: 16px; cursor: pointer; color: #000; }
+
+    .detail-main { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
+    .detail-main .scm-page-section:first-child { margin-top: 0; }
+
+    /* Section title 안 카운트 — section-count.css 의 18/600 spec 사용 (override 제거).
+       타이틀과 카운트 사이 4px 간격을 위해 좌측 마진만 추가. */
+    .scm-page-section-title .scm-section-count { margin-left: 4px; }
+
+    /* UID 카드 리스트 — legacy sd-uid-list spec (border-top + 카드 사이 gap 0).
+       각 collapsible-card head 가 자체 border-bottom 으로 separator 역할 → 연속 리스트. */
+    .sd-uid-list {
+      width: 100%; max-width: 926px;
+      border-top: 1px solid #E0E0E0;
+      display: flex; flex-direction: column;
+    }
+
+    /* 바코드 추가 버튼 — 72×72 (legacy sd-barcode-add) */
+    .scm-barcode-add {
+      width: 72px; height: 72px; padding: 16px;
+      background: #F5F5F5; border: 1px solid #E0E0E0; border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; flex-shrink: 0;
+    }
+    .scm-barcode-add:hover { background: #EBEBEB; }
+    .scm-barcode-add svg { width: 20px; height: 20px; color: #000; }
+
+    /* tag-stack (aside) */
+    .scm-tag-stack { display: inline-flex; gap: 8px; flex-wrap: wrap; }
+
+    /* === Page-specific helpers (legacy 흡수) === */
+
+    /* Required dot — 4px blue dot (legacy sd-req-dot) */
+    .sd-req-dot {
+      width: 4px; height: 4px; background: #245EFF; border-radius: 50%;
+      display: inline-block; margin-left: 2px; vertical-align: top; margin-top: 6px;
+    }
+
+    /* 입수정보 input mock — readonly 풍 (legacy sd-input-mock) */
+    .sd-input-mock {
+      width: 64px; height: 36px; padding: 8px 10px; box-sizing: border-box;
+      background: rgba(138,138,138,0.10); border: 1px solid #EBEBEB; border-radius: 4px;
+      display: inline-flex; align-items: center;
+      font-size: 15px; font-weight: 400; line-height: 20px; color: #000;
+    }
+    .sd-input-row { display: flex; align-items: center; gap: 20px; }
+    .sd-input-pair { display: flex; align-items: center; gap: 10px; }
+    .sd-input-pair .label { font-size: 14px; font-weight: 400; line-height: 19.6px; color: #000; }
+
+    /* 소비기한 관리 grid (legacy sd-consume-grid) */
+    .sd-consume-grid { display: flex; gap: 24px; }
+    .sd-consume-grid .col { display: flex; flex-direction: column; gap: 8px; }
+    .sd-consume-grid .row-label { font-size: 15px; font-weight: 400; line-height: 20.4px; color: #000; height: 20px; display: flex; align-items: center; }
+    .sd-consume-grid .row-value { font-size: 15px; font-weight: 500; line-height: 20.4px; color: #000; height: 20px; display: flex; align-items: center; }
+    .sd-consume-grid .row-value.is-accent { color: #245EFF; }
+
+    /* UID 카드 head — 번호 + 연결 아이콘 (legacy uid-num) */
+    .sd-uid-num {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 15px; font-weight: 600; line-height: 20.4px; color: #000;
+    }
+    .sd-uid-num svg { width: 16px; height: 16px; color: #1A1A1A; flex-shrink: 0; }
+    /* 연결 끊김 — 회색 톤 */
+    .sd-uid-num.is-broken svg { color: #666; }
+
+    /* 옵션번호/상태 inline (legacy sd-state-text 의 accent/critical secondary 표현) */
+    .sd-inline-state { display: inline-flex; align-items: center; gap: 4px; }
+    .sd-inline-state .accent   { color: #245EFF; font-weight: 500; }
+    .sd-inline-state .critical { color: #F31110; }
+
+    /* sd-aside name 우측 상단 edit-icon — legacy 와 동일하게 absolute */
+    .detail-aside__name { position: relative; padding-right: 24px; }
+    .detail-aside__name .edit-icon { position: absolute; top: 0; right: 0; margin-top: 4px; }
+
+    /* 공급/운영 정보 — 좌측 pair (rowspan 형태) + 우측 stacked */
+    .sd-supply-row { display: grid; grid-template-columns: 1fr 1fr; align-items: stretch; }
+    .sd-supply-row__left { display: flex; align-items: stretch; }
+    .sd-supply-row__right { display: flex; flex-direction: column; }
+    .sd-supply-row__right > .sd-supply-cell + .sd-supply-cell { border-top: 1px solid rgba(138,138,138,0.10); }
+    .sd-supply-cell { display: flex; align-items: center; flex: 1; }
+    .sd-supplier-stack { display: flex; flex-direction: column; gap: 10px; max-width: 236px; }
+    .sd-supplier-stack .secondary { color: #8A8A8A; }
+  </style>
+
+  <script>
+    try { if (localStorage.getItem('scm-lnb-open') === '1') document.documentElement.classList.add('is-lnb-open'); } catch(_) {}
+  </script>
+</head>
+<body>
+
+<!-- ============== Legacy SVG sprite ============== -->
+<svg width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+<defs>
+  <symbol id="ic-menu" viewBox="0 0 24 24"><path d="M4 12H20.0714M4 6H20.0714M4 18H20.0714" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="ic-nav-dashboard" viewBox="0 0 24 24"><rect x="3.6" y="3.6" width="7.2" height="7.2" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><rect x="13.2" y="3.6" width="7.2" height="4.8" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><rect x="3.6" y="13.2" width="7.2" height="7.2" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><rect x="13.2" y="10.8" width="7.2" height="9.6" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
+  <symbol id="ic-nav-store" viewBox="0 0 24 24"><path d="M4.5 13.0864V19.5C4.5 19.6989 4.57902 19.8897 4.71967 20.0303C4.86032 20.171 5.05109 20.25 5.25 20.25H18.75C18.9489 20.25 19.1397 20.171 19.2803 20.0303C19.421 19.8897 19.5 19.6989 19.5 19.5V13.0865M5.06573 3.75H18.9343C19.0973 3.75 19.2558 3.80309 19.3859 3.90124C19.516 3.99939 19.6106 4.13725 19.6554 4.29396L21 9H3L4.34458 4.29396C4.38936 4.13725 4.48396 3.99939 4.61408 3.90124C4.7442 3.80309 4.90274 3.75 5.06573 3.75ZM9 9V10.5C9 11.2956 8.68393 12.0587 8.12132 12.6213C7.55871 13.1839 6.79565 13.5 6 13.5C5.20435 13.5 4.44129 13.1839 3.87868 12.6213C3.31607 12.0587 3 11.2956 3 10.5V9M15 9V10.5C15 11.2956 14.6839 12.0587 14.1213 12.6213C13.5587 13.1839 12.7956 13.5 12 13.5C11.2044 13.5 10.4413 13.1839 9.87868 12.6213C9.31607 12.0587 9 11.2956 9 10.5V9M21 9V10.5C21 11.2956 20.6839 12.0587 20.1213 12.6213C19.5587 13.1839 18.7956 13.5 18 13.5C17.2044 13.5 16.4413 13.1839 15.8787 12.6213C15.3161 12.0587 15 11.2956 15 10.5V9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="ic-nav-hanger" viewBox="0 0 24 24"><path d="M9 6.5V7.1C9 8.75685 10.3431 10.1 12 10.1C13.6569 10.1 15 8.75685 15 7.1V6.5M9 6.5H8.51537C8.44034 6.5 8.36718 6.52344 8.30613 6.56706L4.27987 9.44295C4.22758 9.4803 4.18624 9.53097 4.16014 9.58969L1.94818 14.5666C1.86666 14.75 1.95087 14.9647 2.13534 15.0437L6 16.7M9 6.5H15M15 6.5H15.4846C15.5597 6.5 15.6328 6.52344 15.6939 6.56706L19.7201 9.44295C19.7724 9.4803 19.8138 9.53097 19.8399 9.58969L22.0518 14.5666C22.1333 14.75 22.0491 14.9647 21.8647 15.0437L18 16.7M18 12.8V16.7M18 16.7V21.74C18 21.9388 17.8388 22.1 17.64 22.1H6.36C6.16118 22.1 6 21.9388 6 21.74V16.7M6 16.7V12.8M10.4 3.18C10.4 2.25216 11.1522 1.5 12.08 1.5C13.0079 1.5 13.76 2.25216 13.76 3.18C13.76 4.10784 13.0079 4.86 12.08 4.86V6.5" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
+  <symbol id="ic-nav-stock" viewBox="0 0 24 24"><path d="M20.4 7.4769L17.2661 3.71622C17.2047 3.64256 17.1138 3.59998 17.0179 3.59998H12M20.4 7.4769V20.0769C20.4 20.2553 20.2553 20.4 20.0769 20.4H3.92305C3.74462 20.4 3.59998 20.2553 3.59998 20.0769V7.4769M20.4 7.4769H12M3.59998 7.4769L6.73387 3.71622C6.79525 3.64256 6.88618 3.59998 6.98207 3.59998H12M3.59998 7.4769H12M12 3.59998V7.4769" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="ic-arrowLeft" viewBox="0 0 20 20"><path d="M16.5 10H3.5M3.5 10L9 4.5M3.5 10L9 15.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="ic-edit" viewBox="0 0 16 16"><path d="M11.3 2.7l2 2L5 13H3v-2l8.3-8.3z M9.5 4.5l2 2" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="ic-chevronDown16" viewBox="0 0 16 16"><path d="M3 6L8 11L13 6" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="ic-plus" viewBox="0 0 20 20"><path d="M10 4V16M4 10H16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/></symbol>
+  <symbol id="ic-plus20" viewBox="0 0 20 20"><path d="M10 4V16M4 10H16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></symbol>
+  <symbol id="ic-minus20" viewBox="0 0 20 20"><path d="M4 10H16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/></symbol>
+  <!-- Frame 178 — 32x32 바코드 패턴 (라운드 5 #F5F5F5 배경 + #1A1A1A 세로 바) -->
+  <symbol id="ic-barcode-bars" viewBox="0 0 32 32">
+    <rect width="32" height="32" rx="5" fill="#F5F5F5"/>
+    <path d="M6.03906 5.53906C5.76292 5.53906 5.53906 5.76292 5.53906 6.03906V25.9621C5.53906 26.2383 5.76292 26.4621 6.03906 26.4621H7.79891C8.07505 26.4621 8.29891 26.2383 8.29891 25.9621V6.03906C8.29891 5.76292 8.07505 5.53906 7.79891 5.53906H6.03906ZM10.9943 5.53906C10.8112 5.53906 10.6628 5.6875 10.6628 5.87061V26.1306C10.6628 26.3137 10.8112 26.4621 10.9943 26.4621C11.1774 26.4621 11.3259 26.3137 11.3259 26.1306V5.87061C11.3259 5.6875 11.1774 5.53906 10.9943 5.53906ZM12.7561 5.53906C12.48 5.53906 12.2561 5.76292 12.2561 6.03906V25.9621C12.2561 26.2383 12.48 26.4621 12.7561 26.4621H13.8542C14.1303 26.4621 14.3542 26.2383 14.3542 25.9621V6.03906C14.3542 5.76292 14.1303 5.53906 13.8542 5.53906H12.7561ZM16.9335 5.53906C16.6863 5.53906 16.4859 5.73948 16.4859 5.98672V26.0145C16.4859 26.2617 16.6863 26.4621 16.9335 26.4621C17.1807 26.4621 17.3812 26.2617 17.3812 26.0145V5.98672C17.3812 5.73948 17.1807 5.53906 16.9335 5.53906ZM20.0773 5.53906C19.8945 5.53906 19.7464 5.68721 19.7464 5.86995V26.1312C19.7464 26.314 19.8945 26.4621 20.0773 26.4621C20.26 26.4621 20.4082 26.314 20.4082 26.1312V5.86995C20.4082 5.6872 20.26 5.53906 20.0773 5.53906ZM21.1927 5.53906C20.9166 5.53906 20.6927 5.76292 20.6927 6.03906V25.9621C20.6927 26.2383 20.9166 26.4621 21.1927 26.4621H22.9351C23.2113 26.4621 23.4351 26.2383 23.4351 25.9621V6.03906C23.4351 5.76292 23.2113 5.53906 22.9351 5.53906H21.1927ZM25.5808 5.53906C25.3047 5.53906 25.0808 5.76292 25.0808 6.03906V25.9621C25.0808 26.2383 25.3047 26.4621 25.5808 26.4621H25.9621C26.2383 26.4621 26.4621 26.2383 26.4621 25.9621V6.03906C26.4621 5.76292 26.2383 5.53906 25.9621 5.53906H25.5808Z" fill="#1A1A1A"/>
+  </symbol>
+  <!-- LinkSimple — 16x16 연결중 -->
+  <symbol id="ic-link" viewBox="0 0 16 16">
+    <path d="M5.87891 10.1207L10.1215 5.87805" stroke="currentColor" stroke-width="1.2" stroke-linecap="square" stroke-linejoin="round" fill="none"/>
+    <path d="M9.0606 11.1818L7.29283 12.9496C6.73019 13.5121 5.96718 13.828 5.17162 13.8279C4.37606 13.8279 3.6131 13.5118 3.05055 12.9493C2.48801 12.3867 2.17194 11.6237 2.17188 10.8282C2.17181 10.0326 2.48774 9.26962 3.05019 8.70697L4.81796 6.93921" stroke="currentColor" stroke-width="1.2" stroke-linecap="square" stroke-linejoin="round" fill="none"/>
+    <path d="M11.1821 9.06023L12.9499 7.29247C13.5123 6.72982 13.8282 5.96681 13.8282 5.17125C13.8281 4.37569 13.512 3.61273 12.9495 3.05019C12.387 2.48764 11.624 2.17158 10.8284 2.17151C10.0329 2.17144 9.26986 2.48738 8.70722 3.04983L6.93945 4.81759" stroke="currentColor" stroke-width="1.2" stroke-linecap="square" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <!-- DisconnectOutlined — 16x16 연결 끊김 -->
+  <symbol id="ic-link-broken" viewBox="0 0 16 16">
+    <path d="M13.0102 2.99116C11.6883 1.66929 9.54922 1.66929 8.22891 2.99116L6.71484 4.50522L7.51172 5.3021L9.02578 3.78804C9.86641 2.94741 11.2852 2.85835 12.2133 3.78804C13.143 4.71772 13.0539 6.13491 12.2133 6.97554L10.6992 8.4896L11.4977 9.28804L13.0117 7.77398C14.3305 6.4521 14.3305 4.31304 13.0102 2.99116V2.99116ZM6.97734 12.213C6.13672 13.0537 4.71797 13.1427 3.78984 12.213C2.86016 11.2834 2.94922 9.86616 3.78984 9.02554L5.30391 7.51148L4.50547 6.71304L2.99141 8.2271C1.66953 9.54898 1.66953 11.688 2.99141 13.0084C4.31328 14.3287 6.45234 14.3302 7.77266 13.0084L9.28672 11.4943L8.48984 10.6974L6.97734 12.213V12.213ZM4.06797 3.27241C4.04448 3.24915 4.01275 3.2361 3.97969 3.2361C3.94663 3.2361 3.9149 3.24915 3.89141 3.27241L3.27266 3.89116C3.24939 3.91466 3.23634 3.94638 3.23634 3.97944C3.23634 4.01251 3.24939 4.04423 3.27266 4.06772L11.9352 12.7302C11.9836 12.7787 12.0633 12.7787 12.1117 12.7302L12.7305 12.1115C12.7789 12.063 12.7789 11.9834 12.7305 11.9349L4.06797 3.27241Z" fill="currentColor"/>
+  </symbol>
+</defs>
+</svg>
+
+<!-- ============== Topbar (scm-topbar 모듈) ============== -->
+<header class="scm-topbar" role="banner">
+  <div class="scm-topbar__left">
+    <button class="scm-topbar__menu-btn" type="button" data-scm-lnb-toggle aria-label="메뉴 열기/닫기">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 12H20.0714M4 6H20.0714M4 18H20.0714" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" stroke-linejoin="round" fill="none"/>
+      </svg>
+    </button>
+    <a class="scm-topbar__logo" href="dashboard.html" aria-label="SCM-Hub 홈">
+      <svg viewBox="0 0 96 18" aria-hidden="true">
+        <path d="M85.3496 1.61133V6.90625C85.7984 6.47277 86.9465 5.55859 88.8203 5.55859C91.9664 5.55882 94.2324 8.02321 94.2324 11.1191C94.2323 14.215 91.9663 16.6785 88.8203 16.6787C86.817 16.6787 85.6764 15.6848 85.2168 15.1523L84.6914 16.4482L84.666 16.5107H83.1973V1.61133H85.3496ZM88.6729 7.62793C86.6351 7.62794 85.3076 9.19315 85.3076 11.1191C85.3077 13.045 86.6351 14.6103 88.6729 14.6104C90.7106 14.6104 92.038 13.045 92.0381 11.1191C92.0381 9.19314 90.7107 7.62793 88.6729 7.62793Z" fill="currentColor"/>
+        <path d="M74.9072 5.81055V12.5674C74.9073 13.4123 75.113 13.9079 75.4238 14.2188C75.7602 14.5551 76.2172 14.7353 76.7393 14.7354C77.2613 14.7354 77.7183 14.5551 78.0547 14.2188C78.3658 13.9077 78.5713 13.4329 78.5713 12.5674V5.81055H80.7451V16.5098H79.2812L78.9209 15.7891C78.5897 16.1418 77.7942 16.7411 76.3408 16.7412C74.3798 16.7412 72.7129 15.3361 72.7129 13.1338V5.81055H74.9072Z" fill="currentColor"/>
+        <path d="M59.9746 1.61133V7.78516H67.6074V1.61133H69.9287V16.5107H67.6074V10.0635H59.9746V16.5107H57.6543V1.61133H59.9746Z" fill="currentColor"/>
+        <path d="M55.085 9.69727V11.9971H48.9004V9.69727H55.085Z" fill="currentColor"/>
+        <path d="M33.2148 1.61133L33.2441 1.6582L38.4297 10.0664L43.6367 1.6582L43.666 1.61133H46.3213V16.5107H44.0215V5.16895L39.4814 12.4941L39.4521 12.542H37.4082L37.3789 12.4941L32.8604 5.1709V16.5107H30.5605V1.61133H33.2148Z" fill="currentColor"/>
+        <path d="M20.8125 1.40039C24.402 1.40039 27.1131 3.42106 27.9238 6.51465L27.9561 6.63965H25.4473L25.4238 6.5752C24.7679 4.833 23.1271 3.6582 20.8125 3.6582C17.6172 3.65842 15.4953 6.02401 15.4951 9.05957C15.4951 12.0935 17.6362 14.4617 20.9385 14.4619C23.2565 14.4619 25.0415 13.2841 25.6963 11.5449L25.7207 11.4805H28.2295L28.1963 11.6055C27.3849 14.7011 24.5254 16.7197 20.9385 16.7197C16.3491 16.7195 13.1113 13.5053 13.1113 9.05957C13.1115 4.61571 16.2847 1.4006 20.8125 1.40039Z" fill="currentColor"/>
+        <path d="M6.58008 1.40039C8.00725 1.40041 9.16335 1.8319 9.96289 2.61523C10.7625 3.39871 11.1952 4.52346 11.1953 5.88867V5.98926H8.76855V5.61621C8.76855 4.9693 8.54277 4.47783 8.16309 4.14746C7.78158 3.81556 7.23461 3.63673 6.58008 3.63672C5.91491 3.63672 5.3783 3.81593 5.00977 4.12988C4.64309 4.44242 4.43268 4.89677 4.43262 5.46875C4.43262 5.97 4.57135 6.33564 4.92578 6.66309C5.28822 6.99784 5.88072 7.29742 6.80371 7.64355L7.64453 7.95801C8.9502 8.44273 9.74471 8.86969 10.3906 9.55859C11.0368 10.2478 11.4258 11.0278 11.4258 12.252C11.4258 14.6421 9.42384 16.7197 6.60059 16.7197C5.21506 16.7196 3.97684 16.2828 3.08398 15.46C2.18996 14.6359 1.65039 13.4321 1.65039 11.916V11.8164H4.07617V12.126C4.07617 12.8674 4.33961 13.4538 4.78125 13.8555C5.2239 14.258 5.85415 14.4833 6.60059 14.4834C7.34821 14.4834 7.94765 14.2683 8.3584 13.8975C8.76809 13.5275 9 12.9936 9 12.3359C8.99999 11.9579 8.93955 11.6633 8.82812 11.4238C8.71705 11.1853 8.55272 10.9951 8.33398 10.8301C7.88946 10.4948 7.23524 10.27 6.37695 9.95215L5.36914 9.57324C4.25265 9.15193 3.47465 8.74531 2.91113 8.05176C2.35254 7.36415 2.00684 6.58617 2.00684 5.51074C2.0069 4.54201 2.3672 3.51388 3.12109 2.72754C3.87671 1.93954 5.02247 1.40039 6.58008 1.40039Z" fill="currentColor"/>
+      </svg>
+    </a>
+    <span class="scm-topbar__demo-tag" aria-label="데모 환경">DEMO</span>
+  </div>
+  <div class="scm-topbar__right" role="button" tabindex="0">
+    <span class="scm-topbar__avatar">홍</span>
+    <div class="scm-topbar__name-group">
+      <span class="scm-topbar__name">
+        <span class="scm-topbar__name-first">홍길동</span>
+        <span class="scm-topbar__name-suffix">님</span>
+      </span>
+      <span class="scm-topbar__chev">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 6L8 11L13 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+    </div>
+  </div>
+</header>
+
+<div class="app">
+  <!-- ============== LNB (scm-lnb 모듈) ============== -->
+<nav class="scm-lnb" aria-label="주메뉴">
+
+  <!-- 대시보드 (L1만, sub 없음) -->
+  <div class="scm-lnb-item" data-key="dashboard">
+    <a class="scm-lnb-row" href="dashboard.html">
+      <span class="scm-lnb-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3.6" y="3.6" width="7.2" height="7.2" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <rect x="13.2" y="3.6" width="7.2" height="4.8" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <rect x="3.6" y="13.2" width="7.2" height="7.2" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <rect x="13.2" y="10.8" width="7.2" height="9.6" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
+        </svg>
+      </span>
+      <span class="scm-lnb-label">대시보드</span>
+    </a>
+  </div>
+
+  <!-- 스토어 -->
+  <div class="scm-lnb-item is-open" data-key="store">
+    <button class="scm-lnb-row" type="button" data-nav-toggle>
+      <span class="scm-lnb-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4.5 13.0864V19.5C4.5 19.6989 4.57902 19.8897 4.71967 20.0303C4.86032 20.171 5.05109 20.25 5.25 20.25H18.75C18.9489 20.25 19.1397 20.171 19.2803 20.0303C19.421 19.8897 19.5 19.6989 19.5 19.5V13.0865M5.06573 3.75H18.9343C19.0973 3.75 19.2558 3.80309 19.3859 3.90124C19.516 3.99939 19.6106 4.13725 19.6554 4.29396L21 9H3L4.34458 4.29396C4.38936 4.13725 4.48396 3.99939 4.61408 3.90124C4.7442 3.80309 4.90274 3.75 5.06573 3.75ZM9 9V10.5C9 11.2956 8.68393 12.0587 8.12132 12.6213C7.55871 13.1839 6.79565 13.5 6 13.5C5.20435 13.5 4.44129 13.1839 3.87868 12.6213C3.31607 12.0587 3 11.2956 3 10.5V9M15 9V10.5C15 11.2956 14.6839 12.0587 14.1213 12.6213C13.5587 13.1839 12.7956 13.5 12 13.5C11.2044 13.5 10.4413 13.1839 9.87868 12.6213C9.31607 12.0587 9 11.2956 9 10.5V9M21 9V10.5C21 11.2956 20.6839 12.0587 20.1213 12.6213C19.5587 13.1839 18.7956 13.5 18 13.5C17.2044 13.5 16.4413 13.1839 15.8787 12.6213C15.3161 12.0587 15 11.2956 15 10.5V9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+      <span class="scm-lnb-label">스토어</span>
+      <span class="scm-lnb-chev">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+    </button>
+    <div class="scm-lnb-l2-list">
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">무탠 재고 보충 현황</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">무탠 재고 보충 요청</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+      <a class="scm-lnb-l2" href="index.html" data-key="index"><span class="scm-lnb-l2-text">무탠 전개상품 관리</span><span class="scm-lnb-tag scm-lnb-tag--new">NEW</span></a>
+      <a class="scm-lnb-l2" href="editshop-restock-status.html" data-key="editshop-status"><span class="scm-lnb-l2-text">편집샵 재고 보충 현황</span><span class="scm-lnb-tag scm-lnb-tag--new">NEW</span></a>
+      <a class="scm-lnb-l2" href="editshop-restock-request.html" data-key="editshop-request"><span class="scm-lnb-l2-text">편집샵 재고 보충 요청</span><span class="scm-lnb-tag scm-lnb-tag--new">NEW</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">편집샵 전개상품 관리</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+    </div>
+  </div>
+
+  <!-- 상품 관리 -->
+  <div class="scm-lnb-item is-open" data-key="hanger">
+    <button class="scm-lnb-row" type="button" data-nav-toggle>
+      <span class="scm-lnb-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 6.5V7.1C9 8.75685 10.3431 10.1 12 10.1C13.6569 10.1 15 8.75685 15 7.1V6.5M9 6.5H8.51537C8.44034 6.5 8.36718 6.52344 8.30613 6.56706L4.27987 9.44295C4.22758 9.4803 4.18624 9.53097 4.16014 9.58969L1.94818 14.5666C1.86666 14.75 1.95087 14.9647 2.13534 15.0437L6 16.7M9 6.5H15M15 6.5H15.4846C15.5597 6.5 15.6328 6.52344 15.6939 6.56706L19.7201 9.44295C19.7724 9.4803 19.8138 9.53097 19.8399 9.58969L22.0518 14.5666C22.1333 14.75 22.0491 14.9647 21.8647 15.0437L18 16.7M18 12.8V16.7M18 16.7V21.74C18 21.9388 17.8388 22.1 17.64 22.1H6.36C6.16118 22.1 6 21.9388 6 21.74V16.7M6 16.7V12.8M10.4 3.18C10.4 2.25216 11.1522 1.5 12.08 1.5C13.0079 1.5 13.76 2.25216 13.76 3.18C13.76 4.10784 13.0079 4.86 12.08 4.86V6.5" stroke="currentColor" stroke-width="1.4" fill="none"/>
+        </svg>
+      </span>
+      <span class="scm-lnb-label">상품 관리</span>
+      <span class="scm-lnb-chev">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+    </button>
+    <div class="scm-lnb-l2-list">
+      <a class="scm-lnb-l2" href="sku-management.html" data-key="sku-management"><span class="scm-lnb-l2-text">SKU 관리</span><span class="scm-lnb-tag scm-lnb-tag--new">NEW</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">위탁 상품 미매핑 관리</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+    </div>
+  </div>
+
+  <!-- 발주/입고 관리 -->
+  <div class="scm-lnb-item is-open" data-key="order">
+    <button class="scm-lnb-row" type="button" data-nav-toggle>
+      <span class="scm-lnb-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="5" y="5" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <rect x="9" y="3" width="6" height="3" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <path d="M9 13l2.2 2.2L15 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+      <span class="scm-lnb-label">발주/입고 관리</span>
+      <span class="scm-lnb-chev">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+    </button>
+    <div class="scm-lnb-l2-list">
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">위탁 상품 입고 승인</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">위탁 상품 입고 현황</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">PB 상품 입고 검토</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">PB 상품 ASN 등록/확정</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+      <a class="scm-lnb-l2" href="otb-budget.html" data-key="otb-budget"><span class="scm-lnb-l2-text">OTB 예산 관리</span><span class="scm-lnb-tag scm-lnb-tag--new">NEW</span></a>
+    </div>
+  </div>
+
+  <!-- 재고 관리 -->
+  <div class="scm-lnb-item is-open" data-key="stock">
+    <button class="scm-lnb-row" type="button" data-nav-toggle>
+      <span class="scm-lnb-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20.4 7.4769L17.2661 3.71622C17.2047 3.64256 17.1138 3.59998 17.0179 3.59998H12M20.4 7.4769V20.0769C20.4 20.2553 20.2553 20.4 20.0769 20.4H3.92305C3.74462 20.4 3.59998 20.2553 3.59998 20.0769V7.4769M20.4 7.4769H12M3.59998 7.4769L6.73387 3.71622C6.79525 3.64256 6.88618 3.59998 6.98207 3.59998H12M3.59998 7.4769H12M12 3.59998V7.4769" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+      <span class="scm-lnb-label">재고 관리</span>
+      <span class="scm-lnb-chev">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+    </button>
+    <div class="scm-lnb-l2-list">
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">재고내역 조회</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">재고이동</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">불량/정상 전환</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+    </div>
+  </div>
+
+  <!-- 운영 설정 -->
+  <div class="scm-lnb-item is-open" data-key="control">
+    <button class="scm-lnb-row" type="button" data-nav-toggle>
+      <span class="scm-lnb-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M8.39998 5.99998V12M8.39998 12C7.40586 12 6.59998 12.8059 6.59998 13.8C6.59998 14.7941 7.40586 15.6 8.39998 15.6M8.39998 12C9.39409 12 10.2 12.8059 10.2 13.8C10.2 14.7941 9.39409 15.6 8.39998 15.6M8.39998 15.6V18M15.6 12V18M15.6 12C16.5941 12 17.4 11.1941 17.4 10.2C17.4 9.20586 16.5941 8.39998 15.6 8.39998M15.6 12C14.6059 12 13.8 11.1941 13.8 10.2C13.8 9.20586 14.6059 8.39998 15.6 8.39998M15.6 5.99998V8.39998M3.89998 20.4H20.1C20.2657 20.4 20.4 20.2657 20.4 20.1V3.89998C20.4 3.73429 20.2657 3.59998 20.1 3.59998H3.89998C3.73429 3.59998 3.59998 3.73429 3.59998 3.89998V20.1C3.59998 20.2657 3.73429 20.4 3.89998 20.4Z" stroke="currentColor" stroke-width="1.4" fill="none"/>
+        </svg>
+      </span>
+      <span class="scm-lnb-label">운영 설정</span>
+      <span class="scm-lnb-chev">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+    </button>
+    <div class="scm-lnb-l2-list">
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">수기 재고 조정</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">운영 정책 설정</span></a>
+    </div>
+  </div>
+
+  <!-- 관리자 -->
+  <div class="scm-lnb-item is-open" data-key="setting">
+    <button class="scm-lnb-row" type="button" data-nav-toggle>
+      <span class="scm-lnb-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M10.7206 3.59998H13.2795C13.3327 3.59998 13.3796 3.63508 13.3946 3.68619L14.0781 6.01563C14.0888 6.05203 14.1161 6.08117 14.1516 6.09468C14.8012 6.34221 15.3991 6.6986 15.9238 7.14216C15.9533 7.16713 15.993 7.17678 16.0306 7.1677L18.3426 6.60887C18.3947 6.59627 18.4489 6.6198 18.4753 6.66651L19.7571 8.93636C19.7827 8.98171 19.7761 9.0384 19.7408 9.07669L18.1072 10.8491C18.0819 10.8765 18.0709 10.9141 18.0769 10.951C18.1328 11.2921 18.1619 11.6426 18.1619 12C18.1619 12.3574 18.1328 12.7078 18.0769 13.049C18.0709 13.0858 18.0819 13.1234 18.1072 13.1509L19.7408 14.9233C19.7761 14.9615 19.7827 15.0182 19.7571 15.0636L18.4753 17.3334C18.4489 17.3802 18.3947 17.4037 18.3426 17.3911L16.0306 16.8323C15.993 16.8232 15.9533 16.8328 15.9238 16.8578C15.3991 17.3013 14.8013 17.6577 14.1516 17.9053C14.1161 17.9188 14.0888 17.9479 14.0781 17.9843L13.3946 20.3138C13.3796 20.3649 13.3327 20.4 13.2795 20.4H10.7206C10.6673 20.4 10.6204 20.3649 10.6054 20.3138L9.9219 17.9843C9.91122 17.9479 9.88392 17.9188 9.84846 17.9053C9.1988 17.6577 8.60099 17.3013 8.07625 16.8578C8.04671 16.8328 8.00709 16.8232 7.96949 16.8323L5.65745 17.3911C5.60531 17.4037 5.55114 17.3802 5.52476 17.3334L4.24299 15.0636C4.21738 15.0182 4.22395 14.9616 4.25924 14.9233L5.89289 13.1509C5.91817 13.1234 5.92919 13.0858 5.92315 13.049C5.86723 12.7078 5.83812 12.3574 5.83812 12C5.83812 11.6426 5.86723 11.2921 5.92315 10.951C5.92919 10.9141 5.91817 10.8765 5.89289 10.8491L4.25924 9.07669C4.22395 9.0384 4.21738 8.98171 4.24299 8.93636L5.52476 6.66651C5.55114 6.6198 5.60531 6.59627 5.65745 6.60887L7.96949 7.1677C8.00709 7.17678 8.04671 7.16713 8.07625 7.14216C8.60099 6.6986 9.1988 6.34221 9.84846 6.09468C9.88392 6.08117 9.91122 6.05203 9.9219 6.01563L10.6054 3.68619C10.6204 3.63508 10.6673 3.59998 10.7206 3.59998Z" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <path d="M14.4 12C14.4 13.3255 13.3255 14.4 12 14.4C10.6745 14.4 9.60002 13.3255 9.60002 12C9.60002 10.6745 10.6745 9.59998 12 9.59998C13.3255 9.59998 14.4 10.6745 14.4 12Z" stroke="currentColor" stroke-width="1.4" fill="none"/>
+        </svg>
+      </span>
+      <span class="scm-lnb-label">관리자</span>
+      <span class="scm-lnb-chev">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+    </button>
+    <div class="scm-lnb-l2-list">
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">계정 관리</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">권한 관리</span></a>
+      <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">로그 조회</span></a>
+    </div>
+  </div>
+
+</nav>
+
+  <main>
+    <!-- Page head (--detail) -->
+    <div class="scm-page-head scm-page-head--detail">
+      <button class="scm-back-btn" type="button" aria-label="뒤로" id="back-btn">
+        <svg viewBox="0 0 20 20"><use href="#ic-arrowLeft"/></svg>
+      </button>
+      <h1 class="scm-page-head__title">SKU <span id="sd-sku-no">90669592</span></h1>
+    </div>
+
+    <div class="detail-grid">
+      <!-- ============== Aside: 이미지 + 제품 정보 ============== -->
+      <aside class="detail-aside">
+        <div class="detail-aside__cover">
+          <img src="https://placehold.co/320x386" alt="상품 이미지" />
+        </div>
+        <div class="detail-aside__breadcrumb">신발 &gt; 스포츠화 &gt; 러닝화</div>
+        <div class="detail-aside__name-wrap">
+          <div class="detail-aside__name">
+            <span>YZY 350 V2 CMPCT - SLATE ONYX / IG9606 [Black][XL]</span>
+            <svg class="edit-icon" viewBox="0 0 16 16" aria-label="수정"><use href="#ic-edit"/></svg>
+          </div>
+          <div class="detail-aside__tags">
+            <span class="scm-tag">Black</span>
+            <span class="scm-tag">XL</span>
+          </div>
+        </div>
+        <div class="detail-aside__table">
+          <div class="detail-aside__row">
+            <div class="label">소유사</div>
+            <div class="value">무신사</div>
+          </div>
+          <div class="detail-aside__row">
+            <div class="label">스타일넘버(SKU)</div>
+            <div class="value">12345263</div>
+          </div>
+          <div class="detail-aside__row">
+            <div class="label">시즌정보</div>
+            <div class="value">FW
+              <svg class="edit-icon" viewBox="0 0 16 16"><use href="#ic-edit"/></svg>
+            </div>
+          </div>
+          <div class="detail-aside__row">
+            <div class="label">출시연도</div>
+            <div class="value is-empty">미입력
+              <svg class="edit-icon" viewBox="0 0 16 16"><use href="#ic-edit"/></svg>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ============== Main sections ============== -->
+      <div class="detail-main">
+
+        <!-- 사용/미사용 바코드 섹션 (탭) -->
+        <section class="scm-page-section">
+          <header class="scm-page-section-head">
+            <div class="scm-tabs scm-tabs--underline" id="barcode-tabs" role="tablist">
+              <button class="scm-tab is-active" type="button" data-key="used" role="tab" aria-selected="true">
+                <span class="scm-tab__label">사용 바코드</span>
+                <span class="scm-tab__count">2</span>
+              </button>
+              <button class="scm-tab" type="button" data-key="unused" role="tab" aria-selected="false">
+                <span class="scm-tab__label">미사용 바코드</span>
+                <span class="scm-tab__count">2</span>
+              </button>
+            </div>
+          </header>
+          <div class="scm-page-section-body" style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+            <button class="scm-barcode-add" type="button" aria-label="바코드 추가">
+              <svg viewBox="0 0 20 20" aria-hidden="true"><use href="#ic-plus20"/></svg>
+            </button>
+            <div class="scm-barcode-card">
+              <div class="scm-barcode-card__inner">
+                <span class="scm-barcode-card__icon">
+                  <svg viewBox="0 0 32 32" aria-hidden="true"><use href="#ic-barcode-bars"/></svg>
+                </span>
+                <span class="scm-barcode-card__num">880K/13029/ADKE/SRJS/WPTA</span>
+              </div>
+              <span class="scm-barcode-card__chip" role="button" tabindex="0">사용중 <svg viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chevronDown16"/></svg></span>
+            </div>
+            <div class="scm-barcode-card">
+              <div class="scm-barcode-card__inner">
+                <span class="scm-barcode-card__icon">
+                  <svg viewBox="0 0 32 32" aria-hidden="true"><use href="#ic-barcode-bars"/></svg>
+                </span>
+                <span class="scm-barcode-card__num">880K/13029/ADKE/SRJS/WPTB</span>
+              </div>
+              <span class="scm-barcode-card__chip" role="button" tabindex="0">사용중 <svg viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chevronDown16"/></svg></span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 공급 / 운영 정보 (legacy: 공급사명 좌측 멀티라인 / 운영상태 + 매입유형 stacked) -->
+        <section class="scm-page-section">
+          <header class="scm-page-section-head">
+            <h2 class="scm-page-section-title">공급/운영 정보</h2>
+          </header>
+          <div class="scm-info-table">
+            <div class="scm-info-row sd-supply-row">
+              <!-- 좌측 — 공급사명(ID), 멀티라인 + 추가 button -->
+              <div class="sd-supply-row__left">
+                <div class="scm-info-cell-label scm-info-cell-label--top">공급사명(ID)</div>
+                <div class="scm-info-cell-value scm-info-cell-value--flex-between scm-info-cell-value--padded" style="flex:1; min-width:0;">
+                  <div class="sd-supplier-stack">
+                    <span>Adidas_korea(M00000000000000001)</span>
+                    <span class="secondary">Adidas_korea (M000000002)</span>
+                  </div>
+                  <button class="scm-button scm-button--sm" type="button">추가</button>
+                </div>
+              </div>
+              <!-- 우측 — 운영상태 / 매입유형 stacked -->
+              <div class="sd-supply-row__right">
+                <div class="sd-supply-cell">
+                  <div class="scm-info-cell-label" style="align-self:stretch;">운영상태</div>
+                  <div class="scm-info-cell-value" style="flex:1; min-width:0;">
+                    <span class="scm-select scm-select--sm" style="width:120px; min-width:60px;" aria-haspopup="listbox" aria-expanded="false">
+                      <span class="scm-select__dot scm-select__dot--accent"></span>
+                      <span class="scm-select__value">운영중</span>
+                      <svg class="scm-select__chev" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chevronDown16"/></svg>
+                    </span>
+                  </div>
+                </div>
+                <div class="sd-supply-cell">
+                  <div class="scm-info-cell-label" style="align-self:stretch;">매입유형</div>
+                  <div class="scm-info-cell-value" style="flex:1; min-width:0;">매입 / 자체제작(PB)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SKU 분리 기준 속성 -->
+        <section class="scm-page-section">
+          <header class="scm-page-section-head">
+            <h2 class="scm-page-section-title">SKU 분리 기준 속성</h2>
+          </header>
+          <div class="scm-info-table">
+            <div class="scm-info-row scm-info-row--quad">
+              <div class="scm-info-cell-label">상품 컨디션</div>
+              <div class="scm-info-cell-value">신상품</div>
+              <div class="scm-info-cell-label">유통/조달 유형</div>
+              <div class="scm-info-cell-value">미대상</div>
+            </div>
+            <div class="scm-info-row scm-info-row--quad">
+              <div class="scm-info-cell-label">인증/검증 유형</div>
+              <div class="scm-info-cell-value">미대상</div>
+              <div class="scm-info-cell-label">판매 단위</div>
+              <div class="scm-info-cell-value">단품</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 물류 속성 (legacy: 소비기한 관리 sub-grid + 행거 토글) -->
+        <section class="scm-page-section">
+          <header class="scm-page-section-head">
+            <h2 class="scm-page-section-title">물류 속성</h2>
+          </header>
+          <div class="scm-info-table">
+            <div class="scm-info-row scm-info-row--quad" style="align-items:stretch;">
+              <div class="scm-info-cell-label scm-info-cell-label--top">소비기한 관리</div>
+              <div class="scm-info-cell-value scm-info-cell-value--flex-between scm-info-cell-value--padded" style="flex:1 1 0; min-width:0;">
+                <div class="sd-consume-grid">
+                  <div class="col">
+                    <span class="row-label">소비기한 관리 여부</span>
+                    <span class="row-label">소비기한일수</span>
+                  </div>
+                  <div class="col">
+                    <span class="row-value is-accent">사용</span>
+                    <span class="row-value">90일</span>
+                  </div>
+                </div>
+                <button class="scm-button scm-button--sm" type="button">수정</button>
+              </div>
+              <div class="scm-info-cell-label">행거 사용 여부</div>
+              <div class="scm-info-cell-value scm-info-cell-value--padded" style="flex:1; min-width:0;">
+                <span class="scm-toggle scm-toggle--sm" role="switch" aria-checked="false" tabindex="0">
+                  <span class="scm-toggle-track"></span>
+                  <span class="scm-toggle-knob"></span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 발주 속성 (legacy: 입수정보 — 박스/팔레트 입수 + required dot + 수정) -->
+        <section class="scm-page-section">
+          <header class="scm-page-section-head">
+            <h2 class="scm-page-section-title">발주 속성</h2>
+          </header>
+          <div class="scm-info-table">
+            <div class="scm-info-row">
+              <div class="scm-info-cell-label">입수정보</div>
+              <div class="scm-info-cell-value scm-info-cell-value--flex-between" style="flex:1; min-width:0; gap:12px;">
+                <div class="sd-input-row">
+                  <div class="sd-input-pair">
+                    <span class="label">박스 입수 (박스당 PCS 수량)<span class="sd-req-dot"></span></span>
+                    <span class="sd-input-mock">24</span>
+                  </div>
+                  <div class="sd-input-pair">
+                    <span class="label">팔레트 입수 (팔레트당 PCS)</span>
+                    <span class="sd-input-mock">50</span>
+                  </div>
+                </div>
+                <button class="scm-button scm-button--sm" type="button">수정</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 연결된 UID 번호 -->
+        <section class="scm-page-section">
+          <header class="scm-page-section-head">
+            <h2 class="scm-page-section-title">연결된 UID 번호<span class="scm-section-count">3</span></h2>
+          </header>
+          <div class="scm-page-section-body sd-uid-list">
+            <div class="scm-collapsible-card" id="uid-card-1">
+              <div class="scm-collapsible-card__head">
+                <div class="scm-collapsible-card__head-left">
+                  <span class="sd-uid-num"><svg viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-link"/></svg>0123456</span>
+                  <span class="scm-platform-tag" data-color="blue">MUSINSA</span>
+                </div>
+                <span class="scm-collapsible-card__toggle">
+                  <svg class="minus" viewBox="0 0 20 20" aria-hidden="true"><use href="#ic-minus20"/></svg>
+                  <svg class="plus" viewBox="0 0 20 20" aria-hidden="true"><use href="#ic-plus20"/></svg>
+                </span>
+              </div>
+              <div class="scm-collapsible-card__body" style="padding:8px 0;">
+                <div class="scm-info-table scm-info-table--no-bottom" style="border-bottom:1px solid #E0E0E0;">
+                  <div class="scm-info-row scm-info-row--quad">
+                    <div class="scm-info-cell-label">상품명</div>
+                    <div class="scm-info-cell-value">
+                      <a class="scm-code-link">조디 숄더백 - 화이트 / S 텍스트가 길어질 경우 이렇게 보여집니다</a>
+                    </div>
+                    <div class="scm-info-cell-label">옵션 연결 상태</div>
+                    <div class="scm-info-cell-value">
+                      <span class="scm-select scm-select--sm" style="width:120px; min-width:60px;" aria-haspopup="listbox" aria-expanded="false">
+                        <span class="scm-select__dot scm-select__dot--success"></span>
+                        <span class="scm-select__value">연결중</span>
+                        <svg class="scm-select__chev" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chevronDown16"/></svg>
+                      </span>
+                    </div>
+                  </div>
+                  <div class="scm-info-row scm-info-row--quad">
+                    <div class="scm-info-cell-label">옵션</div>
+                    <div class="scm-info-cell-value">Black^XL</div>
+                    <div class="scm-info-cell-label">옵션번호/상태</div>
+                    <div class="scm-info-cell-value">
+                      <span class="sd-inline-state">S^아이보리 <span class="accent">(사용중)</span></span>
+                    </div>
+                  </div>
+                  <div class="scm-info-row scm-info-row--quad">
+                    <div class="scm-info-cell-label">스타일넘버</div>
+                    <div class="scm-info-cell-value">12345263</div>
+                    <div class="scm-info-cell-label">COM_ID</div>
+                    <div class="scm-info-cell-value">com_id_37283</div>
+                  </div>
+                  <div class="scm-info-row scm-info-row--quad">
+                    <div class="scm-info-cell-label">담당 MD</div>
+                    <div class="scm-info-cell-value">홍길동</div>
+                    <div class="scm-info-cell-label">등록일시</div>
+                    <div class="scm-info-cell-value">YYYY-MM-DD HH:MM:SS</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="scm-collapsible-card is-collapsed" id="uid-card-2">
+              <div class="scm-collapsible-card__head">
+                <div class="scm-collapsible-card__head-left">
+                  <span class="sd-uid-num is-broken"><svg viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-link-broken"/></svg>0123456</span>
+                  <span class="scm-platform-tag" data-color="blue">MUSINSA</span>
+                </div>
+                <span class="scm-collapsible-card__toggle">
+                  <svg class="minus" viewBox="0 0 20 20" aria-hidden="true"><use href="#ic-minus20"/></svg>
+                  <svg class="plus" viewBox="0 0 20 20" aria-hidden="true"><use href="#ic-plus20"/></svg>
+                </span>
+              </div>
+              <div class="scm-collapsible-card__body" style="padding:8px 0;">
+                <div class="scm-info-table scm-info-table--no-bottom" style="border-bottom:1px solid #E0E0E0;">
+                  <div class="scm-info-row scm-info-row--quad">
+                    <div class="scm-info-cell-label">상품명</div>
+                    <div class="scm-info-cell-value"><a class="scm-code-link">조디 숄더백 - 화이트 / S</a></div>
+                    <div class="scm-info-cell-label">옵션 연결 상태</div>
+                    <div class="scm-info-cell-value">
+                      <span class="scm-select scm-select--sm" style="width:120px; min-width:60px;" aria-haspopup="listbox" aria-expanded="false">
+                        <span class="scm-select__dot scm-select__dot--disabled"></span>
+                        <span class="scm-select__value">해제</span>
+                        <svg class="scm-select__chev" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chevronDown16"/></svg>
+                      </span>
+                    </div>
+                  </div>
+                  <div class="scm-info-row scm-info-row--quad">
+                    <div class="scm-info-cell-label">옵션</div>
+                    <div class="scm-info-cell-value">블랙^XL</div>
+                    <div class="scm-info-cell-label">옵션번호/상태</div>
+                    <div class="scm-info-cell-value">
+                      <span class="sd-inline-state">000002 <span class="critical">(미사용)</span></span>
+                    </div>
+                  </div>
+                  <div class="scm-info-row scm-info-row--quad">
+                    <div class="scm-info-cell-label">스타일넘버</div>
+                    <div class="scm-info-cell-value">12345263</div>
+                    <div class="scm-info-cell-label">COM_ID</div>
+                    <div class="scm-info-cell-value">com_id_37283</div>
+                  </div>
+                  <div class="scm-info-row scm-info-row--quad">
+                    <div class="scm-info-cell-label">담당 MD</div>
+                    <div class="scm-info-cell-value">홍길동</div>
+                    <div class="scm-info-cell-label">등록일시</div>
+                    <div class="scm-info-cell-value">YYYY-MM-DD HH:MM:SS</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="scm-collapsible-card is-collapsed" id="uid-card-3">
+              <div class="scm-collapsible-card__head">
+                <div class="scm-collapsible-card__head-left">
+                  <span class="sd-uid-num is-broken"><svg viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-link-broken"/></svg>2345678</span>
+                  <span class="scm-platform-tag" data-color="yellow">29CM</span>
+                </div>
+                <span class="scm-collapsible-card__toggle">
+                  <svg class="minus" viewBox="0 0 20 20" aria-hidden="true"><use href="#ic-minus20"/></svg>
+                  <svg class="plus" viewBox="0 0 20 20" aria-hidden="true"><use href="#ic-plus20"/></svg>
+                </span>
+              </div>
+              <div class="scm-collapsible-card__body" style="padding:8px 0;">
+                <div class="scm-info-table scm-info-table--no-bottom" style="border-bottom:1px solid #E0E0E0;">
+                  <div class="scm-info-row scm-info-row--quad">
+                    <div class="scm-info-cell-label">상품명</div>
+                    <div class="scm-info-cell-value"><a class="scm-code-link">조디 숄더백 - 화이트 / S</a></div>
+                    <div class="scm-info-cell-label">옵션 연결 상태</div>
+                    <div class="scm-info-cell-value">
+                      <span class="scm-select scm-select--sm" style="width:120px; min-width:60px;" aria-haspopup="listbox" aria-expanded="false">
+                        <span class="scm-select__dot scm-select__dot--disabled"></span>
+                        <span class="scm-select__value">해제</span>
+                        <svg class="scm-select__chev" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chevronDown16"/></svg>
+                      </span>
+                    </div>
+                  </div>
+                  <div class="scm-info-row scm-info-row--quad">
+                    <div class="scm-info-cell-label">옵션</div>
+                    <div class="scm-info-cell-value">블랙^105</div>
+                    <div class="scm-info-cell-label">옵션번호/상태</div>
+                    <div class="scm-info-cell-value">
+                      <span class="sd-inline-state">000002 <span class="critical">(미사용)</span></span>
+                    </div>
+                  </div>
+                  <div class="scm-info-row scm-info-row--quad">
+                    <div class="scm-info-cell-label">스타일넘버</div>
+                    <div class="scm-info-cell-value">12345263</div>
+                    <div class="scm-info-cell-label">파트너/브랜드 번호</div>
+                    <div class="scm-info-cell-value">21415 / 39387</div>
+                  </div>
+                  <div class="scm-info-row scm-info-row--quad">
+                    <div class="scm-info-cell-label">담당 MD</div>
+                    <div class="scm-info-cell-value">홍길동</div>
+                    <div class="scm-info-cell-label">등록일시</div>
+                    <div class="scm-info-cell-value">YYYY-MM-DD HH:MM:SS</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Sticky bottom bar (취소 / 저장) -->
+<div class="scm-sticky-bottom-bar">
+  <button class="scm-button scm-button--lg" type="button" id="sd-cancel-btn">취소</button>
+  <button class="scm-button scm-button--lg scm-button--primary" type="button" id="sd-save-btn">저장</button>
+</div>
+
+<!-- Module JS -->
+<script src="../design%20system/components/lnb/lnb.js"></script>
+<script src="../design%20system/components/topbar/topbar.js"></script>
+<script src="../design%20system/components/scroll-lock/scroll-lock.js"></script>
+<script src="../design%20system/components/backdrop/backdrop.js"></script>
+<script src="../design%20system/components/checkbox/checkbox.js"></script>
+<script src="../design%20system/components/toast/toast.js"></script>
+<script src="../design%20system/components/button/button.js"></script>
+<script src="../design%20system/components/back-btn/back-btn.js"></script>
+<script src="../design%20system/components/tabs/tabs.js"></script>
+<script src="../design%20system/components/collapsible-card/collapsible-card.js"></script>
+<script src="../design%20system/components/toggle/toggle.js"></script>
+<script src="../design%20system/components/confirm-modal/confirm-modal.js"></script>
+
+<!-- Page logic -->
+<script>
+(function () {
+  // URL ?sku=... 로 받은 SKU번호를 페이지 타이틀에 반영
+  const params = new URLSearchParams(location.search);
+  const skuNo = params.get('sku');
+  if (skuNo) {
+    const el = document.getElementById('sd-sku-no');
+    if (el) el.textContent = skuNo;
+    document.title = 'SCM-Hub · SKU ' + skuNo;
+  }
+
+  // GNB + LNB
+  if (window.SCM && SCM.lnb)    SCM.lnb.mount(document.querySelector('.scm-lnb'), { active: 'sku-management' });
+  if (window.SCM && SCM.topbar) SCM.topbar.mount(document.querySelector('.scm-topbar'));
+
+  // Back button — referrer 가 있으면 history.back, 없으면 sku-management.html
+  const backBtn = document.getElementById('back-btn');
+  if (backBtn) {
+    backBtn.addEventListener('click', () => {
+      if (history.length > 1 && document.referrer) history.back();
+      else location.href = 'sku-management.html';
+    });
+  }
+
+  // Cancel / Save buttons
+  const cancelBtn = document.getElementById('sd-cancel-btn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+      if (history.length > 1 && document.referrer) history.back();
+      else location.href = 'sku-management.html';
+    });
+  }
+  const saveBtn = document.getElementById('sd-save-btn');
+  if (saveBtn && window.SCM && SCM.toast) {
+    saveBtn.addEventListener('click', () => {
+      SCM.toast.show({ variant: 'success', title: '저장 완료', desc: 'SKU 정보가 저장되었습니다.' });
+    });
+  }
+
+  if (!window.SCM) return;
+
+  // Tabs (사용 / 미사용 바코드)
+  if (SCM.tabs) {
+    SCM.tabs.mount(document.getElementById('barcode-tabs'), {
+      onChange: (key) => {
+        if (SCM.toast) SCM.toast.show({ variant: 'info', title: key === 'used' ? '사용 바코드 (2)' : '미사용 바코드 (2)' });
+      },
+    });
+  }
+
+  // Collapsible cards (UID)
+  if (SCM.collapsibleCard) {
+    ['uid-card-1', 'uid-card-2', 'uid-card-3'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) SCM.collapsibleCard.mount(el);
+    });
+  }
+
+  // Toggle (행거사용)
+  if (SCM.toggle) {
+    document.querySelectorAll('.scm-toggle').forEach(t => SCM.toggle.mount(t));
+  }
+})();
+</script>
+</body>
+</html>

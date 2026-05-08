@@ -1,0 +1,16 @@
+/* scm-kind-chip — 재고 종류 칩 (입고 / 발주 / 재발주 / 보충대상 등) */
+.scm-kind-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  background: rgba(138, 138, 138, 0.10);
+  color: #000;
+}
+.scm-kind-chip--inbound  { background: #E2F1FF; color: #245EFF; }
+.scm-kind-chip--order    { background: #ECFFEC; color: #1EA514; }
+.scm-kind-chip--reorder  { background: #FEF3E2; color: #B7791F; }

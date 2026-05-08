@@ -1,0 +1,29 @@
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="basic/ic-alertTriangle" clip-path="url(#clip0_2751_2619)">
+<g id="weight=light, filled=false">
+<g id="UIIcon">
+<path id="Vector" d="M10 14.7499V12.8832M10 11.9499V7.28322M2.30694 16.4999H17.6931C17.9272 16.4999 18.0711 16.2437 17.9493 16.0438L10.2562 3.42025C10.1393 3.22841 9.86077 3.22841 9.74386 3.42025L2.05076 16.0438C1.92893 16.2437 2.07283 16.4999 2.30694 16.4999Z" stroke="currentColor"/>
+</g>
+</g>
+<g id="weight=regular, filled=false">
+<g id="UIIcon_2">
+<path id="Vector_2" d="M46 14.7499V12.8832M46 11.9499V7.28322M38.3069 16.4999H53.6931C53.9272 16.4999 54.0711 16.2437 53.9493 16.0438L46.2562 3.42025C46.1393 3.22841 45.8608 3.22841 45.7439 3.42025L38.0508 16.0438C37.9289 16.2437 38.0728 16.4999 38.3069 16.4999Z" stroke="currentColor" stroke-width="1.4"/>
+</g>
+</g>
+<g id="weight=bold, filled=false">
+<g id="UIIcon_3">
+<path id="Vector_3" d="M82 14.7499V12.8832M82 11.9499V7.28322M74.3069 16.4999H89.6931C89.9272 16.4999 90.0711 16.2437 89.9493 16.0438L82.2562 3.42025C82.1393 3.22841 81.8608 3.22841 81.7439 3.42025L74.0508 16.0438C73.9289 16.2437 74.0728 16.4999 74.3069 16.4999Z" stroke="currentColor" stroke-width="2"/>
+</g>
+</g>
+<g id="weight=light, filled=true">
+<g id="UIIcon_4">
+<path id="Vector_4" fill-rule="evenodd" clip-rule="evenodd" d="M117.381 3.07062C117.698 2.67896 118.303 2.6789 118.62 3.07062L118.684 3.16047L126.377 15.7835L126.43 15.8851C126.653 16.3992 126.278 17 125.693 17.0003H110.308C109.683 17.0003 109.299 16.3166 109.624 15.7835L117.317 3.16047L117.381 3.07062ZM117.5 12.8831V14.7503H118.5V12.8831H117.5ZM117.5 7.28351V11.9505H118.5V7.28351H117.5Z" fill="currentColor"/>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_2751_2619">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+</defs>
+</svg>

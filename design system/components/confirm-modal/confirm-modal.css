@@ -1,0 +1,96 @@
+/* ============================================================
+ * scm-confirm-modal — 확인 모달
+ * ------------------------------------------------------------
+ * 단건/일괄 작업의 확인 다이얼로그. 제목 + 설명 + 취소/실행 버튼.
+ * scm-backdrop 모듈을 사용하지 않고 자체 backdrop 포함 (자가포함).
+ *
+ * Marker:
+ *   <div class="scm-confirm-modal-backdrop"></div>
+ *   <div class="scm-confirm-modal" role="dialog" aria-labelledby="cm-title">
+ *     <h3 class="scm-confirm-modal__title" id="cm-title">제목</h3>
+ *     <p class="scm-confirm-modal__desc">설명 (innerHTML 허용 — accent strong 등)</p>
+ *     <div class="scm-confirm-modal__actions">
+ *       <button class="scm-confirm-modal__cancel">취소</button>
+ *       <button class="scm-confirm-modal__confirm primary">변경</button>
+ *     </div>
+ *   </div>
+ *
+ * States:
+ *   .is-open                       표시
+ * ============================================================ */
+
+.scm-confirm-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+  z-index: 80;
+  display: none;
+}
+
+.scm-confirm-modal-backdrop.is-open {
+  display: block;
+}
+
+.scm-confirm-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--ld-bg, #fff);
+  border-radius: 8px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.20);
+  padding: 24px;
+  min-width: 360px;
+  max-width: 420px;
+  z-index: 81;
+  display: none;
+  box-sizing: border-box;
+}
+
+.scm-confirm-modal.is-open {
+  display: block;
+}
+
+.scm-confirm-modal__title {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 22px;
+  color: var(--ld-fg, #000);
+}
+
+.scm-confirm-modal__desc {
+  font-size: 15px;
+  line-height: 20.4px;
+  color: #000;
+  margin: 0 0 20px;
+}
+
+.scm-confirm-modal__desc strong.accent {
+  color: var(--ld-fg-accent, #245EFF);
+  font-weight: 700;
+}
+
+.scm-confirm-modal__actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.scm-confirm-modal__actions button {
+  height: 36px;
+  padding: 0 16px;
+  font-family: inherit;
+  font-size: 13px;
+  border-radius: 4px;
+  border: 1px solid var(--ld-border, #E0E0E0);
+  background: var(--ld-bg, #fff);
+  color: var(--ld-fg, #000);
+  cursor: pointer;
+}
+
+.scm-confirm-modal__actions button.primary {
+  background: var(--ld-fg, #000);
+  color: #fff;
+  border-color: var(--ld-fg, #000);
+}

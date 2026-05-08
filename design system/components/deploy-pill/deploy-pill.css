@@ -1,0 +1,107 @@
+/* ============================================================
+ * scm-deploy-pill — 전개 상태 셀 (pill + chevron split)
+ * ------------------------------------------------------------
+ * 데이터 리스트 셀 안 인라인. 좌측 pill (상태 dot + 라벨) +
+ * 우측 chevron-down 버튼. 셀 전체 클릭으로 popover 트리거.
+ *
+ * Marker:
+ *   <td class="scm-deploy-cell">
+ *     <div class="scm-deploy-pill scm-deploy-pill--deployed">
+ *       <span class="scm-deploy-pill__pill">
+ *         <span class="scm-deploy-pill__dot"></span>전개중
+ *       </span>
+ *       <button class="scm-deploy-pill__chev" aria-label="스토어 전개 여부 변경" type="button">
+ *         <svg>...chevron-down...</svg>
+ *       </button>
+ *     </div>
+ *   </td>
+ *
+ * State variants:
+ *   .scm-deploy-pill--deployed     파랑 (#E2F1FF / #245EFF)
+ *   .scm-deploy-pill--undeployed   회색 (rgba(138,138,138,0.10) / #666 / dot #999)
+ *   .scm-deploy-pill--partial      주황 (#FEF3E2 / #B7791F / dot #D97706)
+ *
+ * Cell helper (table 안 셀 hover/cursor 적용용):
+ *   .scm-deploy-cell                cursor pointer + user-select none
+ *   .scm-deploy-cell.is-open .scm-deploy-pill__chev   chevron 회전 (popover 열림)
+ * ============================================================ */
+
+/* 셀 도우미 */
+.scm-deploy-cell {
+  cursor: pointer;
+  user-select: none;
+}
+.scm-deploy-cell:hover {
+  background: var(--ld-bg-low, #FAFBFC);
+}
+
+/* pill + chev split */
+.scm-deploy-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  width: 100%;
+  pointer-events: none;            /* 셀이 클릭 영역 — chev 만 인터랙션 */
+}
+
+.scm-deploy-pill__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.scm-deploy-pill__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* State variants */
+.scm-deploy-pill--deployed   .scm-deploy-pill__pill { background: #E2F1FF; color: #245EFF; }
+.scm-deploy-pill--deployed   .scm-deploy-pill__dot  { background: #245EFF; }
+
+.scm-deploy-pill--undeployed .scm-deploy-pill__pill { background: rgba(138, 138, 138, 0.10); color: #666; }
+.scm-deploy-pill--undeployed .scm-deploy-pill__dot  { background: #999; }
+
+.scm-deploy-pill--partial    .scm-deploy-pill__pill { background: #FEF3E2; color: #B7791F; }
+.scm-deploy-pill--partial    .scm-deploy-pill__dot  { background: #D97706; }
+
+/* Chevron button */
+.scm-deploy-pill__chev {
+  width: 16px;
+  height: 16px;
+  border: 0;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #8A8A8A;
+  cursor: pointer;
+  padding: 0;
+  pointer-events: auto;
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.scm-deploy-pill__chev svg {
+  width: 16px;
+  height: 16px;
+}
+
+.scm-deploy-pill__chev:hover {
+  color: #000;
+}
+
+/* popover 열린 상태 → chevron 위로 회전 */
+.scm-deploy-cell.is-open .scm-deploy-pill__chev {
+  transform: rotate(180deg);
+}

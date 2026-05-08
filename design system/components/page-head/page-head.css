@@ -1,0 +1,107 @@
+/* ============================================================
+ * scm-page-head — 페이지 헤드 (4 variants)
+ * ------------------------------------------------------------
+ * 페이지 타입별 head 시각:
+ *   --list           : 데이터 리스트 페이지 (title 좌, actions 우)
+ *   --detail         : 상세 페이지 (back-btn + title 좌)
+ *   --form           : 폼 페이지 (back-btn + title 좌, 동일 구조)
+ *   --dashboard      : 대시보드 (title + sub 좌, 우측 액션 슬롯)
+ *
+ * Marker (list):
+ *   <div class="scm-page-head scm-page-head--list">
+ *     <h1 class="scm-page-head__title">무탠 전개상품 관리</h1>
+ *     <div class="scm-page-head__actions">
+ *       <button class="scm-button">...</button>
+ *     </div>
+ *   </div>
+ *
+ * Marker (detail / form):
+ *   <div class="scm-page-head scm-page-head--detail">
+ *     <button class="scm-back-btn" aria-label="뒤로">...</button>
+ *     <h1 class="scm-page-head__title">SKU 90669592</h1>
+ *   </div>
+ *
+ * Marker (dashboard):
+ *   <div class="scm-page-head scm-page-head--dashboard">
+ *     <div class="scm-page-head__titles">
+ *       <h1 class="scm-page-head__title">대시보드</h1>
+ *       <p class="scm-page-head__sub">25.10.24 12:00 업데이트</p>
+ *     </div>
+ *     <div class="scm-page-head__actions">
+ *       <div class="scm-tabs scm-tabs--pill">...</div>
+ *     </div>
+ *   </div>
+ *
+ * Sticky:
+ *   .scm-page-head--sticky      sticky top (페이지 마다 top 값 다름 — CSS var)
+ * ============================================================ */
+
+.scm-page-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  box-sizing: border-box;
+  background: #fff;
+}
+
+.scm-page-head__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 30.8px;            /* 22 × 1.4 */
+  color: #000;
+}
+
+.scm-page-head__actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  min-height: 44px;
+}
+
+.scm-page-head__sub {
+  margin: 4px 0 0;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 20.4px;
+  color: #666;
+}
+
+.scm-page-head__titles {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== Variants ===== */
+
+/* List page — title 좌 + actions 우, 둘 다 padding-top edge 에서 시작 (top 정렬) */
+.scm-page-head--list {
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 24px 0 0;
+  min-height: 56px;
+}
+
+/* Detail / Form page — back-btn + title 좌측 정렬 */
+.scm-page-head--detail,
+.scm-page-head--form {
+  justify-content: flex-start;
+  padding: 20px 0;
+  min-height: 56px;
+}
+
+/* Dashboard — title + sub 좌, 우측 액션 (period tabs 등) */
+.scm-page-head--dashboard {
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 32px 0 20px;
+  gap: 16px;
+}
+
+/* Sticky modifier (페이지 마다 top 값 다름) */
+.scm-page-head--sticky {
+  position: sticky;
+  top: var(--scm-sticky-gnb, 64px);
+  z-index: 12;
+}

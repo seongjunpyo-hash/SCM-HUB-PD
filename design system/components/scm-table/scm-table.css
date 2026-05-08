@@ -1,0 +1,699 @@
+/* ============================================================
+ * SCM Table — 자가포함 테이블 컴포넌트
+ * ============================================================
+ * SCM HUB 4개 데이터 리스트 페이지(SKU 관리 / 무탠 전개상품 /
+ * 편집샵 보충 요청 / 편집샵 보충 현황)의 공통 테이블 패턴.
+ *
+ * 포함:
+ *   1. 컬럼 폭 시스템 (Auto / Small / Medium / Large / Spacer)
+ *   2. cell-clamp / cell-clamp-2 (1줄 / 2줄 wrap)
+ *   3. Frozen 컬럼 (col-frozen-1 ~ N)
+ *   4. Sticky thead 듀얼 테이블 (별도 컨테이너)
+ *   5. Sticky scroll stack (GNB → filter → stats → thead)
+ *   6. 셀 선택 (Excel-like, 외곽 라인 + 옅은 블루 bg)
+ *   7. resize 핸들 (우측 가장자리, 2단 thead 시 row1 영역까지 확장)
+ *   8. Hover row + 호버 배경
+ *
+ * 사용:
+ *   <link rel="stylesheet" href=".../scm-table.css"/>
+ *   <script type="module" src=".../scm-table.js"></script>
+ *   <div class="mp-thead-sticky"><div class="mp-thead-scroll"></div></div>
+ *   <div class="mp-table-scroll">
+ *     <table class="mp-table"> … </table>
+ *   </div>
+ *   <script>SCMTable.init();</script>
+ * ============================================================ */
+
+
+/* ----- Sticky scroll stack 변수 (Layout 레이어가 setup) ----- */
+:root {
+  --scm-sticky-gnb: 64px;       /* GNB 높이 */
+  --scm-sticky-filter: 0px;     /* filter bar 높이 (JS 가 ResizeObserver 로 측정) */
+  --scm-sticky-stats: 0px;      /* stats row 높이 */
+
+  /* 컬럼 폭 가이드 */
+  --scm-col-medium-min: 88px;
+  --scm-col-medium-max: 260px;
+  --scm-col-large-min: 320px;   /* 상품명·SKU명 */
+  --scm-col-resize-min: 100px;
+
+  /* sku-stack sub-row 높이 — 플랫폼 칩 셀 자연 높이(52) 기준.
+     모든 sku-stack 컬럼이 이 동일 높이를 기준으로 가로 정렬. 칩 사이즈 변경 시 여기만 갱신. */
+  --scm-substack-row-h: 52px;
+
+  /* 셀 선택 컬러 — frozen sticky 셀에서 뒤 셀 비침 방지 위해 SOLID 컬러 사용 (white + 8% blue) */
+  --scm-sel-bg: #EFF5FE;
+  --scm-sel-line: #3B82F6;
+}
+
+
+/* ============================================================
+ * 0. 액션바 (Stats Row) — 공통 spec
+ *    체크박스 선택 시 "전체 N" → "선택됨 N / total" + primary 버튼 활성
+ * ============================================================ */
+/* stats-left: counts-wrap ↔ mini-actions 간격 16px (Figma spec) */
+.mp-stats-left { flex:1; min-width:0; height:36px; display:flex; align-items:center; gap:16px; }
+.mp-stats-counts-wrap { display:flex; align-items:center; gap:4px; }
+.mp-stats-counts { display:flex; align-items:center; gap:2px; }
+.mp-stats-mini-actions { display:flex; align-items:center; gap:8px; }
+/* [공통] mp-mini-action — standalone 컴포넌트 (mp-stats-row 외 다른 컨텍스트에서도 사용 가능, 예: 사이즈 개별 설정 drawer) */
+.mp-mini-action {
+  display:inline-flex; align-items:center; gap:8px;
+  height:36px; min-width:48px; padding:8px 12px;
+  font-size:14px; font-weight:500; line-height:19.6px;
+  border:1px solid #E0E0E0; border-radius:4px;
+  background:#fff; color:#000; cursor:pointer;
+  font-family:inherit;
+}
+.mp-mini-action svg { width:16px; height:16px; color:#000; }
+.mp-mini-action[disabled] {
+  background:rgba(138,138,138,0.10); border-color:#EBEBEB;
+  color:rgba(0,0,0,0.20); cursor:not-allowed;
+}
+.mp-mini-action[disabled] svg { color:rgba(0,0,0,0.20); }
+/* primary filled (검정 fill) — 상품 매핑 등 */
+.mp-mini-action--primary {
+  background:#000; border-color:#000; color:#fff;
+}
+.mp-mini-action--primary svg { color:#fff; }
+.mp-mini-action--primary[disabled] {
+  background:rgba(138,138,138,0.10); border-color:#EBEBEB; color:rgba(0,0,0,0.20);
+}
+.mp-mini-action--primary[disabled] svg { color:rgba(0,0,0,0.20); }
+
+/* mp-stat 기본 — "전체 N" / "선택됨 N / total" 공용 */
+.mp-stat { display:inline-flex; align-items:center; gap:4px; height:36px; padding:8px; font-size:15px; line-height:20.4px; color:#000; }
+.mp-stat--all { padding:8px 8px 8px 0; }
+.mp-stat .label { font-weight:500; }
+.mp-stat .num { font-weight:600; font-variant-numeric:tabular-nums; }
+.mp-stat--all .num { color:#000; }
+.mp-stat--deployed .num { color:#245EFF; }
+.mp-stat--undeployed .num { color:#666; }
+.mp-stat-divider { width:3px; height:3px; border-radius:50%; background:#CCCCCC; flex-shrink:0; }
+
+/* selected stat — Figma: 선택됨 N / total
+   "전체" 와 동일한 좌측 0 패딩으로 위치 안정 (sku-management 가 우측으로 밀리던 버그 수정) */
+.mp-stat--selected { padding:8px 8px 8px 0; }
+.mp-stat--selected .label { color:#000; font-weight:500; }
+.mp-stat--selected .num { color:#245EFF; font-weight:600; }
+.mp-stat--selected .divider,
+.mp-stat--selected .num-total { color:#8A8A8A; font-weight:500; }
+
+
+/* ============================================================
+ * 0-1. 필터 영역 — 셀렉트 / 검색 / 초기화
+ * ============================================================ */
+/* 필터 셀렉트 (chip-select with floating label) */
+.mp-filter-select { position:relative; min-width:120px; padding:12px 16px; background:#fff; border:1px solid #E0E0E0; border-radius:4px; display:inline-flex; align-items:center; gap:8px; font-size:15px; font-weight:400; line-height:20.4px; color:#000; cursor:pointer; text-align:left; transition:border-color .18s ease; }
+.mp-filter-select .label { position:absolute; left:12px; top:-9px; height:18px; padding:0 4px; background:#fff; font-size:12px; font-weight:400; line-height:18px; color:#8A8A8A; display:flex; align-items:flex-start; gap:2px; transform-origin:left center; pointer-events:none; transition:opacity .18s ease, transform .18s ease; }
+.mp-filter-select .label .req-dot { width:4px; height:4px; background:#245EFF; border-radius:50%; margin-top:2px; }
+.mp-filter-select .value { min-width:64px; flex:1; transition:color .18s ease, font-weight .18s ease; }
+.mp-filter-select .chev { width:16px; height:16px; flex-shrink:0; color:#000; transition:transform .15s ease; }
+.mp-filter-select[aria-expanded="true"] .chev { transform:rotate(180deg); }
+.mp-filter-select[data-state="filled"] .label { opacity:1; transform:translateY(0) scale(1); }
+.mp-filter-select[data-state="filled"] .value { color:#000; font-weight:500; }
+.mp-filter-select[data-state="active"] .value { color:#000; font-weight:400; }
+.mp-filter-select[data-state="placeholder"] .label { opacity:0; transform:translateY(14px) scale(0.92); }
+.mp-filter-select[data-state="placeholder"] .value { color:#8A8A8A; font-weight:500; }
+.mp-filter-select:focus, .mp-filter-select[aria-expanded="true"] { border-color:#000; outline:none; z-index:1; }
+.mp-filter-select[data-chev="disabled"] .chev { color:rgba(0,0,0,0.20); }
+
+/* [공통] 필터 셀렉트 disabled — 다른 필터값에 의존해 비활성화될 때 사용
+   예: sku-management 매입형태=위탁 → 제조구분 disabled */
+.mp-filter-select[disabled],
+.mp-filter-select[aria-disabled="true"] {
+  background: rgba(138,138,138,0.10);
+  border-color: #EBEBEB;
+  color: rgba(0,0,0,0.20);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.mp-filter-select[disabled] .label,
+.mp-filter-select[aria-disabled="true"] .label,
+.mp-filter-select[disabled] .value,
+.mp-filter-select[aria-disabled="true"] .value { color: rgba(0,0,0,0.20); }
+.mp-filter-select[disabled] .chev,
+.mp-filter-select[aria-disabled="true"] .chev { color: rgba(0,0,0,0.20); }
+
+/* 검색 / 초기화 액션 영역 */
+.mp-filter-actions { flex-shrink:0; display:inline-flex; align-items:center; gap:6px; }
+/* 검색 활성: outlined (검정 라인) */
+.mp-search-btn { min-width:84px; padding:12px 16px; box-sizing:border-box; background:rgba(138,138,138,0.10); border:1px solid #EBEBEB; border-radius:4px; font-size:15px; font-weight:500; line-height:20.4px; color:rgba(0,0,0,0.20); cursor:not-allowed; display:inline-flex; align-items:center; justify-content:center; }
+.mp-search-btn:not(:disabled) { background:#fff; border:1px solid #000; color:#000; cursor:pointer; }
+.mp-search-btn:not(:disabled):hover { background:var(--ld-bg-low, #F5F5F5); }
+.mp-search-btn[disabled] { background:rgba(138,138,138,0.10); border-color:transparent; color:rgba(0,0,0,0.20); cursor:not-allowed; }
+/* 초기화 버튼 ghost */
+.mp-filter-reset-btn { height:44px; min-width:56px; padding:12px 12px 12px 8px; background:transparent; border:0; border-radius:4px; font-size:15px; font-weight:500; line-height:20.4px; color:#666; display:inline-flex; align-items:center; justify-content:center; gap:4px; cursor:pointer; font-family:inherit; }
+.mp-filter-reset-btn[hidden] { display:none; }
+.mp-filter-reset-btn svg { width:20px; height:20px; color:#666; }
+.mp-filter-reset-btn:hover { background:var(--ld-bg-low, #F5F5F5); }
+
+
+/* ============================================================
+ * 1. 테이블 컨테이너
+ * ============================================================ */
+.mp-table-scroll {
+  position: relative;
+  overflow-x: auto;
+  overflow-y: visible;
+  /* 표 하단 마감선 — tbody 의 마지막 row td 별 border-bottom 대신 컨테이너에 단일 1px 라인.
+     sticky frozen cell 과 non-sticky cell 의 border-bottom 이 z-index 차이로 doubled 되는 현상 방지. */
+  border-bottom: 1px solid #EBEBEB;
+}
+
+.mp-thead-sticky {
+  position: sticky;
+  top: calc(var(--scm-sticky-gnb) + var(--scm-sticky-filter) + var(--scm-sticky-stats));
+  z-index: 9;
+  background: #fff;
+  /* 강한 블랙 구분선 — 상단(스택 경계) */
+  isolation: isolate;
+}
+.mp-thead-sticky::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1.5px;
+  background: #000;
+  z-index: 10;
+}
+
+/* ============================================================
+ * thead 상단 검정 1.5px 라인 — mp-thead-sticky 없는 환경 fallback
+ * (와이어프레임 / 단순 페이지에서도 자가포함 — 컴포넌트가 데모 마크업에 의존하지 않게)
+ * mp-thead-sticky 가 init 되면 thead 가 그쪽으로 이동하므로 이 셀렉터는 매칭 안 됨 → 중복 X
+ * ============================================================ */
+.mp-table-scroll > .mp-table > thead {
+  position: relative;
+  isolation: isolate;
+}
+.mp-table-scroll > .mp-table > thead::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1.5px;
+  background: #000;
+  z-index: 10;
+}
+.mp-thead-scroll {
+  overflow-x: hidden;
+}
+.mp-thead-scroll .mp-table {
+  /* sticky thead 테이블은 본문과 colgroup 으로 너비 일치 */
+  margin: 0;
+}
+
+
+/* ============================================================
+ * 2. 기본 테이블
+ * ============================================================ */
+.mp-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+  color: #000;
+}
+
+.mp-table thead th {
+  position: relative; /* resize 핸들 기준 */
+  background: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 19.6px;
+  color: #000;
+  /* box-sizing 은 body td 와 동일하게 content-box (default) — width 계산 일관 → thead/body column divider 1px 어긋남 방지 */
+  height: 44px;
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #E0E0E0;
+  border-left: 1px solid #EBEBEB;
+  /* [공통] border-LEFT 시스템 — 페이지 inline 의 border-right 무력화 */
+  border-right: 0;
+  white-space: nowrap;
+  vertical-align: middle; /* 1줄 타이틀 세로 가운데 — 2줄 wrap 시에도 자연스러움 */
+}
+.mp-table thead th[data-pad="full"] { padding: 16px; }
+/* cb-col 의 좌측 보더 제거 — 첫 칸이지만 sku-management 2-row thead 의 행2 첫 셀(SKU번호) 은 cb-col 이 아니라 정상 보더 필요.
+   따라서 :first-child 가 아닌 .cb-col 만 명시 타겟. */
+.mp-table thead th.cb-col,
+.mp-table thead th.cb-header { border-left: 0; }
+
+.mp-table thead th .sort {
+  display: inline-block;
+  width: 16px; height: 16px;
+  vertical-align: middle;
+  margin-left: 4px;
+  color: #CCCCCC;
+}
+.mp-table thead th .sort svg { width: 16px; height: 16px; }
+
+/* ===== 정렬 아이콘 (sort-ic) — 데이터 리스트 page 의 th 에 사용 =====
+ * 마크업: <th><svg class="sort-ic"><use href="#ic-arrowUpDown"/></svg></th>
+ *   - default: 회색 (#CCC) 더블 화살표 (ic-arrowUpDown — 신규 키보드 스타일)
+ *   - th:hover: 진한 회색 (#666)
+ *   - th[data-sort="asc"]: 파랑 (#245EFF) — JS 가 use href 를 #ic-sort-asc 로 swap
+ *   - th[data-sort="desc"]: 파랑 (#245EFF) — JS 가 use href 를 #ic-sort-desc 로 swap
+ */
+.mp-table thead th .sort-ic {
+  display: inline-block;
+  width: 16px; height: 16px;
+  vertical-align: middle;
+  margin-left: 4px;
+  color: #CCCCCC;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+.mp-table thead th:hover .sort-ic { color: #666; }
+.mp-table thead th[data-sort="asc"] .sort-ic,
+.mp-table thead th[data-sort="desc"] .sort-ic { color: #245EFF; }
+
+/* ===== 컬럼 헤더 아이콘 (sort + filter) =====
+ * - sort-ic: 텍스트 옆에 inline (정렬 아이콘 — 항상 노출)
+ * - .th-icons: sort-ic 우측 8px 간격 inline 배치 — filter-ic
+ * - filter-ic: 항상 노출. 기본 회색, 컬럼 필터 적용 시 #245EFF
+ * - more-ic: 미노출 (display: none) — 더보기 메뉴 미사용
+ */
+.mp-table thead th .th-icons {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.mp-table thead th .filter-ic {
+  width: 16px; height: 16px;
+  color: #CCC;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
+.mp-table thead th:hover .filter-ic { opacity: 1; pointer-events: auto; color: #666; }
+.mp-table thead th .filter-ic:hover { color: #000; }
+.mp-table thead th .more-ic { display: none; }
+
+/* 컬럼 필터가 적용된 경우 — 호버 여부와 무관하게 항상 노출 + 블루 활성 */
+.mp-table thead th .filter-ic.is-active { opacity: 1 !important; pointer-events: auto !important; color: #245EFF !important; }
+
+/* ----- 본문 셀 — 1줄 nowrap, 잘림 (말줄임 ... 미노출), 좌측 상단 정렬 -----
+   row 헤이트 = padding 12+12 + line-height 20.4 ≈ 44.4 (1줄). thumb·multi-line 셀이 있으면 그만큼 stretch. */
+.mp-table tbody td {
+  padding: 12px 16px;
+  border-top: 1px solid #EBEBEB;
+  border-left: 1px solid #EBEBEB;
+  /* [공통] border-LEFT 시스템 — 페이지 inline 의 border-right 무력화 */
+  border-right: 0;
+  white-space: nowrap;             /* 1줄 유지 (창 줄여도 줄 안 내려감) */
+  overflow: hidden;                /* 셀 폭 초과 시 잘림 */
+  text-overflow: clip;             /* 말줄임 ... 미노출 — 그냥 잘림 */
+  word-break: keep-all;
+  vertical-align: top;             /* 좌측 상단 정렬 */
+  text-align: left;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 20.4px;
+  color: #000;
+}
+/* 숫자/금액 — 우측 상단 정렬 */
+.mp-table tbody td.cell-numeric,
+.mp-table tbody td.sku-num,
+.mp-table tbody td.col-no {
+  white-space: nowrap;
+  text-align: right;
+  vertical-align: top;
+}
+/* 체크박스 셀 — 가운데 정렬 (이미 col 시스템에서 정의되지만 명시) */
+.mp-table tbody td.cb-col,
+.mp-table tbody td.cb-col2 {
+  white-space: nowrap;
+  text-align: center;
+  vertical-align: top;
+}
+
+/* 첫 칸 (cb-col) 은 좌측 보더 제거 — :first-child 가 cb-col 인 것은 모든 페이지 공통 */
+.mp-table tbody td:first-child { border-left: 0; }
+
+/* [공통] 마지막 frozen 컬럼 우측 경계 — sticky frozen cell 의 border-right 로 그림.
+   border-LEFT 시스템 (각 셀의 border-left 로 column divider) 위에 col-frozen-last 만 예외적으로
+   border-right 를 추가 → 가로 스크롤 시 frozen 영역과 함께 라인이 따라가서 사라지지 않음.
+   다음 cell 의 border-left 는 제거 (이중선 방지 — 총 1px 만 표시).
+   톤은 일반 column divider(#EBEBEB) 보다 진한 rgba(0,0,0,0.12) — frozen 경계 강조.
+   2단 thead row1 (.group-row) 은 519줄 부근 별도 rule (동일 rgba 색). */
+.mp-table tbody td.col-frozen-last,
+.mp-table thead tr:not(.group-row) th.col-frozen-last {
+  border-right: 1px solid rgba(0, 0, 0, 0.12);
+}
+.mp-table tbody td.col-frozen-last + td:not([class*="col-frozen"]),
+.mp-table thead tr:not(.group-row) th.col-frozen-last + th:not([class*="col-frozen"]) {
+  border-left: 0;
+}
+.mp-table tbody tr:first-child td { border-top: 0; }
+/* 마지막 row 의 하단 라인 — 각 td 의 border-bottom 으로 그리지 않고 컨테이너 (.mp-table-scroll) 의 border-top 으로
+   단일 1px 만 표시. sticky frozen cell (z-index:5) 과 non-sticky cell 의 border-bottom 이 paint 순서 차이로
+   같은 y 좌표에 두 번 그려져 2px 처럼 보이는 문제 회피.
+   (mp-table-scroll 은 본문 가로 스크롤 컨테이너 — 스크롤해도 라인이 함께 따라가지 않음. 단 스크롤 영역
+   하단 = tbody 마지막 row 직하단이라 시각적 효과는 동일) */
+.mp-table tbody tr:hover td { background: #FAFBFC; }
+
+/* group head row(대표스타일이 바뀌는 첫 행)은 #E0E0E0 진한 라인 */
+.mp-table tbody tr[data-group="true"] td { border-top-color: #E0E0E0; }
+
+
+/* ============================================================
+ * 3. 컬럼 폭 시스템
+ * ============================================================
+ * 가이드:
+ *   col-auto    : 콘텐츠 max-content + 패딩
+ *   col-small   : auto (cell-clamp 160px cap), min 100
+ *   col-medium  : auto, max 260, min 88 (카테고리·옵션 류 공통). cell-clamp-2 → 260 고정 + 2줄 wrap
+ *   col-large   : 320 (JS 강제), min 100, resize 가능 (SKU명·상품명)
+ *   col-spacer  : 100% — 남는 가로 공간 흡수 (마지막)
+ * ============================================================ */
+/* [공통] 체크박스 셀 — 좌우 padding 12 (위 12, 아래 16), cb 는 셀 가운데 정렬
+   (cb 16×16, 셀 48 → padding-left/right 12 + cb 16 = 40, 잔여 8px 를 좌우 4px 씩 분배) */
+.mp-table th.cb-col, .mp-table td.cb-col,
+.mp-table th.cb-col2, .mp-table td.cb-col2 { width: 48px; padding: 12px 12px 16px; text-align: center; }
+/* cb-header — padding 은 cb-col 과 동일(12px), text-align: left
+   → 체크박스 시작 x = padding-left(12)
+   → cb-col 의 체크박스 시작 x = padding-left(12) + (content_w - 16)/2 → content_w=16 일 때 0, 24 일 때 4
+   실제 렌더 폭이 40px (content 16px) 이면 양쪽 다 x=12 → 정확히 정렬 */
+.mp-table th.cb-header { width: 96px; padding: 16px 12px; text-align: left; white-space: nowrap; }
+/* cb-header 안 체크박스 + "전체" 라벨 — vertical-align middle, 사이 8px */
+.mp-table th.cb-header .mp-cb,
+.mp-table th.cb-header .scm-checkbox {
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.mp-table th.cb-header .cb-header-label {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 19.6px;
+  color: #000;
+  vertical-align: middle;
+}
+/* [공통] cb 가 단독 (라벨 없는 경우 — 편집샵) margin-right 제거 → cb 가 셀 가운데에 정확히 위치 */
+.mp-table th.cb-header .mp-cb:only-child,
+.mp-table th.cb-header .scm-checkbox:only-child,
+.mp-table th.cb-col .mp-cb:only-child,
+.mp-table th.cb-col .scm-checkbox:only-child,
+.mp-table td.cb-col .mp-cb:only-child,
+.mp-table td.cb-col .scm-checkbox:only-child { margin-right: 0; }
+
+.mp-table th.col-auto,
+.mp-table td.col-auto {
+  width: 1%;
+  white-space: nowrap;
+  min-width: min-content;
+}
+.mp-table th.col-small,
+.mp-table td.col-small  { width: 1%; min-width: 100px; }
+.mp-table th.col-medium,
+.mp-table td.col-medium { width: 1%; min-width: var(--scm-col-medium-min); }
+.mp-table th.col-large,
+.mp-table td.col-large  { width: var(--scm-col-large-min); min-width: 100px; }
+.mp-table th.col-spacer,
+.mp-table td.col-spacer { width: 100%; padding: 0; }
+
+
+/* ----- inner clamp wrappers ----- */
+/* col-small: 한 줄, max 160, 말줄임 미노출 */
+.mp-table .col-small > .cell-clamp {
+  display: inline-block;
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  word-break: keep-all;
+  line-height: 1.4;
+  vertical-align: top;
+}
+
+/* col-medium cell-clamp: 한 줄, max 260, 말줄임 미노출 */
+.mp-table .col-medium > .cell-clamp {
+  display: inline-block;
+  max-width: var(--scm-col-medium-max);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  word-break: keep-all;
+  line-height: 1.4;
+  vertical-align: top;
+}
+
+/* col-medium cell-clamp-2: 컨텐츠 260 초과 시 2줄 wrap (말줄임 미노출 — 그냥 잘림 X, 2줄까지 표시 후 ellipsis) */
+.mp-table .col-medium > .cell-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  max-width: var(--scm-col-medium-max);
+  white-space: normal;
+  overflow: hidden;
+  word-break: break-word;
+  line-height: 1.4;
+  vertical-align: top;
+}
+
+/* col-medium scm-tag-stack: 시즌 등 칩 stack — 한 줄 nowrap (col-medium auto-sizing 88~260 따름, 칩 개수만큼 자연 폭, 좌측 정렬) */
+.mp-table .col-medium > .scm-tag-stack {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  max-width: var(--scm-col-medium-max);
+  vertical-align: top;
+}
+
+/* col-large cell-clamp: 320 고정 폭 — 컨텐츠가 폭 넘으면 2줄 wrap (말줄임). 상품명·SKU명·스타일명. */
+.mp-table .col-large > .cell-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  max-width: 100%;
+  white-space: normal;
+  overflow: hidden;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+
+/* ============================================================
+ * 4. Frozen 컬럼 (가로 sticky)
+ * ============================================================
+ * --frozen-l1 ~ N: JS 가 누적 left offset 을 :root 에 set
+ * !important — cell-selected 등 어떤 클래스도 sticky 를 깨지 못하게 방어
+ * ============================================================ */
+.mp-table .col-frozen-1 { position: sticky !important; left: var(--frozen-l1, 0); z-index: 5; }
+.mp-table .col-frozen-2 { position: sticky !important; left: var(--frozen-l2, 0); z-index: 5; }
+.mp-table .col-frozen-3 { position: sticky !important; left: var(--frozen-l3, 0); z-index: 5; }
+.mp-table .col-frozen-4 { position: sticky !important; left: var(--frozen-l4, 0); z-index: 5; }
+.mp-table .col-frozen-5 { position: sticky !important; left: var(--frozen-l5, 0); z-index: 5; }
+.mp-table .col-frozen-6 { position: sticky !important; left: var(--frozen-l6, 0); z-index: 5; }
+
+/* frozen 셀은 background 를 명시 — sticky 시 뒤 셀이 비치지 않게 */
+.mp-table thead th.col-frozen-1,
+.mp-table thead th.col-frozen-2,
+.mp-table thead th.col-frozen-3,
+.mp-table thead th.col-frozen-4,
+.mp-table thead th.col-frozen-5,
+.mp-table thead th.col-frozen-6 { background: #fff; }
+
+.mp-table tbody td.col-frozen-1,
+.mp-table tbody td.col-frozen-2,
+.mp-table tbody td.col-frozen-3,
+.mp-table tbody td.col-frozen-4,
+.mp-table tbody td.col-frozen-5,
+.mp-table tbody td.col-frozen-6 { background: #fff; }
+.mp-table tbody tr:hover td.col-frozen-1,
+.mp-table tbody tr:hover td.col-frozen-2,
+.mp-table tbody tr:hover td.col-frozen-3,
+.mp-table tbody tr:hover td.col-frozen-4,
+.mp-table tbody tr:hover td.col-frozen-5,
+.mp-table tbody tr:hover td.col-frozen-6 { background: #FAFBFC; }
+
+
+/* ============================================================
+ * 5. 셀 선택 (Excel-like)
+ * ============================================================
+ * - 드래그로 범위 선택
+ * - Cmd/Ctrl+C 로 TSV 클립보드 복사
+ * - 헤더 더블클릭 시 컬럼 전체 선택
+ * - 외곽 4변에 옅은 블루 라인 (sel-top/right/bottom/left)
+ * - 선택된 셀은 blue 톤 bg
+ * ============================================================ */
+.mp-table.is-cell-selectable { -webkit-user-select: none; user-select: none; }
+.mp-table.is-cell-selectable tbody td:not(.cb-col):not(.cb-col2):not(.col-spacer) { cursor: cell; }
+.mp-table.is-cell-selectable tbody td::selection { background: transparent; }
+
+.mp-table tbody td.cell-selected {
+  background: var(--scm-sel-bg) !important;
+  --sel-t: 0; --sel-r: 0; --sel-b: 0; --sel-l: 0;
+  box-shadow:
+    inset 0 calc(var(--sel-t) * 1.2px) 0 0 var(--scm-sel-line),
+    inset calc(var(--sel-r) * -1.2px) 0 0 0 var(--scm-sel-line),
+    inset 0 calc(var(--sel-b) * -1.2px) 0 0 var(--scm-sel-line),
+    inset calc(var(--sel-l) * 1.2px) 0 0 0 var(--scm-sel-line);
+}
+.mp-table tbody td.cell-selected.sel-top    { --sel-t: 1; }
+.mp-table tbody td.cell-selected.sel-right  { --sel-r: 1; }
+.mp-table tbody td.cell-selected.sel-bottom { --sel-b: 1; }
+.mp-table tbody td.cell-selected.sel-left   { --sel-l: 1; }
+
+
+/* ============================================================
+ * 6. 헤더 resize 핸들
+ * ============================================================
+ * - 우측 가장자리 8px 영역, hover 시 가운데 2px 블루 라인
+ * - 2단 thead 의 row2 leaf 셀은 is-row2 클래스 → 위쪽으로 확장
+ *   (group-row 영역까지 핸들이 보임)
+ * ============================================================ */
+.th-resize-handle {
+  position: absolute;
+  top: 0; right: -4px; bottom: 0;
+  width: 8px;                       /* 셀 우측 라인을 정확히 중심으로 — 라인에 딱 맞게 잡힘 */
+  cursor: col-resize;
+  user-select: none;
+  z-index: 5;
+}
+.th-resize-handle.is-row2 { top: -44px; }
+.th-resize-handle:hover::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0; left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--scm-sel-line);
+}
+
+
+/* ============================================================
+ * 7. 헤더 reorder (HTML5 drag/drop)
+ * ============================================================ */
+.mp-table thead th[draggable="true"] { user-select: none; }
+.mp-table thead th.is-dragging       { opacity: 0.4; }
+.mp-table thead th.is-drop-target    {
+  background: rgba(0, 0, 0, 0.06);
+  box-shadow: inset 2px 0 0 0 #245EFF;
+}
+
+
+/* ============================================================
+ * 8. 2단 thead group row (sku-management 스타일)
+ * ============================================================ */
+.mp-table thead .group-row th {
+  height: 44px;
+  padding: 8px 16px;
+  font-weight: 500;
+  font-size: 14px;
+  background: #fff;
+  /* box-sizing 은 body td 와 일관 (content-box, default) — column divider 위치 1px shift 방지 */
+  border-bottom: 1px solid #EBEBEB;
+  border-left: 1px solid #EBEBEB;
+  border-right: 0;
+  color: #000;
+  text-align: left;
+  vertical-align: middle;
+}
+.mp-table thead .group-row th[data-empty="true"] {
+  background: transparent;
+  border-bottom: 0;
+  border-left: 0;
+}
+.mp-table thead .group-row th:first-child { border-left: 0; }
+.mp-table thead .group-row th[rowspan="2"] {
+  height: auto;
+  vertical-align: middle;
+  border-bottom: 1px solid #E0E0E0;
+}
+.mp-table thead .group-row .col-frozen-group {
+  border-right: 1px solid rgba(0, 0, 0, 0.12);
+}
+.mp-table thead .group-row .col-frozen-group + th { border-left: 0; }
+
+/* group-row: 마지막 frozen group cell (e.g., 기본정보) 의 우측 border 로 frozen 경계 라인 그림 + 다음 셀의 border-left 제거 (이중선 방지)
+   group-row 만 적용 (body / leafTr 는 sticky cell paint 순서로 doubled 보이는 문제 있어서 별도 처리 안 함) */
+.mp-table thead .group-row .col-frozen-last {
+  border-right: 1px solid rgba(0, 0, 0, 0.12);
+}
+.mp-table thead .group-row .col-frozen-last + :not([class*="col-frozen"]) {
+  border-left: 0;
+}
+
+/* ============================================================
+ * 2단 thead: row1 non-frozen group cell — 가로 스크롤 시 group title sticky
+ * frozen 영역 우측 (--frozen-l-end) 에 sticky 로 붙어서 그룹 타이틀이 항상 보임
+ * 다음 group 이 스크롤로 진입하면 DOM 후순위가 paint 위에 올라와 자연스럽게 교체
+ * ============================================================ */
+.mp-table thead .group-row th:not([class*="col-frozen"]):not([data-empty="true"]) {
+  position: sticky;
+  left: var(--frozen-l-end, 0);
+  z-index: 4;                      /* frozen group cell (z:5) 보다 낮음 — frozen 영역과 겹칠 일 없지만 안전 */
+  background: #fff;
+}
+
+
+/* ============================================================
+ * 9. Stack 셀 (sku-management 의 multi-row sub-row)
+ * ============================================================ */
+.mp-table tbody td.sku-stack-td { padding: 0; }
+.sku-stack {
+  display: flex;
+  flex-direction: column;
+  height: 100%;          /* td 높이까지 stretch — 마지막 sub-row 가 td bottom 까지 fill */
+}
+.sku-stack > .sub-row {
+  /* 모든 sub-row 동일 min-height (가로 정렬) + 컨텐츠 vertical center —
+     칩(24h) 과 텍스트(20.4h) 의 시각적 가운데가 같은 y 에서 정렬되도록. */
+  min-height: var(--scm-substack-row-h, 52px);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  word-break: keep-all;
+  box-sizing: border-box;
+}
+/* 마지막 sub-row 만 flex-grow:1 → td 가 다른 컬럼 영향으로 살짝 커져도 마지막 sub-row 가 그 빈공간 흡수 → 마지막 라인이 td bottom 과 정확히 맞음 */
+.sku-stack > .sub-row:last-child {
+  flex: 1 0 auto;
+}
+.sku-stack > .sub-row + .sub-row {
+  border-top: 1px solid #EBEBEB;
+  /* border-top 1px 가 border-box min-height 안에 먹혀서 콘텐츠 영역이 1px 작아지는 것을 보상.
+     모든 sub-row 의 콘텐츠 영역(box - border - padding)을 동일하게 유지 → align-items:center 가
+     모든 row 에서 동일한 y 위치에 콘텐츠를 배치 → 컬럼 간 1px 어긋남 제거. */
+  min-height: calc(var(--scm-substack-row-h, 52px) + 1px);
+}
+/* col-medium 의 stack 컨텐츠 — 한 줄, max 260 (옵션·카테고리 spec 일치) */
+.mp-table td.col-medium .sku-stack { max-width: var(--scm-col-medium-max); }
+.mp-table td.col-medium .sku-stack > .sub-row {
+  max-width: var(--scm-col-medium-max);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+
+/* ============================================================
+ * 10. 체크박스 셀 (cb-col / cb-header)
+ * ============================================================ */
+.mp-cb {
+  display: inline-block;
+  width: 16px; height: 16px;
+  border: 1px solid #CCCCCC;
+  border-radius: 2px;
+  background: #fff;
+  cursor: pointer;
+  vertical-align: middle;
+  box-sizing: border-box;
+  position: relative;
+}
+.mp-cb[aria-checked="true"] {
+  background: #000;
+  border-color: #000;
+}
+.mp-cb[aria-checked="true"]::after {
+  content: '';
+  position: absolute;
+  left: 4px; top: 1px;
+  width: 5px; height: 9px;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(45deg);
+}

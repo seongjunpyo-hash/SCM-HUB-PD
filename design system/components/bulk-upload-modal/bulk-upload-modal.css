@@ -1,0 +1,466 @@
+/* ============================================================
+ * scm-bulk-upload-modal — 일괄 업로드 모달
+ * ------------------------------------------------------------
+ * 1024w 큰 모달. header / body (warning + type-section + history) /
+ * footer 구조. 자체 backdrop 포함.
+ *
+ * Marker:
+ *   <div class="scm-bu-backdrop"></div>
+ *   <div class="scm-bu-modal" role="dialog">
+ *     <header class="scm-bu-header">...</header>
+ *     <div class="scm-bu-body">
+ *       <div class="scm-bu-warning">...</div>
+ *       <div class="scm-bu-type-section">...</div>
+ *       <section class="scm-bu-history-section">...</section>
+ *     </div>
+ *     <footer class="scm-bu-footer">...</footer>
+ *   </div>
+ *
+ * 자체 내부 컴포넌트:
+ *   - scm-bu-warning (collapsible 주의사항)
+ *   - scm-bu-type-section (업로드 유형 선택)
+ *   - scm-bu-history-table (요청 이력 테이블)
+ *
+ * 외부 모듈 활용:
+ *   - 라디오: scm-radio + .scm-radio-dot (Stage 2)
+ *   - 셀렉트: scm-select scm-select--bu (Stage 2)
+ *   - 버튼: scm-button (Stage 2)
+ *
+ * 단, 본 파일은 자가포함성을 위해 bu-radio / bu-select / bu-btn
+ * legacy 시각도 자체 클래스로 그대로 보존. 추후 외부 모듈로
+ * 100% 이전 가능.
+ * ============================================================ */
+
+/* ================ Backdrop + modal frame ================ */
+.scm-bu-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+  z-index: 90;
+  display: none;
+}
+.scm-bu-backdrop.is-open { display: block; }
+
+.scm-bu-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1024px;
+  max-width: calc(100vw - 64px);
+  max-height: calc(100vh - 80px);
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.20);
+  z-index: 91;
+  display: none;
+  flex-direction: column;
+}
+.scm-bu-modal.is-open { display: flex; }
+
+.scm-bu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  flex-shrink: 0;
+}
+.scm-bu-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24.48px;
+  color: #000;
+}
+
+.scm-bu-close {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+  flex-shrink: 0;
+}
+.scm-bu-close:hover { background: #F5F5F5; }
+.scm-bu-close svg { width: 20px; height: 20px; }
+
+.scm-bu-body {
+  padding: 0 24px 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0;            /* 기본은 0 — 자식 간 margin-top 으로 개별 제어 */
+  flex: 1;
+  min-height: 0;
+}
+/* 모든 후속 자식에 20px gap, 단 warning + type-section 사이는 16px */
+.scm-bu-body > * + * { margin-top: 20px; }
+.scm-bu-body > .scm-bu-warning + .scm-bu-type-section { margin-top: 16px; }
+
+/* ================ Warning banner ================ */
+.scm-bu-warning {
+  background: #FFF4E5;
+  border: 1px solid rgba(255, 203, 133, 0.50);
+  border-radius: 4px;
+  padding: 12px;
+}
+.scm-bu-warning__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.scm-bu-warning__icon {
+  width: 20px;
+  height: 20px;
+  color: #FA9200;
+  flex-shrink: 0;
+}
+.scm-bu-warning__head-body {
+  flex: 1;
+  padding: 0 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.scm-bu-warning__title {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 20.4px;
+  color: #000;
+}
+.scm-bu-warning__toggle {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: #000;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.scm-bu-warning__toggle svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.15s ease;
+}
+.scm-bu-warning.is-collapsed .scm-bu-warning__toggle svg { transform: rotate(180deg); }
+.scm-bu-warning.is-collapsed .scm-bu-warning__list { display: none; }
+
+.scm-bu-warning__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.scm-bu-warning__list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 19.6px;
+  color: #000;
+}
+.scm-bu-warning__list li::before {
+  content: '';
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #000;
+  flex-shrink: 0;
+  margin: 8px 4.5px 0 4.5px;
+}
+.scm-bu-warning__list li.is-critical { color: #F31110; line-height: 22px; }
+.scm-bu-warning__list li.is-critical::before { background: #F31110; }
+
+/* ================ Type section ================ */
+.scm-bu-type-section {
+  align-self: stretch;
+  padding: 16px 24px;
+  background: rgba(235, 235, 235, 0.20);
+  border: 1px solid #EBEBEB;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+}
+.scm-bu-type-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+.scm-bu-type-label {
+  width: 160px;
+  height: 36px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 20.4px;
+  color: #000;
+}
+.scm-bu-type-label .req {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #245EFF;
+  display: inline-block;
+  align-self: flex-start;
+  margin-top: 6px;
+}
+.scm-bu-type-controls {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.scm-bu-type-controls__row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+/* 라디오 그룹 — 일괄 업로드 모달 톤: 항목 간 gap 16, 폰트 15 (--sm 미사용) */
+.scm-radio-group--bu { gap: 16px; }
+/* 템플릿 select + 양식 다운로드 버튼 — 사이 gap 8 */
+.scm-bu-template-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.scm-bu-type-hint {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 19.6px;
+  color: #666;
+}
+.scm-bu-template-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 40px;
+  min-width: 64px;
+  padding: 10px 12px;
+  border: 1px solid #000;
+  border-radius: 4px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 19.6px;
+  color: #000;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.scm-bu-template-btn:hover { background: #FAFAFA; }
+.scm-bu-template-btn svg { width: 16px; height: 16px; color: #000; }
+
+/* ================ History section ================ */
+.scm-bu-history-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* 타이틀은 section 안에 그대로, 가로 스크롤은 안쪽 wrapper(.scm-bu-history-scroll) 가 담당 */
+}
+.scm-bu-history-scroll {
+  overflow-x: auto;
+  /* sticky cell 의 보더가 잘리지 않도록 */
+  overflow-y: visible;
+}
+.scm-bu-history-section .scm-bu-history-table {
+  width: 100%;               /* colgroup 의 누적 폭 사용 */
+  table-layout: fixed;       /* colgroup width 적용 + resize 동작 */
+}
+/* 행 셀 — 잘림 해제, nowrap 으로 1줄 유지 (폭 초과는 부모가 스크롤) */
+.scm-bu-history-table thead th,
+.scm-bu-history-table tbody td {
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/* ===== Sticky 좌측 고정 컬럼: No (1) + 상태 (2) ===== */
+.scm-bu-history-table thead th:nth-child(1),
+.scm-bu-history-table tbody td:nth-child(1) {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #fff;
+  width: 60px;
+  min-width: 60px;
+}
+.scm-bu-history-table thead th:nth-child(2),
+.scm-bu-history-table tbody td:nth-child(2) {
+  position: sticky;
+  left: 60px;             /* 1번 컬럼 폭 */
+  z-index: 2;
+  background: #fff;
+  width: 112px;
+  min-width: 112px;
+  /* 고정 영역 경계 — 우측에 명확한 보더 */
+  box-shadow: 1px 0 0 0 #E0E0E0;
+}
+/* hover 시에도 sticky 셀 배경 유지 (유지력 우선) */
+.scm-bu-history-table tbody tr:hover td:nth-child(1),
+.scm-bu-history-table tbody tr:hover td:nth-child(2) {
+  background: #FAFBFC;
+}
+.scm-bu-history-title {
+  margin: 0;
+  padding: 8px 0 8px 2px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 20.4px;
+  color: #000;
+}
+
+/* mp-table 디자인 시스템 토큰에 맞춤 — thead 14/500/h44, tbody 14/400, padding 12 16 */
+.scm-bu-history-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: #000;
+  table-layout: fixed;
+}
+/* mp-table 동일: thead ::before 로 상단 1.5px 검정 라인 제공 */
+.scm-bu-history-table thead {
+  position: relative;
+  isolation: isolate;
+}
+.scm-bu-history-table thead::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1.5px;
+  background: #000;
+  z-index: 10;
+}
+.scm-bu-history-table thead th {
+  position: relative;
+  height: 44px;
+  padding: 12px 16px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 19.6px;
+  color: #000;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid #E0E0E0;
+  border-left: 1px solid #EBEBEB;
+  white-space: nowrap;
+}
+.scm-bu-history-table thead th:first-child { border-left: 0; }
+.scm-bu-history-table thead th .sort {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+  color: #CCCCCC;
+  margin-left: 4px;
+}
+.scm-bu-history-table tbody td {
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 19.6px;
+  color: #000;
+  vertical-align: middle;
+  border-top: 1px solid #EBEBEB;
+  border-left: 1px solid #EBEBEB;
+  white-space: nowrap;
+  /* 컨텐츠 fit — 잘림/ellipsis 없음. 컬럼 width 부족 시 가로 스크롤 (mp-table-scroll) 로 처리 */
+}
+.scm-bu-history-table tbody td:first-child { border-left: 0; }
+.scm-bu-history-table tbody tr:hover td { background: #FAFBFC; }
+.scm-bu-history-table tbody tr:last-child td { border-bottom: 1px solid #EBEBEB; }
+
+/* status pills — scm-tag 톤 (h24 / 13/500 / padding 2 8) */
+.scm-bu-status-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  white-space: nowrap;
+}
+.scm-bu-status-pill[data-state="processing"] { background: #E2F1FF; color: #245EFF; }
+.scm-bu-status-pill[data-state="done"]       { background: #ECFFEC; color: #1EA514; }
+.scm-bu-status-pill[data-state="partial"]    { background: #E6FFFB; color: #08979C; }
+
+/* result cell */
+.scm-bu-history-table .scm-bu-result-cell { padding: 8px 16px; }
+.scm-bu-history-table .scm-bu-result {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+.scm-bu-history-table .scm-bu-result-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 19.6px;
+  color: #000;
+}
+.scm-bu-history-table .scm-bu-result-group em {
+  font-style: normal;
+  font-weight: 500;
+}
+.scm-bu-history-table .scm-bu-result-group--success em { color: #1EA514; }
+.scm-bu-history-table .scm-bu-result-group--fail em    { color: #F31110; }
+.scm-bu-history-table .scm-bu-result-divider {
+  width: 1px;
+  height: 16px;
+  background: #EBEBEB;
+  flex-shrink: 0;
+}
+.scm-bu-history-table .scm-bu-result-dl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  min-width: 64px;
+  padding: 6px 10px;
+  border: 1px solid #E0E0E0;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 19.5px;
+  color: #000;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+}
+.scm-bu-history-table .scm-bu-result-dl:hover { background: #FAFAFA; }
+
+/* ================ Footer ================ */
+.scm-bu-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding: 24px;
+  flex-shrink: 0;
+}

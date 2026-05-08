@@ -1,0 +1,40 @@
+/* ============================================================
+ * scm-filter-reset-btn — 필터바 "초기화" 버튼
+ * ------------------------------------------------------------
+ * h44 ghost. 회전 화살표 svg + "초기화" 텍스트. gap 4.
+ * 필터가 활성 상태일 때만 노출 ([hidden] 아닐 때).
+ * ============================================================ */
+
+.scm-filter-reset-btn {
+  height: 44px;
+  min-width: 56px;
+  padding: 12px 12px 12px 8px;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 20.4px;
+  color: #666;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.scm-filter-reset-btn[hidden] {
+  display: none;
+}
+
+.scm-filter-reset-btn svg {
+  width: 20px;
+  height: 20px;
+  color: #666;
+}
+
+.scm-filter-reset-btn:hover {
+  background: var(--ld-bg-low, #FAFBFC);
+}

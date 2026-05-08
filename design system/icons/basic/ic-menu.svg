@@ -1,0 +1,29 @@
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="basic/ic-menu" clip-path="url(#clip0_3955_1710)">
+<g id="weight=light, filled=false">
+<g id="UIIcon">
+<path id="Vector" d="M2 4H18M2 10H18M2 16H18" stroke="currentColor"/>
+</g>
+</g>
+<g id="weight=regular, filled=false">
+<g id="UIIcon_2">
+<path id="Vector_2" d="M38 4H54M38 10H54M38 16H54" stroke="currentColor" stroke-width="1.4"/>
+</g>
+</g>
+<g id="weight=bold, filled=false">
+<g id="UIIcon_3">
+<path id="Vector_3" d="M74 4H90M74 10H90M74 16H90" stroke="currentColor" stroke-width="2"/>
+</g>
+</g>
+<g id="weight=regular, filled=true">
+<g id="UIIcon_4">
+<path id="Vector_4" d="M126 15.2998V16.7002H110V15.2998H126ZM126 9.2998V10.7002H110V9.2998H126ZM126 3.2998V4.7002H110V3.2998H126Z" fill="currentColor"/>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_3955_1710">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+</defs>
+</svg>

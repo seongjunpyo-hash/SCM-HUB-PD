@@ -1,0 +1,22 @@
+<!-- ============================================================
+     scm-code-popover — canonical marker
+     자체 마운트 시 backdrop + popover 자동 생성. 수동으로 마크업
+     하려면 아래.
+     ============================================================ -->
+
+<!-- backdrop (외부 클릭 차단, 투명) -->
+<div class="scm-code-popover-backdrop"></div>
+
+<!-- popover 본체 -->
+<div class="scm-code-popover" role="dialog" aria-labelledby="cp-title">
+  <h4 id="cp-title">연결된 UID번호 확인</h4>
+  <ul>
+    <li class="linked">383827</li>
+    <li class="linked">383828</li>
+    <li class="linked">383829</li>
+  </ul>
+  <div class="scm-code-popover__actions">
+    <button type="button">UID 복사 (3)</button>
+    <button type="button" class="primary">닫기</button>
+  </div>
+</div>

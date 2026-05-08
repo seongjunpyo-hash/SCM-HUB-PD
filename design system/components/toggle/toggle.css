@@ -1,0 +1,114 @@
+/* ============================================================
+ * scm-toggle — On/Off 토글 스위치
+ * ------------------------------------------------------------
+ * 36×20 (기본) 또는 32×20 (--sm) 토글 스위치.
+ * input checkbox 기반 (실제 폼 인풋) 또는 div 기반 (mock/시각용)
+ * 둘 다 동일 클래스로 처리.
+ *
+ * Marker A — input 기반 (실제 토글):
+ *   <label class="scm-toggle">
+ *     <input type="checkbox" class="scm-toggle-input">
+ *     <span class="scm-toggle-track"></span>
+ *     <span class="scm-toggle-knob"></span>
+ *   </label>
+ *
+ * Marker B — div 기반 (mock):
+ *   <span class="scm-toggle is-on">
+ *     <span class="scm-toggle-track"></span>
+ *     <span class="scm-toggle-knob"></span>
+ *   </span>
+ *
+ * Sizes:
+ *   기본              36×20
+ *   .scm-toggle--sm   32×20 (sku-detail mock)
+ *
+ * States:
+ *   input:checked OR .is-on   On
+ *   .is-disabled              비활성
+ * ============================================================ */
+
+.scm-toggle {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.scm-toggle--sm {
+  width: 32px;
+}
+
+.scm-toggle-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.scm-toggle-track {
+  position: absolute;
+  inset: 0;
+  background: #CCCCCC;
+  border-radius: 999px;
+  transition: background 0.15s;
+}
+
+.scm-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.15s, background 0.15s, left 0.15s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* On 상태 — input:checked 또는 .is-on */
+.scm-toggle .scm-toggle-input:checked ~ .scm-toggle-track,
+.scm-toggle.is-on .scm-toggle-track {
+  background: #000;
+}
+
+.scm-toggle .scm-toggle-input:checked ~ .scm-toggle-knob {
+  transform: translateX(16px);
+}
+
+.scm-toggle.is-on .scm-toggle-knob {
+  transform: translateX(16px);
+}
+
+.scm-toggle--sm .scm-toggle-input:checked ~ .scm-toggle-knob,
+.scm-toggle--sm.is-on .scm-toggle-knob {
+  transform: translateX(12px);
+}
+
+/* Disabled */
+.scm-toggle.is-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* 라벨 (옆에 붙는 "전개"/"미전개" 등) */
+.scm-toggle-label {
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 20.4px;
+  color: #000;
+}
+
+.scm-toggle-label.is-off {
+  color: #8A8A8A;
+}
+
+/* 라벨과 토글을 묶는 셀 */
+.scm-toggle-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}

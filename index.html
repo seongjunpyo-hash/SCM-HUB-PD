@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SCM HUB Workspace</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <style>
+    :root {
+      --bg:        #0E0E14;
+      --surface:   #15151D;
+      --surface-h: #1B1B25;
+      --line:      #25252F;
+      --line-2:    #34344A;
+      --fg:        #FFFFFF;
+      --fg-mute:   rgba(255,255,255,0.62);
+      --fg-dim:    rgba(255,255,255,0.40);
+      --accent:    #6E6BFF;
+      --accent-bg: rgba(110,107,255,0.14);
+      --warn:      #F59E0B;
+      --success:   #10B981;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--fg);
+      font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+      letter-spacing: -0.01em;
+      min-height: 100vh;
+      min-width: 1440px;          /* 1440 미만 보장 */
+    }
+    a { color: inherit; text-decoration: none; }
+    /* 1440~1920+ 해상도 대응 — 컨텐츠 폭 가변, 좌우 padding 으로 여백 확보 */
+    .shell { max-width: 1680px; margin: 0 auto; padding: 64px 80px 96px; }
+    @media (min-width: 1680px) {
+      .shell { padding: 64px 120px 96px; }
+    }
+
+    .top {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 0 48px;
+      font-size: 12px; color: var(--fg-mute);
+    }
+    .top__brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; font-size: 24px; color: var(--fg); letter-spacing: 1.5px; }
+    .top__beta { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--accent-bg); color: var(--accent); font-weight: 700; letter-spacing: 0.6px; }
+    .top__right { display: inline-flex; align-items: center; gap: 12px; }
+    .top__user { font-size: 13px; color: var(--fg-mute); }
+    .top__role {
+      display: inline-block; padding: 3px 10px; border-radius: 999px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+      background: var(--accent-bg); color: var(--accent);
+    }
+    .top__role[data-role="super"]    { background: rgba(245,158,11,0.16); color: var(--warn); }
+    .top__role[data-role="admin"]    { background: var(--accent-bg); color: var(--accent); }
+    .top__role[data-role="biz"]      { background: rgba(16,185,129,0.16); color: var(--success); }
+    .top__role[data-role="pm"],
+    .top__role[data-role="dev"],
+    .top__role[data-role="pd"]       { background: rgba(255,255,255,0.08); color: var(--fg-mute); }
+    .top__link {
+      font-size: 12px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px;
+      color: var(--fg-mute); transition: all 0.15s;
+    }
+    .top__link:hover { color: var(--fg); border-color: var(--line-2); }
+    .top__logout {
+      font-size: 12px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px;
+      background: transparent; color: var(--fg-mute); cursor: pointer; font-family: inherit; transition: all 0.15s;
+    }
+    .top__logout:hover { color: var(--fg); border-color: var(--line-2); }
+
+    .hero { padding: 80px 0 64px; text-align: center; }
+    .hero__eyebrow { font-size: 20px; font-weight: 800; letter-spacing: 2.2px; text-transform: uppercase; color: var(--accent); }
+    .hero__title { margin: 80px 0 0; font-size: 60px; font-weight: 800; letter-spacing: -0.8px; line-height: 1.15; }
+    .hero__sub { margin: 20px auto 0; font-size: 17px; color: var(--fg-mute); max-width: 820px; line-height: 1.7; }
+
+    .section { margin-top: 32px; }
+    .section__head { display: flex; align-items: baseline; justify-content: space-between; padding: 0 4px 14px; }
+    .section__title { font-size: 13px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--fg-mute); }
+    .section__sub { font-size: 12px; color: var(--fg-dim); }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid--3 { grid-template-columns: 1fr 1fr 1fr; }
+
+    .card {
+      display: flex; flex-direction: column; position: relative;
+      background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
+      padding: 48px 40px;
+      min-height: 440px;
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    }
+    .card:hover { background: var(--surface-h); border-color: var(--line-2); transform: translateY(-2px); }
+    .card__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 36px; }
+    .card__icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 64px; height: 64px;
+      background: var(--accent-bg); color: var(--accent);
+      border-radius: 16px;
+    }
+    .card__icon svg { width: 32px; height: 32px; }
+    .card__num { font-size: 13px; font-weight: 700; letter-spacing: 0.6px; color: var(--fg-dim); }
+    .card__title { margin: 0 0 20px; font-size: 32px; font-weight: 700; letter-spacing: -0.5px; }
+    .card__desc { margin: 0; font-size: 15px; color: var(--fg-mute); line-height: 1.75; }
+    .card__path { margin-top: auto; padding-top: 32px; font-size: 12px; color: var(--fg-dim); font-family: ui-monospace, monospace; }
+
+    /* Color variants — 카드 1/2/3 별 시그니처 컬러 (gradient bg + border + icon) */
+    .card--blue {
+      background: linear-gradient(180deg, rgba(59,130,246,0.18) 0%, var(--surface) 100%);
+      border-color: #3B82F6;
+    }
+    .card--blue .card__icon { background: #3B82F6; color: #fff; }
+
+    .card--violet {
+      background: linear-gradient(180deg, rgba(110,107,255,0.18) 0%, var(--surface) 100%);
+      border-color: #6E6BFF;
+    }
+    .card--violet .card__icon { background: #6E6BFF; color: #fff; }
+
+    .card--green {
+      background: linear-gradient(180deg, rgba(16,185,129,0.18) 0%, var(--surface) 100%);
+      border-color: #10B981;
+    }
+    .card--green .card__icon { background: #10B981; color: #fff; }
+
+    .footer {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      z-index: 40;
+      padding: 16px 80px;
+      background: rgba(14, 14, 20, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid var(--line);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 11.5px; color: var(--fg-dim);
+    }
+    @media (min-width: 1680px) { .footer { padding: 16px 120px; } }
+    .footer a { color: var(--fg-dim); }
+    .footer a:hover { color: var(--fg-mute); }
+  </style>
+</head>
+<body>
+  <div class="shell">
+
+    <header class="top">
+      <span class="top__brand">MUSINSA</span>
+      <span class="top__right" id="topRight">
+        <span class="top__user" id="topUser">—</span>
+        <span class="top__role" id="topRole" style="display:none;">—</span>
+        <a class="top__link" id="topAdmin" href="/admin/accounts.html" style="display:none;">계정 관리</a>
+        <button class="top__logout" id="topLogout">로그아웃</button>
+      </span>
+    </header>
+
+    <section class="hero">
+      <span class="hero__eyebrow">PBO Product Design</span>
+      <h1 class="hero__title">SCM HUB 통합 워크스페이스</h1>
+      <p class="hero__sub">디자인 시스템 + 시뮬레이션 도구 + SCM Hub 데모 + 핸드오프 산출물 + 스펙 문서를 한 곳에서. 진입할 영역을 선택하세요.</p>
+    </section>
+
+    <!-- 1. 시뮬레이션 시스템 (디자인 시스템 + PRD 검증 + 시뮬레이터 + 카탈로그) -->
+    <section class="section">
+      <div class="grid grid--3">
+        <a class="card card--blue" href="./design%20system/prd-validate/index.html" target="_blank" rel="noopener">
+          <div class="card__head">
+            <span class="card__icon">
+              <svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4M3 7v10l9 4 9-4V7M3 7l9 4 9-4M12 11v10" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/></svg>
+            </span>
+            <span class="card__num">01</span>
+          </div>
+          <h3 class="card__title">시뮬레이션 시스템</h3>
+          <p class="card__desc">PRD 검증 → 시뮬레이터 → 와이어프레임 자동 생성 → 컴포넌트 카탈로그.</p>
+          <div class="card__path">design system/prd-validate/</div>
+        </a>
+
+        <a class="card card--violet" href="./demo/dashboard.html" target="_blank" rel="noopener">
+          <div class="card__head">
+            <span class="card__icon">
+              <svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="13" y="3" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="3" y="13" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="13" y="13" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
+            </span>
+            <span class="card__num">02</span>
+          </div>
+          <h3 class="card__title">SCM Hub 데모</h3>
+          <p class="card__desc">대시보드 / SKU 관리 / 편집샵 보충 등 실제 페이지 데모. 새 창으로 열림.</p>
+          <div class="card__path">scm hub/</div>
+        </a>
+
+        <a class="card card--green" href="./voc/index.html" target="_blank" rel="noopener">
+          <div class="card__head">
+            <span class="card__icon">
+              <svg viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4V5z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><path d="M8 9h8M8 12h5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
+            </span>
+            <span class="card__num">03</span>
+          </div>
+          <h3 class="card__title">현업 VOC</h3>
+          <p class="card__desc">실제 사용 현장의 의견 / 개선 요청 / 불편사항을 자유롭게 남겨주세요. 우선순위 검토 후 다음 빌드에 반영됩니다.</p>
+          <div class="card__path">voc/</div>
+        </a>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>SCM HUB Workspace · Internal</span>
+    </footer>
+
+  </div>
+
+  <script src="/auth-gate.js"></script>
+  <script>
+    const ROLE_LABEL = { super: '최고 어드민', admin: '어드민', biz: '현업', pm: 'PM', dev: '개발팀', pd: 'PD' };
+    document.addEventListener('scm:auth-ready', (e) => {
+      const u = e.detail.user;
+      document.getElementById('topUser').textContent = u.email;
+      const roleEl = document.getElementById('topRole');
+      roleEl.textContent = ROLE_LABEL[u.role] || u.role;
+      roleEl.dataset.role = u.role;
+      roleEl.style.display = '';
+      if (u.role === 'super' || u.role === 'admin') {
+        document.getElementById('topAdmin').style.display = '';
+      }
+    });
+    document.getElementById('topLogout').addEventListener('click', () => SCM.logout());
+  </script>
+</body>
+</html>

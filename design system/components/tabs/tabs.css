@@ -1,0 +1,99 @@
+/* ============================================================
+ * scm-tabs — 탭
+ * ------------------------------------------------------------
+ * 두 가지 시각 변형 통합:
+ *   --underline   하단 언더라인 강조 (sd-section-tabs 패턴)
+ *   --pill        라운드 배경 위 pill 강조 (db-period-tabs 패턴)
+ *
+ * Marker (underline):
+ *   <div class="scm-tabs scm-tabs--underline">
+ *     <button class="scm-tab is-active">
+ *       <span class="scm-tab__label">사용 바코드</span>
+ *       <span class="scm-tab__count">3</span>
+ *     </button>
+ *     <button class="scm-tab">
+ *       <span class="scm-tab__label">미사용</span>
+ *     </button>
+ *   </div>
+ *
+ * Marker (pill):
+ *   <div class="scm-tabs scm-tabs--pill">
+ *     <button class="scm-tab is-active">7일</button>
+ *     <button class="scm-tab">14일</button>
+ *     <button class="scm-tab">30일</button>
+ *   </div>
+ *
+ * States:
+ *   .is-active                 활성 탭
+ * ============================================================ */
+
+.scm-tabs {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ===== Underline variant ===== */
+.scm-tabs--underline {
+  gap: 16px;
+}
+
+.scm-tabs--underline .scm-tab {
+  padding: 0 0 8px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24.48px;
+  color: #8A8A8A;
+}
+
+.scm-tabs--underline .scm-tab .scm-tab__label,
+.scm-tabs--underline .scm-tab .scm-tab__count {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24.48px;
+  color: #8A8A8A;
+}
+
+.scm-tabs--underline .scm-tab.is-active {
+  border-bottom: 2px solid #000;
+  color: #000;
+}
+
+.scm-tabs--underline .scm-tab.is-active .scm-tab__label,
+.scm-tabs--underline .scm-tab.is-active .scm-tab__count {
+  color: #000;
+}
+
+/* ===== Pill variant ===== */
+.scm-tabs--pill {
+  display: inline-flex;
+  padding: 2px;
+  background: rgba(138, 138, 138, 0.10);
+  border-radius: 6px;
+}
+
+.scm-tabs--pill .scm-tab {
+  padding: 8px 16px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 19.6px;
+  color: #666;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.scm-tabs--pill .scm-tab.is-active {
+  background: #fff;
+  color: #000;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}

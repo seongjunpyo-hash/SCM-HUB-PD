@@ -1,0 +1,145 @@
+/* ============================================================
+ * scm-mini-action — stats bar 의 미니 액션 버튼 (드롭다운형)
+ * ------------------------------------------------------------
+ * "코드 복사", "전개 여부 변경" 같은 작은 액션. h36 outlined,
+ * 우측 chevron, 클릭 시 popup 드롭다운. variants: 기본 / --primary.
+ *
+ * Marker:
+ *   <span class="scm-mini-wrap">
+ *     <button class="scm-mini-action" aria-haspopup="listbox" aria-expanded="false">
+ *       코드 복사
+ *       <svg>...</svg>
+ *     </button>
+ *     <ul class="scm-mini-popup" role="listbox">
+ *       <li>대표스타일 복사</li>
+ *       <li>SKU번호 복사</li>
+ *       ...
+ *     </ul>
+ *   </span>
+ *
+ * Variants:
+ *   기본               outlined (border #E0E0E0, bg #fff)
+ *   --primary          solid (bg #000, color #fff)
+ *
+ * States:
+ *   [aria-expanded="true"]   chevron 회전
+ *   :disabled / [disabled]   회색 톤
+ * ============================================================ */
+
+.scm-mini-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.scm-mini-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  min-width: 48px;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 19.6px;
+  border: 1px solid #E0E0E0;
+  border-radius: 4px;
+  background: #fff;
+  color: #000;
+  cursor: pointer;
+  white-space: nowrap;
+  box-sizing: border-box;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.scm-mini-action svg {
+  width: 16px;
+  height: 16px;
+  color: #000;
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.scm-mini-action:hover:not(:disabled):not([disabled]) {
+  background: var(--ld-bg-low, #FAFBFC);
+  border-color: #000;     /* hover 시 보더 진하게 — 클릭 가능 시각 강조 */
+}
+
+.scm-mini-action[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+/* Variants */
+.scm-mini-action--primary {
+  background: #000;
+  border-color: #000;
+  color: #fff;
+}
+.scm-mini-action--primary svg { color: #fff; }
+.scm-mini-action--primary:hover:not(:disabled):not([disabled]) {
+  background: #333;       /* #1A1A1A → #333 (가독성 향상) */
+  border-color: #333;
+}
+
+/* Disabled */
+.scm-mini-action:disabled,
+.scm-mini-action[disabled] {
+  background: rgba(138, 138, 138, 0.10);
+  border-color: #EBEBEB;
+  color: rgba(0, 0, 0, 0.20);
+  cursor: not-allowed;
+}
+.scm-mini-action:disabled svg,
+.scm-mini-action[disabled] svg { color: rgba(0, 0, 0, 0.20); }
+
+.scm-mini-action--primary:disabled,
+.scm-mini-action--primary[disabled] {
+  background: rgba(138, 138, 138, 0.10);
+  border-color: #EBEBEB;
+  color: rgba(0, 0, 0, 0.20);
+}
+
+/* Popup (드롭다운) */
+.scm-mini-popup {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: var(--ld-bg, #fff);
+  border: 1px solid var(--ld-border, #E0E0E0);
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  min-width: 100%;
+  display: none;
+  z-index: 30;
+  white-space: nowrap;
+}
+
+.scm-mini-popup.is-open {
+  display: block;
+}
+
+.scm-mini-popup li {
+  padding: 8px 14px;
+  font-size: 15px;
+  line-height: 20.4px;
+  color: var(--ld-fg, #000);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.scm-mini-popup li:hover {
+  background: var(--ld-bg-low, #FAFBFC);
+}
+
+.scm-mini-popup li.is-current {
+  color: #000;
+  font-weight: 400;
+}
+
+.scm-mini-popup li .accent {
+  color: #245EFF;
+  font-weight: 700;
+}

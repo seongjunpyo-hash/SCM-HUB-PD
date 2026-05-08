@@ -1,0 +1,141 @@
+/* ============================================================
+ * scm-button — 베이스 버튼
+ * ------------------------------------------------------------
+ * 모든 페이지의 액션 버튼. 페이지 헤드, 모달 푸터, 폼 액션,
+ * stats bar 등에서 사용.
+ *
+ * Variants:
+ *   기본 = outlined           border 1px #000, bg #fff, color #000
+ *   .scm-button--primary      bg #000, color #fff, border #000
+ *   .scm-button--ghost        bg transparent, border 0, color #000
+ *
+ * Sizes:
+ *   .scm-button--sm           h36, min-width 64, padding 8 12, font 14
+ *   기본 = md                 h44, min-width 80, padding 12, font 15
+ *   .scm-button--lg           h52, min-width 120, padding 14 20, font 16
+ *
+ * Special:
+ *   .scm-button--block        width 100%
+ *
+ * States:
+ *   :disabled / [disabled]    회색 톤
+ * ============================================================ */
+
+.scm-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 44px;
+  min-width: 80px;
+  padding: 12px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 20.4px;
+  color: #000;
+  background: #fff;
+  border: 1px solid #000;
+  border-radius: 4px;
+  cursor: pointer;
+  box-sizing: border-box;
+  user-select: none;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.scm-button:hover:not(:disabled):not([disabled]) {
+  background: var(--ld-bg-low, #FAFBFC);
+}
+
+/* Variants */
+.scm-button--primary {
+  background: #000;
+  color: #fff;
+  border-color: #000;
+}
+.scm-button--primary:hover:not(:disabled):not([disabled]) {
+  background: #333;       /* #1A1A1A → #333 (호버 가독성 향상) */
+  border-color: #333;
+}
+
+.scm-button--ghost {
+  background: transparent;
+  border: 0;
+  color: #000;
+}
+.scm-button--ghost:hover:not(:disabled):not([disabled]) {
+  background: var(--ld-bg-low, #FAFBFC);
+}
+
+/* Sizes */
+.scm-button--sm {
+  height: 36px;
+  min-width: 64px;
+  padding: 8px 12px;
+  font-size: 14px;
+  line-height: 19.6px;
+}
+
+.scm-button--lg {
+  height: 52px;
+  min-width: 120px;
+  padding: 14px 20px;
+  font-size: 16px;
+  line-height: 21.76px;
+}
+
+.scm-button--block {
+  width: 100%;
+}
+
+/* Disabled */
+.scm-button:disabled,
+.scm-button[disabled] {
+  background: rgba(138, 138, 138, 0.10);
+  border-color: #EBEBEB;
+  color: rgba(0, 0, 0, 0.20);
+  cursor: not-allowed;
+}
+
+.scm-button--primary:disabled,
+.scm-button--primary[disabled] {
+  background: rgba(138, 138, 138, 0.10);
+  border-color: #EBEBEB;
+  color: rgba(0, 0, 0, 0.20);
+}
+
+/* Internal: SVG icon size */
+.scm-button > svg,
+.scm-button > .scm-button__icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.scm-button--sm > svg,
+.scm-button--sm > .scm-button__icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Internal: progress group (페이지 헤드 액션 버튼의 진행 카운터) */
+.scm-button__v-divider {
+  width: 1px;
+  height: 16px;
+  background: #EBEBEB;
+  flex-shrink: 0;
+}
+.scm-button__progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.scm-button__progress-label {
+  color: #245EFF;
+  font-weight: 500;
+}
+.scm-button__progress-num {
+  color: #245EFF;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}

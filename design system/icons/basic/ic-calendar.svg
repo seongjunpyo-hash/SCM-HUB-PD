@@ -1,0 +1,32 @@
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="basic/ic-calendar" clip-path="url(#clip0_107_111)">
+<g id="weight=light, filled=false">
+<g id="UIIcon">
+<path id="Vector" d="M3 7.5H17M5.5 10.5H6.5M5.5 13.5H6.5M9.5 10.5H10.5M9.5 13.5H10.5M13.5 10.5H14.5M13.5 13.5H14.5M3.3 16.5H16.7C16.8657 16.5 17 16.3657 17 16.2V3.8C17 3.63431 16.8657 3.5 16.7 3.5H3.3C3.13431 3.5 3 3.63431 3 3.8V16.2C3 16.3657 3.13431 16.5 3.3 16.5Z" stroke="currentColor"/>
+</g>
+</g>
+<g id="weight=regular, filled=false">
+<g id="UIIcon_2">
+<path id="Vector_2" d="M39 7.5H53M41.5 10.5H42.5M41.5 13.5H42.5M45.5 10.5H46.5M45.5 13.5H46.5M49.5 10.5H50.5M49.5 13.5H50.5M39.3 16.5H52.7C52.8657 16.5 53 16.3657 53 16.2V3.8C53 3.63431 52.8657 3.5 52.7 3.5H39.3C39.1343 3.5 39 3.63431 39 3.8V16.2C39 16.3657 39.1343 16.5 39.3 16.5Z" stroke="currentColor" stroke-width="1.4"/>
+</g>
+</g>
+<g id="weight=bold, filled=false">
+<g id="UIIcon_3">
+<path id="Vector_3" d="M75 7.5H89M77.5 10.5H78.5M77.5 13.5H78.5M81.5 10.5H82.5M81.5 13.5H82.5M85.5 10.5H86.5M85.5 13.5H86.5M75.3 16.5H88.7C88.8657 16.5 89 16.3657 89 16.2V3.8C89 3.63431 88.8657 3.5 88.7 3.5H75.3C75.1343 3.5 75 3.63431 75 3.8V16.2C75 16.3657 75.1343 16.5 75.3 16.5Z" stroke="currentColor" stroke-width="2"/>
+</g>
+</g>
+<g id="weight=light, filled=true">
+<g id="UIIcon_4">
+<g id="Vector_4">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M125.5 16.2002C125.5 16.6419 125.142 16.9999 124.7 17H111.3C110.858 16.9999 110.5 16.6419 110.5 16.2002V8H125.5V16.2002ZM113.5 13.4004V14.4004H114.5V13.4004H113.5ZM117.5 13.4004V14.4004H118.5V13.4004H117.5ZM121.5 13.4004V14.4004H122.5V13.4004H121.5ZM113.5 10.4004V11.4004H114.5V10.4004H113.5ZM117.5 10.4004V11.4004H118.5V10.4004H117.5ZM121.5 10.4004V11.4004H122.5V10.4004H121.5Z" fill="currentColor"/>
+<path d="M124.7 3C125.142 3.00011 125.5 3.35813 125.5 3.7998V7H110.5V3.7998C110.5 3.35813 110.858 3.00011 111.3 3H124.7Z" fill="currentColor"/>
+</g>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_107_111">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+</defs>
+</svg>

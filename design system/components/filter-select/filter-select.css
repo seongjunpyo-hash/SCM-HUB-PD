@@ -1,0 +1,169 @@
+/* ============================================================
+ * scm-filter-select — 필터바 개별 셀렉트
+ * ------------------------------------------------------------
+ * 필터바의 각 필터 칩. floating label 패턴 (placeholder 시 라벨
+ * 숨김 / filled 시 라벨이 위로 떠 작은 폰트로). 클릭 시 popover.
+ *
+ * Marker:
+ *   <button class="scm-filter-select" data-state="placeholder" aria-expanded="false" aria-haspopup="listbox">
+ *     <span class="scm-filter-select__label">스토어 전개 여부 <span class="req-dot"></span></span>
+ *     <span class="scm-filter-select__value">스토어 전개 여부</span>
+ *     <svg class="scm-filter-select__chev">...</svg>
+ *   </button>
+ *
+ * data-state:
+ *   placeholder    라벨 숨김, value 회색 500
+ *   filled         라벨 위로 떠서 표시 (12/400 회색), value 검정 500
+ *   active         (인터랙션 중) value 검정 400
+ *
+ * aria-expanded="true":
+ *   - chev 180도 회전
+ *   - border #000
+ *
+ * 부속:
+ *   .scm-filter-select__req-dot     필수 도트
+ * ============================================================ */
+
+.scm-filter-select {
+  position: relative;
+  min-width: 120px;
+  height: 44px;
+  padding: 12px 16px;
+  background: #fff;
+  border: 1px solid #E0E0E0;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 20.4px;
+  color: #000;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.18s ease;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+.scm-filter-select:focus,
+.scm-filter-select[aria-expanded="true"] {
+  border: 1px solid #000;            /* 모든 4면 #000 */
+  outline: none;
+  z-index: 2;
+}
+
+.scm-filter-select__label {
+  position: absolute;
+  left: 12px;
+  top: -9px;
+  height: 18px;
+  padding: 0 4px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  color: #8A8A8A;
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+  transform-origin: left center;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.scm-filter-select__label .req-dot,
+.scm-filter-select__req-dot {
+  width: 4px;
+  height: 4px;
+  background: #245EFF;
+  border-radius: 50%;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.scm-filter-select__value {
+  min-width: 64px;
+  flex: 1;
+  transition: color 0.18s ease, font-weight 0.18s ease;
+}
+
+.scm-filter-select__chev {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: #000;
+  transition: transform 0.15s ease;
+}
+
+.scm-filter-select[aria-expanded="true"] .scm-filter-select__chev {
+  transform: rotate(180deg);
+}
+
+/* States */
+.scm-filter-select[data-state="placeholder"] .scm-filter-select__label {
+  opacity: 0;
+  transform: translateY(14px) scale(0.92);
+}
+.scm-filter-select[data-state="placeholder"] .scm-filter-select__value {
+  color: #8A8A8A;
+  font-weight: 500;
+}
+
+.scm-filter-select[data-state="filled"] .scm-filter-select__label {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.scm-filter-select[data-state="filled"] .scm-filter-select__value {
+  color: #000;
+  font-weight: 500;
+}
+
+.scm-filter-select[data-state="active"] .scm-filter-select__value {
+  color: #000;
+  font-weight: 400;
+}
+
+/* Chev disabled (선택 불가 상태 시 chev 만 흐리게) */
+.scm-filter-select[data-chev="disabled"] .scm-filter-select__chev {
+  color: rgba(0, 0, 0, 0.20);
+}
+
+/* Disabled — 의존성 차단 (예: 매입형태=위탁 선택 시 제조구분 비활성) */
+.scm-filter-select[disabled],
+.scm-filter-select.is-disabled {
+  background: rgba(138, 138, 138, 0.05);
+  border-color: #EBEBEB;
+  color: rgba(0, 0, 0, 0.30);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.scm-filter-select[disabled] .scm-filter-select__value,
+.scm-filter-select.is-disabled .scm-filter-select__value {
+  color: rgba(0, 0, 0, 0.30);
+}
+.scm-filter-select[disabled] .scm-filter-select__chev,
+.scm-filter-select.is-disabled .scm-filter-select__chev {
+  color: rgba(0, 0, 0, 0.20);
+}
+
+/* Filter group — 인접 필터 사이 보더 처리.
+ * 활성 chip 자체의 우측 보더는 #000 으로 유지 (border: 1px solid #000),
+ * 다음 sibling chip 의 좌측 보더를 width 0 으로 제거 (transparent 가 disabled rule 의
+ * border-color: #EBEBEB 와 specificity 가 동일해지는 케이스 회피). */
+.scm-filter-group {
+  display: inline-flex;
+  align-items: center;
+}
+/* 활성 chip 의 우측 라인을 box-shadow 로 명시적으로 1px 검정 표시.
+   — 자체 border-right 는 제거하고 padding 으로 보정해서 box-shadow 1px 만 보이도록.
+   — z-index 로 sibling 위에 stacking 시켜서 항상 보이도록 보장. */
+.scm-filter-group > .scm-filter-select[aria-expanded="true"],
+.scm-filter-group > .scm-filter-select:focus {
+  position: relative;
+  z-index: 3;
+  border-right-width: 0;
+  padding-right: 17px;       /* 1px border + 16px 원본 padding = 보정 */
+  box-shadow: 1px 0 0 0 #000;
+}

@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SCM Hub Design System — Component Catalog</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <link rel="stylesheet" href="../layer-desktop.css" />
+
+  <!-- 공용 베이스 / 유틸 -->
+  <link rel="stylesheet" href="../components/scm-table/scm-table.css" />
+  <link rel="stylesheet" href="../components/scm-table/column-more-menu.css" />
+  <link rel="stylesheet" href="../components/scm-table/column-filter-popover.css" />
+
+  <!-- Atoms -->
+  <link rel="stylesheet" href="../components/icon-box/icon-box.css" />
+  <link rel="stylesheet" href="../components/checkbox/checkbox.css" />
+  <link rel="stylesheet" href="../components/radio/radio.css" />
+  <link rel="stylesheet" href="../components/toggle/toggle.css" />
+  <link rel="stylesheet" href="../components/tag/tag.css" />
+  <link rel="stylesheet" href="../components/color-chip/color-chip.css" />
+  <link rel="stylesheet" href="../components/state-text/state-text.css" />
+  <link rel="stylesheet" href="../components/platform-tag/platform-tag.css" />
+  <link rel="stylesheet" href="../components/status-chip/status-chip.css" />
+  <link rel="stylesheet" href="../components/kind-chip/kind-chip.css" />
+  <link rel="stylesheet" href="../components/forecast-chip/forecast-chip.css" />
+  <link rel="stylesheet" href="../components/empty-hint/empty-hint.css" />
+  <link rel="stylesheet" href="../components/empty-state/empty-state.css" />
+
+  <!-- Buttons & Inputs -->
+  <link rel="stylesheet" href="../components/button/button.css" />
+  <link rel="stylesheet" href="../components/input/input.css" />
+  <link rel="stylesheet" href="../components/select/select.css" />
+  <link rel="stylesheet" href="../components/back-btn/back-btn.css" />
+  <link rel="stylesheet" href="../components/search-btn/search-btn.css" />
+  <link rel="stylesheet" href="../components/filter-reset-btn/filter-reset-btn.css" />
+  <link rel="stylesheet" href="../components/download-btn/download-btn.css" />
+  <link rel="stylesheet" href="../components/cell-input/cell-input.css" />
+  <link rel="stylesheet" href="../components/sizeset-btn/sizeset-btn.css" />
+  <link rel="stylesheet" href="../components/mini-action/mini-action.css" />
+  <link rel="stylesheet" href="../components/deploy-pill/deploy-pill.css" />
+
+  <!-- Form -->
+  <link rel="stylesheet" href="../components/form-row/form-row.css" />
+  <link rel="stylesheet" href="../components/form-action-row/form-action-row.css" />
+
+  <!-- Containers / Display -->
+  <link rel="stylesheet" href="../components/card/card.css" />
+  <link rel="stylesheet" href="../components/info-table/info-table.css" />
+  <link rel="stylesheet" href="../components/info-banner/info-banner.css" />
+  <link rel="stylesheet" href="../components/kpi-card/kpi-card.css" />
+  <link rel="stylesheet" href="../components/quick-link-card/quick-link-card.css" />
+  <link rel="stylesheet" href="../components/activity-item/activity-item.css" />
+  <link rel="stylesheet" href="../components/barcode-card/barcode-card.css" />
+  <link rel="stylesheet" href="../components/bar-chart/bar-chart.css" />
+  <link rel="stylesheet" href="../components/collapsible-card/collapsible-card.css" />
+
+  <!-- Navigation / Layout -->
+  <link rel="stylesheet" href="../components/page-head/page-head.css" />
+  <link rel="stylesheet" href="../components/page-section/page-section.css" />
+  <link rel="stylesheet" href="../components/section-count/section-count.css" />
+  <link rel="stylesheet" href="../components/tabs/tabs.css" />
+  <link rel="stylesheet" href="../components/pager/pager.css" />
+  <link rel="stylesheet" href="../components/pgsize-select/pgsize-select.css" />
+
+  <!-- Code links / popovers -->
+  <link rel="stylesheet" href="../components/code-link/code-link.css" />
+  <link rel="stylesheet" href="../components/code-popover/code-popover.css" />
+  <link rel="stylesheet" href="../components/deploy-popover/deploy-popover.css" />
+
+  <!-- Filter system -->
+  <link rel="stylesheet" href="../components/filter-chip/filter-chip.css" />
+  <link rel="stylesheet" href="../components/filter-select/filter-select.css" />
+  <link rel="stylesheet" href="../components/filter-popover/filter-popover.css" />
+  <link rel="stylesheet" href="../components/filter-bar/filter-bar.css" />
+  <link rel="stylesheet" href="../components/filter-drawer/filter-drawer.css" />
+
+  <!-- Stats / Toast / Overlay -->
+  <link rel="stylesheet" href="../components/stat/stat.css" />
+  <link rel="stylesheet" href="../components/stats-bar/stats-bar.css" />
+  <link rel="stylesheet" href="../components/toast/toast.css" />
+  <link rel="stylesheet" href="../components/backdrop/backdrop.css" />
+  <link rel="stylesheet" href="../components/confirm-modal/confirm-modal.css" />
+  <link rel="stylesheet" href="../components/side-drawer/side-drawer.css" />
+  <link rel="stylesheet" href="../components/sticky-bottom-bar/sticky-bottom-bar.css" />
+
+  <style>
+    :root {
+      --cat-bg:      #FAFBFC;
+      --cat-card:    #FFFFFF;
+      --cat-border:  #EBEBEB;
+      --cat-text:    #1A1A1A;
+      --cat-muted:   #666;
+      --cat-accent:  #245EFF;
+      --cat-code-bg: #0F1115;
+      --cat-code-fg: #E6E6E6;
+      --cat-side-w:  240px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: 'Pretendard Variable', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--cat-text);
+      background: var(--cat-bg);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    a { color: var(--cat-accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ===== Topbar ===== */
+    .cat-topbar {
+      position: sticky; top: 0; z-index: 50;
+      height: 56px;
+      background: var(--cat-card);
+      border-bottom: 1px solid var(--cat-border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px;
+    }
+    .cat-topbar h1 { margin: 0; font-size: 16px; font-weight: 600; }
+    .cat-topbar h1 .accent { color: var(--cat-accent); margin-right: 6px; }
+    .cat-topbar .meta { font-size: 12px; color: var(--cat-muted); }
+
+    /* ===== Layout ===== */
+    .cat-layout {
+      display: grid;
+      grid-template-columns: var(--cat-side-w) minmax(0, 1fr);
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+    .cat-side {
+      position: sticky; top: 56px;
+      height: calc(100vh - 56px);
+      overflow-y: auto;
+      border-right: 1px solid var(--cat-border);
+      background: var(--cat-card);
+      padding: 16px 0;
+    }
+    .cat-side h4 {
+      margin: 16px 16px 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--cat-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .cat-side a {
+      display: block;
+      padding: 6px 16px;
+      font-size: 13px;
+      color: var(--cat-text);
+      border-left: 2px solid transparent;
+    }
+    .cat-side a:hover {
+      background: var(--cat-bg);
+      text-decoration: none;
+    }
+    .cat-side a.is-active {
+      color: var(--cat-accent);
+      border-left-color: var(--cat-accent);
+      font-weight: 600;
+    }
+
+    .cat-main { padding: 32px 32px 80px; }
+
+    /* ===== Section ===== */
+    .cat-section {
+      background: var(--cat-card);
+      border: 1px solid var(--cat-border);
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 20px;
+      scroll-margin-top: 80px;
+    }
+    .cat-section__head {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .cat-section__head h2 { margin: 0; font-size: 20px; font-weight: 600; }
+    .cat-section__head .file {
+      font-size: 12px;
+      font-family: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+      color: var(--cat-muted);
+    }
+    .cat-section__desc { margin: 0 0 16px; color: var(--cat-muted); font-size: 13px; }
+
+    /* ===== Sub group ===== */
+    .cat-group { margin-top: 20px; }
+    .cat-group:first-child { margin-top: 0; }
+    .cat-group__title {
+      font-size: 12px; font-weight: 600;
+      color: var(--cat-muted);
+      text-transform: uppercase; letter-spacing: 0.4px;
+      margin-bottom: 8px;
+    }
+
+    /* ===== Preview canvas ===== */
+    .cat-preview {
+      padding: 20px;
+      background: var(--cat-bg);
+      border: 1px solid var(--cat-border);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      min-height: 60px;
+    }
+    .cat-preview--col { flex-direction: column; align-items: flex-start; }
+    .cat-preview--block { display: block; padding: 0; background: transparent; border: 0; }
+
+    /* ===== Code block ===== */
+    .cat-code {
+      margin-top: 8px;
+      padding: 12px 16px;
+      background: var(--cat-code-bg);
+      color: var(--cat-code-fg);
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      overflow-x: auto;
+      white-space: pre;
+    }
+
+    /* ===== Token swatches ===== */
+    .cat-swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+    .cat-swatch { background: var(--cat-bg); border-radius: 6px; padding: 12px; }
+    .cat-swatch__chip { width: 100%; height: 56px; border-radius: 4px; border: 1px solid var(--cat-border); margin-bottom: 8px; }
+    .cat-swatch__name { font-size: 12px; font-weight: 600; }
+    .cat-swatch__val  { font-size: 11px; color: var(--cat-muted); font-family: 'JetBrains Mono', monospace; }
+
+    /* ===== Type sample ===== */
+    .cat-type-row {
+      display: grid;
+      grid-template-columns: 80px 1fr 120px;
+      align-items: baseline;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--cat-border);
+    }
+    .cat-type-row:last-child { border-bottom: 0; }
+    .cat-type-row .name { font-size: 11px; font-weight: 600; color: var(--cat-muted); }
+    .cat-type-row .meta { font-size: 11px; color: var(--cat-muted); font-family: 'JetBrains Mono', monospace; text-align: right; }
+
+    /* ===== Helper labels ===== */
+    .cat-row {
+      display: flex; align-items: center; gap: 16px;
+      padding: 8px 0;
+    }
+    .cat-row .label {
+      width: 120px; font-size: 12px; color: var(--cat-muted); flex-shrink: 0;
+    }
+    .cat-row .body { flex: 1; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+    /* ===== Tag badge in TOC ===== */
+    .badge { display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 99px; background: #E2F1FF; color: #1A56DB; font-size: 10px; font-weight: 600; margin-left: 6px; vertical-align: 1px; }
+
+    /* hide scrollbar for side */
+    .cat-side::-webkit-scrollbar { width: 6px; }
+    .cat-side::-webkit-scrollbar-thumb { background: #E0E0E0; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- ============== Inline icon sprite (가이드용 일부만) ============== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="ic-package" viewBox="0 0 20 20"><path d="M3 6L10 2.5L17 6V14L10 17.5L3 14V6Z M3 6L10 9.5L17 6 M10 9.5V17.5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-check" viewBox="0 0 16 16"><path d="M3 8L7 12L13 5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-arrowLeft" viewBox="0 0 20 20"><path d="M16 10H4M4 10L9 5M4 10L9 15" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-search" viewBox="0 0 20 20"><path d="M12 12L16.5 16.5M13.5 8.5C13.5 11.2614 11.2614 13.5 8.5 13.5C5.73858 13.5 3.5 11.2614 3.5 8.5C3.5 5.73858 5.73858 3.5 8.5 3.5C11.2614 3.5 13.5 5.73858 13.5 8.5Z" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
+    <symbol id="ic-download" viewBox="0 0 20 20"><path d="M3 16.5H17M10 13.5V3.5M10 13.5L14 9.5M10 13.5L6 9.5" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
+    <symbol id="ic-refresh" viewBox="0 0 20 20"><path d="M16.5 4V8H12.5M3.5 16V12H7.5M5.07 8C5.5 6.46 6.4 5.1 7.65 4.16C8.91 3.21 10.45 2.7 12.04 2.7C13.62 2.7 15.16 3.21 16.42 4.16C17.67 5.1 18.58 6.46 19 8M3 12C3.42 13.54 4.33 14.9 5.58 15.84C6.84 16.79 8.38 17.3 9.96 17.3C11.55 17.3 13.09 16.79 14.35 15.84C15.6 14.9 16.5 13.54 16.93 12" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-funnel" viewBox="0 0 20 20"><path d="M6.14286 10H13.8571M4 6L16 6M8.28571 14L11.7143 14" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
+    <symbol id="ic-filter" viewBox="0 0 20 20"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="round"><path d="M10.625 13.4375L3.125 13.4375"/><path d="M16.875 13.4375L13.125 13.4375"/><path d="M5.625 6.56257L3.125 6.5625"/><path d="M16.875 6.5625L8.125 6.56257"/><path d="M8.125 4.6875V8.4375"/><path d="M13.125 15.3125V11.5625"/></g></symbol>
+    <symbol id="ic-arrowUp" viewBox="0 0 16 16"><path d="M8 13V3M8 3L4 7M8 3L12 7" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-arrowDown" viewBox="0 0 16 16"><path d="M8 3V13M8 13L4 9M8 13L12 9" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-checkCircle-filled" viewBox="0 0 20 20"><path d="M10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2ZM13.7071 8.20711L9.41421 12.5L6.29289 9.37868L7.70711 7.96447L9.41421 9.67157L12.2929 6.79289L13.7071 8.20711Z" fill="currentColor"/></symbol>
+    <symbol id="ic-alertTriangle" viewBox="0 0 20 20"><path d="M10 14.7499V12.8832M10 11.9499V7.28322M2.30694 16.4999H17.6931C17.9272 16.4999 18.0711 16.2437 17.9493 16.0438L10.2562 3.42025C10.1393 3.22841 9.86077 3.22841 9.74386 3.42025L2.05076 16.0438C1.92893 16.2437 2.07283 16.4999 2.30694 16.4999Z" stroke="currentColor" fill="none"/></symbol>
+    <symbol id="ic-close" viewBox="0 0 20 20"><path d="M5 5L15 15M15 5L5 15" stroke="currentColor" fill="none"/></symbol>
+  </defs>
+</svg>
+
+<header class="cat-topbar">
+  <h1><span class="accent">●</span>SCM Hub Design System</h1>
+  <span class="meta">Component Catalog · v2 (rebuilt)</span>
+</header>
+
+<div class="cat-layout">
+  <!-- ============== Sidebar TOC ============== -->
+  <nav class="cat-side" aria-label="목차">
+    <h4>Foundation</h4>
+    <a href="#colors">Colors</a>
+    <a href="#typography">Typography</a>
+    <a href="#spacing">Spacing</a>
+
+    <h4>Atoms</h4>
+    <a href="#icon-box">Icon Box</a>
+    <a href="#checkbox">Checkbox</a>
+    <a href="#radio">Radio</a>
+    <a href="#toggle">Toggle</a>
+    <a href="#tag">Tag</a>
+    <a href="#color-chip">Color Chip</a>
+    <a href="#status-chip">Status Chip</a>
+    <a href="#platform-tag">Platform Tag</a>
+    <a href="#kind-chip">Kind Chip</a>
+    <a href="#forecast-chip">Forecast Chip</a>
+    <a href="#state-text">State Text</a>
+
+    <h4>Buttons</h4>
+    <a href="#button">Button</a>
+    <a href="#mini-action">Mini Action</a>
+    <a href="#search-btn">Search / Reset / Download</a>
+    <a href="#cell-input">Cell Input</a>
+    <a href="#back-btn">Back / Sizeset</a>
+    <a href="#deploy-pill">Deploy Pill</a>
+
+    <h4>Form</h4>
+    <a href="#input">Input</a>
+    <a href="#select">Select</a>
+    <a href="#form-row">Form Row</a>
+
+    <h4>Filter System</h4>
+    <a href="#filter-bar">Filter Bar</a>
+    <a href="#filter-chip">Filter Chip</a>
+    <a href="#filter-select">Filter Select</a>
+    <a href="#filter-popover">Filter Popover (4 modes)</a>
+    <a href="#filter-drawer">Filter Drawer</a>
+
+    <h4>Table</h4>
+    <a href="#scm-table">SCM Table</a>
+    <a href="#col-icons">Column Icons (sort/filter)</a>
+
+    <h4>Layout</h4>
+    <a href="#page-head">Page Head</a>
+    <a href="#page-section">Page Section</a>
+    <a href="#tabs">Tabs</a>
+    <a href="#stats-bar">Stats Bar</a>
+
+    <h4>Display</h4>
+    <a href="#card">Card</a>
+    <a href="#info-banner">Info Banner</a>
+    <a href="#info-table">Info Table</a>
+    <a href="#kpi-card">KPI Card</a>
+    <a href="#quick-link-card">Quick Link</a>
+    <a href="#activity-item">Activity Item</a>
+    <a href="#bar-chart">Bar Chart</a>
+    <a href="#collapsible-card">Collapsible Card</a>
+    <a href="#empty-state">Empty State</a>
+
+    <h4>Code & Inline</h4>
+    <a href="#code-link">Code Link</a>
+    <a href="#barcode-card">Barcode Card</a>
+
+    <h4>Overlay</h4>
+    <a href="#toast">Toast</a>
+    <a href="#confirm-modal">Confirm Modal</a>
+    <a href="#side-drawer">Side Drawer</a>
+
+    <h4>Pagination</h4>
+    <a href="#pager">Pager</a>
+    <a href="#pgsize-select">Page Size Select</a>
+  </nav>
+
+  <main class="cat-main">
+
+    <!-- ============== INTRO ============== -->
+    <section class="cat-section" id="intro" style="border-color:#245EFF;">
+      <header class="cat-section__head"><h2>About this Catalog</h2><span class="file">design system / catalog</span></header>
+      <p class="cat-section__desc" style="font-size:14px;color:#000;">
+        SCM Hub 디자인 시스템의 모든 컴포넌트를 카테고리별로 정리한 가이드입니다.
+        모든 컴포넌트는 <code>components/&lt;name&gt;/</code> 폴더의 단일 source 를 사용합니다 — 이 카탈로그·시뮬레이터·실제 데모 페이지 (scm hub) 가 같은 CSS / JS 를 공유합니다.
+      </p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px;">
+        <div style="padding:12px;background:var(--cat-bg);border-radius:6px;font-size:13px;">
+          <strong>📂 컴포넌트 코드</strong><br/>
+          <span style="color:var(--cat-muted);">components/&lt;name&gt;/ — CSS/JS/JSX/HTML</span>
+        </div>
+        <div style="padding:12px;background:var(--cat-bg);border-radius:6px;font-size:13px;">
+          <strong>📖 카탈로그 (현재 페이지)</strong><br/>
+          <span style="color:var(--cat-muted);">catalog/index.html — 문서/프리뷰 전용</span>
+        </div>
+        <div style="padding:12px;background:var(--cat-bg);border-radius:6px;font-size:13px;">
+          <strong>🚀 실제 데모</strong><br/>
+          <span style="color:var(--cat-muted);">scm hub/*.html — 페이지에 컴포넌트 사용</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== FOUNDATION ============== -->
+    <section class="cat-section" id="colors">
+      <header class="cat-section__head"><h2>Colors</h2><span class="file">layer-desktop.css</span></header>
+      <p class="cat-section__desc">디자인 토큰 — 표면, 텍스트, 상태, 액센트.</p>
+      <div class="cat-group">
+        <div class="cat-group__title">Brand · Functional</div>
+        <div class="cat-swatches">
+          <div class="cat-swatch"><div class="cat-swatch__chip" style="background:#245EFF;"></div><div class="cat-swatch__name">Accent</div><div class="cat-swatch__val">#245EFF</div></div>
+          <div class="cat-swatch"><div class="cat-swatch__chip" style="background:#000;"></div><div class="cat-swatch__name">Foreground</div><div class="cat-swatch__val">#000000</div></div>
+          <div class="cat-swatch"><div class="cat-swatch__chip" style="background:#666;"></div><div class="cat-swatch__name">FG Low</div><div class="cat-swatch__val">#666666</div></div>
+          <div class="cat-swatch"><div class="cat-swatch__chip" style="background:#8A8A8A;"></div><div class="cat-swatch__name">FG Lower</div><div class="cat-swatch__val">#8A8A8A</div></div>
+          <div class="cat-swatch"><div class="cat-swatch__chip" style="background:#1EA514;"></div><div class="cat-swatch__name">Success</div><div class="cat-swatch__val">#1EA514</div></div>
+          <div class="cat-swatch"><div class="cat-swatch__chip" style="background:#F31110;"></div><div class="cat-swatch__name">Critical</div><div class="cat-swatch__val">#F31110</div></div>
+        </div>
+      </div>
+      <div class="cat-group">
+        <div class="cat-group__title">Surface · Border</div>
+        <div class="cat-swatches">
+          <div class="cat-swatch"><div class="cat-swatch__chip" style="background:#FFFFFF;"></div><div class="cat-swatch__name">BG</div><div class="cat-swatch__val">#FFFFFF</div></div>
+          <div class="cat-swatch"><div class="cat-swatch__chip" style="background:#FAFBFC;"></div><div class="cat-swatch__name">BG Low</div><div class="cat-swatch__val">#FAFBFC</div></div>
+          <div class="cat-swatch"><div class="cat-swatch__chip" style="background:#F5F7FA;"></div><div class="cat-swatch__name">BG Inset</div><div class="cat-swatch__val">#F5F7FA</div></div>
+          <div class="cat-swatch"><div class="cat-swatch__chip" style="background:#E0E0E0;"></div><div class="cat-swatch__name">Border</div><div class="cat-swatch__val">#E0E0E0</div></div>
+          <div class="cat-swatch"><div class="cat-swatch__chip" style="background:#EBEBEB;"></div><div class="cat-swatch__name">Border Low</div><div class="cat-swatch__val">#EBEBEB</div></div>
+          <div class="cat-swatch"><div class="cat-swatch__chip" style="background:#F0F7FF;"></div><div class="cat-swatch__name">Selected BG</div><div class="cat-swatch__val">#F0F7FF</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat-section" id="typography">
+      <header class="cat-section__head"><h2>Typography</h2><span class="file">Pretendard Variable</span></header>
+      <p class="cat-section__desc">기본 폰트 Pretendard. 본문 14/15px, 헤더 18~26px.</p>
+      <div class="cat-type-row"><span class="name">Display</span><span style="font-size:26px;font-weight:600;line-height:1.4;">SCM Hub 대시보드</span><span class="meta">26 / 600</span></div>
+      <div class="cat-type-row"><span class="name">H1</span><span style="font-size:22px;font-weight:600;line-height:1.4;">페이지 타이틀</span><span class="meta">22 / 600</span></div>
+      <div class="cat-type-row"><span class="name">H2</span><span style="font-size:18px;font-weight:600;line-height:1.4;">섹션 타이틀</span><span class="meta">18 / 600</span></div>
+      <div class="cat-type-row"><span class="name">Body L</span><span style="font-size:15px;font-weight:400;line-height:1.36;">기본 본문 텍스트</span><span class="meta">15 / 400</span></div>
+      <div class="cat-type-row"><span class="name">Body</span><span style="font-size:14px;font-weight:400;line-height:1.4;">테이블 / 폼 일반 본문</span><span class="meta">14 / 400</span></div>
+      <div class="cat-type-row"><span class="name">Caption</span><span style="font-size:13px;font-weight:400;line-height:1.5;color:#666;">보조 / 라벨</span><span class="meta">13 / 400</span></div>
+      <div class="cat-type-row"><span class="name">Micro</span><span style="font-size:11px;font-weight:600;line-height:1.4;color:#666;letter-spacing:.2px;">UPPERCASE LABEL</span><span class="meta">11 / 600</span></div>
+    </section>
+
+    <section class="cat-section" id="spacing">
+      <header class="cat-section__head"><h2>Spacing</h2><span class="file">8px base</span></header>
+      <p class="cat-section__desc">8px 그리드 기반. 4 / 8 / 12 / 16 / 24 / 32 / 40 자주 사용.</p>
+      <div class="cat-preview">
+        <div style="background:#245EFF;height:24px;width:4px;"></div><span class="cat-swatch__val">4</span>
+        <div style="background:#245EFF;height:24px;width:8px;"></div><span class="cat-swatch__val">8</span>
+        <div style="background:#245EFF;height:24px;width:12px;"></div><span class="cat-swatch__val">12</span>
+        <div style="background:#245EFF;height:24px;width:16px;"></div><span class="cat-swatch__val">16</span>
+        <div style="background:#245EFF;height:24px;width:24px;"></div><span class="cat-swatch__val">24</span>
+        <div style="background:#245EFF;height:24px;width:32px;"></div><span class="cat-swatch__val">32</span>
+        <div style="background:#245EFF;height:24px;width:40px;"></div><span class="cat-swatch__val">40</span>
+      </div>
+    </section>
+
+    <!-- ============== ATOMS ============== -->
+    <section class="cat-section" id="icon-box">
+      <header class="cat-section__head"><h2>Icon Box</h2><span class="file">components/icon-box/</span></header>
+      <p class="cat-section__desc">아이콘을 색깔 박스 안에 담아 강조 — 대시보드 KPI / 액티비티 등.</p>
+      <div class="cat-preview">
+        <span class="scm-icon-box scm-icon-box--blue"><svg viewBox="0 0 20 20"><use href="#ic-package"/></svg></span>
+        <span class="scm-icon-box scm-icon-box--green"><svg viewBox="0 0 16 16"><use href="#ic-check"/></svg></span>
+        <span class="scm-icon-box scm-icon-box--orange"><svg viewBox="0 0 20 20"><use href="#ic-package"/></svg></span>
+        <span class="scm-icon-box scm-icon-box--red"><svg viewBox="0 0 20 20"><use href="#ic-package"/></svg></span>
+        <span class="scm-icon-box scm-icon-box--sm scm-icon-box--blue"><svg viewBox="0 0 20 20"><use href="#ic-package"/></svg></span>
+      </div>
+      <pre class="cat-code">&lt;span class="scm-icon-box scm-icon-box--blue"&gt;
+  &lt;svg viewBox="0 0 20 20"&gt;&lt;use href="#ic-package"/&gt;&lt;/svg&gt;
+&lt;/span&gt;</pre>
+    </section>
+
+    <section class="cat-section" id="checkbox">
+      <header class="cat-section__head"><h2>Checkbox</h2><span class="file">components/checkbox/</span></header>
+      <p class="cat-section__desc">role="checkbox" + aria-checked. true / false / mixed (indeterminate).</p>
+      <div class="cat-preview">
+        <span class="scm-checkbox" role="checkbox" aria-checked="false"></span>
+        <span class="scm-checkbox" role="checkbox" aria-checked="true"></span>
+        <span class="scm-checkbox" role="checkbox" aria-checked="mixed"></span>
+        <span class="scm-checkbox is-disabled" role="checkbox" aria-checked="false"></span>
+      </div>
+      <pre class="cat-code">&lt;span class="scm-checkbox" role="checkbox" aria-checked="true"&gt;&lt;/span&gt;</pre>
+    </section>
+
+    <section class="cat-section" id="radio">
+      <header class="cat-section__head"><h2>Radio</h2><span class="file">components/radio/</span></header>
+      <div class="cat-preview">
+        <label class="scm-radio"><input type="radio" name="r1"/><span class="scm-radio__dot"></span><span class="scm-radio__label">옵션 A</span></label>
+        <label class="scm-radio"><input type="radio" name="r1" checked/><span class="scm-radio__dot"></span><span class="scm-radio__label">옵션 B (선택)</span></label>
+        <label class="scm-radio is-disabled"><input type="radio" name="r1" disabled/><span class="scm-radio__dot"></span><span class="scm-radio__label">비활성</span></label>
+      </div>
+    </section>
+
+    <section class="cat-section" id="toggle">
+      <header class="cat-section__head"><h2>Toggle</h2><span class="file">components/toggle/</span></header>
+      <div class="cat-preview">
+        <span class="scm-toggle" role="switch" aria-checked="false"><span class="scm-toggle-track"></span><span class="scm-toggle-knob"></span></span>
+        <span class="scm-toggle" role="switch" aria-checked="true"><span class="scm-toggle-track"></span><span class="scm-toggle-knob"></span></span>
+        <span class="scm-toggle scm-toggle--sm" role="switch" aria-checked="true"><span class="scm-toggle-track"></span><span class="scm-toggle-knob"></span></span>
+      </div>
+    </section>
+
+    <section class="cat-section" id="tag">
+      <header class="cat-section__head"><h2>Tag</h2><span class="file">components/tag/</span></header>
+      <p class="cat-section__desc">라이트 그레이 배경 + 12/500 텍스트. 옵션 / 컬러 / 사이즈 표기.</p>
+      <div class="cat-preview">
+        <span class="scm-tag">블랙</span>
+        <span class="scm-tag">크림화이트</span>
+        <span class="scm-tag">280</span>
+        <span class="scm-tag">FREE</span>
+      </div>
+    </section>
+
+    <section class="cat-section" id="color-chip">
+      <header class="cat-section__head"><h2>Color Chip</h2><span class="file">components/color-chip/</span></header>
+      <div class="cat-preview">
+        <span class="scm-color-chip"><span class="scm-color-chip__sw" style="background:#1A1A1A;"></span>블랙</span>
+        <span class="scm-color-chip"><span class="scm-color-chip__sw" style="background:#FFE4C4;"></span>크림</span>
+        <span class="scm-color-chip"><span class="scm-color-chip__sw" style="background:#0033A0;"></span>인디고</span>
+      </div>
+    </section>
+
+    <section class="cat-section" id="status-chip">
+      <header class="cat-section__head"><h2>Status Chip</h2><span class="file">components/status-chip/</span></header>
+      <div class="cat-preview">
+        <span class="scm-status-chip scm-status-chip--success">매핑완료</span>
+        <span class="scm-status-chip scm-status-chip--default">미매핑</span>
+        <span class="scm-status-chip scm-status-chip--warn">대기</span>
+        <span class="scm-status-chip scm-status-chip--critical">중지</span>
+      </div>
+    </section>
+
+    <section class="cat-section" id="platform-tag">
+      <header class="cat-section__head"><h2>Platform Tag</h2><span class="file">components/platform-tag/</span></header>
+      <div class="cat-preview">
+        <span class="scm-platform-tag" data-color="blue">MUSINSA</span>
+        <span class="scm-platform-tag" data-color="yellow">29CM</span>
+      </div>
+    </section>
+
+    <section class="cat-section" id="kind-chip">
+      <header class="cat-section__head"><h2>Kind Chip</h2><span class="file">components/kind-chip/</span></header>
+      <p class="cat-section__desc">보충대상(target=초록) / 비대상(nontarget=회색) — 편집샵 보충 요청.</p>
+      <div class="cat-preview">
+        <span class="er-kind-chip" data-kind="target">보충대상</span>
+        <span class="er-kind-chip" data-kind="nontarget">비대상</span>
+      </div>
+    </section>
+
+    <section class="cat-section" id="forecast-chip">
+      <header class="cat-section__head"><h2>Forecast Chip</h2><span class="file">components/forecast-chip/</span></header>
+      <div class="cat-preview">
+        <span class="er-forecast-chip">7일 32</span>
+        <span class="er-forecast-chip">14일 64</span>
+      </div>
+    </section>
+
+    <section class="cat-section" id="state-text">
+      <header class="cat-section__head"><h2>State Text</h2><span class="file">components/state-text/</span></header>
+      <div class="cat-preview">
+        <span class="scm-state-text scm-state-text--success">완료</span>
+        <span class="scm-state-text scm-state-text--warn">처리중</span>
+        <span class="scm-state-text scm-state-text--critical">실패</span>
+        <span class="scm-state-text scm-state-text--muted">미적용</span>
+      </div>
+    </section>
+
+    <!-- ============== BUTTONS ============== -->
+    <section class="cat-section" id="button">
+      <header class="cat-section__head"><h2>Button</h2><span class="file">components/button/</span></header>
+      <p class="cat-section__desc">primary (검정 채움) / secondary (흰 + 보더) / sm (height 32). disabled 자동 처리.</p>
+      <div class="cat-preview">
+        <button class="scm-button scm-button--primary">상품 매핑</button>
+        <button class="scm-button">취소</button>
+        <button class="scm-button" disabled>비활성</button>
+        <button class="scm-button scm-button--sm">수정</button>
+      </div>
+      <pre class="cat-code">&lt;button class="scm-button scm-button--primary"&gt;상품 매핑&lt;/button&gt;
+&lt;button class="scm-button"&gt;취소&lt;/button&gt;</pre>
+    </section>
+
+    <section class="cat-section" id="mini-action">
+      <header class="cat-section__head"><h2>Mini Action</h2><span class="file">components/mini-action/</span></header>
+      <p class="cat-section__desc">stats-bar 우측 보조 액션 — 텍스트 버튼.</p>
+      <div class="cat-preview">
+        <button class="scm-mini-action">SKU번호 복사</button>
+        <button class="scm-mini-action">선택 해제</button>
+      </div>
+    </section>
+
+    <section class="cat-section" id="search-btn">
+      <header class="cat-section__head"><h2>Search / Reset / Download</h2><span class="file">components/search-btn ·  filter-reset-btn · download-btn</span></header>
+      <div class="cat-preview">
+        <button class="scm-search-btn">검색</button>
+        <button class="scm-filter-reset-btn"><svg viewBox="0 0 20 20"><use href="#ic-refresh"/></svg>초기화</button>
+        <button class="scm-download-btn"><svg viewBox="0 0 20 20"><use href="#ic-download"/></svg>다운로드</button>
+      </div>
+    </section>
+
+    <section class="cat-section" id="cell-input">
+      <header class="cat-section__head"><h2>Cell Input</h2><span class="file">components/cell-input/</span></header>
+      <p class="cat-section__desc">mp-table 안의 직접 입력 셀. 디폴트 파란 BG(입력 가능 의미색), 1번 클릭은 셀 선택만(드래그 다중 선택 OK), 더블클릭/Enter/F2/타이핑 시 편집 모드로 전환. 셀 전체 검은 inset 보더.</p>
+      <div class="cat-preview" style="display:block; padding:0;">
+        <div class="mp-table-host">
+          <div class="mp-table-scroll">
+            <table class="mp-table is-cell-selectable">
+              <thead><tr><th class="col-medium" style="text-align:left;">브랜드</th><th class="col-medium cell-numeric">기초재고</th><th class="col-medium cell-numeric">OTB</th><th class="col-medium cell-numeric">GMV</th></tr></thead>
+              <tbody>
+                <tr><td>폴로 랄프 로렌</td><td class="cell-numeric">16,054</td><td class="cell-input cell-numeric"><input type="number" value="5454" /></td><td class="cell-input cell-numeric"><input type="number" value="23616" /></td></tr>
+                <tr><td>메종 마르지엘라</td><td class="cell-numeric">1,054</td><td class="cell-input cell-numeric"><input type="number" value="1600" /></td><td class="cell-input cell-numeric"><input type="number" value="2171" /></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat-section" id="back-btn">
+      <header class="cat-section__head"><h2>Back / Sizeset</h2><span class="file">components/back-btn · sizeset-btn</span></header>
+      <div class="cat-preview">
+        <button class="scm-back-btn" aria-label="뒤로"><svg viewBox="0 0 20 20"><use href="#ic-arrowLeft"/></svg></button>
+        <button class="scm-sizeset-btn">사이즈 개별 설정</button>
+      </div>
+    </section>
+
+    <section class="cat-section" id="deploy-pill">
+      <header class="cat-section__head"><h2>Deploy Pill</h2><span class="file">components/deploy-pill/</span></header>
+      <p class="cat-section__desc">전개중(파랑) / 미전개(회색) / 부분(N/M) — 무탠 전개상품 관리.</p>
+      <div class="cat-preview">
+        <span class="scm-deploy-pill"><strong>전체 전개</strong></span>
+        <span class="scm-deploy-pill scm-deploy-pill--partial"><strong>전개 5</strong>/9</span>
+      </div>
+    </section>
+
+    <!-- ============== FORM ============== -->
+    <section class="cat-section" id="input">
+      <header class="cat-section__head"><h2>Input</h2><span class="file">components/input/</span></header>
+      <p class="cat-section__desc">기본 h44 / sm h36. focus 시 border #000. counter 옵션 (input-wrap + .--with-counter).</p>
+
+      <div class="cat-group">
+        <div class="cat-group__title">Default (h44)</div>
+        <div class="cat-preview cat-preview--col" style="align-items:stretch;max-width:360px;">
+          <input class="scm-input" placeholder="기본 입력 필드" />
+          <input class="scm-input" value="값 입력됨" />
+          <input class="scm-input" disabled placeholder="비활성" />
+        </div>
+        <pre class="cat-code">&lt;input class="scm-input" placeholder="입력" /&gt;</pre>
+      </div>
+
+      <div class="cat-group">
+        <div class="cat-group__title">Small (h36)</div>
+        <div class="cat-preview cat-preview--col" style="align-items:stretch;max-width:360px;">
+          <input class="scm-input scm-input--sm" placeholder="작은 입력 필드" />
+        </div>
+        <pre class="cat-code">&lt;input class="scm-input scm-input--sm" /&gt;</pre>
+      </div>
+
+      <div class="cat-group">
+        <div class="cat-group__title">With Counter</div>
+        <div class="cat-preview cat-preview--block" style="max-width:360px;">
+          <div class="scm-input-wrap scm-input-wrap--with-counter">
+            <input class="scm-input" maxlength="20" placeholder="최대 20자" />
+            <span class="scm-input-counter">0 / 20</span>
+          </div>
+        </div>
+        <pre class="cat-code">&lt;div class="scm-input-wrap scm-input-wrap--with-counter"&gt;
+  &lt;input class="scm-input" maxlength="20" /&gt;
+  &lt;span class="scm-input-counter"&gt;0 / 20&lt;/span&gt;
+&lt;/div&gt;</pre>
+      </div>
+    </section>
+
+    <section class="cat-section" id="select">
+      <header class="cat-section__head"><h2>Select</h2><span class="file">components/select/</span></header>
+      <div class="cat-preview">
+        <span class="scm-select" role="button"><span class="scm-select__value">옵션 선택</span><svg class="scm-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+        <span class="scm-select" role="button"><span class="scm-select__dot scm-select__dot--success"></span><span class="scm-select__value">운영중</span><svg class="scm-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+        <span class="scm-select scm-select--sm" role="button"><span class="scm-select__value">소형</span><svg class="scm-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      </div>
+    </section>
+
+    <section class="cat-section" id="form-row">
+      <header class="cat-section__head"><h2>Form Row</h2><span class="file">components/form-row/</span></header>
+      <p class="cat-section__desc">라벨 + 컨트롤 가로 배치. 필수 표시 (req-dot).</p>
+      <div class="cat-preview cat-preview--block" style="background:#fff;padding:16px;border:1px solid var(--cat-border);border-radius:6px;">
+        <div class="scm-form-row">
+          <label class="scm-form-label scm-form-label--w120">SKU 명 <span class="scm-form-row-req"></span></label>
+          <div class="scm-form-control scm-form-control--w320"><input class="scm-input" placeholder="입력" /></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== FILTER SYSTEM ============== -->
+    <section class="cat-section" id="filter-bar">
+      <header class="cat-section__head"><h2>Filter Bar</h2><span class="file">components/filter-bar/</span></header>
+      <p class="cat-section__desc">데이터 리스트 페이지 sticky 필터바. 좌측 [전체 필터 chip] + 가로 스크롤 [chip 목록] + 우측 검색/초기화.</p>
+      <div class="cat-preview cat-preview--block">
+        <div class="scm-filter-bar" style="position:relative;margin:0;">
+          <button class="scm-filter-chip"><svg viewBox="0 0 20 20"><use href="#ic-filter"/></svg><span>전체 필터</span><span class="scm-filter-chip__count">3</span></button>
+          <div class="scm-filter-overflow"><div class="scm-filter-overflow__track">
+            <button class="scm-filter-select" data-state="filled"><span class="scm-filter-select__label">시즌</span><span class="scm-filter-select__value">26-SS</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+            <button class="scm-filter-select" data-state="placeholder"><span class="scm-filter-select__label">브랜드</span><span class="scm-filter-select__value">브랜드</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          </div></div>
+          <div class="scm-filter-actions"><button class="scm-search-btn">검색</button><button class="scm-filter-reset-btn"><svg viewBox="0 0 20 20"><use href="#ic-refresh"/></svg>초기화</button></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat-section" id="filter-chip">
+      <header class="cat-section__head"><h2>Filter Chip</h2><span class="file">components/filter-chip/</span></header>
+      <p class="cat-section__desc">전체 필터 chip — drawer trigger.</p>
+      <div class="cat-preview">
+        <button class="scm-filter-chip"><svg viewBox="0 0 20 20"><use href="#ic-filter"/></svg><span>전체 필터</span><span class="scm-filter-chip__count">5</span></button>
+      </div>
+    </section>
+
+    <section class="cat-section" id="filter-select">
+      <header class="cat-section__head"><h2>Filter Select</h2><span class="file">components/filter-select/</span></header>
+      <p class="cat-section__desc">필터 칩. data-state: placeholder / filled / active.</p>
+      <div class="cat-preview">
+        <button class="scm-filter-select" data-state="placeholder"><span class="scm-filter-select__label">시즌</span><span class="scm-filter-select__value">시즌</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+        <button class="scm-filter-select" data-state="filled"><span class="scm-filter-select__label">매입형태</span><span class="scm-filter-select__value">매입</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+        <button class="scm-filter-select is-disabled" disabled><span class="scm-filter-select__label">제조구분</span><span class="scm-filter-select__value">제조구분</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+      </div>
+    </section>
+
+    <section class="cat-section" id="filter-popover">
+      <header class="cat-section__head"><h2>Filter Popover (4 modes)</h2><span class="file">components/filter-popover/ + modes.js</span></header>
+      <p class="cat-section__desc">필터 chip 클릭 시 열리는 popover. REGISTRY 정의된 mode 에 따라 4가지 형태로 자동 렌더.</p>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
+
+        <!-- single -->
+        <div>
+          <div class="cat-group__title">single — 단일 라디오</div>
+          <div class="scm-filter-popover-root is-open" style="position:relative;display:block;">
+            <div class="scm-filter-popover scm-filter-popover--list-single">
+              <div class="scm-filter-popover__list-body">
+                <div class="scm-filter-popover__item-row"><div class="scm-filter-popover__item scm-filter-popover__item--single" data-selected="true"><span class="label">전체</span><svg class="check" viewBox="0 0 16 16"><path d="M3.45 7.3l3.28 3.28L12.55 4.85" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+                <div class="scm-filter-popover__item-row"><div class="scm-filter-popover__item scm-filter-popover__item--single"><span class="label">운영중</span></div></div>
+                <div class="scm-filter-popover__item-row"><div class="scm-filter-popover__item scm-filter-popover__item--single"><span class="label">중지</span></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- codeinput -->
+        <div>
+          <div class="cat-group__title">codeinput — textarea (코드 입력)</div>
+          <div class="scm-filter-popover-root is-open" style="position:relative;display:block;">
+            <div class="scm-filter-popover scm-filter-popover--codeinput" style="height:240px;">
+              <div class="scm-filter-popover__body">
+                <div class="scm-filter-popover__textarea"><textarea placeholder="코드를 줄바꿈으로 구분해 입력" style="font-size:13px;"></textarea></div>
+                <div class="scm-filter-popover__counter"><strong>0</strong>&nbsp;<span class="total">/ 1,000</span></div>
+              </div>
+              <div class="scm-filter-popover__footer"><button type="button" class="scm-filter-popover__reset">초기화</button></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- multi (list pane) -->
+        <div>
+          <div class="cat-group__title">multi — 목록 선택 + 직접 입력 토글</div>
+          <div class="scm-filter-popover-root is-open" data-pop-mode="list" style="position:relative;display:block;">
+            <div class="scm-filter-popover scm-filter-popover--multi">
+              <div class="scm-filter-popover__tabs">
+                <label class="scm-filter-popover__tab is-active"><input type="radio" name="m1" checked/><span>목록 선택</span></label>
+                <label class="scm-filter-popover__tab"><input type="radio" name="m1"/><span>직접 입력</span></label>
+              </div>
+              <div style="padding:8px 12px;font-size:12px;color:#8A8A8A;">검색결과 + 선택됨 2단 (실제 동작은 SCM.filterPopoverModes.init 시)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- codeinput-tabs -->
+        <div>
+          <div class="cat-group__title">codeinput-tabs — 입력 종류 라디오</div>
+          <div class="scm-filter-popover-root is-open" style="position:relative;display:block;">
+            <div class="scm-filter-popover scm-filter-popover--codeinput" style="height:260px;">
+              <div class="scm-filter-popover__tabs">
+                <label class="scm-filter-popover__tab is-active"><input type="radio" name="t1" checked/><span>SKU번호</span></label>
+                <label class="scm-filter-popover__tab"><input type="radio" name="t1"/><span>SKU명</span></label>
+              </div>
+              <div class="scm-filter-popover__body">
+                <div class="scm-filter-popover__textarea"><textarea placeholder="SKU번호 줄바꿈으로 구분해 입력" style="font-size:13px;"></textarea></div>
+                <div class="scm-filter-popover__counter"><strong>0</strong>&nbsp;<span class="total">/ 1,000</span></div>
+              </div>
+              <div class="scm-filter-popover__footer"><button type="button" class="scm-filter-popover__reset">초기화</button></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <pre class="cat-code">// REGISTRY 등록 (filter-popover-modes.js)
+season:    { mode: 'multi',          options: [...] },
+opStatus:  { mode: 'single',         options: [...] },
+sku:       { mode: 'codeinput' },
+skuLookup: { mode: 'codeinput-tabs', tabs: [{id:'number',label:'SKU번호'},{id:'name',label:'SKU명'}] },</pre>
+    </section>
+
+    <section class="cat-section" id="filter-drawer">
+      <header class="cat-section__head"><h2>Filter Drawer</h2><span class="file">components/filter-drawer/</span></header>
+      <p class="cat-section__desc">"전체 필터" 좌측 슬라이드 드로어 (480w). REGISTRY 기반 자동 빌드. footer 검색 적용 / 전체 초기화.</p>
+    </section>
+
+    <!-- ============== TABLE ============== -->
+    <section class="cat-section" id="scm-table">
+      <header class="cat-section__head"><h2>SCM Table</h2><span class="file">components/scm-table/</span></header>
+      <p class="cat-section__desc">데이터 리스트 테이블. sticky thead, frozen columns, cell selection, sort, column filter / more menu, resize.</p>
+
+      <div class="cat-group">
+        <div class="cat-group__title">예시 (체크박스 / 정렬 아이콘 / 컬럼 필터 호버 / 셀 선택)</div>
+        <div class="cat-preview cat-preview--block">
+          <div class="mp-table-scroll" style="border:1px solid #EBEBEB;border-radius:6px;background:#fff;">
+            <table class="mp-table" style="width:100%;border-collapse:separate;border-spacing:0;">
+              <thead>
+                <tr>
+                  <th class="cb-col" style="height:44px;padding:12px;border-bottom:1px solid #E0E0E0;width:48px;text-align:center;"><span class="scm-checkbox" role="checkbox" aria-checked="false"></span></th>
+                  <th style="height:44px;padding:12px 16px;border-bottom:1px solid #E0E0E0;border-left:1px solid #EBEBEB;text-align:left;font-size:14px;font-weight:500;">
+                    SKU번호 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUp" /></svg>
+                  </th>
+                  <th style="height:44px;padding:12px 16px;border-bottom:1px solid #E0E0E0;border-left:1px solid #EBEBEB;text-align:left;font-size:14px;font-weight:500;">상품명</th>
+                  <th style="height:44px;padding:12px 16px;border-bottom:1px solid #E0E0E0;border-left:1px solid #EBEBEB;text-align:left;font-size:14px;font-weight:500;">시즌</th>
+                  <th style="height:44px;padding:12px 16px;border-bottom:1px solid #E0E0E0;border-left:1px solid #EBEBEB;text-align:left;font-size:14px;font-weight:500;width:100%;"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td class="cb-col" style="padding:12px;border-top:1px solid #EBEBEB;text-align:center;"><span class="scm-checkbox" role="checkbox" aria-checked="true"></span></td><td style="padding:12px 16px;border-top:1px solid #EBEBEB;border-left:1px solid #EBEBEB;font-size:13px;">10669591</td><td style="padding:12px 16px;border-top:1px solid #EBEBEB;border-left:1px solid #EBEBEB;font-size:13px;">삼바 OG - 블랙:크림화이트</td><td style="padding:12px 16px;border-top:1px solid #EBEBEB;border-left:1px solid #EBEBEB;font-size:13px;">26-FW</td><td style="border-top:1px solid #EBEBEB;border-left:1px solid #EBEBEB;"></td></tr>
+                <tr><td class="cb-col" style="padding:12px;border-top:1px solid #EBEBEB;text-align:center;"><span class="scm-checkbox" role="checkbox" aria-checked="false"></span></td><td style="padding:12px 16px;border-top:1px solid #EBEBEB;border-left:1px solid #EBEBEB;font-size:13px;">10669592</td><td style="padding:12px 16px;border-top:1px solid #EBEBEB;border-left:1px solid #EBEBEB;font-size:13px;">NIKE PEGASUS 41</td><td style="padding:12px 16px;border-top:1px solid #EBEBEB;border-left:1px solid #EBEBEB;font-size:13px;">26-SS</td><td style="border-top:1px solid #EBEBEB;border-left:1px solid #EBEBEB;"></td></tr>
+                <tr><td class="cb-col" style="padding:12px;border-top:1px solid #EBEBEB;text-align:center;"><span class="scm-checkbox" role="checkbox" aria-checked="false"></span></td><td style="padding:12px 16px;border-top:1px solid #EBEBEB;border-left:1px solid #EBEBEB;font-size:13px;">10669593</td><td style="padding:12px 16px;border-top:1px solid #EBEBEB;border-left:1px solid #EBEBEB;font-size:13px;">와이드 데님 팬츠</td><td style="padding:12px 16px;border-top:1px solid #EBEBEB;border-left:1px solid #EBEBEB;font-size:13px;">26-FW</td><td style="border-top:1px solid #EBEBEB;border-left:1px solid #EBEBEB;"></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="cat-group">
+        <div class="cat-group__title">기능 모듈</div>
+        <ul style="font-size:13px;color:#666;padding-left:20px;">
+          <li><strong>sticky thead</strong> (<code>scm-table.js · setupStickyThead</code>) — 듀얼 테이블 분리 + colgroup 동기</li>
+          <li><strong>frozen columns</strong> (<code>.col-frozen-1 ~ N</code>) — sticky left + 누적 offset CSS 변수 (<code>--frozen-l1</code>...)</li>
+          <li><strong>cell selection</strong> — drag 범위 / Cmd+C TSV 클립보드 / 헤더 더블클릭 컬럼 전체 선택</li>
+          <li><strong>sort</strong> (<code>table-sort.js</code>) — <code>.sort-ic</code> 클릭 → asc / desc / default 토글, 데이터 재정렬</li>
+          <li><strong>column filter</strong> (<code>column-filter-popover.js</code>) — <code>.filter-ic</code> hover 노출, 코드 입력 popover, 적용 시 blue 활성</li>
+          <li><strong>column more</strong> (<code>column-more-menu.js</code>) — 정렬 / 좌우 고정 / 숨김 메뉴 (현재 미노출)</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="cat-section" id="col-icons">
+      <header class="cat-section__head"><h2>Column Icons</h2><span class="file">scm-table.css · table-sort.js · column-filter-popover.js · column-more-menu.js</span></header>
+      <p class="cat-section__desc">컬럼 헤더 우측 아이콘 그룹.</p>
+      <div class="cat-preview">
+        <span style="display:inline-flex;align-items:center;gap:4px;">텍스트<svg style="width:16px;height:16px;color:#CCC;" viewBox="0 0 16 16"><path d="M5.23 2.76l0-.65l-1.3 0l0 .65l.65 0l.65 0ZM3.93 13.24c0 .36.29.65.65.65c.36 0 .65-.29.65-.65l-.65 0l-.65 0ZM4.58 2.76l-.65 0l0 10.49l.65 0l.65 0l0-10.49l-.65 0Z" fill="currentColor"/><path d="M2.14 10.81L4.57 13.24L7.01 10.81" stroke="currentColor" stroke-width="1.3" stroke-linecap="square" stroke-linejoin="round" fill="none"/></svg></span>
+      </div>
+    </section>
+
+    <!-- ============== LAYOUT ============== -->
+    <section class="cat-section" id="page-head">
+      <header class="cat-section__head"><h2>Page Head</h2><span class="file">components/page-head/</span></header>
+      <p class="cat-section__desc">variant: list / detail / form / dashboard.</p>
+      <div class="cat-preview cat-preview--block">
+        <div class="scm-page-head scm-page-head--list" style="background:#fff;padding:16px;border:1px solid var(--cat-border);border-radius:6px;">
+          <h1 class="scm-page-head__title">무탠 전개상품 관리</h1>
+          <div class="scm-page-head__actions"><button class="scm-button">일괄 업로드</button></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat-section" id="page-section">
+      <header class="cat-section__head"><h2>Page Section</h2><span class="file">components/page-section/</span></header>
+      <div class="cat-preview cat-preview--block">
+        <section class="scm-page-section" style="background:#fff;padding:16px;border:1px solid var(--cat-border);border-radius:6px;">
+          <header class="scm-page-section-head"><h2 class="scm-page-section-title">섹션 타이틀</h2><a class="scm-card-link" href="#">전체 보기 →</a></header>
+          <div>섹션 본문 컨텐츠</div>
+        </section>
+      </div>
+    </section>
+
+    <section class="cat-section" id="tabs">
+      <header class="cat-section__head"><h2>Tabs</h2><span class="file">components/tabs/</span></header>
+      <div class="cat-preview cat-preview--col" style="align-items:flex-start;">
+        <div class="scm-tabs scm-tabs--underline" role="tablist">
+          <button class="scm-tab is-active" role="tab"><span class="scm-tab__label">사용 바코드</span><span class="scm-tab__count">2</span></button>
+          <button class="scm-tab" role="tab"><span class="scm-tab__label">미사용 바코드</span><span class="scm-tab__count">2</span></button>
+        </div>
+        <div class="scm-tabs scm-tabs--pill" role="tablist">
+          <button class="scm-tab is-active" role="tab">7일</button>
+          <button class="scm-tab" role="tab">14일</button>
+          <button class="scm-tab" role="tab">30일</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat-section" id="stats-bar">
+      <header class="cat-section__head"><h2>Stats Bar</h2><span class="file">components/stats-bar/ + stat/</span></header>
+      <div class="cat-preview cat-preview--block">
+        <div class="scm-stats-bar" style="background:#fff;padding:12px 16px;border:1px solid var(--cat-border);border-radius:6px;">
+          <div class="scm-stats-bar__left">
+            <div class="scm-stats-bar__counts">
+              <span class="scm-stat scm-stat--all"><span class="scm-stat__label">전체</span> <span class="scm-stat__num">12</span></span>
+              <span class="scm-stat scm-stat--deployed"><span class="scm-stat__label">전개중</span> <span class="num">8</span></span>
+              <span class="scm-stat"><span class="scm-stat__label">미전개</span> <span class="scm-stat__num">4</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== DISPLAY ============== -->
+    <section class="cat-section" id="card">
+      <header class="cat-section__head"><h2>Card</h2><span class="file">components/card/</span></header>
+      <div class="cat-preview cat-preview--block">
+        <article class="scm-card">
+          <header class="scm-card-head"><h3 class="scm-card-title">카드 타이틀</h3><a class="scm-card-link" href="#">전체 보기 →</a></header>
+          <div class="scm-card-body">카드 본문 영역. 임의의 컨텐츠 삽입.</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="cat-section" id="info-banner">
+      <header class="cat-section__head"><h2>Info Banner</h2><span class="file">components/info-banner/</span></header>
+      <div class="cat-preview cat-preview--block">
+        <div class="scm-info-banner">
+          <div class="scm-info-banner__body">
+            <div class="scm-info-banner__title">신규 SKU 등록 시 주의사항</div>
+            <div class="scm-info-banner__text">기본 정보 / 분리 기준 / 옵션 조합 단위로 SKU 를 생성합니다.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat-section" id="info-table">
+      <header class="cat-section__head"><h2>Info Table</h2><span class="file">components/info-table/</span></header>
+      <div class="cat-preview cat-preview--block">
+        <div class="scm-info-table">
+          <div class="scm-info-row scm-info-row--quad">
+            <div class="scm-info-cell-label">소유사</div><div class="scm-info-cell-value">무신사</div>
+            <div class="scm-info-cell-label">스타일넘버</div><div class="scm-info-cell-value">12345263</div>
+          </div>
+          <div class="scm-info-row scm-info-row--quad">
+            <div class="scm-info-cell-label">시즌</div><div class="scm-info-cell-value">26-FW</div>
+            <div class="scm-info-cell-label">출시연도</div><div class="scm-info-cell-value">2026</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat-section" id="kpi-card">
+      <header class="cat-section__head"><h2>KPI Card</h2><span class="file">components/kpi-card/</span></header>
+      <div class="cat-preview cat-preview--block">
+        <div class="scm-kpi-card" style="max-width:280px;">
+          <div class="scm-kpi-card__head">
+            <span class="scm-kpi-card__label">진행중인 보충 요청</span>
+            <span class="scm-icon-box scm-icon-box--blue"><svg viewBox="0 0 20 20"><use href="#ic-package"/></svg></span>
+          </div>
+          <div class="scm-kpi-card__body">
+            <div class="scm-kpi-card__value">1,284</div>
+            <div class="scm-kpi-card__meta">
+              <span class="scm-kpi-card__delta scm-kpi-card__delta--up"><svg viewBox="0 0 16 16" style="width:14px;height:14px;vertical-align:middle;"><use href="#ic-arrowUp"/></svg> 8%</span>
+              <span class="scm-kpi-card__meta-text">vs 지난 주</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat-section" id="quick-link-card">
+      <header class="cat-section__head"><h2>Quick Link Card</h2><span class="file">components/quick-link-card/</span></header>
+      <div class="cat-preview">
+        <a href="#" class="scm-quick-link-card" style="max-width:240px;">
+          <span class="scm-icon-box scm-icon-box--blue"><svg viewBox="0 0 20 20"><use href="#ic-package"/></svg></span>
+          <div class="scm-quick-link-card__title">편집샵 재고 보충 요청</div>
+          <div class="scm-quick-link-card__desc">매장별 보충 SKU 일괄 요청</div>
+        </a>
+      </div>
+    </section>
+
+    <section class="cat-section" id="activity-item">
+      <header class="cat-section__head"><h2>Activity Item</h2><span class="file">components/activity-item/</span></header>
+      <div class="cat-preview cat-preview--block" style="background:#fff;border:1px solid var(--cat-border);border-radius:6px;">
+        <div class="scm-activity-item">
+          <span class="scm-icon-box scm-icon-box--sm scm-icon-box--blue"><svg viewBox="0 0 20 20"><use href="#ic-package"/></svg></span>
+          <div class="scm-activity-item__content">
+            <div class="scm-activity-item__title">SKU 5000001 보충 요청 승인</div>
+            <div class="scm-activity-item__desc">무신사 스탠다드 강남 외 3개 매장</div>
+          </div>
+          <span class="scm-activity-item__time">2분 전</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat-section" id="bar-chart">
+      <header class="cat-section__head"><h2>Bar Chart</h2><span class="file">components/bar-chart/</span></header>
+      <div class="cat-preview cat-preview--block">
+        <div class="scm-bar-chart" style="max-width:480px;">
+          <div class="scm-bar-chart__bar" style="height:60%;"><span class="scm-bar-chart__bar-label">월</span></div>
+          <div class="scm-bar-chart__bar" style="height:75%;"><span class="scm-bar-chart__bar-label">화</span></div>
+          <div class="scm-bar-chart__bar scm-bar-chart__bar--light" style="height:45%;"><span class="scm-bar-chart__bar-label">수</span></div>
+          <div class="scm-bar-chart__bar" style="height:80%;"><span class="scm-bar-chart__bar-label">목</span></div>
+          <div class="scm-bar-chart__bar" style="height:55%;"><span class="scm-bar-chart__bar-label">금</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat-section" id="collapsible-card">
+      <header class="cat-section__head"><h2>Collapsible Card</h2><span class="file">components/collapsible-card/</span></header>
+      <p class="cat-section__desc">접고 펼 수 있는 카드 — sku-detail 의 UID 카드.</p>
+    </section>
+
+    <section class="cat-section" id="empty-state">
+      <header class="cat-section__head"><h2>Empty State</h2><span class="file">components/empty-state/</span></header>
+      <div class="cat-preview cat-preview--block" style="background:#fff;border:1px solid var(--cat-border);border-radius:6px;padding:24px;">
+        <div class="scm-empty-state" style="text-align:center;color:#8A8A8A;">
+          <p>표시할 항목이 없습니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== CODE ============== -->
+    <section class="cat-section" id="code-link">
+      <header class="cat-section__head"><h2>Code Link</h2><span class="file">components/code-link/</span></header>
+      <p class="cat-section__desc">SKU번호 / UID / 바코드 / 스타일넘버 등 코드 셀의 underlined 링크. 클릭 시 code-popover.</p>
+      <div class="cat-preview">
+        <a class="scm-code-link" data-code-type="sku">10669591</a>
+        <a class="scm-code-link" data-code-type="uid">383827</a>
+        <span><a class="scm-code-link" data-code-type="uid">383827</a><a class="scm-code-link__extra">외 6</a></span>
+      </div>
+    </section>
+
+    <section class="cat-section" id="barcode-card">
+      <header class="cat-section__head"><h2>Barcode Card</h2><span class="file">components/barcode-card/</span></header>
+      <div class="cat-preview">
+        <div class="scm-barcode-card">
+          <div class="scm-barcode-card__inner">
+            <span class="scm-barcode-card__icon"><svg viewBox="0 0 32 32"><rect width="32" height="32" rx="5" fill="#F5F5F5"/></svg></span>
+            <span class="scm-barcode-card__num">880K/13029/ADKE</span>
+          </div>
+          <span class="scm-barcode-card__chip">사용중</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== OVERLAY ============== -->
+    <section class="cat-section" id="toast">
+      <header class="cat-section__head"><h2>Toast</h2><span class="file">components/toast/</span></header>
+      <p class="cat-section__desc">SCM.toast.show({ variant, title, desc }) — success / info / critical. 우상단 슬라이드 인.</p>
+      <div class="cat-preview cat-preview--col" style="background:#F5F7FA;align-items:stretch;">
+        <!-- success -->
+        <div class="scm-toast scm-toast--success" style="position:relative;animation:none;">
+          <div class="scm-toast__main">
+            <svg class="scm-toast__icon" aria-hidden="true"><use href="#ic-checkCircle-filled"/></svg>
+            <div class="scm-toast__body">
+              <div class="scm-toast__title">SKU번호 복사 완료</div>
+              <div class="scm-toast__desc">5건이 클립보드에 복사되었습니다.</div>
+            </div>
+          </div>
+          <button class="scm-toast__close" aria-label="닫기"><svg aria-hidden="true"><use href="#ic-close"/></svg></button>
+        </div>
+        <!-- info -->
+        <div class="scm-toast scm-toast--info" style="position:relative;animation:none;">
+          <div class="scm-toast__main">
+            <svg class="scm-toast__icon" aria-hidden="true"><use href="#ic-checkCircle-filled"/></svg>
+            <div class="scm-toast__body">
+              <div class="scm-toast__title">필터 적용 완료</div>
+              <div class="scm-toast__desc">12건의 결과가 표시됩니다.</div>
+            </div>
+          </div>
+          <button class="scm-toast__close" aria-label="닫기"><svg aria-hidden="true"><use href="#ic-close"/></svg></button>
+        </div>
+        <!-- critical -->
+        <div class="scm-toast scm-toast--critical" style="position:relative;animation:none;">
+          <div class="scm-toast__main">
+            <svg class="scm-toast__icon" aria-hidden="true"><use href="#ic-alertTriangle"/></svg>
+            <div class="scm-toast__body">
+              <div class="scm-toast__title">n건 행거 사용 여부 실패</div>
+              <div class="scm-toast__desc">요청한 일괄 변경이 실패했습니다. 잠시 후 다시 시도해 주세요.</div>
+            </div>
+          </div>
+          <button class="scm-toast__close" aria-label="닫기"><svg aria-hidden="true"><use href="#ic-close"/></svg></button>
+        </div>
+      </div>
+      <pre class="cat-code">SCM.toast.show({ variant: 'success',  title: 'SKU번호 복사 완료',     desc: '5건이 클립보드에 복사되었습니다.' });
+SCM.toast.show({ variant: 'info',     title: '필터 적용 완료',         desc: '12건의 결과가 표시됩니다.' });
+SCM.toast.show({ variant: 'critical', title: 'n건 행거 사용 여부 실패', desc: '요청한 일괄 변경이 실패했습니다.' });</pre>
+    </section>
+
+    <section class="cat-section" id="confirm-modal">
+      <header class="cat-section__head"><h2>Confirm Modal</h2><span class="file">components/confirm-modal/</span></header>
+      <p class="cat-section__desc">중앙 모달 + 확인/취소 버튼. SCM.confirmModal.open() 사용.</p>
+    </section>
+
+    <section class="cat-section" id="side-drawer">
+      <header class="cat-section__head"><h2>Side Drawer</h2><span class="file">components/side-drawer/</span></header>
+      <p class="cat-section__desc">우측에서 슬라이드 인 드로어. 사이즈 개별 설정, 코드 검토 등.</p>
+    </section>
+
+    <!-- ============== PAGINATION ============== -->
+    <section class="cat-section" id="pager">
+      <header class="cat-section__head"><h2>Pager</h2><span class="file">components/pager/</span></header>
+      <div class="cat-preview">
+        <div class="scm-pager">
+          <button class="scm-pager__nav">‹</button>
+          <button class="scm-pager__btn is-active">1</button>
+          <button class="scm-pager__btn">2</button>
+          <button class="scm-pager__btn">3</button>
+          <button class="scm-pager__btn">4</button>
+          <button class="scm-pager__btn">5</button>
+          <button class="scm-pager__nav">›</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat-section" id="pgsize-select">
+      <header class="cat-section__head"><h2>Page Size Select</h2><span class="file">components/pgsize-select/</span></header>
+      <div class="cat-preview">
+        <button class="scm-pgsize" type="button">100<svg viewBox="0 0 16 16" style="width:16px;height:16px;"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  // 사이드 nav active state — scroll spy
+  (function () {
+    const links = document.querySelectorAll('.cat-side a');
+    const sections = Array.from(document.querySelectorAll('.cat-section'));
+    function setActive() {
+      const y = window.scrollY + 120;
+      let cur = sections[0];
+      for (const s of sections) { if (s.offsetTop <= y) cur = s; }
+      links.forEach(a => a.classList.toggle('is-active', a.getAttribute('href') === '#' + cur.id));
+    }
+    window.addEventListener('scroll', setActive, { passive: true });
+    setActive();
+  })();
+</script>
+</body>
+</html>

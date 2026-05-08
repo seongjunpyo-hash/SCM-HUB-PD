@@ -1,0 +1,136 @@
+/* ============================================================
+ * scm-cell-input — mp-table 셀 안에 들어가는 직접 입력 인풋
+ *                  (엑셀 패턴: 셀 선택 ↔ 편집 모드 분리)
+ * ------------------------------------------------------------
+ * 사용 패턴 (sku-management 와 동일한 mp-table 위에 modifier 한 줄):
+ *   <td class="cell-input cell-numeric">
+ *     <input type="number" value="409" />
+ *   </td>
+ *
+ * 특징:
+ *   - 디폴트(셀 선택만): 파랑 BG (--ld-blue-bg-light, #E2F1FF) — "입력 가능" 의미색.
+ *     input 은 readonly + pointer-events: none → mp-table 의 native cellSelection
+ *     (드래그 다중 선택, Cmd/Ctrl+C TSV 복사) 가 그대로 동작.
+ *   - 편집 모드 (.is-editing): 흰 BG, input 활성, 셀 전체 검은 inset 보더.
+ *   - hover (편집 X): 살짝 진한 파랑 BG.
+ *
+ * JS 모듈: cell-input.js (SCM.cellInput.mount)
+ *   - 1번 클릭 → 셀 선택만 (mp-table 의 setupCellSelection 가 처리)
+ *   - 더블클릭 / Enter / F2 / 글자 입력 → 편집 모드
+ *   - blur / Esc / Enter → 편집 모드 종료
+ *   - 화살표 / Tab → 인접 입력 셀로 selected 이동
+ * ============================================================ */
+
+.mp-table tbody td.cell-input {
+  /* td 의 padding 을 0 으로 두고 input 이 셀 전체를 채우게 함 */
+  padding: 0;
+  background: var(--ld-blue-bg-light, #E2F1FF);
+  position: relative;
+  cursor: cell;                 /* 엑셀 십자 커서 */
+}
+
+/* 행 hover 시에도 의미색(파랑) 유지 */
+.mp-table tbody tr:hover td.cell-input { background: var(--ld-blue-bg-light, #E2F1FF); }
+
+.mp-table tbody td.cell-input > input {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 44px;             /* mp-table tbody td 기본 높이와 일치 */
+  padding: 12px 16px;           /* mp-table tbody td 의 padding 동일 */
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 20.4px;
+  color: var(--ld-fg, #000);
+  text-align: inherit;          /* td 의 text-align 따라감 */
+  font-variant-numeric: tabular-nums;
+  box-sizing: border-box;
+  cursor: cell;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.mp-table tbody td.cell-input > input::-webkit-outer-spin-button,
+.mp-table tbody td.cell-input > input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.mp-table tbody td.cell-input > input::placeholder {
+  color: var(--ld-fg-lower, #8A8A8A);
+}
+
+/* ============================================================
+ * 디폴트 (편집 X) — input 은 클릭/포커스 안 받게 처리
+ *   pointer-events:none 로 클릭이 td 로 통과 → mp-table cellSelection 작동
+ * ============================================================ */
+.mp-table tbody td.cell-input:not(.is-editing) > input {
+  pointer-events: none;
+  user-select: none;
+  caret-color: transparent;
+}
+
+/* ============================================================
+ * Selected 상태 (mp-table 의 cell-selected 자동 적용)
+ *   — mp-table 가 td.cell-selected + sel-top/right/bottom/left 부여
+ *   — 그 위에 cell-input 의 파랑 BG 가 그대로 보임
+ *   — focus(active) 셀은 검은 inset 보더 살짝 더 진하게
+ * ============================================================ */
+.mp-table tbody td.cell-input.cell-active {
+  box-shadow: inset 0 0 0 2px var(--ld-fg, #000);
+  z-index: 1;
+}
+
+/* ============================================================
+ * Editing 상태 — 더블클릭 / Enter / F2 / 타이핑 시작 시
+ *   input 활성, 셀 전체 검은 inset 보더, 흰색 BG
+ * ============================================================ */
+.mp-table tbody td.cell-input.is-editing {
+  background: var(--ld-bg, #fff);
+  box-shadow: inset 0 0 0 2px var(--ld-fg, #000);
+  z-index: 2;
+}
+.mp-table tbody td.cell-input.is-editing > input {
+  pointer-events: auto;
+  user-select: text;
+  caret-color: var(--ld-fg, #000);
+  cursor: text;
+  background: transparent;
+}
+.mp-table tbody tr:hover td.cell-input.is-editing { background: var(--ld-bg, #fff); }
+
+/* hover (셀 위에 마우스만, 선택 X) — 살짝 진한 파랑 */
+.mp-table tbody td.cell-input:hover:not(.is-editing):not(.cell-selected) {
+  background: rgba(36, 94, 255, 0.10);
+}
+
+/* ============================================================
+ * sticky / frozen 컬럼이 cell-input 인 경우에도 BG 유지
+ * ============================================================ */
+.mp-table tbody td.cell-input[class*="col-frozen"] {
+  background: var(--ld-blue-bg-light, #E2F1FF);
+}
+.mp-table tbody td.cell-input.is-editing[class*="col-frozen"] {
+  background: var(--ld-bg, #fff);
+}
+
+/* ============================================================
+ * disabled / readonly (영구 readonly — 편집 자체 불가)
+ *   data-readonly 속성으로 마크 — JS 가 .is-editing 진입 차단
+ * ============================================================ */
+.mp-table tbody td.cell-input[data-readonly="true"] {
+  background: var(--ld-gray-100, #F5F5F5);
+  cursor: not-allowed;
+}
+.mp-table tbody td.cell-input[data-readonly="true"] > input {
+  color: var(--ld-fg-low, #666);
+  cursor: not-allowed;
+}
+
+/* ============================================================
+ * 도메인 modifier — 페이지가 추가 (.is-changed 등) — cell-input 도 지원
+ * ============================================================ */
+.mp-table tbody td.cell-input.is-changed { background: #FFF4CC; }
+.mp-table tbody td.cell-input.is-changed.is-editing { background: var(--ld-bg, #fff); }

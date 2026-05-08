@@ -1,0 +1,64 @@
+/* ============================================================
+ * scm-pager — 페이저 ("1 / 99 페이지" + ‹ ›)
+ * ------------------------------------------------------------
+ * stats bar 우측에 배치. 현재 페이지 강조 + 총 페이지 회색 + 좌우
+ * 화살표 (36×36 ghost). disabled 시 stroke 회색.
+ *
+ * Marker:
+ *   <span class="scm-pager">
+ *     <strong class="scm-pager__current">1</strong>
+ *     <span class="scm-pager__total">/ <span>99</span> 페이지</span>
+ *     <button class="scm-pager-btn" aria-label="이전 페이지" disabled>...</button>
+ *     <button class="scm-pager-btn" aria-label="다음 페이지">...</button>
+ *   </span>
+ * ============================================================ */
+
+.scm-pager {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.scm-pager__current {
+  color: #000;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 20.4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.scm-pager__total {
+  color: #666;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 20.4px;
+}
+
+.scm-pager-btn {
+  width: 36px;
+  height: 36px;
+  padding: 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #000;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.scm-pager-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.scm-pager-btn:hover:not(:disabled) {
+  background: var(--ld-bg-low, #FAFBFC);
+}
+
+.scm-pager-btn:disabled {
+  color: var(--ld-fg-disabled, #CCCCCC);
+  cursor: not-allowed;
+}

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<!--
+  navigation-drawer.html — LNB 풀 메뉴 드로어 템플릿
+  ============================================================
+  메뉴 버튼 클릭 시 표시. 풀 LNB (1뎁스 + 2뎁스 expandable).
+============================================================ -->
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <link rel="stylesheet" href="../layer-desktop.css" />
+  <link rel="stylesheet" href="../components/backdrop/backdrop.css" />
+  <style>
+    /* navigation-drawer 자체 스타일은 페이지에 inline 또는 layer-desktop.css 의 lnb-* 클래스 활용 */
+  </style>
+</head>
+<body>
+  <div class="scm-backdrop" id="lnb-drawer-backdrop"></div>
+  <aside class="lnb-drawer" id="lnb-drawer" hidden role="navigation" aria-label="전체 메뉴">
+    <header class="lnb-drawer-head">
+      <span class="lnb-drawer-logo">SCM HUB</span>
+      <button class="lnb-drawer-collapse" type="button" aria-label="접기">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M5 5L19 19M19 5L5 19" stroke="#000" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </header>
+
+    <div class="lnb-profile">
+      <div class="lnb-profile-row">
+        <span class="lnb-profile-avatar">J</span>
+        <span class="lnb-profile-email">{{USER_EMAIL}}</span>
+        <button class="lnb-profile-more" type="button" aria-haspopup="menu" aria-expanded="false">
+          <svg viewBox="0 0 20 20"><circle cx="10" cy="5" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="10" cy="15" r="1.5"/></svg>
+        </button>
+      </div>
+      <ul class="lnb-profile-menu" role="menu" hidden>
+        <li class="lnb-profile-menu-item" role="menuitem">로그아웃</li>
+      </ul>
+    </div>
+
+    <hr class="lnb-divider" />
+
+    <div class="lnb-scroll">
+      <div class="lnb-nav-group">
+        {{NAV_GROUPS}}
+      </div>
+    </div>
+
+    <div class="lnb-action-bar">
+      <button class="lnb-action-btn" type="button">초보 가이드</button>
+    </div>
+  </aside>
+
+  <script src="../components/backdrop/backdrop.js"></script>
+  <script>{{PAGE_SCRIPT}}</script>
+</body>
+</html>

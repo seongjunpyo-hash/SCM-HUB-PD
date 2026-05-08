@@ -1,0 +1,24 @@
+{
+  "name": "scm-hub",
+  "version": "1.0.0",
+  "description": "무신사 SCM Hub 의 디자인 시스템 + 시뮬레이션 도구 + 데모 페이지 + 핸드오프/스펙 문서를 한 곳에 모은 통합 워크스페이스.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/seongjunpyo-hash/SCM-HUB-PD.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/seongjunpyo-hash/SCM-HUB-PD/issues"
+  },
+  "homepage": "https://github.com/seongjunpyo-hash/SCM-HUB-PD#readme",
+  "devDependencies": {
+    "wrangler": "^4.87.0"
+  }
+}

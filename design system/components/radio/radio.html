@@ -1,0 +1,64 @@
+<!-- ============================================================
+     scm-radio — canonical markers
+     ============================================================ -->
+
+<!-- 단일 라디오 -->
+<label class="scm-radio">
+  <input type="radio" name="example1" value="a" checked />
+  <span class="scm-radio-dot"></span>
+  <span>옵션 A</span>
+</label>
+
+<!-- 그룹 (기본 — gap 32) -->
+<div class="scm-radio-group" role="radiogroup" aria-label="예시">
+  <label class="scm-radio">
+    <input type="radio" name="example2" value="1" checked />
+    <span class="scm-radio-dot"></span>
+    <span>옵션 1</span>
+  </label>
+  <label class="scm-radio">
+    <input type="radio" name="example2" value="2" />
+    <span class="scm-radio-dot"></span>
+    <span>옵션 2</span>
+  </label>
+  <label class="scm-radio">
+    <input type="radio" name="example2" value="3" />
+    <span class="scm-radio-dot"></span>
+    <span>옵션 3</span>
+  </label>
+</div>
+
+<!-- 작은 그룹 (modal 톤 — gap 12, font 14) -->
+<div class="scm-radio-group scm-radio-group--sm" role="radiogroup">
+  <label class="scm-radio scm-radio--sm">
+    <input type="radio" name="example3" value="1" checked />
+    <span class="scm-radio-dot"></span>
+    <span>모달 옵션</span>
+  </label>
+  <label class="scm-radio scm-radio--sm">
+    <input type="radio" name="example3" value="2" />
+    <span class="scm-radio-dot"></span>
+    <span>다른 옵션</span>
+  </label>
+</div>
+
+<!-- 2-col 그룹 (반응형 wrap) -->
+<div class="scm-radio-group scm-radio-group--2col" role="radiogroup">
+  <label class="scm-radio">
+    <input type="radio" name="example4" value="1" />
+    <span class="scm-radio-dot"></span>
+    <span>긴 옵션 텍스트 1</span>
+  </label>
+  <label class="scm-radio">
+    <input type="radio" name="example4" value="2" />
+    <span class="scm-radio-dot"></span>
+    <span>긴 옵션 텍스트 2</span>
+  </label>
+</div>
+
+<!-- Disabled -->
+<label class="scm-radio" aria-disabled="true">
+  <input type="radio" name="example5" value="x" disabled />
+  <span class="scm-radio-dot"></span>
+  <span>비활성</span>
+</label>
