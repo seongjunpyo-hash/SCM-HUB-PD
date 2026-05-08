@@ -676,23 +676,7 @@
   if (!window.SCM) return;
 
   // Filter bar
-  if (SCM.filterBar) SCM.filterBar.mount(document.getElementById('filter-bar'));
-
   // Filter drawer
-  if (SCM.filterDrawer) {
-    const fdEl = document.getElementById('filter-drawer');
-    const fdOpenBtn = document.getElementById('filter-drawer-open');
-    if (fdEl) {
-      const fd = SCM.filterDrawer.mount(fdEl, {
-        backdrop: document.getElementById('fd-backdrop'),
-      });
-      if (fd && fdOpenBtn) {
-        fdOpenBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          fd.open();
-        });
-      }
     }
   }
 

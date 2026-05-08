@@ -647,16 +647,7 @@
 
   // GNB + LNB
   // Filter bar (fade gradient 자동 동기화)
-  if (window.SCM && SCM.filterBar) SCM.filterBar.mount(document.getElementById('filter-bar'));
-
   // Filter drawer
-  if (window.SCM && SCM.filterDrawer) {
-    const fd = SCM.filterDrawer.mount(document.getElementById('filter-drawer'), {
-      backdrop: document.getElementById('fd-backdrop'),
-    });
-    document.getElementById('filter-drawer-open').addEventListener('click', fd.open);
-  }
-
   // Search/reset 버튼 동작은 SCM.filterPopoverModes 의 onSearch / onReset 콜백으로 통합 (아래 init 호출 참조).
 
   // Pgsize-select

@@ -55,9 +55,42 @@
     }
     window.addEventListener('resize', syncStickyVars);
   }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', bootStickyVars, { once: true });
-  } else {
+
+  // filter-bar / filter-drawer 자동 mount — 페이지마다 복붙되어 있던
+  // SCM.filterBar.mount(#filter-bar) / SCM.filterDrawer.mount(#filter-drawer)
+  // 보일러플레이트 통합. 마크업 (placeholder element + open button) 만 있으면
+  // 자동 동작.
+  function bootFilterMounts() {
+    if (window.SCM && SCM.filterBar) {
+      var fb = document.getElementById('filter-bar');
+      if (fb && !fb.dataset.scmFilterBarMounted) {
+        fb.dataset.scmFilterBarMounted = '1';
+        try { SCM.filterBar.mount(fb); } catch (_) {}
+      }
+    }
+    if (window.SCM && SCM.filterDrawer) {
+      var fd = document.getElementById('filter-drawer');
+      var bd = document.getElementById('fd-backdrop');
+      var openBtn = document.getElementById('filter-drawer-open');
+      if (fd && !fd.dataset.scmFilterDrawerMounted) {
+        fd.dataset.scmFilterDrawerMounted = '1';
+        try {
+          var inst = SCM.filterDrawer.mount(fd, { backdrop: bd || undefined });
+          if (openBtn && inst && typeof inst.open === 'function') {
+            openBtn.addEventListener('click', inst.open);
+          }
+        } catch (_) {}
+      }
+    }
+  }
+
+  function boot() {
     bootStickyVars();
+    bootFilterMounts();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
   }
 })();

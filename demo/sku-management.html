@@ -730,16 +730,7 @@
   if (!window.SCM) return;
 
   // Filter bar
-  if (SCM.filterBar) SCM.filterBar.mount(document.getElementById('filter-bar'));
-
   // Filter drawer
-  if (SCM.filterDrawer) {
-    const fd = SCM.filterDrawer.mount(document.getElementById('filter-drawer'), {
-      backdrop: document.getElementById('fd-backdrop'),
-    });
-    document.getElementById('filter-drawer-open').addEventListener('click', fd.open);
-  }
-
   // Pgsize
   if (SCM.pgsizeSelect) SCM.pgsizeSelect.mount(document.getElementById('pgsize'), { value: 100 });
 

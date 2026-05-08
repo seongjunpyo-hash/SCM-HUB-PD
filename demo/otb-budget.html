@@ -761,19 +761,7 @@
   }
 
   // filter-bar
-  if (window.SCM && SCM.filterBar) {
-    try { SCM.filterBar.mount(document.getElementById('filter-bar')); } catch (_) {}
-  }
-
   // filter-drawer
-  if (window.SCM && SCM.filterDrawer) {
-    try {
-      var fd = SCM.filterDrawer.mount(document.getElementById('filter-drawer'), {
-        backdrop: document.getElementById('fd-backdrop'),
-      });
-      var openBtn = document.getElementById('filter-drawer-open');
-      if (openBtn && fd && fd.open) openBtn.addEventListener('click', fd.open);
-    } catch (_) {}
   }
 
   // ============================================================
