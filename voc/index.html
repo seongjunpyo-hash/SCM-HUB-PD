@@ -2331,7 +2331,22 @@
         document.querySelectorAll('.side-tab').forEach((b) => b.classList.toggle('is-active', b === btn));
         document.querySelectorAll('.side-pane').forEach((p) => p.classList.toggle('is-active', p.dataset.pane === tab));
         if (tab === 'edit') renderEditPane();
+        // 데모 iframe 모드 동기화 — 편집/신규 탭에선 browse(데모 자유 조작),
+        // 코멘트 탭에선 comment(클릭 시 핀 배치).
+        syncIframeMode(tab);
       });
+      // tab 기반 iframe mode 헬퍼. iframe 이 ready 될 때까지는 무시되지만
+      // iframe load 핸들러가 voc-ready 수신 후 다시 한번 호출함.
+      function syncIframeMode(tab) {
+        const mode = (tab === 'comments') ? 'comment' : 'browse';
+        postIframe({ type: 'voc-set-mode', mode });
+      }
+      // 외부에서 참조 가능하게 — iframe load 시 현재 active tab 기준으로 호출.
+      window.__vocSyncIframeMode = function () {
+        const active = document.querySelector('.side-tab.is-active');
+        const tab = (active && active.dataset.tab) || 'edit';
+        syncIframeMode(tab);
+      };
 
       // edit pane footer
       document.getElementById('editSaveBtn').addEventListener('click', () => { if (isDirty()) commitDraft(); });
@@ -2373,6 +2388,10 @@
           state.iframeReady = true;
           // VOC iframe → permanently lock GNB/LNB (no nav, no hover-expand).
           postIframe({ type: 'voc-worker-mode', on: true });
+          // 현재 active tab 기준으로 iframe 모드 동기화. 편집/신규 → browse,
+          // 코멘트 → comment. 이렇게 해야 편집 탭에서 데모 버튼/필터/테이블이
+          // 정상 동작.
+          if (window.__vocSyncIframeMode) window.__vocSyncIframeMode();
           // re-apply any sims we know about (in case of nav-back to same page)
           state.simActive.forEach((id) => {
             const c = findById(id);

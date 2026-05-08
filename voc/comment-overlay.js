@@ -702,11 +702,11 @@
         e.stopImmediatePropagation && e.stopImmediatePropagation();
         return;
       }
-      // Worker mode + main area click — pin will be placed below by the
-      // mode === 'comment' branch (worker mode forces comment mode). Also
-      // surface a transient hint so the user understands why the demo's
-      // buttons / dropdowns / links didn't react to their click.
-      if (state.workerMode) {
+      // Worker mode + main area click. comment 모드일 땐 핀 배치를 위해
+      // intercept 한다 (아래 onPlacePin 분기). browse 모드일 땐 사용자가
+      // 데모를 직접 조작하려는 의도이므로 click hint 도 띄우지 않고 그대로
+      // 페이지 핸들러로 흘려 보낸다.
+      if (state.workerMode && state.mode === 'comment') {
         showClickHint(e.clientX, e.clientY);
       }
       if (state.mode !== 'comment') return;
@@ -721,9 +721,12 @@
       e.stopImmediatePropagation && e.stopImmediatePropagation();
       onPlacePin(e);
     }, true);
-    // Block drag/select start in comment mode + worker mode (GNB/LNB)
+    // Block drag/select start in comment mode (and GNB/LNB in worker mode).
     document.addEventListener('mousedown', (e) => {
       if (isOurUI(e.target)) return;
+      // Worker mode 의 GNB/LNB intercept 는 comment 모드일 때만. browse
+      // 모드에서는 데모 자체에는 손대지 않지만 GNB/LNB 도 정책상 lock 인지
+      // 모호하므로 intercept 유지.
       if (state.workerMode && isNonCommentable(e.target)) {
         if (isWorkerInteractive(e.target)) return;
         e.preventDefault();
