@@ -1885,7 +1885,10 @@ ${jsxBody}
           top: var(--scm-sticky-gnb, 64px);
           left: var(--scm-lnb-width, 56px);
           right: 0; bottom: 0;
-          z-index: 30;
+          /* topbar(20) / LNB(15) / sticky filter-bar(12) / stats-bar(11) 보다
+             아래로 두어 dropdown / GNB 모달이 오버레이에 가려지지 않도록.
+             main 컨텐츠(z-auto = 0) 위에만 떠있으면 충분. */
+          z-index: 8;
           pointer-events: none;
           background: repeating-linear-gradient(
             45deg,
