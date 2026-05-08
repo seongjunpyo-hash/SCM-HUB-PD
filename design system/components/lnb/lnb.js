@@ -94,25 +94,12 @@
   }
 
   // ---------- per-page status tags ----------
-  // NEW       — page is in scm:prd:newPages:v1 (PRD validation marked it as a brand-new menu)
-  // MODIFIED  — page has at least one saved snapshot in scm:voc:versions:v1
-  // confirmed — page is in scm:dev-export:confirmed:v1 (super admin pressed 작업완료);
-  //             when confirmed, BOTH tags are suppressed.
-  var NEW_PAGES_KEY  = 'scm:prd:newPages:v1';
-  var VERSIONS_KEY   = 'scm:voc:versions:v1';
+  // 작업중   — 실데모 페이지 기본 상태 (아직 최종확정 안 됨)
+  // 최종확정 — page is in scm:dev-export:confirmed:v1 (super 가 '최종확정' 버튼 누름)
+  // # 플레이스홀더 메뉴는 정적 마크업에 이미 작업중 태그가 있어 동적 처리 skip.
   var CONFIRMED_KEY  = 'scm:dev-export:confirmed:v1';
   function _readJsonLs(key) {
     try { var raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : null; } catch (_) { return null; }
-  }
-  function _isNewPage(pagePath) {
-    var arr = _readJsonLs(NEW_PAGES_KEY);
-    return Array.isArray(arr) && arr.indexOf(pagePath) >= 0;
-  }
-  function _isModifiedPage(pagePath) {
-    var map = _readJsonLs(VERSIONS_KEY);
-    if (!map || !map[pagePath]) return false;
-    var ver = map[pagePath];
-    return Array.isArray(ver.list) && ver.list.length > 0;
   }
   function _isConfirmedPage(pagePath) {
     var map = _readJsonLs(CONFIRMED_KEY);
@@ -128,21 +115,18 @@
       var prev = a.querySelector('.scm-lnb-tag.is-dynamic');
       if (prev) prev.parentNode.removeChild(prev);
       var href = a.getAttribute('href');
-      // Skip disabled / placeholder menus. These come in two flavours:
-      // - href="" / no href           → no destination yet
-      // - href="#"                    → explicit "not built yet" anchor
-      // Both should NOT show NEW / MODIFIED tags. The PRD validation
-      // tool can later mint a real demo path + add it to scm:prd:newPages
-      // to surface NEW.
+      // Skip placeholder menus — their static --wip tag in markup handles "작업중".
       if (!href || href === '#' || href.charAt(0) === '#') continue;
       var pagePath;
       try { pagePath = new URL(href, document.baseURI).pathname; } catch (_) { continue; }
-      // confirmed wins over both NEW and MODIFIED → no tag
-      if (_isConfirmedPage(pagePath)) continue;
-      var tagText = null, tagCls = null;
-      if (_isNewPage(pagePath))           { tagText = 'NEW';      tagCls = 'scm-lnb-tag--new'; }
-      else if (_isModifiedPage(pagePath)) { tagText = 'MODIFIED'; tagCls = 'scm-lnb-tag--modified'; }
-      if (!tagText) continue;
+      var tagText, tagCls;
+      if (_isConfirmedPage(pagePath)) {
+        tagText = '최종확정';
+        tagCls = 'scm-lnb-tag--done';
+      } else {
+        tagText = '작업중';
+        tagCls = 'scm-lnb-tag--wip';
+      }
       var tag = document.createElement('span');
       tag.className = 'scm-lnb-tag is-dynamic ' + tagCls;
       tag.textContent = tagText;
@@ -162,7 +146,7 @@
     if (!root.__scmLnbStorageWired) {
       window.addEventListener('storage', function (e) {
         if (!e || !e.key) return;
-        if (e.key === NEW_PAGES_KEY || e.key === VERSIONS_KEY || e.key === CONFIRMED_KEY) {
+        if (e.key === CONFIRMED_KEY) {
           var nodes = document.querySelectorAll('.scm-lnb');
           for (var i = 0; i < nodes.length; i++) applyStatusTags(nodes[i]);
         }

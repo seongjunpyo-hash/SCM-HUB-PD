@@ -188,8 +188,16 @@ html:not(.is-lnb-open) .scm-lnb:hover .scm-lnb-item.is-open .scm-lnb-l2-list {
 }
 .scm-lnb-tag--new      { background: #E2F1FF; color: #1A56DB; }
 .scm-lnb-tag--modified { background: #FEF3C7; color: #B45309; }
-/* '작업중' 태그 숨김 — 텍스트만 제거하고 메뉴 자체는 disabled 처리로 안내 */
-.scm-lnb-tag--wip { display: none; }
+/* 작업중 — 회색 톤 (in progress) */
+.scm-lnb-tag--wip {
+  background: #F5F5F5;
+  color: rgba(0, 0, 0, 0.50);
+}
+/* 최종완료 — 그린 톤 (final / signed off) */
+.scm-lnb-tag--done {
+  background: #DEF7EC;
+  color: #03543F;
+}
 
 /* 화면이 없는 메뉴 (href="#") — 비활성 처리: 회색 텍스트 + not-allowed cursor + 호버 무효 */
 .scm-lnb-l2[href="#"],
