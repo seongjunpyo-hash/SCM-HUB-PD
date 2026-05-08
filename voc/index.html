@@ -3390,8 +3390,19 @@
         }
       }
 
-      // Components — top-level scm-card / scm-page-section / scm-kpi-card / etc.
-      const compSel = '.scm-card, .scm-page-section, .scm-kpi-card, .scm-bar-chart, .db-pending-list, .db-schedule-list, .db-quick-grid';
+      // Components — top-level scm-* / db-* 컨테이너.
+      // dashboard 의 card/section/kpi 외에, 테이블 기반 데모(sku-management,
+      // editshop-restock-*, otb-budget 등)에서도 편집 모드에 컴포넌트가
+      // 잡히도록 page-head / info-banner / filter-bar / stats-bar /
+      // mp-table-host / table-action-bar / info-table 추가.
+      const compSel = [
+        '.scm-card', '.scm-page-section', '.scm-kpi-card',
+        '.scm-bar-chart', '.db-pending-list', '.db-schedule-list', '.db-quick-grid',
+        '.scm-page-head', '.scm-info-banner',
+        '.scm-filter-bar', '.scm-stats-bar',
+        '.mp-table-host', '.scm-table-action-bar',
+        '.scm-info-table',
+      ].join(', ');
       const compEls = main.querySelectorAll(compSel);
       const taken = new Set();
       compEls.forEach((el) => {
