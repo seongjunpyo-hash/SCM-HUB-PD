@@ -40,6 +40,8 @@
   function saveConfirmed() {
     try { localStorage.setItem(CONFIRMED_KEY, JSON.stringify(confirmed)); }
     catch (e) { console.warn('[dev-export] save failed', e); }
+    // LNB 등이 same-tab 에서 즉시 갱신될 수 있게 broadcast
+    try { document.dispatchEvent(new CustomEvent('scm:confirmed-changed')); } catch (_) {}
   }
   function pageKey() { return location.pathname; }
   // 최종 확정 (finalId) — '최종확정' 버튼이 가리키는 운영 베이스라인 버전.

@@ -210,3 +210,8 @@ html:not(.is-lnb-open) .scm-lnb:hover .scm-lnb-item.is-open .scm-lnb-l2-list {
 .scm-lnb-l2[href=""] .scm-lnb-l2-text {
   color: rgba(0, 0, 0, 0.30);
 }
+/* 비활성 메뉴엔 상태 태그(작업중 / 최종확정 등) 노출 X — 활성 메뉴만 status 부착 */
+.scm-lnb-l2[href="#"] .scm-lnb-tag,
+.scm-lnb-l2[href=""] .scm-lnb-tag {
+  display: none;
+}
