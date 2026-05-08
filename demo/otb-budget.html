@@ -3,18 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=1440" />
-  <title>SCM-Hub · OTB 예산 관리 (모듈 기반)</title>
+  <title>SCM-Hub · OTB 예산 관리</title>
   <script src="/auth-gate.js"></script>
   <script src="/voc/comment-overlay.js" defer></script>
   <script src="/dev-export.js" defer></script>
-  <script src="/profile-menu.js" defer></script>
-  <!-- ExcelJS — 양식 다운로드용 -->
+  <!-- ExcelJS — rich text / 셀 스타일 / 병합 / 폰트 출력 풀 지원 -->
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
   <link rel="stylesheet" href="../design%20system/layer-desktop.css" />
 
-  <!-- SCM Components -->
+  <!-- SCM Components — 데이터 리스트 + 도메인 -->
   <link rel="stylesheet" href="../design%20system/components/backdrop/backdrop.css" />
   <link rel="stylesheet" href="../design%20system/components/checkbox/checkbox.css" />
   <link rel="stylesheet" href="../design%20system/components/tag/tag.css" />
@@ -26,16 +25,20 @@
   <link rel="stylesheet" href="../design%20system/components/pager/pager.css" />
   <link rel="stylesheet" href="../design%20system/components/pgsize-select/pgsize-select.css" />
   <link rel="stylesheet" href="../design%20system/components/mini-action/mini-action.css" />
+  <link rel="stylesheet" href="../design%20system/components/info-banner/info-banner.css" />
   <link rel="stylesheet" href="../design%20system/components/code-link/code-link.css" />
   <link rel="stylesheet" href="../design%20system/components/code-popover/code-popover.css" />
   <link rel="stylesheet" href="../design%20system/components/confirm-modal/confirm-modal.css" />
+  <link rel="stylesheet" href="../design%20system/components/cell-input/cell-input.css" />
   <link rel="stylesheet" href="../design%20system/components/bulk-upload-modal/bulk-upload-modal.css" />
-  <link rel="stylesheet" href="../design%20system/components/deploy-popover/deploy-popover.css" />
+  <link rel="stylesheet" href="../design%20system/components/radio/radio.css" />
+  <link rel="stylesheet" href="../design%20system/components/select/select.css" />
+  <link rel="stylesheet" href="../design%20system/components/platform-tag/platform-tag.css" />
   <link rel="stylesheet" href="../design%20system/components/filter-chip/filter-chip.css" />
   <link rel="stylesheet" href="../design%20system/components/filter-select/filter-select.css" />
   <link rel="stylesheet" href="../design%20system/components/filter-bar/filter-bar.css" />
-  <link rel="stylesheet" href="../design%20system/components/filter-drawer/filter-drawer.css" />
   <link rel="stylesheet" href="../design%20system/components/filter-popover/filter-popover.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-drawer/filter-drawer.css" />
   <link rel="stylesheet" href="../design%20system/components/stat/stat.css" />
   <link rel="stylesheet" href="../design%20system/components/stats-bar/stats-bar.css" />
   <link rel="stylesheet" href="../design%20system/components/page-head/page-head.css" />
@@ -45,13 +48,8 @@
   <!-- 공용 셸 (GNB + LNB) -->
   <link rel="stylesheet" href="../design%20system/components/topbar/topbar.css" />
   <link rel="stylesheet" href="../design%20system/components/lnb/lnb.css" />
-  <!-- 도메인 chips -->
-  <link rel="stylesheet" href="../design%20system/components/status-chip/status-chip.css" />
-  <link rel="stylesheet" href="../design%20system/components/kind-chip/kind-chip.css" />
-  <link rel="stylesheet" href="../design%20system/components/forecast-chip/forecast-chip.css" />
-  <link rel="stylesheet" href="../design%20system/components/input-cell/input-cell.css" />
+  <!-- 도메인 -->
   <link rel="stylesheet" href="../design%20system/components/product-name/product-name.css" />
-  <link rel="stylesheet" href="../design%20system/components/detail-stack/detail-stack.css" />
 
   <style>
     :root {
@@ -70,89 +68,402 @@
     /* sticky stack */
     .scm-filter-bar { top: var(--scm-sticky-gnb); }
     .scm-stats-bar--sticky { top: calc(var(--scm-sticky-gnb) + var(--scm-sticky-filter)); }
-
     .mp-table-host { margin-top: 0; }
 
-    /* 우상단 액션 버튼 — sticky 제거, page-head 안의 일반 flow → 스크롤하면 자연스럽게 사라짐 */
+    /* 일괄 업로드 / SKU 단건 등록 버튼 — sticky 제거, page-head 안의 일반 flow → 스크롤하면 자연스럽게 사라짐 */
     .mp-table .cell-numeric { font-variant-numeric: tabular-nums; text-align: right; }
 
-    /* Sticky bottom action bar — 체크박스 선택 시 노출 */
-    .scm-table-action-bar {
-      position: fixed; left: var(--scm-lnb-width, 56px); right: 0; bottom: 0;
-      background: #fff; border-top: 1px solid #E0E0E0; box-shadow: 0 -2px 8px rgba(0,0,0,.06);
-      z-index: 18; padding: 12px 28px;
-      transition: left .2s ease;
+    /* 일괄 업로드 모달 — 템플릿 select popup (디자인 시스템 단일 선택 popover 와 동일 톤) */
+    .scm-bu-template-popup {
+      position: absolute; top: calc(100% + 4px); left: 0; min-width: 100%;
+      background: #fff; border: 1px solid #E0E0E0; border-radius: 4px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+      list-style: none; margin: 0; padding: 4px 0;
+      z-index: 100; max-height: 300px; overflow-y: auto;
     }
-    .scm-table-action-bar[hidden] { display: none; }
-    .scm-table-action-bar__inner { display: flex; align-items: center; justify-content: space-between; }
-    .scm-table-action-bar__count { font-size: 14px; font-weight: 500; }
-    .scm-table-action-bar__count strong { color: #245EFF; font-weight: 700; margin-right: 4px; }
-    .scm-table-action-bar__actions { display: flex; gap: 8px; }
+    .scm-bu-template-popup li {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px; font-size: 14px; cursor: pointer; line-height: 19.6px;
+      color: #000;
+    }
+    .scm-bu-template-popup li:hover { background: var(--ld-bg-low, #FAFBFC); }
+    .scm-bu-template-popup li.is-selected { background: #F5F5F5; color: #000; font-weight: 500; }
+    .scm-bu-template-popup li.is-selected::after {
+      content: '';
+      width: 16px; height: 16px; flex-shrink: 0; margin-left: 12px;
+      background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'><path d='M3.45 7.3l3.28 3.28L12.55 4.85' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>") center/16px no-repeat;
+    }
+    .scm-bu-template-popup li.is-disabled { color: #BBB; cursor: default; }
+    .scm-bu-template-popup li.is-disabled:hover { background: transparent; }
 
-    /* === Domain — 편집샵 재고 보충 요청 === */
-    /* 보충 대상 구분 chip — target=초록 / nontarget=회색 (legacy er-kind-chip 재현) */
-    .scm-kind-chip--target    { background: #ECFFEC; color: #1EA514; }
-    .scm-kind-chip--nontarget { background: rgba(138,138,138,0.10); color: #666; }
+    /* === Domain — SKU 관리 (legacy 인라인 보조) === */
+    /* 운영상태 / 매핑상태 pill — dot + label (legacy sku-status-pill 재현) */
+    .sku-status-pill { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 2px 8px; border-radius: 4px; font-size: 13px; font-weight: 500; line-height: 18px; }
+    .sku-status-pill .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .sku-status-pill[data-state="active"]   { background: #E2F1FF; color: #245EFF; }
+    .sku-status-pill[data-state="active"]   .dot { background: #245EFF; }
+    .sku-status-pill[data-state="inactive"] { background: rgba(138,138,138,0.10); color: #666; }
+    .sku-status-pill[data-state="inactive"] .dot { background: #999; }
+    .sku-status-pill[data-state="mapped"]   { background: #E8F5E9; color: #2E7D32; }
+    .sku-status-pill[data-state="mapped"]   .dot { background: #43A047; }
+    .sku-status-pill[data-state="unmapped"] { background: #FFF3E0; color: #E65100; }
+    .sku-status-pill[data-state="unmapped"] .dot { background: #FF9800; }
 
     /* 옵션 chip wrap — 다중 chip 한 줄 (max 260) */
-    .er-opt-chips { display: inline-flex; align-items: center; gap: 4px; flex-wrap: nowrap; max-width: 260px; white-space: nowrap; }
-    /* er-opt-chips 는 .scm-tag 모듈 기본 스펙 그대로 (h24/p2,8/fs13/lh18) — 별도 오버라이드 X */
+    .sku-opt-chips { display: inline-flex; align-items: center; gap: 8px; flex-wrap: nowrap; max-width: 260px; white-space: nowrap; }
 
-    /* 초도 chip — 파란 chip "초도" (legacy er-intro-chip 재현, scm-tag 톤 통일) */
-    .er-intro-chip {
-      display: inline-flex; align-items: center; height: 24px; padding: 2px 8px; border-radius: 4px;
-      background: #E2F1FF; color: #000;
-      font-size: 13px; font-weight: 500; line-height: 18px;
+    /* 숫자 셀 — tabular-nums */
+    .sku-num { font-variant-numeric: tabular-nums; }
+
+    /* info-banner 하단 마진 (legacy 8px) */
+    #sku-info-banner { margin-bottom: 8px; }
+
+    /* === confirm-modal 안내문 — 상품 등록 후 매핑 callout (legacy 재현, page-scope) === */
+    .scm-confirm-modal__desc .mp-modal-body-text { font-size: 15px; line-height: 20.4px; color: #1A1A1A; margin-bottom: 12px; }
+    .scm-confirm-modal__desc .mp-modal-callout { background: #F5F5F5; border-radius: 4px; padding: 12px 16px; }
+    .scm-confirm-modal__desc .mp-modal-callout .callout-title { font-size: 14px; font-weight: 500; line-height: 19.6px; color: #000; padding-bottom: 8px; }
+    .scm-confirm-modal__desc .mp-modal-callout .callout-text { font-size: 14px; font-weight: 400; line-height: 19.6px; color: #1A1A1A; }
+    .scm-confirm-modal__desc strong.accent { color: #245EFF; font-weight: 700; }
+
+    /* stat 선택됨 상태 (action sync 시 추가됨) — legacy mp-stat--selected 재현 */
+    .scm-stat--selected .scm-stat__num { color: #245EFF; font-weight: 700; }
+
+    /* === filter-bar joined group + input (legacy mp-filter-group / mp-filter-input 페이지 스코프) === */
+    .scm-filter-group { display: inline-flex; align-items: center; }
+    .scm-filter-group > * { border-radius: 0 !important; }
+    .scm-filter-group > *:first-child { border-top-left-radius: 4px !important; border-bottom-left-radius: 4px !important; }
+    .scm-filter-group > *:last-child { border-top-right-radius: 4px !important; border-bottom-right-radius: 4px !important; }
+    .scm-filter-group > *:not(:last-child) { border-right-width: 0 !important; }
+    .scm-filter-input { display: inline-flex; align-items: center; gap: 8px; min-width: 120px; padding: 12px 16px; background: #fff; border: 1px solid #E0E0E0; border-radius: 4px; box-sizing: border-box; height: 44px; }
+    .scm-filter-input input { flex: 1; min-width: 64px; border: 0; outline: none; background: transparent; font-size: 15px; font-weight: 500; line-height: 20.4px; color: #000; font-family: inherit; padding: 0; }
+    .scm-filter-input input::placeholder { color: #8A8A8A; font-weight: 500; }
+    .scm-filter-input__chev { width: 16px; height: 16px; flex-shrink: 0; color: rgba(0,0,0,0.20); }
+    .scm-filter-input:focus-within { border-color: #000; }
+
+    /* ============================================================
+       OTB 도메인 — page-scope (디자인 시스템 토큰 기반)
+       ============================================================ */
+
+    /* OTB 도메인 전용 색상 (입력셀/변경/신규 — 의미색이라 별도 var) */
+    :root {
+      --otb-input-bg:        #FFFBEA;
+      --otb-input-bg-hover:  #FFF7CC;
+      --otb-changed-bg:      #FFF4CC;
+      --otb-changed-dot:     var(--ld-yellow-500);  /* #fa9200 */
+      --otb-grand-bg:        var(--ld-fg);          /* #000 */
+      --otb-grand-fg:        var(--ld-bg);          /* #fff */
+      --otb-grand-pos:       #6FE769;
+      --otb-grand-neg:       #FF8B8B;
+      --otb-grand-neu:       var(--ld-gray-400);    /* #cccccc */
+      --otb-approval-h:      56px;
     }
 
-    /* 프로모션 정보 — 제목 + 날짜 (legacy er-promo) */
-    .er-promo { display: flex; flex-direction: column; gap: 4px; }
-    .er-promo-title { font-size: 15px; font-weight: 500; line-height: 20.4px; color: #000; }
-    .er-promo-date  { font-size: 15px; font-weight: 400; line-height: 20.4px; color: #000; }
-
-    /* 헤더 옆 info icon */
-    .er-th-info { display: inline-flex; align-items: center; gap: 4px; }
-
-    /* 매장 입고예정 accent (>0) */
-    .er-num-accent { color: #245EFF; font-weight: 600; }
-    .mp-table tbody td.er-num-zero { background: #fff; color: #F31110; }
-
-    /* 이동 요청 수량 — INPUT 셀 light blue bg (legacy er-input-cell 재현) */
-    .mp-table tbody td.er-input-cell {
-      background: rgba(36,94,255,0.08);
-      padding: 12px 14px;
+    /* === 헤더 보조 요소 (버전 트리거 / 상태 태그 / diff 토글) === */
+    .otb-version-trigger {
+      display: inline-flex; align-items: center; gap: 6px;
+      height: 32px; padding: 0 12px;
+      background: var(--ld-bg);
+      border: 1px solid var(--ld-border);
+      border-radius: var(--ld-radius-xs, 4px);
+      font-family: inherit;
+      font-size: var(--ld-font-size-100, 13px);
+      font-weight: var(--ld-font-weight-medium, 500);
+      color: var(--ld-fg);
+      cursor: pointer;
     }
-    .mp-table tbody tr:hover td.er-input-cell {
-      background: rgba(36,94,255,0.12);
-    }
-    /* 이동 가능 재고 = 0 → 요청 불가 — INPUT 셀 bg 도 disabled 토큰 (#88888810) 적용
-       (input/max disabled 톤은 디자인 시스템 input-cell.css 가 처리) */
-    .mp-table tbody td.er-input-cell.is-disabled,
-    .mp-table tbody tr:hover td.er-input-cell.is-disabled {
-      background: rgba(138, 138, 138, 0.10);
-    }
-    /* 요청 수량 > 이동 가능 재고 → 에러 톤 — INPUT 셀 wrapper bg-critical-low (faded red) */
-    .mp-table tbody td.er-input-cell.is-error,
-    .mp-table tbody tr:hover td.er-input-cell.is-error {
-      background: rgba(243, 17, 16, 0.10);
+    .otb-version-trigger:hover { border-color: var(--ld-fg); background: var(--ld-bg-low); }
+    .otb-version-trigger .chev {
+      font-size: 9px;
+      color: var(--ld-fg-lower);
+      margin-left: 2px;
     }
 
-    /* Date cards (legacy er-date-row) */
-    .er-date-row {
-      display: flex; gap: 12px; padding: 16px 28px 16px; flex-wrap: wrap;
-      background: #fff;
-      margin: 0 -28px;
+    .otb-status-tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      height: 24px; padding: 0 10px;
+      border-radius: var(--ld-radius-xs, 4px);
+      font-size: var(--ld-font-size-75, 12px);
+      font-weight: var(--ld-font-weight-semibold, 600);
+      border: 1px solid var(--ld-fg);
+      background: var(--ld-bg);
+      color: var(--ld-fg);
     }
-    .er-date-card {
-      flex: 0 0 auto; padding: 20px 24px;
-      background: #fff; border: 1px solid #E0E0E0; border-radius: 4px;
-      display: flex; align-items: center; gap: 24px;
+    .otb-status-tag[data-state="draft"]    { background: var(--ld-bg);                color: var(--ld-fg);          border-color: var(--ld-fg); }
+    .otb-status-tag[data-state="review"]   { background: var(--ld-blue-bg-light);     color: var(--ld-blue-500);    border-color: var(--ld-blue-500); }
+    .otb-status-tag[data-state="approved"] { background: var(--ld-green-bg-light);    color: var(--ld-green-500);   border-color: var(--ld-green-500); }
+    .otb-status-tag[data-state="rejected"] { background: var(--ld-red-bg-light);      color: var(--ld-red-500);     border-color: var(--ld-red-500); }
+
+    /* diff toggle 활성화 — scm-button dark variant */
+    .scm-button.is-on {
+      background: var(--ld-fg); color: var(--ld-bg); border-color: var(--ld-fg);
     }
-    .er-date-cell { display: flex; flex-direction: column; }
-    .er-date-cell-label { font-size: 13px; font-weight: 400; line-height: 18.2px; color: #666; margin-bottom: 4px; }
-    .er-date-cell-value { font-size: 18px; font-weight: 500; line-height: 25.2px; color: #000; }
-    .er-date-cell-value--muted { color: #666; font-weight: 400; font-size: 16px; line-height: 22.4px; }
-    .er-date-divider { width: 1px; height: 56px; background: #EBEBEB; flex-shrink: 0; }
+    .scm-button.is-on:hover { background: var(--ld-gray-800); }
+
+    /* 페이지 헤더 보조 영역 */
+    .scm-page-head--list .otb-head-aux {
+      display: inline-flex; align-items: center; gap: 8px;
+      margin-left: 16px;
+    }
+
+    /* ============================================================
+       OTB 테이블 — mp-table 위에 도메인 modifier 만 추가
+       (테이블 기본 인터랙션은 SCMTable.init / SCM.tableSort 등이 담당)
+       ============================================================ */
+
+    /* 그룹 요약 — 합계 행(검은 배경) / 그룹 행(연회색) */
+    .mp-table tr.is-grand td {
+      background: var(--otb-grand-bg) !important;
+      color: var(--otb-grand-fg) !important;
+      font-weight: var(--ld-font-weight-bold, 700);
+      border-bottom: 1px solid var(--otb-grand-bg);
+    }
+    .mp-table tr.is-grand td .otb-yoy-pos { color: var(--otb-grand-pos); }
+    .mp-table tr.is-grand td .otb-yoy-neg { color: var(--otb-grand-neg); }
+    .mp-table tr.is-grand td .otb-yoy-neutral { color: var(--otb-grand-neu); }
+    .mp-table tr.is-group td {
+      background: var(--ld-bg-low);
+      font-weight: var(--ld-font-weight-semibold, 600);
+    }
+    .mp-table tr.is-grand:hover td { background: var(--otb-grand-bg) !important; color: var(--otb-grand-fg) !important; }
+    .mp-table tr.is-group:hover td { background: var(--ld-gray-100); color: var(--ld-fg); }
+
+    /* 입력 셀: cell-input 컴포넌트 사용 (cell-input.css). 도메인은 calc 셀 색상만 정의 */
+    .mp-table td.cell-calc { color: var(--ld-fg-low); }
+
+    /* diff 모드 — 변경된 셀 / 신규 행 */
+    .mp-table.is-diff td.is-changed {
+      background: var(--otb-changed-bg) !important;
+      position: relative;
+    }
+    .mp-table.is-diff td.cell-input.is-changed { background: var(--otb-changed-bg) !important; }
+    .mp-table.is-diff td.is-changed::after {
+      content: '●';
+      position: absolute;
+      top: 2px; right: 4px;
+      color: var(--otb-changed-dot);
+      font-size: 8px;
+      pointer-events: none;
+    }
+    .mp-table.is-diff tr.is-new td { background: var(--ld-green-bg-light) !important; }
+    .mp-table.is-diff tr.is-new td.cell-input { background: var(--otb-input-bg) !important; }
+    .mp-table.is-diff tr.is-new td:first-child::before {
+      content: '신규 ';
+      color: var(--ld-green-500);
+      font-weight: var(--ld-font-weight-bold, 700);
+      font-size: 10px;
+      letter-spacing: 0.5px;
+    }
+
+    /* YoY 색상 */
+    .otb-yoy-pos     { color: var(--ld-green-500); }
+    .otb-yoy-neg     { color: var(--ld-red-500); }
+    .otb-yoy-neutral { color: var(--ld-fg-lower); }
+    .otb-yoy-new     { color: var(--ld-green-500); font-weight: var(--ld-font-weight-bold, 700); }
+
+    /* 그룹 태그 (작은 inline pill) */
+    .otb-group-pill {
+      display: inline-flex; align-items: center;
+      padding: 1px 6px;
+      border: 1px solid var(--ld-fg-lower);
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: var(--ld-font-weight-semibold, 600);
+      color: var(--ld-fg-low);
+      background: var(--ld-bg);
+    }
+    .otb-group-pill[data-g="G1"] { border-color: #2A6ABF; color: #2A6ABF; }
+    .otb-group-pill[data-g="G2"] { border-color: #B07825; color: #B07825; }
+    .otb-group-pill[data-g="G3"] { border-color: var(--ld-gray-700); color: var(--ld-gray-700); }
+
+    /* legend chip (info-banner 안의 키 설명) */
+    .otb-legend-chip {
+      display: inline-flex; align-items: center;
+      padding: 2px 8px;
+      border: 1px solid var(--ld-border);
+      border-radius: 3px;
+      font-size: 11px;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+    .otb-legend-chip[data-kind="input"]   { background: var(--otb-input-bg); }
+    .otb-legend-chip[data-kind="changed"] { background: var(--otb-changed-bg); color: var(--otb-changed-dot); }
+    .otb-legend-chip[data-kind="new"]     { background: var(--ld-green-bg-light); color: var(--ld-green-500); }
+
+    /* === 섹션 간격 === */
+    .otb-section { margin-top: 48px; }
+    .otb-section:first-of-type { margin-top: 24px; }
+    .otb-section__head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px;
+      margin: 0 0 12px;
+    }
+    .otb-section__title {
+      margin: 0;
+      font-size: var(--ld-font-size-150, 15px);
+      font-weight: var(--ld-font-weight-semibold, 600);
+      color: var(--ld-fg);
+      line-height: 1.4;
+    }
+    .otb-section__tools {
+      display: inline-flex; align-items: center; gap: 8px;
+      flex-wrap: wrap;
+    }
+    .otb-section__tools .scm-stats-bar__v-divider {
+      width: 1px; height: 16px; background: var(--ld-border); margin: 0 4px;
+    }
+
+    /* === 결재선 (하단 fixed — OTB 도메인 전용 패턴) === */
+    main { padding-bottom: calc(var(--otb-approval-h) + 32px); }
+    .otb-approval-bar {
+      position: fixed;
+      bottom: 0; left: var(--scm-lnb-width); right: 0;
+      background: var(--ld-bg);
+      border-top: 1px solid var(--ld-fg);
+      padding: 12px 28px;
+      display: flex; align-items: center; gap: 16px;
+      z-index: 50;
+      transition: left 0.2s ease;
+      flex-wrap: wrap;
+    }
+    .otb-approval-line { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .otb-approval-label {
+      font-size: var(--ld-font-size-75, 12px);
+      color: var(--ld-fg-lower);
+      margin-right: 4px;
+      font-weight: var(--ld-font-weight-medium, 500);
+    }
+    .otb-approval-step {
+      display: inline-flex; align-items: center; gap: 4px;
+      height: 26px; padding: 0 10px;
+      border: 1px solid var(--ld-gray-400);
+      border-radius: var(--ld-radius-xs, 4px);
+      font-size: var(--ld-font-size-75, 12px);
+      color: var(--ld-fg);
+      background: var(--ld-bg);
+    }
+    .otb-approval-step .num {
+      font-weight: var(--ld-font-weight-bold, 700);
+      color: var(--ld-fg-lower);
+    }
+    .otb-approval-step--done    { background: var(--ld-green-bg-light); border-color: var(--ld-green-500); color: var(--ld-green-500); }
+    .otb-approval-step--current {
+      background: var(--otb-input-bg); border-color: var(--ld-fg); border-width: 2px;
+      font-weight: var(--ld-font-weight-bold, 700);
+      padding: 0 9px;
+    }
+    .otb-approval-step--pending {
+      color: var(--ld-fg-lower);
+      background: var(--ld-bg-low);
+      border-style: dashed;
+    }
+    .otb-approval-arrow { color: var(--ld-gray-400); font-size: var(--ld-font-size-75, 12px); }
+    .otb-approval-actions { margin-left: auto; display: flex; gap: 6px; }
+
+    /* ============================================================
+       OTB 모달 (SCM.confirmModal descHtml 안에서 사용하는 보조 클래스)
+       ============================================================ */
+    .otb-modal-line {
+      font-size: var(--ld-font-size-100, 13px);
+      color: var(--ld-fg);
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+    .otb-modal-section-meta {
+      font-size: var(--ld-font-size-75, 12px);
+      color: var(--ld-fg-lower);
+      margin-bottom: 8px;
+    }
+    .otb-modal-form-row { margin-top: 14px; }
+    .otb-modal-form-row:first-child { margin-top: 0; }
+    .otb-modal-form-label {
+      display: block;
+      font-size: var(--ld-font-size-75, 12px);
+      font-weight: var(--ld-font-weight-semibold, 600);
+      color: var(--ld-fg);
+      margin-bottom: 4px;
+    }
+    .otb-modal-textarea {
+      width: 100%;
+      min-height: 96px;
+      padding: 8px 10px;
+      border: 1px solid var(--ld-border);
+      border-radius: var(--ld-radius-xs, 4px);
+      font-family: inherit;
+      font-size: var(--ld-font-size-100, 13px);
+      color: var(--ld-fg);
+      background: var(--ld-bg);
+      resize: vertical;
+      box-sizing: border-box;
+    }
+    .otb-modal-textarea:focus {
+      outline: none;
+      border-color: var(--ld-fg);
+    }
+    .otb-modal-hint {
+      font-size: 11px;
+      color: var(--ld-fg-lower);
+      margin-top: 10px;
+    }
+    .otb-check { color: var(--ld-green-500); font-weight: var(--ld-font-weight-bold, 700); }
+    .otb-muted { color: var(--ld-fg-lower); }
+
+    /* 버전 선택 리스트 (모달 안) */
+    .otb-version-list {
+      border: 1px solid var(--ld-border);
+      border-radius: var(--ld-radius-xs, 4px);
+      overflow: hidden;
+    }
+    .otb-version-item {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--ld-border-low);
+      cursor: pointer;
+    }
+    .otb-version-item:last-child { border-bottom: none; }
+    .otb-version-item:hover { background: var(--ld-bg-low); }
+    .otb-version-item.is-current { background: var(--otb-input-bg); }
+    .otb-version-item--new { color: var(--ld-fg-lower); }
+    .otb-version-item__title {
+      font-size: var(--ld-font-size-100, 13px);
+      font-weight: var(--ld-font-weight-semibold, 600);
+      color: inherit;
+    }
+    .otb-version-item__meta {
+      font-size: 11px;
+      color: var(--ld-fg-lower);
+      margin-top: 2px;
+    }
+
+    /* 코멘트 리스트 */
+    .otb-comment-list {
+      border: 1px solid var(--ld-border);
+      border-radius: var(--ld-radius-xs, 4px);
+      padding: 10px;
+      max-height: 240px; overflow-y: auto;
+      font-size: var(--ld-font-size-75, 12px);
+      background: var(--ld-bg-low);
+    }
+    .otb-comment-item { padding: 8px 0; border-bottom: 1px dashed var(--ld-border); }
+    .otb-comment-item:last-child { border-bottom: none; }
+    .otb-comment-meta { color: var(--ld-fg-lower); font-size: 10px; }
+    .otb-comment-text { margin-top: 2px; color: var(--ld-fg); }
+
+    /* 결재선 요약 (모달 안) */
+    .otb-approval-summary {
+      border: 1px solid var(--ld-border);
+      border-radius: var(--ld-radius-xs, 4px);
+      padding: 10px 12px;
+      margin-bottom: 14px;
+      font-size: var(--ld-font-size-75, 12px);
+      background: var(--ld-bg-low);
+    }
+    .otb-approval-summary__head {
+      font-size: 11px;
+      color: var(--ld-fg-lower);
+      margin-bottom: 6px;
+    }
+    .otb-approval-summary__line { line-height: 1.7; color: var(--ld-fg); }
+    .otb-approval-summary__line strong { color: var(--ld-fg); }
+    .otb-approval-summary__line strong.accent { color: var(--ld-blue-500); }
   </style>
 
   <script>
@@ -167,6 +478,7 @@
   <symbol id="ic-menu" viewBox="0 0 24 24"><path d="M4 12H20.0714M4 6H20.0714M4 18H20.0714" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" stroke-linejoin="round" fill="none"/></symbol>
   <symbol id="ic-nav-dashboard" viewBox="0 0 24 24"><rect x="3.6" y="3.6" width="7.2" height="7.2" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><rect x="13.2" y="3.6" width="7.2" height="4.8" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><rect x="3.6" y="13.2" width="7.2" height="7.2" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><rect x="13.2" y="10.8" width="7.2" height="9.6" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
   <symbol id="ic-nav-store" viewBox="0 0 24 24"><path d="M4.5 13.0864V19.5C4.5 19.6989 4.57902 19.8897 4.71967 20.0303C4.86032 20.171 5.05109 20.25 5.25 20.25H18.75C18.9489 20.25 19.1397 20.171 19.2803 20.0303C19.421 19.8897 19.5 19.6989 19.5 19.5V13.0865M5.06573 3.75H18.9343C19.0973 3.75 19.2558 3.80309 19.3859 3.90124C19.516 3.99939 19.6106 4.13725 19.6554 4.29396L21 9H3L4.34458 4.29396C4.38936 4.13725 4.48396 3.99939 4.61408 3.90124C4.7442 3.80309 4.90274 3.75 5.06573 3.75ZM9 9V10.5C9 11.2956 8.68393 12.0587 8.12132 12.6213C7.55871 13.1839 6.79565 13.5 6 13.5C5.20435 13.5 4.44129 13.1839 3.87868 12.6213C3.31607 12.0587 3 11.2956 3 10.5V9M15 9V10.5C15 11.2956 14.6839 12.0587 14.1213 12.6213C13.5587 13.1839 12.7956 13.5 12 13.5C11.2044 13.5 10.4413 13.1839 9.87868 12.6213C9.31607 12.0587 9 11.2956 9 10.5V9M21 9V10.5C21 11.2956 20.6839 12.0587 20.1213 12.6213C19.5587 13.1839 18.7956 13.5 18 13.5C17.2044 13.5 16.4413 13.1839 15.8787 12.6213C15.3161 12.0587 15 11.2956 15 10.5V9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="ic-nav-hanger" viewBox="0 0 24 24"><path d="M9 6.5V7.1C9 8.75685 10.3431 10.1 12 10.1C13.6569 10.1 15 8.75685 15 7.1V6.5M9 6.5H8.51537C8.44034 6.5 8.36718 6.52344 8.30613 6.56706L4.27987 9.44295C4.22758 9.4803 4.18624 9.53097 4.16014 9.58969L1.94818 14.5666C1.86666 14.75 1.95087 14.9647 2.13534 15.0437L6 16.7M9 6.5H15M15 6.5H15.4846C15.5597 6.5 15.6328 6.52344 15.6939 6.56706L19.7201 9.44295C19.7724 9.4803 19.8138 9.53097 19.8399 9.58969L22.0518 14.5666C22.1333 14.75 22.0491 14.9647 21.8647 15.0437L18 16.7M18 12.8V16.7M18 16.7V21.74C18 21.9388 17.8388 22.1 17.64 22.1H6.36C6.16118 22.1 6 21.9388 6 21.74V16.7M6 16.7V12.8M10.4 3.18C10.4 2.25216 11.1522 1.5 12.08 1.5C13.0079 1.5 13.76 2.25216 13.76 3.18C13.76 4.10784 13.0079 4.86 12.08 4.86V6.5" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
   <symbol id="ic-nav-stock" viewBox="0 0 24 24"><path d="M20.4 7.4769L17.2661 3.71622C17.2047 3.64256 17.1138 3.59998 17.0179 3.59998H12M20.4 7.4769V20.0769C20.4 20.2553 20.2553 20.4 20.0769 20.4H3.92305C3.74462 20.4 3.59998 20.2553 3.59998 20.0769V7.4769M20.4 7.4769H12M3.59998 7.4769L6.73387 3.71622C6.79525 3.64256 6.88618 3.59998 6.98207 3.59998H12M3.59998 7.4769H12M12 3.59998V7.4769" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="none"/></symbol>
   <symbol id="ic-funnel" viewBox="0 0 20 20"><path d="M6.14286 10H13.8571M4 6L16 6M8.28571 14L11.7143 14" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
   <symbol id="ic-filter" viewBox="0 0 20 20"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="round"><path d="M10.625 13.4375L3.125 13.4375"/><path d="M16.875 13.4375L13.125 13.4375"/><path d="M5.625 6.56257L3.125 6.5625"/><path d="M16.875 6.5625L8.125 6.56257"/><path d="M8.125 4.6875V8.4375"/><path d="M13.125 15.3125V11.5625"/></g></symbol>
@@ -174,6 +486,7 @@
   <symbol id="ic-chevronDown16" viewBox="0 0 16 16"><path d="M3 6L8 11L13 6" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="ic-refresh" viewBox="0 0 20 20"><path d="M16.5 4V8H12.5M3.5 16V12H7.5M5.07 8C5.5 6.46 6.4 5.1 7.65 4.16C8.91 3.21 10.45 2.7 12.04 2.7C13.62 2.7 15.16 3.21 16.42 4.16C17.67 5.1 18.58 6.46 19 8M3 12C3.42 13.54 4.33 14.9 5.58 15.84C6.84 16.79 8.38 17.3 9.96 17.3C11.55 17.3 13.09 16.79 14.35 15.84C15.6 14.9 16.5 13.54 16.93 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
   <symbol id="ic-download" viewBox="0 0 20 20"><path d="M3 16.5H17M10 13.5V3.5M10 13.5L14 9.5M10 13.5L6 9.5" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="ic-upload" viewBox="0 0 20 20"><path d="M3 16.5H17M10 3.5V13.5M10 3.5L14 7.5M10 3.5L6 7.5" stroke="currentColor" fill="none"/></symbol>
   <symbol id="ic-chevronLeft" viewBox="0 0 20 20"><path d="M12.5 16L6.71213 10.212C6.59497 10.0948 6.59498 9.90486 6.71213 9.7877L12.5 4" stroke="currentColor" fill="none"/></symbol>
   <symbol id="ic-chevronRight" viewBox="0 0 20 20"><path d="M7.5 16L13.2879 10.2121C13.405 10.095 13.405 9.90503 13.2879 9.78787L7.5 4" stroke="currentColor" fill="none"/></symbol>
   <symbol id="ic-arrowUpDown" viewBox="0 0 16 16"><path d="M5.23 2.76l0-.65l-1.3 0l0 .65l.65 0l.65 0ZM3.93 13.24c0 .36.29.65.65.65c.36 0 .65-.29.65-.65l-.65 0l-.65 0ZM4.58 2.76l-.65 0l0 10.49l.65 0l.65 0l0-10.49l-.65 0Z" fill="currentColor"/><path d="M10.77 13.24l0 .65l1.3 0l0-.65l-.65 0l-.65 0ZM12.07 2.76c0-.36-.29-.65-.65-.65c-.36 0-.65.29-.65.65l.65 0l.65 0ZM11.42 13.24l.65 0l0-10.49l-.65 0l-.65 0l0 10.49l.65 0Z" fill="currentColor"/><path d="M2.14 10.81L4.57 13.24L7.01 10.81" stroke="currentColor" stroke-width="1.3" stroke-linecap="square" stroke-linejoin="round" fill="none"/><path d="M13.86 5.19L11.43 2.76L9 5.19" stroke="currentColor" stroke-width="1.3" stroke-linecap="square" stroke-linejoin="round" fill="none"/></symbol>
@@ -186,7 +499,7 @@
   <symbol id="ic-pin-right" viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="14" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><line x1="13" y1="3" x2="13" y2="17" stroke="currentColor" stroke-width="1.4"/></symbol>
   <symbol id="ic-close" viewBox="0 0 20 20"><path d="M5 5L15 15M15 5L5 15" stroke="currentColor" fill="none"/></symbol>
   <symbol id="ic-alertTriangle" viewBox="0 0 20 20"><path d="M10 14.7499V12.8832M10 11.9499V7.28322M2.30694 16.4999H17.6931C17.9272 16.4999 18.0711 16.2437 17.9493 16.0438L10.2562 3.42025C10.1393 3.22841 9.86077 3.22841 9.74386 3.42025L2.05076 16.0438C1.92893 16.2437 2.07283 16.4999 2.30694 16.4999Z" stroke="currentColor" fill="none"/></symbol>
-  <symbol id="ic-alertCircle" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="currentColor"/><path d="M10 6V11" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="14" r="0.9" fill="#fff"/></symbol>
+  <symbol id="ic-alertCircle" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7" stroke="currentColor" fill="none"/><path d="M10 6V11M10 14V14.5" stroke="currentColor" stroke-linecap="round"/></symbol>
 </defs>
 </svg>
 
@@ -264,9 +577,9 @@
     <div class="scm-lnb-l2-list">
       <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">무탠 재고 보충 현황</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
       <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">무탠 재고 보충 요청</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
-      <a class="scm-lnb-l2" href="index.html" data-key="index"><span class="scm-lnb-l2-text">무탠 전개상품 관리</span></a>
-      <a class="scm-lnb-l2" href="editshop-restock-status.html" data-key="editshop-status"><span class="scm-lnb-l2-text">편집샵 재고 보충 현황</span></a>
-      <a class="scm-lnb-l2" href="editshop-restock-request.html" data-key="editshop-request"><span class="scm-lnb-l2-text">편집샵 재고 보충 요청</span></a>
+      <a class="scm-lnb-l2" href="index.html" data-key="index"><span class="scm-lnb-l2-text">무탠 전개상품 관리</span><span class="scm-lnb-tag scm-lnb-tag--new">NEW</span></a>
+      <a class="scm-lnb-l2" href="editshop-restock-status.html" data-key="editshop-status"><span class="scm-lnb-l2-text">편집샵 재고 보충 현황</span><span class="scm-lnb-tag scm-lnb-tag--new">NEW</span></a>
+      <a class="scm-lnb-l2" href="editshop-restock-request.html" data-key="editshop-request"><span class="scm-lnb-l2-text">편집샵 재고 보충 요청</span><span class="scm-lnb-tag scm-lnb-tag--new">NEW</span></a>
       <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">편집샵 전개상품 관리</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
     </div>
   </div>
@@ -287,7 +600,7 @@
       </span>
     </button>
     <div class="scm-lnb-l2-list">
-      <a class="scm-lnb-l2" href="sku-management.html" data-key="sku-management"><span class="scm-lnb-l2-text">SKU 관리</span></a>
+      <a class="scm-lnb-l2" href="sku-management.html" data-key="sku-management"><span class="scm-lnb-l2-text">SKU 관리</span><span class="scm-lnb-tag scm-lnb-tag--new">NEW</span></a>
       <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">위탁 상품 미매핑 관리</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
     </div>
   </div>
@@ -314,6 +627,7 @@
       <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">위탁 상품 입고 현황</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
       <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">PB 상품 입고 검토</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
       <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">PB 상품 ASN 등록/확정</span><span class="scm-lnb-tag scm-lnb-tag--wip">작업중</span></a>
+      <a class="scm-lnb-l2" href="otb-budget.html" data-key="otb-budget"><span class="scm-lnb-l2-text">OTB 예산 관리</span><span class="scm-lnb-tag scm-lnb-tag--new">NEW</span></a>
     </div>
   </div>
 
@@ -355,7 +669,6 @@
       </span>
     </button>
     <div class="scm-lnb-l2-list">
-      <a class="scm-lnb-l2" href="otb-budget.html" data-key="otb-budget"><span class="scm-lnb-l2-text">OTB 예산 관리</span></a>
       <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">수기 재고 조정</span></a>
       <a class="scm-lnb-l2" href="#"><span class="scm-lnb-l2-text">운영 정책 설정</span></a>
     </div>
@@ -387,308 +700,246 @@
 </nav>
 
   <main>
-    <!-- Page head (--list) -->
-    <div class="scm-page-head scm-page-head--list">
+
+    <!-- ============== Page head (--list) ============== -->
+    <div class="scm-page-head scm-page-head--list" id="page-head">
       <h1 class="scm-page-head__title">OTB 예산 관리</h1>
+
+      <!-- 헤드 보조 (버전 / 상태 / diff 토글) -->
+      <span class="otb-head-aux">
+        <button class="otb-version-trigger" type="button" id="otb-version-btn" aria-haspopup="dialog">
+          <span id="otb-version-label">26Y 2차 상신</span>
+          <span class="chev" aria-hidden="true">▼</span>
+        </button>
+        <span class="otb-status-tag" id="otb-status-tag" data-state="draft">작성중</span>
+        <button class="scm-button" type="button" id="otb-diff-toggle" aria-pressed="false">1차 대비 변경분 표시</button>
+      </span>
+
       <div class="scm-page-head__actions">
-        <button class="scm-button" id="open-bulk-upload" type="button">일괄 업로드</button>
+        <button class="scm-button" type="button" id="otb-comments-btn">코멘트 (<span id="otb-comments-count">3</span>)</button>
+        <button class="scm-button" type="button" id="otb-save-btn">임시저장</button>
+        <button class="scm-button scm-button--primary" type="button" id="otb-submit-btn">상신하기</button>
       </div>
     </div>
 
-    <!-- Filter bar -->
+    <!-- ============== Filter bar ============== -->
     <div class="scm-filter-bar" id="filter-bar">
       <button class="scm-filter-chip" type="button" id="filter-drawer-open">
-        <svg viewBox="0 0 20 20"><use href="#ic-filter"/></svg>
+        <svg viewBox="0 0 20 20" aria-hidden="true"><use href="#ic-filter"/></svg>
         <span>전체 필터</span>
-        <span class="scm-filter-chip__count">0</span>
+        <span class="scm-filter-chip__count" id="otb-filter-count">0</span>
       </button>
+
       <div class="scm-filter-overflow">
         <div class="scm-filter-overflow__track">
-          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="purchaseType"><span class="scm-filter-select__label">매입형태</span><span class="scm-filter-select__value">매입형태</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
-          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="platform"><span class="scm-filter-select__label">플랫폼</span><span class="scm-filter-select__value">플랫폼</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
-          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="brand"><span class="scm-filter-select__label">브랜드</span><span class="scm-filter-select__value">브랜드</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
-          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="store"><span class="scm-filter-select__label">스토어</span><span class="scm-filter-select__value">스토어</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
-          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="sku"><span class="scm-filter-select__label">SKU번호</span><span class="scm-filter-select__value">SKU번호</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
-          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="uid"><span class="scm-filter-select__label">UID</span><span class="scm-filter-select__value">UID</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
-          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="barcode"><span class="scm-filter-select__label">바코드</span><span class="scm-filter-select__value">바코드</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
-          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="styleNumber"><span class="scm-filter-select__label">스타일넘버</span><span class="scm-filter-select__value">스타일넘버</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
-          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="firstInbound"><span class="scm-filter-select__label">초도 입고 여부</span><span class="scm-filter-select__value">초도 입고 여부</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
-          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="restockKind"><span class="scm-filter-select__label">보충 대상 구분</span><span class="scm-filter-select__value">보충 대상 구분</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="platform">
+            <span class="scm-filter-select__label">플랫폼</span>
+            <span class="scm-filter-select__value">플랫폼</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="hq">
+            <span class="scm-filter-select__label">본부</span>
+            <span class="scm-filter-select__value">본부</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="team">
+            <span class="scm-filter-select__label">실</span>
+            <span class="scm-filter-select__value">실</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="group">
+            <span class="scm-filter-select__label">그룹</span>
+            <span class="scm-filter-select__value">그룹</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+          <button class="scm-filter-select is-disabled" type="button" disabled data-state="filled" data-mp-filter="purchaseType" aria-disabled="true">
+            <span class="scm-filter-select__label">매입형태</span>
+            <span class="scm-filter-select__value">1P (직매입)</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="brand">
+            <span class="scm-filter-select__label">브랜드</span>
+            <span class="scm-filter-select__value">브랜드</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
         </div>
         <div class="scm-filter-overflow__fade scm-filter-overflow__fade--left" style="opacity:0;"></div>
         <div class="scm-filter-overflow__fade scm-filter-overflow__fade--right" style="opacity:0;"></div>
       </div>
+
       <div class="scm-filter-actions">
-        <button class="scm-search-btn" type="button">검색</button>
-        <button class="scm-filter-reset-btn" type="button">
+        <button class="scm-search-btn" type="button" id="otb-search-btn">검색</button>
+        <button class="scm-filter-reset-btn" type="button" id="otb-reset-btn">
           <svg viewBox="0 0 20 20"><use href="#ic-refresh"/></svg>
           <span>초기화</span>
         </button>
       </div>
     </div>
 
-    <!-- Date info cards -->
-    <div class="er-date-row">
-      <div class="er-date-card">
-        <div class="er-date-cell">
-          <div class="er-date-cell-label">스토어 입고일</div>
-          <div class="er-date-cell-value">25년 11월 27일(월)</div>
-        </div>
-        <div class="er-date-divider"></div>
-        <div class="er-date-cell">
-          <div class="er-date-cell-label">확정 마감일시</div>
-          <div class="er-date-cell-value er-date-cell-value--muted">11월 26일(목) 18:00</div>
-        </div>
-      </div>
-      <div class="er-date-card">
-        <div class="er-date-cell">
-          <div class="er-date-cell-label">다음 스토어 입고일</div>
-          <div class="er-date-cell-value">25년 12월 4일(목)</div>
+    <!-- ============== Info banner ============== -->
+    <div class="scm-info-banner scm-info-banner--full" id="otb-info-banner">
+      <svg class="scm-info-banner__icon" viewBox="0 0 20 20" aria-hidden="true"><use href="#ic-alertCircle"/></svg>
+      <div class="scm-info-banner__body">
+        <div class="scm-info-banner__title">OTB 입력 가이드</div>
+        <div class="scm-info-banner__text">
+          하단 브랜드별 셀(<span class="otb-legend-chip" data-kind="input">노란셀</span>)에 직접 입력하면 그룹 요약이 실시간으로 합산됩니다.
+          <span class="otb-legend-chip" data-kind="changed">●</span>는 1차 대비 변경된 셀,
+          <span class="otb-legend-chip" data-kind="new">신규</span>는 2차에 추가된 브랜드입니다.
+          모든 금액 단위는 백만원(VAT 제외)이며, 임시저장은 자동 적용됩니다.
         </div>
       </div>
+      <button class="scm-info-banner__toggle" type="button" id="otb-info-toggle" aria-label="안내 접기/펼치기">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chevronDown16"/></svg>
+      </button>
     </div>
 
-    <!-- Stats bar -->
+    <!-- ============== Stats bar ============== -->
     <div class="scm-stats-bar scm-stats-bar--sticky">
       <div class="scm-stats-bar__left">
         <div class="scm-stats-bar__counts-wrap">
           <div class="scm-stats-bar__counts">
-            <span class="scm-stat scm-stat--all"><span class="scm-stat__label">전체</span> <span class="scm-stat__num">500</span></span>
-            <span class="scm-stat-divider"></span>
-            <span class="scm-stat"><span class="scm-stat__label">대상</span> <span class="scm-stat__num" style="color:#1EA514;">320</span></span>
-            <span class="scm-stat-divider"></span>
-            <span class="scm-stat"><span class="scm-stat__label">비대상</span> <span class="scm-stat__num" style="color:#666;">180</span></span>
+            <span class="scm-stat scm-stat--all">
+              <span class="scm-stat__label">브랜드</span>
+              <span class="scm-stat__num" id="otb-stat-total">13</span>
+            </span>
+            <span class="scm-stat">
+              <span class="scm-stat__label">신규</span>
+              <span class="scm-stat__num" id="otb-stat-new">2</span>
+            </span>
+            <span class="scm-stat">
+              <span class="scm-stat__label">변경</span>
+              <span class="scm-stat__num" id="otb-stat-changed">0</span>
+            </span>
           </div>
-        </div>
-        <div class="scm-stats-bar__mini-actions">
-          <span class="scm-mini-wrap" id="copy-wrap">
-            <button class="scm-mini-action" type="button" aria-haspopup="listbox" aria-expanded="false">
-              코드 복사
-              <svg viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
-            </button>
-            <ul class="scm-mini-popup" role="listbox">
-              <li data-key="sku">SKU번호 복사 (500)</li>
-              <li data-key="barcode">바코드 복사 (500)</li>
-            </ul>
-          </span>
-          <button class="scm-mini-action scm-mini-action--primary" type="button" id="er-bulk-request-btn" disabled>보충요청</button>
-          <button class="scm-mini-action" type="button" id="er-deselect-btn" disabled>선택 해제</button>
         </div>
       </div>
       <div class="scm-stats-bar__right">
-        <span class="scm-stats-bar__ts">25.10.24 12:00 업데이트</span>
-        <button class="scm-download-btn" type="button">
-          <svg viewBox="0 0 20 20"><use href="#ic-download"/></svg>
-          <span>전체 엑셀 다운로드</span>
-        </button>
-        <span class="scm-stats-bar__v-divider"></span>
-        <span class="scm-pager">
-          <strong class="scm-pager__current">1</strong>
-          <span class="scm-pager__total">/ <span>5</span> 페이지</span>
-          <button class="scm-pager-btn" type="button" aria-label="이전 페이지" disabled><svg viewBox="0 0 20 20"><use href="#ic-chevronLeft"/></svg></button>
-          <button class="scm-pager-btn" type="button" aria-label="다음 페이지"><svg viewBox="0 0 20 20"><use href="#ic-chevronRight"/></svg></button>
-        </span>
-        <span class="scm-pgsize-wrap" id="pgsize">
-          <button class="scm-pgsize" type="button" aria-haspopup="listbox" aria-expanded="false">
-            <span class="scm-pgsize__label">100개씩</span>
-            <svg class="scm-pgsize__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
-          </button>
-          <ul class="scm-pgsize-popup" role="listbox"></ul>
-        </span>
+        <span style="font-size:13px; color:#666;">단위: 백만원 (VAT 제외)</span>
       </div>
     </div>
 
-    <!-- Data table — legacy 22 컬럼 + spacer -->
-    <div class="mp-table-host">
-      <div class="mp-thead-sticky"><div class="mp-thead-scroll"></div></div>
-      <div class="mp-table-scroll">
-        <table class="mp-table is-cell-selectable" id="mp-table">
-          <thead>
-            <tr>
-              <th class="cb-col col-frozen-1" title="전체 선택"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" id="mp-cb-all" aria-label="전체 선택"></span></th>
-              <th class="col-auto col-frozen-2">보충 대상 구분 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
-              <th class="col-auto col-frozen-3">스토어명 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
-              <th class="col-auto">브랜드 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
-              <th class="col-auto">SKU번호</th>
-              <th class="col-medium"><div class="cell-clamp">카테고리</div></th>
-              <th class="col-auto">UID <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
-              <th class="col-medium">옵션</th>
-              <th class="col-auto">바코드</th>
-              <th class="col-large" data-pad="full"><div class="cell-clamp">SKU명</div></th>
-              <th class="col-auto cell-numeric">직전 7일 판매량</th>
-              <th class="col-auto cell-numeric">직전 14일 판매량</th>
-              <th class="col-auto"><span class="er-th-info">판매예측치 <svg viewBox="0 0 20 20" style="width:16px;height:16px;color:#666;"><circle cx="10" cy="10" r="8" fill="currentColor"/><path d="M10 6V11" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="14" r="0.9" fill="#fff"/></svg></span></th>
-              <th class="col-auto cell-numeric">매장재고</th>
-              <th class="col-auto cell-numeric">매장 입고예정수량</th>
-              <th class="col-auto"><span class="er-th-info">기요청 수량 <svg viewBox="0 0 20 20" style="width:16px;height:16px;color:#666;"><circle cx="10" cy="10" r="8" fill="currentColor"/><path d="M10 6V11" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="14" r="0.9" fill="#fff"/></svg></span></th>
-              <th class="col-auto">이동 요청 수량</th>
-              <th class="col-auto cell-numeric">이동 가능 재고</th>
-              <th class="col-auto">초도 입고 여부</th>
-              <th class="col-auto"><div class="cell-clamp">프로모션 정보</div></th>
-              <th class="col-auto">스타일넘버</th>
-              <th class="col-auto">매입형태</th>
-              <th class="col-spacer" aria-hidden="true"></th>
-            </tr>
-          </thead>
-          <tbody id="data-tbody"></tbody>
-        </table>
+    <!-- ============== 그룹별 요약 ============== -->
+    <section class="otb-section">
+      <div class="otb-section__head">
+        <h2 class="otb-section__title">그룹별 요약</h2>
       </div>
-    </div>
-
-    <!-- 코드 확인 popover (UID·SKU번호·바코드·스타일넘버) -->
-    <div class="scm-code-popover-backdrop"></div>
-    <div class="scm-code-popover" role="dialog" aria-labelledby="cp-title" id="code-popover">
-      <h4 id="cp-title">코드 확인</h4>
-      <ul></ul>
-      <div class="scm-code-popover__actions">
-        <button type="button" class="copy">복사</button>
-        <button type="button" class="primary close">닫기</button>
-      </div>
-    </div>
-
-    <!-- 스토어 전개 여부 popover -->
-    <div class="scm-deploy-popover" role="dialog" aria-label="전개 여부 변경" id="deploy-popover">
-      <ul>
-        <li data-deploy-opt="deployed" data-current="true">전개중</li>
-        <li data-deploy-opt="undeployed">미전개</li>
-      </ul>
-    </div>
-
-    <!-- 단건/일괄 처리 confirm modal -->
-    <div class="scm-confirm-modal-backdrop" id="confirm-backdrop"></div>
-    <div class="scm-confirm-modal" id="confirm-modal" role="dialog" aria-labelledby="cm-title">
-      <h3 class="scm-confirm-modal__title" id="cm-title">처리 확인</h3>
-      <p class="scm-confirm-modal__desc">
-        선택하신 상품을 처리합니다.<br/>
-        계속 진행하시겠습니까?
-      </p>
-      <div class="scm-confirm-modal__actions">
-        <button type="button" class="scm-confirm-modal__cancel">취소</button>
-        <button type="button" class="scm-confirm-modal__confirm primary">변경</button>
-      </div>
-    </div>
-
-    <!-- 일괄 업로드 모달 -->
-    <div class="scm-bu-backdrop" id="bu-backdrop"></div>
-    <div class="scm-bu-modal" id="bu-modal" role="dialog" aria-labelledby="bu-title">
-      <header class="scm-bu-header">
-        <h2 id="bu-title">일괄 업로드</h2>
-        <button class="scm-bu-close" type="button" aria-label="닫기">
-          <svg viewBox="0 0 20 20"><use href="#ic-close"/></svg>
-        </button>
-      </header>
-      <div class="scm-bu-body">
-        <div class="scm-bu-warning">
-          <div class="scm-bu-warning__head">
-            <svg class="scm-bu-warning__icon" viewBox="0 0 20 20" aria-hidden="true"><use href="#ic-alertTriangle"/></svg>
-            <div class="scm-bu-warning__head-body">
-              <div class="scm-bu-warning__title">일괄 업로드 시 유의사항</div>
-              <ul class="scm-bu-warning__list">
-                <li>업로드 후 적용에 약 5–30분이 소요될 수 있습니다.</li>
-                <li>같은 SKU 가 여러 행에 있을 경우 마지막 행의 값이 적용됩니다.</li>
-                <li class="is-critical">템플릿을 변경하지 마세요. 컬럼 순서가 바뀌면 처리가 실패할 수 있습니다.</li>
-              </ul>
-            </div>
-            <button class="scm-bu-warning__toggle" type="button" aria-label="접기">
-              <svg viewBox="0 0 16 16"><use href="#ic-chevronDown16"/></svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- 양식 다운로드 (단일 type — type-section 없이 양식 다운로드 버튼만, hint 는 버튼 오른쪽 16px 띄움) -->
-        <div class="scm-bu-type-section">
-          <div class="scm-bu-type-row">
-            <span class="scm-bu-type-label">템플릿</span>
-            <div class="scm-bu-type-controls">
-              <div class="scm-bu-type-controls__row" style="gap:16px;">
-                <button class="scm-bu-template-btn" type="button" id="bu-template-dl">
-                  <svg viewBox="0 0 16 16"><path d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  양식 다운로드
-                </button>
-                <div class="scm-bu-type-hint" style="margin:0;">※ 양식을 다운로드 받아 작성 후 업로드해 주세요.</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 요청 이력 — 단일 type 이라 '요청 유형' 컬럼 제외 -->
-        <section class="scm-bu-history-section">
-          <h3 class="scm-bu-history-title">요청 이력</h3>
-          <table class="mp-table scm-bu-history-table" data-scm-no-sticky data-scm-frozen="0">
-            <colgroup>
-              <col style="width:60px"/>
-              <col style="width:112px"/>
-              <col style="width:280px"/>
-              <col style="width:400px"/>
-              <col style="width:160px"/>
-              <col style="width:170px"/>
-            </colgroup>
+      <div class="mp-table-host">
+        <div class="mp-thead-sticky"><div class="mp-thead-scroll"></div></div>
+        <div class="mp-table-scroll">
+          <table class="mp-table" id="otb-summary-table">
             <thead>
               <tr>
-                <th>No</th>
-                <th>상태</th>
-                <th>파일명</th>
-                <th>처리결과/실패건 다운로드</th>
-                <th>요청일시</th>
-                <th>요청자</th>
+                <th class="col-large" style="text-align:left;">그룹</th>
+                <th class="col-medium cell-numeric">기초재고</th>
+                <th class="col-medium cell-numeric">입고재고(OTB)</th>
+                <th class="col-auto cell-numeric">YoY</th>
+                <th class="col-medium cell-numeric">GMV</th>
+                <th class="col-auto cell-numeric">YoY</th>
+                <th class="col-medium cell-numeric">출고원가</th>
+                <th class="col-auto cell-numeric">YoY</th>
+                <th class="col-medium cell-numeric">반품예정</th>
+                <th class="col-auto cell-numeric">COGS%</th>
+                <th class="col-auto cell-numeric">공급률</th>
+                <th class="col-medium cell-numeric">기말재고</th>
+                <th class="col-auto cell-numeric">소진율</th>
+                <th class="col-auto cell-numeric">재고일수</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <td>1</td>
-                <td><span class="scm-bu-status-pill" data-state="processing">처리중</span></td>
-                <td>20260221_재고보충요청.xlsx</td>
-                <td class="scm-bu-result-cell">-</td>
-                <td>2026.02.21. 11:00</td>
-                <td>guji@musinsa.com</td>
-              </tr>
-              <tr>
-                <td>2</td>
-                <td><span class="scm-bu-status-pill" data-state="done">처리완료</span></td>
-                <td>20260220_재고보충요청_001.xlsx</td>
-                <td class="scm-bu-result-cell">
-                  <span class="scm-bu-result">
-                    <span class="scm-bu-result-group scm-bu-result-group--success">성공 <em>1,200</em></span>
-                    <span class="scm-bu-result-divider" aria-hidden="true"></span>
-                    <span class="scm-bu-result-group scm-bu-result-group--fail">실패 <em>0</em></span>
-                  </span>
-                </td>
-                <td>2026.02.20. 10:11</td>
-                <td>jun@musinsa.com</td>
-              </tr>
-              <tr>
-                <td>3</td>
-                <td><span class="scm-bu-status-pill" data-state="partial">부분완료</span></td>
-                <td>20260219_재고보충요청.xlsx</td>
-                <td class="scm-bu-result-cell">
-                  <span class="scm-bu-result">
-                    <span class="scm-bu-result-group scm-bu-result-group--success">성공 <em>980</em></span>
-                    <button class="scm-bu-result-dl" type="button">다운로드</button>
-                    <span class="scm-bu-result-divider" aria-hidden="true"></span>
-                    <span class="scm-bu-result-group scm-bu-result-group--fail">실패 <em>20</em></span>
-                    <button class="scm-bu-result-dl" type="button">다운로드</button>
-                  </span>
-                </td>
-                <td>2026.02.19. 10:11</td>
-                <td>jun@musinsa.com</td>
-              </tr>
-            </tbody>
+            <tbody id="otb-summary-body"></tbody>
           </table>
-        </section>
+        </div>
       </div>
-      <footer class="scm-bu-footer">
-        <button class="scm-button" type="button" id="bu-cancel">닫기</button>
-        <button class="scm-button scm-button--primary" type="button" id="bu-submit">
-          <svg viewBox="0 0 16 16" fill="none" style="width:16px;height:16px;vertical-align:-3px;"><path d="M8 14V3M8 3L4 7M8 3L12 7M2 2H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          엑셀 업로드(요청시작)
-        </button>
-      </footer>
-    </div>
+    </section>
 
+    <!-- ============== 브랜드별 상세 ============== -->
+    <section class="otb-section">
+      <div class="otb-section__head">
+        <h2 class="otb-section__title">브랜드별 상세 (1P)</h2>
+        <div class="otb-section__tools">
+          <!-- 엑셀 업로드 / 다운로드 (둘 다 download-btn 스타일) -->
+          <button class="scm-download-btn" type="button" id="otb-excel-up-btn">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><use href="#ic-upload"/></svg>
+            <span>엑셀 업로드</span>
+          </button>
+          <button class="scm-download-btn" type="button" id="otb-excel-down-btn">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><use href="#ic-download"/></svg>
+            <span>엑셀 다운로드</span>
+          </button>
+          <span class="scm-stats-bar__v-divider" aria-hidden="true"></span>
+
+          <!-- 페이지네이션 -->
+          <span class="scm-pager">
+            <strong class="scm-pager__current" id="otb-page-current">1</strong>
+            <span class="scm-pager__total">/ <span id="otb-page-total">1</span> 페이지</span>
+            <button class="scm-pager-btn" type="button" id="otb-page-prev" aria-label="이전 페이지" disabled>
+              <svg viewBox="0 0 20 20" aria-hidden="true"><use href="#ic-chevronLeft"/></svg>
+            </button>
+            <button class="scm-pager-btn" type="button" id="otb-page-next" aria-label="다음 페이지" disabled>
+              <svg viewBox="0 0 20 20" aria-hidden="true"><use href="#ic-chevronRight"/></svg>
+            </button>
+          </span>
+
+          <!-- 페이지 크기 -->
+          <span class="scm-pgsize-wrap" id="otb-pgsize">
+            <button class="scm-pgsize" type="button" aria-haspopup="listbox" aria-expanded="false">
+              <span class="scm-pgsize__label" id="otb-pgsize-label">10개씩</span>
+              <svg class="scm-pgsize__chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+            </button>
+            <ul class="scm-pgsize-popup" role="listbox" hidden></ul>
+          </span>
+        </div>
+      </div>
+      <div class="mp-table-host" id="otb-detail-host">
+        <div class="mp-thead-sticky"><div class="mp-thead-scroll"></div></div>
+        <div class="mp-table-scroll">
+          <table class="mp-table is-cell-selectable" id="otb-detail-table" data-scm-frozen="3">
+            <thead>
+              <tr>
+                <th class="col-medium col-frozen-1" style="text-align:left; width:200px;">브랜드 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+                <th class="col-auto col-frozen-2" style="text-align:center;">그룹</th>
+                <th class="col-medium col-frozen-3" style="text-align:left;">본부 / 실</th>
+                <th class="col-medium cell-numeric">기초재고 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg></th>
+                <th class="col-medium cell-numeric" data-sort-key="otb">입고재고(OTB) <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg></th>
+                <th class="col-auto cell-numeric">YoY</th>
+                <th class="col-medium cell-numeric" data-sort-key="gmv">GMV <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg></th>
+                <th class="col-auto cell-numeric">YoY</th>
+                <th class="col-medium cell-numeric" data-sort-key="cogs">출고원가 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg></th>
+                <th class="col-auto cell-numeric">YoY</th>
+                <th class="col-medium cell-numeric">반품예정</th>
+                <th class="col-auto cell-numeric">COGS%</th>
+                <th class="col-auto cell-numeric">공급률</th>
+                <th class="col-medium cell-numeric">기말재고 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg></th>
+                <th class="col-auto cell-numeric">소진율</th>
+                <th class="col-auto cell-numeric">재고일수</th>
+                <th class="col-spacer" data-empty="true" aria-hidden="true"></th>
+              </tr>
+            </thead>
+            <tbody id="otb-detail-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="otb-empty" style="display:none; padding:32px; text-align:center; color:var(--ld-fg-lower); font-size:13px; border:1px solid var(--ld-border); border-radius:4px; margin-top:8px;">
+        조건에 해당하는 브랜드가 없습니다.
+      </div>
+    </section>
   </main>
 </div>
 
-<!-- Filter drawer -->
+<!-- ============== 결재선 (하단 fixed) ============== -->
+<div class="otb-approval-bar" id="otb-approval-bar">
+  <div class="otb-approval-line" id="otb-approval-line">
+    <span class="otb-approval-label">결재선</span>
+  </div>
+  <div class="otb-approval-actions">
+    <button class="scm-button" type="button" id="otb-history-btn">변경 이력</button>
+    <button class="scm-button" type="button" id="otb-reject-btn" style="color:#B00020;">반려</button>
+    <button class="scm-button scm-button--primary" type="button" id="otb-approve-btn">검토 완료 → 다음 단계</button>
+  </div>
+</div>
+
+<!-- ============== Filter popover root + drawer (sku-management 와 동일) ============== -->
+<div class="scm-filter-popover-root" id="filter-popover-root" role="dialog" aria-hidden="true"></div>
+
 <div class="scm-filter-drawer-backdrop" id="fd-backdrop" hidden></div>
 <aside class="scm-filter-drawer" id="filter-drawer" hidden role="dialog" aria-label="전체 필터">
   <header class="scm-filter-drawer__header">
@@ -697,7 +948,6 @@
       <svg viewBox="0 0 20 20"><use href="#ic-close"/></svg>
     </button>
   </header>
-  <!-- 본문은 SCM.filterPopoverModes.init 시 REGISTRY 기반으로 자동 생성 -->
   <div class="scm-filter-drawer__body"></div>
   <footer class="scm-filter-drawer__footer">
     <button class="scm-filter-drawer__reset" type="button">
@@ -708,21 +958,7 @@
   </footer>
 </aside>
 
-<!-- Filter popover root (single/multi/codeinput 공용 — SCM.filterPopoverModes 가 동적으로 콘텐츠 렌더) -->
-<div class="scm-filter-popover-root" id="filter-popover-root" role="dialog" aria-hidden="true"></div>
-
-<!-- Sticky bottom action bar — 체크박스 선택 시 노출 -->
-<div class="scm-table-action-bar" id="table-action-bar" hidden>
-  <div class="scm-table-action-bar__inner">
-    <div class="scm-table-action-bar__count">
-      <strong id="tab-count">0</strong>개 선택됨
-    </div>
-    <div class="scm-table-action-bar__actions">
-      <button class="scm-button scm-button--md" type="button" id="tab-clear">선택 해제</button>
-      <button class="scm-button scm-button--md scm-button--primary" type="button" id="tab-bulk">일괄 작업</button>
-    </div>
-  </div>
-</div>
+<!-- 모달 — SCM.confirmModal 사용 (자체 모달 제거됨) -->
 
 <!-- Module JS -->
 <script src="../design%20system/components/lnb/lnb.js"></script>
@@ -733,758 +969,968 @@
 <script src="../design%20system/components/toast/toast.js"></script>
 <script src="../design%20system/components/pgsize-select/pgsize-select.js"></script>
 <script src="../design%20system/components/mini-action/mini-action.js"></script>
+<script src="../design%20system/components/info-banner/info-banner.js"></script>
 <script src="../design%20system/components/code-popover/code-popover.js"></script>
 <script src="../design%20system/components/confirm-modal/confirm-modal.js"></script>
 <script src="../design%20system/components/bulk-upload-modal/bulk-upload-modal.js"></script>
-<script src="../design%20system/components/deploy-popover/deploy-popover.js"></script>
-<script src="../design%20system/components/filter-bar/filter-bar.js"></script>
-<script src="../design%20system/components/filter-drawer/filter-drawer.js"></script>
+<script src="../design%20system/components/search-btn/search-btn.js"></script>
+<script src="../design%20system/components/filter-reset-btn/filter-reset-btn.js"></script>
 <script src="../design%20system/components/filter-popover/filter-popover.js"></script>
 <script src="../design%20system/components/filter-popover/filter-popover-modes.js"></script>
+<script src="../design%20system/components/filter-bar/filter-bar.js"></script>
+<script src="../design%20system/components/filter-drawer/filter-drawer.js"></script>
 <script src="../design%20system/components/scm-table/scm-table.js"></script>
 <script src="../design%20system/components/scm-table/table-sort.js"></script>
 <script src="../design%20system/components/scm-table/column-more-menu.js"></script>
 <script src="../design%20system/components/scm-table/column-filter-popover.js"></script>
 <script src="../design%20system/components/scm-table/table-selection.js"></script>
+<script src="../design%20system/components/cell-input/cell-input.js"></script>
 
 <script>
+/* ============================================================
+   OTB 예산 관리 — 디자인 시스템 컴포넌트 기반
+   - SCM.lnb / SCM.topbar / SCM.filterBar / SCM.filterDrawer / SCM.toast / SCM.confirmModal / SCM.infoBanner 사용
+   - 폼 입력 모달은 OTB 도메인 전용 (자체)
+============================================================ */
 (function () {
-  // ----- Demo data (legacy 12 row 그대로) -----
-  const ROWS = [
-    { kind:'target',   storeName:'무신사 스탠다드 강남',  brand:'아크테릭스',    sku:'S000001', cat:'신발 > 운동화', uid:'123456', opt:['블랙','XL'], barcode:'880K/13029/EFGH',  name:'스몰 소프트 나파 크루아상 숄더백', sales7:40, sales14:68, forecast:'higher', stock:130, incoming:99999, prevReq:99999, requestQty:99999, available:99999, intro:true,  promoTitle:'팝업명 노출', promoDate:'25.10.01 ~ 25.11.31', styleNo:'383827', buyType:'위탁' },
-    { kind:'target',   storeName:'무신사 스탠다드 홍대',   brand:'아크테릭스',    sku:'S000001', cat:'신발 > 운동화', uid:'123456', opt:['블랙','L'],  barcode:'880K/13029/EFGH',  name:'스몰 소프트 나파 크루아상 숄더백', sales7:68, sales14:68, forecast:null,     stock:68,  incoming:0,     prevReq:0,     requestQty:3100,  available:3100,  intro:true,  promoTitle:'팝업명 노출', promoDate:'25.10.01 ~ 25.11.31', styleNo:'383827', buyType:'위탁' },
-    { kind:'target',   storeName:'무신사 스탠다드 강남',  brand:'아크테릭스',    sku:'S000001', cat:'신발 > 운동화', uid:'123456', opt:['블랙','XL'], barcode:'880K/13029/EFGH',  name:'스몰 소프트 나파 크루아상 숄더백', sales7:30, sales14:46, forecast:null,     stock:68,  incoming:0,     prevReq:0,     requestQty:580,   available:580,   intro:true,  promoTitle:'팝업명 노출이 길어지면 줄바꿈 좋습니다.', promoDate:'25.10.01 ~ 25.11.31', styleNo:'383827', buyType:'위탁' },
-    { kind:'target',   storeName:'무신사 스탠다드 성수',   brand:'아크테릭스',    sku:'S000001', cat:'신발 > 운동화', uid:'123456', opt:['블랙','M'],  barcode:'880K/13029/EFGH',  name:'스몰 소프트 나파 크루아상 숄더백', sales7:68, sales14:68, forecast:null,     stock:68,  incoming:0,     prevReq:0,     requestQty:1130,  available:1130,  intro:true,  promoTitle:'팝업명 노출', promoDate:'25.10.01 ~ 25.11.31', styleNo:'383827', buyType:'위탁' },
-    { kind:'target',   storeName:'무신사 스탠다드 동대문', brand:'아크테릭스',    sku:'S000001', cat:'신발 > 운동화', uid:'123456', opt:['블랙','S'],  barcode:'920K/14029/EFGH',  name:'스몰 소프트 나파 크루아상 숄더백', sales7:85, sales14:85, forecast:null,     stock:85,  incoming:0,     prevReq:0,     requestQty:300,   available:430,   intro:true,  promoTitle:'팝업명 노출', promoDate:'25.12.01 ~ 26.01.31', styleNo:'494939', buyType:'위탁' },
-    { kind:'target',   storeName:'무신사 스탠다드 남대문', brand:'아크테릭스',    sku:'S000001', cat:'신발 > 운동화', uid:'123456', opt:['블랙','XS'], barcode:'750K/12029/EFGH',  name:'스몰 소프트 나파 크루아상 숄더백', sales7:78, sales14:78, forecast:null,     stock:78,  incoming:0,     prevReq:0,     requestQty:180,   available:530,   intro:true,  promoTitle:'팝업명 노출', promoDate:'25.09.01 ~ 25.10.30', styleNo:'38382',  buyType:'위탁' },
-    { kind:'nontarget',storeName:'무신사 스탠다드 강남',  brand:'아크테릭스',    sku:'S000002', cat:'신발 > 운동화', uid:'123456', opt:['블랙','XL'], barcode:'600K/11029/EFGH',  name:'스몰 소프트 나파 크루아상 숄더백', sales7:55, sales14:55, forecast:null,     stock:55,  incoming:0,     prevReq:0,     requestQty:180,   available:630,   intro:true,  promoTitle:'팝업명 노출', promoDate:'25.10.15 ~ 25.11.14', styleNo:'393837', buyType:'위탁' },
-    { kind:'nontarget',storeName:'무신사 스탠다드 홍대',   brand:'아크테릭스',    sku:'S000002', cat:'신발 > 운동화', uid:'123456', opt:['블랙','L'],  barcode:'650K/12000/XYZ',   name:'스몰 소프트 나파 크루아상 숄더백', sales7:60, sales14:60, forecast:null,     stock:60,  incoming:0,     prevReq:0,     requestQty:130,   available:0,     intro:true,  promoTitle:'팝업명 노출', promoDate:'25.11.01 ~ 25.12.01', styleNo:'393838', buyType:'위탁' },
-    { kind:'nontarget',storeName:'무신사 스탠다드 성수',   brand:'시티스케이프',  sku:'S000002', cat:'신발 > 운동화', uid:'234567', opt:['블랙','M'],  barcode:'700K/13000/ABC',   name:'스몰 소프트 나파 크루아상 숄더백', sales7:65, sales14:65, forecast:null,     stock:65,  incoming:0,     prevReq:0,     requestQty:130,   available:230,   intro:true,  promoTitle:'팝업명 노출', promoDate:'25.12.05 ~ 26.01.05', styleNo:'393838', buyType:'위탁' },
-    { kind:'nontarget',storeName:'무신사 스탠다드 동대문', brand:'시티스케이프',  sku:'S000002', cat:'신발 > 운동화', uid:'234567', opt:['블랙','S'],  barcode:'800K/15000/DEF',   name:'스몰 소프트 나파 크루아상 숄더백', sales7:70, sales14:70, forecast:null,     stock:70,  incoming:0,     prevReq:0,     requestQty:150,   available:230,   intro:true,  promoTitle:'팝업명 노출', promoDate:'26.01.10 ~ 26.02.10', styleNo:'393838', buyType:'위탁' },
-    { kind:'nontarget',storeName:'무신사 스탠다드 남대문', brand:'시티스케이프',  sku:'S000002', cat:'신발 > 운동화', uid:'234567', opt:['블랙','XS'], barcode:'900K/16000/GHI',   name:'스몰 소프트 나파 크루아상 숄더백', sales7:75, sales14:75, forecast:null,     stock:75,  incoming:0,     prevReq:0,     requestQty:160,   available:330,   intro:true,  promoTitle:'팝업명 노출', promoDate:'26.02.15 ~ 26.03.15', styleNo:'393838', buyType:'위탁' },
-    { kind:'nontarget',storeName:'무신사 스탠다드 강남',  brand:'시티스케이프',  sku:'S000003', cat:'신발 > 운동화', uid:'234567', opt:['블랙','XL'], barcode:'1000K/17000/JKL',  name:'스몰 소프트 나파 크루아상 숄더백', sales7:80, sales14:80, forecast:null,     stock:80,  incoming:0,     prevReq:0,     requestQty:0,     available:530,   intro:false, promoTitle:'',           promoDate:'',                    styleNo:'393838', buyType:'위탁' },
-    { kind:'target',   storeName:'무신사 스탠다드 강남',  brand:'NIKE',          sku:'S000004', cat:'신발 > 스니커즈', uid:'345678', opt:['화이트','275'], barcode:'1100K/18000/MNO', name:'스니커즈 코어 화이트',                sales7:42, sales14:88, forecast:'higher', stock:120, incoming:50,    prevReq:50,    requestQty:200,   available:380,   intro:true,  promoTitle:'팝업명 노출', promoDate:'25.10.10 ~ 25.11.10', styleNo:'494940', buyType:'매입' },
-    { kind:'target',   storeName:'무신사 스탠다드 홍대',   brand:'NIKE',          sku:'S000004', cat:'신발 > 스니커즈', uid:'345678', opt:['화이트','270'], barcode:'1100K/18000/MNO', name:'스니커즈 코어 화이트',                sales7:35, sales14:70, forecast:null,     stock:90,  incoming:0,     prevReq:0,     requestQty:150,   available:300,   intro:true,  promoTitle:'팝업명 노출', promoDate:'25.10.10 ~ 25.11.10', styleNo:'494940', buyType:'매입' },
-    { kind:'target',   storeName:'무신사 스탠다드 성수',   brand:'NIKE',          sku:'S000004', cat:'신발 > 스니커즈', uid:'345678', opt:['블랙','280'],   barcode:'1100K/18000/MNO', name:'스니커즈 코어 블랙',                  sales7:50, sales14:95, forecast:'higher', stock:110, incoming:30,    prevReq:30,    requestQty:0,     available:420,   intro:false, promoTitle:'',           promoDate:'',                    styleNo:'494941', buyType:'매입' },
-    { kind:'target',   storeName:'무신사 스탠다드 동대문', brand:'아디다스',      sku:'S000005', cat:'신발 > 운동화',   uid:'456789', opt:['블루','275'],   barcode:'1200K/19000/PQR', name:'런닝화 울트라 부스트',                sales7:65, sales14:120,forecast:'higher', stock:140, incoming:80,    prevReq:80,    requestQty:300,   available:520,   intro:true,  promoTitle:'런닝 페어',  promoDate:'25.11.01 ~ 25.12.31', styleNo:'595950', buyType:'위탁' },
-    { kind:'target',   storeName:'무신사 스탠다드 남대문', brand:'아디다스',      sku:'S000005', cat:'신발 > 운동화',   uid:'456789', opt:['블루','280'],   barcode:'1200K/19000/PQR', name:'런닝화 울트라 부스트',                sales7:70, sales14:130,forecast:null,     stock:150, incoming:0,     prevReq:0,     requestQty:250,   available:200,   intro:true,  promoTitle:'런닝 페어',  promoDate:'25.11.01 ~ 25.12.31', styleNo:'595950', buyType:'위탁' },
-    { kind:'nontarget',storeName:'무신사 스탠다드 강남',  brand:'아디다스',      sku:'S000005', cat:'신발 > 운동화',   uid:'456789', opt:['블랙','275'],   barcode:'1200K/19000/PQR', name:'런닝화 울트라 부스트',                sales7:55, sales14:100,forecast:null,     stock:110, incoming:20,    prevReq:0,     requestQty:120,   available:0,     intro:false, promoTitle:'',           promoDate:'',                    styleNo:'595951', buyType:'위탁' },
-    { kind:'nontarget',storeName:'무신사 스탠다드 홍대',   brand:'MUSINSA STANDARD', sku:'S000006', cat:'상의 > 셔츠',     uid:'567890', opt:['화이트','M'],  barcode:'1300K/20000/STU', name:'옥스포드 셔츠 화이트 M',              sales7:38, sales14:72, forecast:'higher', stock:80,  incoming:40,    prevReq:40,    requestQty:90,    available:240,   intro:true,  promoTitle:'베이직 위크', promoDate:'25.10.20 ~ 25.11.20', styleNo:'606060', buyType:'매입' },
-    { kind:'nontarget',storeName:'무신사 스탠다드 성수',   brand:'MUSINSA STANDARD', sku:'S000006', cat:'상의 > 셔츠',     uid:'567890', opt:['화이트','L'],  barcode:'1300K/20000/STU', name:'옥스포드 셔츠 화이트 L',              sales7:42, sales14:80, forecast:null,     stock:85,  incoming:0,     prevReq:0,     requestQty:100,   available:260,   intro:true,  promoTitle:'베이직 위크', promoDate:'25.10.20 ~ 25.11.20', styleNo:'606060', buyType:'매입' },
-    { kind:'nontarget',storeName:'무신사 스탠다드 동대문', brand:'MUSINSA STANDARD', sku:'S000006', cat:'상의 > 셔츠',     uid:'567890', opt:['네이비','M'], barcode:'1300K/20000/STU', name:'옥스포드 셔츠 네이비 M',              sales7:48, sales14:90, forecast:null,     stock:95,  incoming:30,    prevReq:30,    requestQty:60,    available:180,   intro:false, promoTitle:'',           promoDate:'',                    styleNo:'606061', buyType:'매입' },
-    { kind:'nontarget',storeName:'무신사 스탠다드 남대문', brand:'MUSINSA STANDARD', sku:'S000006', cat:'상의 > 셔츠',     uid:'567890', opt:['네이비','L'], barcode:'1300K/20000/STU', name:'옥스포드 셔츠 네이비 L',              sales7:52, sales14:100,forecast:'higher', stock:100, incoming:0,     prevReq:0,     requestQty:80,    available:220,   intro:false, promoTitle:'',           promoDate:'',                    styleNo:'606061', buyType:'매입' },
-    { kind:'target',   storeName:'무신사 스탠다드 강남',  brand:'MUSINSA',       sku:'S000007', cat:'잡화 > 모자',     uid:'678901', opt:['블랙','FREE'], barcode:'1400K/21000/VWX', name:'볼캡 로고 블랙',                       sales7:25, sales14:48, forecast:null,     stock:60,  incoming:20,    prevReq:0,     requestQty:50,    available:150,   intro:false, promoTitle:'',           promoDate:'',                    styleNo:'707070', buyType:'위탁' },
-    { kind:'target',   storeName:'무신사 스탠다드 홍대',   brand:'MUSINSA',       sku:'S000007', cat:'잡화 > 모자',     uid:'678901', opt:['네이비','FREE'], barcode:'1400K/21000/VWX', name:'볼캡 로고 네이비',                     sales7:28, sales14:55, forecast:null,     stock:70,  incoming:0,     prevReq:0,     requestQty:60,    available:130,   intro:false, promoTitle:'',           promoDate:'',                    styleNo:'707070', buyType:'위탁' },
-    { kind:'target',   storeName:'무신사 스탠다드 성수',   brand:'MUSINSA',       sku:'S000008', cat:'잡화 > 가방 > 토트백', uid:'789012', opt:['블랙','FREE'], barcode:'1500K/22000/YZA', name:'토트백 캔버스 블랙',                   sales7:18, sales14:36, forecast:null,     stock:45,  incoming:15,    prevReq:15,    requestQty:30,    available:90,    intro:false, promoTitle:'',           promoDate:'',                    styleNo:'808080', buyType:'위탁' },
-    { kind:'nontarget',storeName:'무신사 스탠다드 동대문', brand:'MUSINSA STANDARD', sku:'S000009', cat:'하의 > 슬랙스',   uid:'890123', opt:['차콜','30'],  barcode:'1600K/23000/BCD', name:'슬랙스 테이퍼드 차콜 30',              sales7:22, sales14:44, forecast:null,     stock:50,  incoming:0,     prevReq:0,     requestQty:0,     available:140,   intro:false, promoTitle:'',           promoDate:'',                    styleNo:'909090', buyType:'위탁' },
-    { kind:'nontarget',storeName:'무신사 스탠다드 남대문', brand:'MUSINSA STANDARD', sku:'S000009', cat:'하의 > 슬랙스',   uid:'890123', opt:['차콜','32'],  barcode:'1600K/23000/BCD', name:'슬랙스 테이퍼드 차콜 32',              sales7:26, sales14:50, forecast:'higher', stock:55,  incoming:25,    prevReq:25,    requestQty:40,    available:160,   intro:false, promoTitle:'',           promoDate:'',                    styleNo:'909090', buyType:'위탁' },
-    { kind:'target',   storeName:'무신사 스탠다드 강남',  brand:'MUSINSA STANDARD', sku:'S000010', cat:'상의 > 후디',     uid:'901234', opt:['그레이','M'],  barcode:'1700K/24000/EFG', name:'후디 베이직 그레이 M',                 sales7:32, sales14:64, forecast:null,     stock:75,  incoming:0,     prevReq:0,     requestQty:0,     available:0,     intro:false, promoTitle:'',           promoDate:'',                    styleNo:'101010', buyType:'매입' },
-    { kind:'target',   storeName:'무신사 스탠다드 홍대',   brand:'MUSINSA STANDARD', sku:'S000010', cat:'상의 > 후디',     uid:'901234', opt:['그레이','L'],  barcode:'1700K/24000/EFG', name:'후디 베이직 그레이 L',                 sales7:36, sales14:72, forecast:'higher', stock:80,  incoming:30,    prevReq:30,    requestQty:50,    available:170,   intro:false, promoTitle:'',           promoDate:'',                    styleNo:'101010', buyType:'매입' },
-    { kind:'nontarget',storeName:'무신사 스탠다드 성수',   brand:'MUSINSA STANDARD', sku:'S000010', cat:'상의 > 후디',     uid:'901234', opt:['블랙','M'],   barcode:'1700K/24000/EFH', name:'후디 베이직 블랙 M',                   sales7:34, sales14:68, forecast:null,     stock:78,  incoming:0,     prevReq:0,     requestQty:0,     available:130,   intro:false, promoTitle:'',           promoDate:'',                    styleNo:'101011', buyType:'매입' },
-  ];
+  'use strict';
 
-  function escapeHtml(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
-
-  function rowHtml(r) {
-    const NA = '-';
-    const isEmpty = v => v === null || v === undefined || v === '';
-    const fmtNum = n => isEmpty(n) ? NA : Number(n).toLocaleString();
-    const fmtText = v => isEmpty(v) ? NA : escapeHtml(v);
-
-    // 보충대상 구분 chip — kind-chip 모듈 + 도메인 variant
-    const KIND_LABEL = { target:'보충대상', nontarget:'비대상' };
-    const kindChip = isEmpty(r.kind) ? NA
-      : `<span class="scm-kind-chip scm-kind-chip--${r.kind}">${KIND_LABEL[r.kind] || r.kind}</span>`;
-
-    // 판매예측치 chip — forecast-chip 모듈 (higher → high, mid → low, lower → zero 매핑)
-    const FORECAST_LABEL = { higher:'높음', mid:'보통', lower:'낮음' };
-    const FORECAST_VAR   = { higher:'high', mid:'low',  lower:'zero' };
-    const forecastChip = r.forecast
-      ? `<span class="scm-forecast-chip scm-forecast-chip--${FORECAST_VAR[r.forecast]||''}">${FORECAST_LABEL[r.forecast]}</span>`
-      : NA;
-
-    // 옵션 chip 다중
-    const optChips = (r.opt && r.opt.length)
-      ? `<span class="er-opt-chips">${r.opt.map(o => `<span class="scm-tag">${escapeHtml(o)}</span>`).join('')}</span>`
-      : NA;
-
-    // 매장 입고예정수량 — 0 초과 시 accent
-    const incomingHtml = isEmpty(r.incoming) ? NA
-      : (r.incoming > 0 ? `<span class="er-num-accent">${fmtNum(r.incoming)}</span>` : fmtNum(r.incoming));
-
-    // 초도 chip
-    const introChip = r.intro ? `<span class="er-intro-chip">초도</span>` : NA;
-
-    // 프로모션 정보 (제목 + 기간)
-    const promoHtml = (r.promoTitle || r.promoDate)
-      ? `<div class="er-promo"><span class="er-promo-title">${escapeHtml(r.promoTitle||'')}</span><span class="er-promo-date">${escapeHtml(r.promoDate||'')}</span></div>`
-      : NA;
-
-    // 이동 가능 재고 0 → er-num-zero
-    const availableCls = r.available === 0 ? 'er-num-zero' : '';
-
-    // 코드 link cells (UID / SKU번호 / 바코드 / 스타일넘버 — 4종)
-    const skuHtml     = isEmpty(r.sku)     ? NA : `<a class="scm-code-link" data-code-type="sku" style="font-weight:600;">${escapeHtml(r.sku)}</a>`;
-    const uidHtml     = isEmpty(r.uid)     ? NA : `<a class="scm-code-link" data-code-type="uid">${escapeHtml(r.uid)}</a>`;
-    const barcodeHtml = isEmpty(r.barcode) ? NA : escapeHtml(r.barcode);
-    const styleNoHtml = isEmpty(r.styleNo) ? NA : `<a class="scm-code-link" data-code-type="styleNo">${escapeHtml(r.styleNo)}</a>`;
-
-    // SKU명 (썸네일 + 텍스트)
-    const nameCell = isEmpty(r.name) ? NA
-      : `<div class="cell-clamp"><span class="scm-product-name"><span class="scm-product-name__thumb"></span><span class="scm-product-name__text">${escapeHtml(r.name)}</span></span></div>`;
-
-    // 이동 요청 수량 — input cell. 현재 값이 available 이상이면 '최대' 버튼 disabled.
-    // 이동 가능 재고가 0 이면 요청 자체 불가 — checkbox / input 모두 disabled.
-    const reqNum = Number(r.requestQty) || 0;
-    const availNum = Number(r.available) || 0;
-    const isMaxed = !isEmpty(r.available) && reqNum >= availNum;
-    const isUnavailable = !isEmpty(r.available) && availNum === 0;
-    // 요청 수량 > 이동 가능 재고 → 에러 톤. avail=0 은 입력 자체 불가하므로
-    // disabled 만 적용 (에러 아님). avail>0 인데 req 가 초과한 경우만 error.
-    const isError = !isEmpty(r.available) && availNum > 0 && reqNum > availNum;
-    // disabled 행은 값을 비우고 placeholder '입력' 노출 — avail=0 인데 req 값이 표시되는 모순 제거.
-    const requestQtyVal = isUnavailable
-      ? ''
-      : (isEmpty(r.requestQty) ? '' : Number(r.requestQty).toLocaleString());
-    const inputAttrs = [
-      isUnavailable ? 'disabled' : '',
-      isError ? 'aria-invalid="true"' : '',
-    ].filter(Boolean).join(' ');
-    const inputCls = isError ? 'scm-input-cell__input is-error' : 'scm-input-cell__input';
-    const requestQtyCell = `
-      <span class="scm-input-cell">
-        <input type="text" class="${inputCls}" value="${requestQtyVal}" placeholder="입력" inputmode="numeric" ${inputAttrs}/>
-        <button class="scm-input-cell__max" type="button"${isMaxed ? ' disabled' : ''}>최대</button>
-      </span>`;
-    // 체크박스 비활성 — 요청 불가 (avail=0) 또는 에러 (req > avail) 양쪽 다.
-    const cbDisabled = isUnavailable || isError;
-    const cbCls = cbDisabled ? 'scm-checkbox is-disabled' : 'scm-checkbox';
-    const cbAttrs = cbDisabled
-      ? 'role="checkbox" aria-checked="false" aria-disabled="true" tabindex="-1"'
-      : 'role="checkbox" aria-checked="false" tabindex="0"';
-
-    return `
-      <tr>
-        <td class="cb-col col-frozen-1"><span class="${cbCls}" ${cbAttrs} aria-label="선택"></span></td>
-        <td class="col-auto col-frozen-2">${kindChip}</td>
-        <td class="col-auto col-frozen-3">${fmtText(r.storeName)}</td>
-        <td class="col-auto">${fmtText(r.brand)}</td>
-        <td class="col-auto">${skuHtml}</td>
-        <td class="col-medium"><div class="cell-clamp">${fmtText(r.cat)}</div></td>
-        <td class="col-auto">${uidHtml}</td>
-        <td class="col-medium">${optChips}</td>
-        <td class="col-auto">${barcodeHtml}</td>
-        <td class="col-large">${nameCell}</td>
-        <td class="col-auto cell-numeric">${fmtNum(r.sales7)}</td>
-        <td class="col-auto cell-numeric">${fmtNum(r.sales14)}</td>
-        <td class="col-auto">${forecastChip}</td>
-        <td class="col-auto cell-numeric">${fmtNum(r.stock)}</td>
-        <td class="col-auto cell-numeric">${incomingHtml}</td>
-        <td class="col-auto cell-numeric">${fmtNum(r.prevReq)}</td>
-        <td class="col-auto er-input-cell${isError ? ' is-error' : (isUnavailable ? ' is-disabled' : '')}">${requestQtyCell}</td>
-        <td class="col-auto cell-numeric ${availableCls}">${fmtNum(r.available)}</td>
-        <td class="col-auto">${introChip}</td>
-        <td class="col-auto">${promoHtml}</td>
-        <td class="col-auto">${styleNoHtml}</td>
-        <td class="col-auto">${fmtText(r.buyType)}</td>
-        <td class="col-spacer" aria-hidden="true"></td>
-      </tr>
-    `;
-  }
-
-  document.getElementById('data-tbody').innerHTML = ROWS.map(rowHtml).join('');
-
-  // ----- SCM Table 인터랙션 init -----
-  // frozenCount=3: cb-col(1) + 보충대상 구분(2) + 스토어명(3)
-  if (window.SCMTable) {
-    try { window.SCMTable.init({ root: document, frozenCount: 3 }); } catch (e) { console.warn('SCMTable init failed:', e); }
-  }
-  // 정렬 (sort-ic 클릭 → asc/desc/default 토글 + tbody 재정렬)
-  if (window.SCM && SCM.tableSort) SCM.tableSort.mount({ tableSelector: '.mp-table-scroll .mp-table' });
-  // 더보기 메뉴 (more-ic ⋮ 클릭 → 정렬/고정/숨김 액션 popover)
-  if (window.SCM && SCM.columnMoreMenu) SCM.columnMoreMenu.mount({ tableSelector: '.mp-table-scroll .mp-table' });
-  // 컬럼 필터 (filter-ic ⏷ 클릭 → 코드 입력 popover)
-  if (window.SCM && SCM.columnFilterPopover) SCM.columnFilterPopover.mount({ tableSelector: '.mp-table-scroll .mp-table' });
-
-  // sticky 변수 측정
-  function syncStickyVars() {
-    const root = document.documentElement;
-    const fb = document.getElementById('filter-bar');
-    const sb = document.querySelector('.scm-stats-bar');
-    if (fb) root.style.setProperty('--scm-sticky-filter', fb.offsetHeight + 'px');
-    if (sb) root.style.setProperty('--scm-sticky-stats',  sb.offsetHeight + 'px');
-  }
-  syncStickyVars();
-  if (typeof ResizeObserver !== 'undefined') {
-    const ro = new ResizeObserver(syncStickyVars);
-    document.querySelectorAll('#filter-bar, .scm-stats-bar').forEach(el => ro.observe(el));
-  }
-  window.addEventListener('resize', syncStickyVars);
-
-
-  // ----- Module mounts -----
-
+  // ============================================================
+  // 0. 공통 셸 mount
+  // ============================================================
   if (window.SCM && SCM.lnb)    SCM.lnb.mount(document.querySelector('.scm-lnb'), { active: 'otb-budget' });
   if (window.SCM && SCM.topbar) SCM.topbar.mount(document.querySelector('.scm-topbar'));
 
-  if (!window.SCM) return;
+  // info-banner
+  if (window.SCM && SCM.infoBanner) {
+    try { SCM.infoBanner.mount(document.getElementById('otb-info-banner')); } catch (_) {}
+  } else {
+    // fallback: 토글만 자체 처리
+    var ib = document.getElementById('otb-info-banner');
+    var ibToggle = document.getElementById('otb-info-toggle');
+    if (ibToggle) ibToggle.addEventListener('click', function () { ib.classList.toggle('is-collapsed'); });
+  }
 
-  // Filter bar
-  if (SCM.filterBar) SCM.filterBar.mount(document.getElementById('filter-bar'));
+  // filter-bar
+  if (window.SCM && SCM.filterBar) {
+    try { SCM.filterBar.mount(document.getElementById('filter-bar')); } catch (_) {}
+  }
 
-  // Filter drawer
-  if (SCM.filterDrawer) {
-    const fdEl = document.getElementById('filter-drawer');
-    const fdOpenBtn = document.getElementById('filter-drawer-open');
-    if (fdEl) {
-      const fd = SCM.filterDrawer.mount(fdEl, {
+  // filter-drawer
+  if (window.SCM && SCM.filterDrawer) {
+    try {
+      var fd = SCM.filterDrawer.mount(document.getElementById('filter-drawer'), {
         backdrop: document.getElementById('fd-backdrop'),
       });
-      if (fd && fdOpenBtn) {
-        fdOpenBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          fd.open();
-        });
-      }
-    }
+      var openBtn = document.getElementById('filter-drawer-open');
+      if (openBtn && fd && fd.open) openBtn.addEventListener('click', fd.open);
+    } catch (_) {}
   }
 
-  // Pgsize
-  if (SCM.pgsizeSelect) SCM.pgsizeSelect.mount(document.getElementById('pgsize'), { value: 100 });
+  // ============================================================
+  // 1. 데이터 (단위: 백만원, VAT 제외)
+  //    그룹: G1=1P 매출 확대, G2=셀렉션 확대, G3=재고정상화
+  // ============================================================
+  var initialBrands = [
+    { id: 'b1',  brand: '폴로 랄프 로렌 칠드런', group: 'G1', hq: '유니섹스글로벌본부', team: '글로벌패션_일반', platform: '무신사',
+      base: 532, otb: 409, gmv: 1113, cogs: 578, ret: 0, prev: { otb: 325, gmv: 970, cogs: 503, ret: 0 } },
+    { id: 'b2',  brand: '폴로 랄프 로렌',         group: 'G1', hq: '유니섹스글로벌본부', team: '글로벌패션_일반', platform: '무신사',
+      base: 16054, otb: 5454, gmv: 23616, cogs: 12237, ret: 0, prev: { otb: 8021, gmv: 25400, cogs: 13160, ret: 0 } },
+    { id: 'b3',  brand: '메종 마르지엘라',        group: 'G2', hq: '유니섹스글로벌본부', team: '글로벌패션_B1', platform: '무신사',
+      base: 1054, otb: 1600, gmv: 2171, cogs: 1697, ret: 0, prev: { otb: 1356, gmv: 1956, cogs: 1714, ret: 0 } },
+    { id: 'b4',  brand: '마르니',                 group: 'G2', hq: '유니섹스글로벌본부', team: '글로벌패션_B1', platform: '무신사',
+      base: 417, otb: 100, gmv: 430, cogs: 351, ret: 0, prev: { otb: 40, gmv: 1000, cogs: 763, ret: 0 } },
+    { id: 'b5',  brand: '디젤',                   group: 'G3', hq: '유니섹스글로벌본부', team: '글로벌패션_B1', platform: '무신사',
+      base: 479, otb: 750, gmv: 1151, cogs: 785, ret: 0, prev: { otb: 806, gmv: 1323, cogs: 863, ret: 0 } },
+    { id: 'b6',  brand: '텐씨',                   group: 'G2', hq: '유니섹스글로벌본부', team: '글로벌패션_B1', platform: '무신사',
+      base: 20, otb: 30, gmv: 53, cogs: 34, ret: 0, prev: { otb: 20, gmv: 60, cogs: 51, ret: 0 } },
+    { id: 'b7',  brand: '바토너',                 group: 'G2', hq: '유니섹스글로벌본부', team: '글로벌패션_B1', platform: '무신사',
+      base: 3, otb: 20, gmv: 21, cogs: 14, ret: 0, prev: { otb: 8, gmv: 7, cogs: 4, ret: 0 } },
+    { id: 'b8',  brand: '에이치쥐비비 스튜디오',  group: 'G2', hq: '유니섹스글로벌본부', team: '글로벌패션_B1', platform: '무신사',
+      base: 8, otb: 25, gmv: 29, cogs: 19, ret: 0, prev: { otb: 17, gmv: 16, cogs: 9, ret: 0 } },
+    { id: 'b9',  brand: '오어슬로우',             group: 'G1', hq: '유니섹스글로벌본부', team: '글로벌패션_B1', platform: '무신사',
+      base: 4, otb: 25, gmv: 27, cogs: 18, ret: 0, prev: { otb: 12, gmv: 14, cogs: 7, ret: 0 } },
+    { id: 'b10', brand: '제임스 펄스',            group: 'G1', hq: '유니섹스글로벌본부', team: '글로벌패션_B1', platform: '무신사',
+      base: 0, otb: 35, gmv: 41, cogs: 26, ret: 0, prev: null, isNew: true },
+    { id: 'b11', brand: '톰브라운(공식)',         group: 'G1', hq: '유니섹스글로벌본부', team: '글로벌패션_B1', platform: '무신사',
+      base: 0, otb: 403, gmv: 379, cogs: 241, ret: 0, prev: null, isNew: true },
+    { id: 'b12', brand: '하울린',                 group: 'G2', hq: '유니섹스글로벌본부', team: '글로벌패션_B1', platform: '무신사',
+      base: 8, otb: 25, gmv: 31, cogs: 21, ret: 0, prev: { otb: 20, gmv: 22, cogs: 12, ret: 0 } },
+    { id: 'b13', brand: '와일드 동키',            group: 'G2', hq: '유니섹스글로벌본부', team: '글로벌패션_B1', platform: '무신사',
+      base: 6, otb: 25, gmv: 29, cogs: 19, ret: 0, prev: { otb: 15, gmv: 17, cogs: 9, ret: 0 } },
+  ];
 
-  // Mini-action (코드 복사)
-  if (SCM.miniAction) {
-    SCM.miniAction.mount(document.getElementById('copy-wrap'), {
-      onSelect: (key) => {
-        const labels = { sku: 'SKU번호', barcode: '바코드' };
-        SCM.toast.show({ variant: 'success', title: `${labels[key]} 복사 완료`, desc: '500개 복사되었습니다.' });
-      },
-    });
+  var groupLabels = {
+    G1: { name: '그룹1. 1P 매출 확대', short: 'G1' },
+    G2: { name: '그룹2. 셀렉션 확대',   short: 'G2' },
+    G3: { name: '그룹3. 재고정상화',    short: 'G3' },
+  };
+
+  // 결재선
+  var approvalSteps = [
+    { idx: 1, role: 'MD',     name: '김민지', status: 'done',    note: '2026-04-28 14:30 작성' },
+    { idx: 2, role: '팀장',   name: '박지훈', status: 'current', note: '검토 대기' },
+    { idx: 3, role: '실장',   name: '이수진', status: 'pending', note: '' },
+    { idx: 4, role: '본부장', name: '최영호', status: 'pending', note: '' },
+  ];
+
+  // ============================================================
+  // 2. 상태
+  // ============================================================
+  var PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+  var state = {
+    brands: JSON.parse(JSON.stringify(initialBrands)),
+    diff: false,
+    status: 'draft', // draft | review | approved | rejected
+    versionLabel: '26Y 2차 상신',
+    page: 1,
+    pageSize: 10,
+    comments: [
+      { author: 'MD 김민지',   ts: '2026-04-28 14:32', tag: '상신',        text: '2차 상신 — 톰브라운 공식 신규 추가, 마르니 GMV 하향 조정 (재고 회전 부진)' },
+      { author: 'MD 김민지',   ts: '2026-04-28 11:05', tag: '작성',        text: '제임스 펄스 신규 브랜드 등록 — 봄/여름 시즌 시범 운영' },
+      { author: '팀장 박지훈', ts: '2026-03-20 16:12', tag: '1차 승인 시', text: '디젤 OTB 과다 우려, 2차 때 재검토 요망' },
+    ],
+  };
+
+  // ============================================================
+  // 3. 유틸
+  // ============================================================
+  function $(s, r) { return (r || document).querySelector(s); }
+  function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
+
+  function fmt(n) {
+    if (n === null || n === undefined || isNaN(n)) return '-';
+    return Number(n).toLocaleString('ko-KR');
+  }
+  function fmtPct(n) {
+    if (n === null || n === undefined || isNaN(n)) return '-';
+    return Number(n).toFixed(1) + '%';
+  }
+  function fmtYoY(n) {
+    if (n === null) return '<span class="otb-yoy-new">신규</span>';
+    if (n === undefined || isNaN(n)) return '-';
+    var cls = n > 0 ? 'otb-yoy-pos' : (n < 0 ? 'otb-yoy-neg' : 'otb-yoy-neutral');
+    var sign = n > 0 ? '+' : '';
+    return '<span class="' + cls + '">' + sign + n + '%</span>';
+  }
+  function calcDerived(b) {
+    var final = b.base + b.otb - b.cogs - b.ret;
+    var cogsPct = b.gmv > 0 ? (b.cogs / b.gmv) * 100 : 0;
+    var supplyPct = 100 - cogsPct;
+    var turnover = (b.base + b.otb) > 0 ? (b.cogs / (b.base + b.otb)) * 100 : 0;
+    var stockDays = b.cogs > 0 ? Math.round(final / (b.cogs / 365)) : 0;
+    return { final: final, cogsPct: cogsPct, supplyPct: supplyPct, turnover: turnover, stockDays: stockDays };
+  }
+  function calcYoY(curr, prev) {
+    if (prev === null || prev === undefined || prev === 0) return null;
+    return Math.round(((curr - prev) / prev) * 100);
+  }
+  function nowStr() {
+    var d = new Date();
+    var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+      + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
-  // 코드 link → SKU번호는 상세 페이지로 이동 / 그 외(uid/barcode/styleNo)는 code-popover
-  // legacy 동작: 클릭한 링크 + 같은 type의 인접 row 들에서 코드 모음 (max 7) → 묶음으로 확인
-  document.getElementById('data-tbody').addEventListener('click', (e) => {
-    const link = e.target.closest('.scm-code-link');
-    if (link) {
-      const type0 = link.getAttribute('data-code-type') || 'sku';
-      if (type0 === 'sku') {
-        const sku = link.textContent.trim();
-        if (sku) {
-          e.preventDefault();
-          window.location.href = 'sku-detail.html?sku=' + encodeURIComponent(sku);
-        }
+  // ============================================================
+  // 4. 토스트 (SCM.toast 우선)
+  // ============================================================
+  function toast(title, variant, desc) {
+    if (window.SCM && SCM.toast && typeof SCM.toast.show === 'function') {
+      try {
+        SCM.toast.show({ variant: variant || 'info', title: title, desc: desc || '' });
         return;
-      }
+      } catch (e) { /* fallthrough — DOM fallback 없음, 무음 처리 */ }
     }
-    if (link && SCM.codePopover) {
-      e.preventDefault();
-      const type = link.getAttribute('data-code-type') || 'sku';
-      const TITLE = { sku:'SKU번호 확인', uid:'연결된 UID번호 확인', barcode:'바코드 확인', styleNo:'스타일넘버 확인' };
-      const COPY  = { sku:'SKU번호 복사', uid:'UID 복사', barcode:'바코드 복사', styleNo:'스타일넘버 복사' };
-      // 같은 column 의 다른 row 코드값을 최대 7개까지 모음 (legacy 와 동일)
-      const tbody = link.closest('tbody');
-      const items = [];
-      if (tbody) {
-        const rows = Array.from(tbody.querySelectorAll('tr')).slice(0, 7);
-        rows.forEach(tr => {
-          const a = tr.querySelector(`.scm-code-link[data-code-type="${type}"]`);
-          if (a) {
-            const txt = a.textContent.trim();
-            if (txt && !items.includes(txt)) items.push(txt);
-          }
-        });
-      }
-      if (!items.length) items.push(link.textContent.trim());
-      SCM.codePopover.open({
-        title: TITLE[type] || '코드 확인',
-        items: items,
-        copyLabel: COPY[type] || '복사',
-        anchorEl: link,
-        onCopy: () => {
-          if (navigator.clipboard) navigator.clipboard.writeText(items.join('\n'));
-          SCM.toast.show({ variant: 'success', title: `${(COPY[type]||'코드').replace(' 복사','')} 복사 완료`, desc: `${items.length}개 복사되었습니다.` });
-        },
-      });
-    }
-  });
-
-  // 일괄 업로드 버튼 → bulk-upload-modal
-  (function () {
-    const openBtn = document.getElementById('open-bulk-upload');
-    const buBackdrop = document.getElementById('bu-backdrop');
-    const buModal = document.getElementById('bu-modal');
-    const buClose = buModal.querySelector('.scm-bu-close');
-    const buCancel = document.getElementById('bu-cancel');     // 푸터 '닫기' 버튼
-    function open()  { buBackdrop.classList.add('is-open'); buModal.classList.add('is-open'); }
-    function close() { buBackdrop.classList.remove('is-open'); buModal.classList.remove('is-open'); }
-    if (openBtn) openBtn.addEventListener('click', open);
-    if (buClose) buClose.addEventListener('click', close);
-    if (buCancel) buCancel.addEventListener('click', close);   // 푸터 닫기 버튼
-    if (buBackdrop) buBackdrop.addEventListener('click', close);
-    // warning 접기/펴기
-    const warn = buModal.querySelector('.scm-bu-warning');
-    const toggleBtn = buModal.querySelector('.scm-bu-warning__toggle');
-    if (toggleBtn && warn) toggleBtn.addEventListener('click', () => warn.classList.toggle('is-collapsed'));
-  })();
+    // 디자인 시스템 toast 모듈이 없는 환경에서는 console.log 만 (UI 노출 없음)
+    if (window.console && console.info) console.info('[toast:' + (variant || 'info') + '] ' + title + (desc ? ' / ' + desc : ''));
+  }
 
   // ============================================================
-  // Filter popover (글로벌 REGISTRY 기반)
-  // 검색 클릭 시 ROWS 를 chip 값에 맞춰 필터링 → tbody 행 display:none 으로 숨김.
+  // 5. 필터 / 집계
+  //   filterModeInstance.getActiveFilters() 가 적용된 필터 라벨 배열 객체를 반환
+  //   { platform: ['MUSINSA'], group: ['G1'], brand: ['폴로 랄프 로렌'], ... }
+  //   sku-management 의 matchesFiltersSku 와 동일 패턴
   // ============================================================
-  let filterModeInstance = null;
+  // OTB 데이터의 platform 라벨('무신사' 한국어) ↔ REGISTRY 라벨('MUSINSA' 영문) 매핑
+  var PLATFORM_LABEL_MAP = { '무신사': 'MUSINSA', '29CM': '29CM' };
 
-  function matchesFiltersER(r, active) {
-    // 매입형태 (single)
-    if (active.purchaseType && !active.purchaseType.includes(r.buyType)) return false;
-    // 브랜드 (multi)
-    if (active.brand && !active.brand.includes(r.brand)) return false;
-    // 스토어 (multi)
-    if (active.store) {
-      // r.storeName 은 "무신사 스탠다드 강남" 등 long 표기 — 옵션 라벨 (강남점 등) 의 substring 매치
-      const has = active.store.some(s => {
-        const short = (s || '').replace(/점$/, '');
-        return r.storeName && r.storeName.includes(short);
-      });
-      if (!has) return false;
+  function passFilter(b) {
+    var inst = window.filterModeInstance;
+    var active = inst && typeof inst.getActiveFilters === 'function' ? inst.getActiveFilters() : null;
+    if (!active) return true;
+
+    if (active.platform && active.platform.length) {
+      var bp = PLATFORM_LABEL_MAP[b.platform] || b.platform;
+      if (active.platform.indexOf(bp) === -1) return false;
     }
-    // 초도 입고 여부 (single)
-    if (active.firstInbound) {
-      const introLabel = r.intro ? '초도' : '재발주';
-      if (!active.firstInbound.includes(introLabel)) return false;
+    if (active.hq && active.hq.length && active.hq.indexOf(b.hq) === -1) return false;
+    if (active.team && active.team.length && active.team.indexOf(b.team) === -1) return false;
+    if (active.group && active.group.length) {
+      // group 라벨 ('그룹1. 1P 매출 확대') ↔ 키 ('G1') 매핑
+      var bgLabel = (groupLabels[b.group] && groupLabels[b.group].name) || b.group;
+      if (active.group.indexOf(bgLabel) === -1) return false;
     }
-    // 보충 대상 구분 (single — '보충대상' = target, '비대상' = nontarget)
-    if (active.restockKind) {
-      const kindMap = { '보충대상': 'target', '비대상': 'nontarget' };
-      const targets = active.restockKind.map(l => kindMap[l] || l);
-      if (!targets.includes(r.kind)) return false;
-    }
-    // SKU번호 / UID / 바코드 / 스타일넘버 (codeinput — 부분 매치)
-    if (active.sku && !active.sku.some(v => r.sku && r.sku.toLowerCase().includes(v.toLowerCase()))) return false;
-    if (active.uid && !active.uid.some(v => r.uid && r.uid.toLowerCase().includes(v.toLowerCase()))) return false;
-    if (active.barcode && !active.barcode.some(v => r.barcode && r.barcode.toLowerCase().includes(v.toLowerCase()))) return false;
-    if (active.styleNumber && !active.styleNumber.some(v => r.styleNo && r.styleNo.toLowerCase().includes(v.toLowerCase()))) return false;
+    if (active.brand && active.brand.length && active.brand.indexOf(b.brand) === -1) return false;
     return true;
   }
+  function filteredBrands() { return state.brands.filter(passFilter); }
 
-  function applyDataFilterER() {
-    if (!filterModeInstance) return;
-    const active = filterModeInstance.getActiveFilters();
-    const tbody = document.querySelector('.mp-table tbody');
-    if (!tbody) return;
-    let visibleCount = 0;
-    Array.from(tbody.children).forEach((tr, i) => {
-      const r = ROWS[i];
-      if (!r) return;
-      const visible = matchesFiltersER(r, active);
-      tr.style.display = visible ? '' : 'none';
-      if (visible) visibleCount++;
-    });
-    return visibleCount;
-  }
-
-  if (window.SCM && SCM.filterPopoverModes) {
-    filterModeInstance = SCM.filterPopoverModes.init({
-      rootEl: document.getElementById('filter-popover-root'),
-      filterBarEl: document.getElementById('filter-bar'),
-      onSearch: () => {
-        applyDataFilterER();
-      },
-      onReset: () => {
-        applyDataFilterER();
-        if (SCM.toast) SCM.toast.show({ variant: 'info', title: '필터 초기화 완료' });
-      },
-    });
-  }
-
-  // ============================================================
-  // Checkbox + sticky action bar — inline (무탠 검증 패턴)
-  // ============================================================
-  var tabCount = document.getElementById('tab-count');
-  var actionBar = document.getElementById('table-action-bar');
-  // headerWasAll: 헤더로 '전체 선택' 했었는지 추적. 전체→부분 해제 시에만 'mixed' 표시.
-  var erHeaderWasAll = false;
-  function getERRowCbs() {
-    return document.querySelectorAll('.mp-table tbody td.cb-col .scm-checkbox');
-  }
-  function refreshERAction() {
-    var rows = getERRowCbs();
-    var n = Array.from(rows).filter(function (c) { return c.getAttribute('aria-checked') === 'true'; }).length;
-    var total = rows.length;
-    if (tabCount) tabCount.textContent = String(n);
-    if (actionBar) {
-      if (n === 0) actionBar.setAttribute('hidden', '');
-      else         actionBar.removeAttribute('hidden');
-    }
-    var headerCb = document.getElementById('mp-cb-all');
-    if (headerCb) {
-      if (total > 0 && n === total) {
-        headerCb.setAttribute('aria-checked', 'true');
-        erHeaderWasAll = true;
-      } else if (n === 0) {
-        headerCb.setAttribute('aria-checked', 'false');
-        erHeaderWasAll = false;
-      } else {
-        headerCb.setAttribute('aria-checked', erHeaderWasAll ? 'mixed' : 'false');
-      }
-    }
-    // 상단 stats 첫 번째 stat — 선택 0 = "전체 N" / 1+ = "선택됨 N / total" (legacy 동작)
-    var statMain = document.querySelector('.scm-stats-bar__counts .scm-stat--all, .scm-stats-bar__counts .scm-stat--selected');
-    if (statMain) {
-      var totalRows = ROWS.length;
-      if (n > 0) {
-        statMain.classList.remove('scm-stat--all');
-        statMain.classList.add('scm-stat--selected');
-        statMain.innerHTML = '<span class="scm-stat__label">선택됨</span> <span class="scm-stat__num">' + n + '</span> <span class="scm-stat__label" style="color:#8A8A8A;font-weight:400;">/ ' + totalRows + '</span>';
-      } else {
-        statMain.classList.remove('scm-stat--selected');
-        statMain.classList.add('scm-stat--all');
-        statMain.innerHTML = '<span class="scm-stat__label">전체</span> <span class="scm-stat__num">' + totalRows + '</span>';
-      }
-    }
-    // 미니 액션 코드 복사 popup 라벨 카운트 갱신
-    var copyPopup = document.querySelector('#copy-wrap .scm-mini-popup');
-    if (copyPopup) {
-      var labelMap = { sku: 'SKU번호', barcode: '바코드' };
-      var displayN = n > 0 ? n : ROWS.length;
-      copyPopup.querySelectorAll('li').forEach(function (li) {
-        var key = li.getAttribute('data-key');
-        if (labelMap[key]) li.textContent = labelMap[key] + ' 복사 (' + displayN + ')';
-      });
-    }
-    // stats-bar 의 "선택 해제" / "보충요청" 미니 액션 — 선택 0 disabled, 1+ 활성
-    var deselectMini = document.getElementById('er-deselect-btn');
-    var bulkReqMini = document.getElementById('er-bulk-request-btn');
-    [deselectMini, bulkReqMini].forEach(function (el) {
-      if (!el) return;
-      if (n === 0) el.setAttribute('disabled', '');
-      else         el.removeAttribute('disabled');
-    });
-  }
-  // stats-bar 선택 해제 / 보충요청 클릭 핸들러
-  (function () {
-    var btn = document.getElementById('er-deselect-btn');
-    if (btn) {
-      btn.addEventListener('click', function () {
-        if (btn.disabled) return;
-        getERRowCbs().forEach(function (c) { c.setAttribute('aria-checked', 'false'); });
-        var h = document.getElementById('mp-cb-all');
-        if (h) h.setAttribute('aria-checked', 'false');
-        erHeaderWasAll = false;
-        refreshERAction();
-      });
-    }
-    var bulk = document.getElementById('er-bulk-request-btn');
-    if (bulk) {
-      bulk.addEventListener('click', function () {
-        if (bulk.disabled) return;
-        var n = getERRowCbs().filter(function (c) { return c.getAttribute('aria-checked') === 'true'; }).length;
-        if (window.SCM && SCM.toast) {
-          SCM.toast.show({ variant: 'success', title: n + '건 보충요청 전송', desc: '선택한 행에 대한 보충요청이 접수되었습니다.' });
-        }
-      });
-    }
-  })();
-  document.addEventListener('click', function (e) {
-    var cb = e.target.closest('.mp-table .scm-checkbox, #mp-cb-all');
-    if (!cb) return;
-    if (cb.classList.contains('is-disabled')) return;
-    e.preventDefault();
-    var cur = cb.getAttribute('aria-checked');
-    // 헤더는 mixed → false (전체 해제), 그 외엔 토글
-    var next;
-    if (cb.id === 'mp-cb-all') {
-      next = (cur === 'true' || cur === 'mixed') ? 'false' : 'true';
-    } else {
-      next = cur === 'true' ? 'false' : 'true';
-    }
-    if (cb.id === 'mp-cb-all') {
-      cb.setAttribute('aria-checked', next);
-      getERRowCbs().forEach(function (c) { c.setAttribute('aria-checked', next); });
-      erHeaderWasAll = (next === 'true');
-    } else if (cb.closest('td.cb-col')) {
-      cb.setAttribute('aria-checked', next);
-    } else {
-      return;
-    }
-    refreshERAction();
-  });
-  refreshERAction();
-  var sel = {
-    clear: function () {
-      getERRowCbs().forEach(function (c) { c.setAttribute('aria-checked', 'false'); });
-      var h = document.getElementById('mp-cb-all');
-      if (h) h.setAttribute('aria-checked', 'false');
-      erHeaderWasAll = false;
-      refreshERAction();
-    }
-  };
-  document.getElementById('tab-clear').addEventListener('click', function () {
-    sel.clear();
-  });
-  // 일괄 작업 → confirm modal (선택 건수 표기 + 변경 토스트)
-  (function () {
-    const cm = document.getElementById('confirm-modal');
-    const cmBackdrop = document.getElementById('confirm-backdrop');
-    const cmTitle = cm && cm.querySelector('.scm-confirm-modal__title');
-    const cmDesc = cm && cm.querySelector('.scm-confirm-modal__desc');
-    const cmCancel = cm && cm.querySelector('.scm-confirm-modal__cancel');
-    const cmConfirm = cm && cm.querySelector('.scm-confirm-modal__confirm');
-    function openCM() {
-      if (!cm) return;
-      const cnt = parseInt(tabCount.textContent, 10) || 0;
-      if (cmTitle) cmTitle.textContent = `${cnt}건 보충 요청 일괄 처리`;
-      if (cmDesc) cmDesc.innerHTML = `선택하신 ${cnt}건의 보충 요청을 일괄 처리합니다.<br/>계속 진행하시겠습니까?`;
-      cm.classList.add('is-open'); if (cmBackdrop) cmBackdrop.classList.add('is-open');
-    }
-    function closeCM() { if (cm) cm.classList.remove('is-open'); if (cmBackdrop) cmBackdrop.classList.remove('is-open'); }
-    document.getElementById('tab-bulk').addEventListener('click', function () {
-      if (cm) openCM();
-      else if (SCM.toast) SCM.toast.show({ variant: 'info', title: '일괄 작업', desc: tabCount.textContent + '개 항목 일괄 작업 (단순 데모)' });
-    });
-    if (cmCancel) cmCancel.addEventListener('click', closeCM);
-    if (cmBackdrop) cmBackdrop.addEventListener('click', closeCM);
-    if (cmConfirm) cmConfirm.addEventListener('click', function () {
-      const cnt = tabCount.textContent;
-      closeCM();
-      if (SCM.toast) SCM.toast.show({ variant: 'success', title: `${cnt}건 일괄 처리 완료`, desc: '요청하신 일괄 작업이 적용되었습니다.' });
-      if (sel) sel.clear();
-    });
-  })();
-
-  // 이동 요청 수량 input — 더블클릭 시 전체 선택
-  // capture phase + preventDefault 로 브라우저 기본 word-select 차단 + 즉시 전체 선택
-  document.getElementById('data-tbody').addEventListener('dblclick', (e) => {
-    const input = e.target.closest('.scm-input-cell__input');
-    if (input) {
-      e.preventDefault();
-      e.stopPropagation();
-      input.focus();
-      input.select();
-    }
-  }, true);
-
-  // input 클릭 시 cell-selection 이 컬럼 선택 / drag-select 발동하지 않게 차단
-  document.getElementById('data-tbody').addEventListener('mousedown', (e) => {
-    const input = e.target.closest('.scm-input-cell__input');
-    if (input) e.stopPropagation();
-  }, true);
-
-  // 이동 요청 수량 input 변경 시 — 값/available 비교 → '최대' 버튼 disabled 토글 + 초과 시 input error 톤
-  document.getElementById('data-tbody').addEventListener('input', (e) => {
-    const input = e.target.closest('.scm-input-cell__input');
-    if (!input) return;
-    const wrap = input.closest('.scm-input-cell');
-    if (!wrap) return;
-    const max = wrap.querySelector('.scm-input-cell__max');
-    if (!max) return;
-    const tr = input.closest('tr');
-    const idx = Array.prototype.indexOf.call(tr.parentNode.children, tr);
-    const r = ROWS[idx];
-    if (!r) return;
-    const inputVal = parseInt(String(input.value).replace(/,/g, ''), 10) || 0;
-    const avail = Number(r.available) || 0;
-    if (avail > 0 && inputVal >= avail) max.setAttribute('disabled', '');
-    else max.removeAttribute('disabled');
-    // 이동 가능 재고 초과 입력 → 에러 톤 (input + td wrapper + 체크박스 비활성)
-    const td = input.closest('td.er-input-cell');
-    const tr2 = input.closest('tr');
-    const cb = tr2 ? tr2.querySelector('td.cb-col .scm-checkbox') : null;
-    if (inputVal > avail) {
-      input.classList.add('is-error');
-      input.setAttribute('aria-invalid', 'true');
-      if (td) { td.classList.add('is-error'); td.classList.remove('is-disabled'); }
-      if (cb) {
-        cb.classList.add('is-disabled');
-        cb.setAttribute('aria-disabled', 'true');
-        cb.setAttribute('aria-checked', 'false');
-        cb.setAttribute('tabindex', '-1');
-      }
-    } else {
-      input.classList.remove('is-error');
-      input.removeAttribute('aria-invalid');
-      if (td) td.classList.remove('is-error');
-      // avail=0 (isUnavailable) 인 행은 항상 disabled. 그 외엔 활성 복귀.
-      if (cb && avail > 0) {
-        cb.classList.remove('is-disabled');
-        cb.removeAttribute('aria-disabled');
-        cb.setAttribute('tabindex', '0');
-      }
-    }
-  });
-
-  // 최대 버튼 클릭 → 이동 가능 재고만큼 input 채우고 버튼 disabled
-  document.getElementById('data-tbody').addEventListener('click', (e) => {
-    const max = e.target.closest('.scm-input-cell__max');
-    if (!max || max.hasAttribute('disabled')) return;
-    const input = max.parentElement.querySelector('.scm-input-cell__input');
-    if (!input) return;
-    const tr = max.closest('tr');
-    const idx = Array.prototype.indexOf.call(tr.parentNode.children, tr);
-    const r = ROWS[idx];
-    if (r && !isNaN(r.available)) {
-      input.value = Number(r.available).toLocaleString();
-      max.setAttribute('disabled', '');
-    }
-  });
-
-  // ============================================================
-  // 양식 다운로드 — 재고 보충 요청 양식 (4컬럼: 스토어코드 / SKU번호 / 바코드 / 이동수량)
-  // ============================================================
-  const RESTOCK_TEMPLATE = {
-    label: '재고 보충 요청 양식',
-    sheetName: '재고 보충 요청 양식',
-    bannerText: '※ 템플릿 가이드 및 유의사항 수정/삭제 불가',
-    columns: ['스토어코드', 'SKU번호', '바코드', '이동수량'],
-    descriptions: [
-      '[필수]\n\n스토어코드를 입력해 주세요.\n\n[스토어코드 입력]\n- 스토어코드는 옆 탭의 \'스토어 코드 목록\'에서\n  확인하여 해당 스토어 코드를 입력해 주세요.',
-      '[필수]\n\nSKU번호를 입력해 주세요.\n\n[SKU번호 입력]\n- 시스템에 등록된 SKU 번호를 정확히\n  입력해 주세요.',
-      '[필수]\n\n바코드를 입력해 주세요.\n\n[바코드 입력]\n- 시스템에 등록된 바코드를 정확히\n  입력해 주세요.',
-      '[필수]\n\n이동 수량을 입력해 주세요.\n\n[이동수량 입력]\n- 이동 가능 재고를 초과해서 입력\n  하실 수 없습니다.\n  (※ 0 이상 & 숫자만 가능)',
-    ],
-    storeCodes: [
-      ['무신사 스탠다드 강남',  'MS_GANGNAM'],
-      ['무신사 스탠다드 홍대',   'MS_HONGDAE'],
-      ['무신사 스탠다드 성수',   'MS_SEONGSU'],
-      ['무신사 스탠다드 동대문', 'MS_DONGDAEMUN'],
-      ['무신사 스탠다드 남대문', 'MS_NAMDAEMUN'],
-    ],
-  };
-
-  function thinBorder(argb) {
+  function aggregate(list) {
+    var sum = function (k) { return list.reduce(function (s, b) { return s + (b[k] || 0); }, 0); };
+    var prevSum = function (k) {
+      return list.reduce(function (s, b) {
+        return s + (b.prev && b.prev[k] !== undefined ? b.prev[k] : 0);
+      }, 0);
+    };
+    var base = sum('base'), otb = sum('otb'), gmv = sum('gmv'), cogs = sum('cogs'), ret = sum('ret');
+    var final = base + otb - cogs - ret;
+    var cogsPct = gmv > 0 ? (cogs / gmv) * 100 : 0;
+    var supplyPct = 100 - cogsPct;
+    var turnover = (base + otb) > 0 ? (cogs / (base + otb)) * 100 : 0;
+    var stockDays = cogs > 0 ? Math.round(final / (cogs / 365)) : 0;
     return {
-      top:    { style: 'thin', color: { argb } },
-      bottom: { style: 'thin', color: { argb } },
-      left:   { style: 'thin', color: { argb } },
-      right:  { style: 'thin', color: { argb } },
+      base: base, otb: otb, gmv: gmv, cogs: cogs, ret: ret,
+      final: final, cogsPct: cogsPct, supplyPct: supplyPct, turnover: turnover, stockDays: stockDays,
+      prevOtb: prevSum('otb'), prevGmv: prevSum('gmv'), prevCogs: prevSum('cogs'),
     };
   }
 
-  function richDescription(text) {
-    if (!text) return null;
-    const FB = { name: 'Pretendard', size: 10 };
-    const fontRed       = { ...FB, color: { argb: 'FFFF0000' } };
-    const fontRedBold   = { ...FB, bold: true, color: { argb: 'FFFF0000' } };
-    const fontBlack     = { ...FB, color: { argb: 'FF000000' } };
-    const fontBlackBold = { ...FB, bold: true, color: { argb: 'FF000000' } };
-
-    const m = String(text).match(/^(\s*\[[^\]]+\])([\s\S]*)$/);
-    if (!m) return [{ font: fontBlack, text: String(text) }];
-    const marker = m[1];
-    const rest = m[2];
-    const labelMatch = rest.match(/^([\s\n]*)([^\n]+)([\s\S]*)$/);
-    const segs = [];
-    segs.push({ font: fontRedBold, text: marker });
-    if (labelMatch) {
-      const [, sep, label, after] = labelMatch;
-      if (sep) segs.push({ font: fontRed, text: sep });
-      segs.push({ font: fontBlackBold, text: label });
-      if (after) segs.push({ font: fontBlack, text: after });
-    } else {
-      segs.push({ font: fontBlack, text: rest });
-    }
-    return segs;
+  function summaryRowCells(agg) {
+    var otbYoY  = calcYoY(agg.otb, agg.prevOtb);
+    var gmvYoY  = calcYoY(agg.gmv, agg.prevGmv);
+    var cogsYoY = calcYoY(agg.cogs, agg.prevCogs);
+    return ''
+      + '<td class="cell-numeric">' + fmt(agg.base) + '</td>'
+      + '<td class="cell-numeric">' + fmt(agg.otb) + '</td>'
+      + '<td class="cell-numeric">' + fmtYoY(otbYoY) + '</td>'
+      + '<td class="cell-numeric">' + fmt(agg.gmv) + '</td>'
+      + '<td class="cell-numeric">' + fmtYoY(gmvYoY) + '</td>'
+      + '<td class="cell-numeric">' + fmt(agg.cogs) + '</td>'
+      + '<td class="cell-numeric">' + fmtYoY(cogsYoY) + '</td>'
+      + '<td class="cell-numeric">' + fmt(agg.ret) + '</td>'
+      + '<td class="cell-numeric">' + fmtPct(agg.cogsPct) + '</td>'
+      + '<td class="cell-numeric">' + fmtPct(agg.supplyPct) + '</td>'
+      + '<td class="cell-numeric">' + fmt(agg.final) + '</td>'
+      + '<td class="cell-numeric">' + fmtPct(agg.turnover) + '</td>'
+      + '<td class="cell-numeric">' + agg.stockDays + '일</td>';
   }
 
-  async function downloadRestockTemplate() {
-    if (!window.ExcelJS) { alert('ExcelJS 라이브러리가 로드되지 않았습니다.'); return; }
-    const t = RESTOCK_TEMPLATE;
-    const cols = t.columns.length;
-    const wb = new ExcelJS.Workbook();
-    wb.creator = 'SCM HUB';
-    wb.created = new Date();
-    const ws = wb.addWorksheet(t.sheetName);
-    ws.columns = t.columns.map(() => ({ width: 30 }));
+  // ============================================================
+  // 6. 렌더
+  // ============================================================
+  function renderSummary() {
+    var list = filteredBrands();
+    var total = aggregate(list);
+    var html = ''
+      + '<tr class="is-grand">'
+      + '<td style="text-align:left;">전체 합계 (1P · 무신사+29CM)</td>'
+      + summaryRowCells(total)
+      + '</tr>';
+    ['G1', 'G2', 'G3'].forEach(function (g) {
+      var sub = list.filter(function (b) { return b.group === g; });
+      var agg = aggregate(sub);
+      html += '<tr class="is-group">'
+        + '<td style="text-align:left;"><span class="otb-group-pill" data-g="' + g + '">' + g + '</span> '
+        + groupLabels[g].name
+        + ' <span style="color:#8A8A8A; font-weight:400; margin-left:4px;">· ' + sub.length + '개 브랜드</span></td>'
+        + summaryRowCells(agg)
+        + '</tr>';
+    });
+    $('#otb-summary-body').innerHTML = html;
+  }
 
-    // Row 1: banner (전체 merge)
-    const r1 = ws.addRow([t.bannerText]);
-    r1.height = 22;
-    ws.mergeCells('A1:' + String.fromCharCode(64 + cols) + '1');
-    const bannerCell = ws.getCell('A1');
-    bannerCell.font = { name: 'Pretendard', size: 11, bold: true, color: { argb: 'FFFB0007' } };
-    bannerCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFBDAD7' } };
-    bannerCell.alignment = { wrapText: true, vertical: 'middle', horizontal: 'left' };
-    bannerCell.border = thinBorder('FFCCCCCC');
+  // 페이지네이션: 현재 페이지에 해당하는 항목만 반환
+  function paginate(list) {
+    var size = state.pageSize;
+    var totalPages = Math.max(1, Math.ceil(list.length / size));
+    if (state.page > totalPages) state.page = totalPages;
+    if (state.page < 1) state.page = 1;
+    var start = (state.page - 1) * size;
+    var pageItems = list.slice(start, start + size);
+    return { items: pageItems, totalPages: totalPages, totalItems: list.length };
+  }
 
-    // Row 2: descriptions — 동적 높이 (가장 긴 desc 의 wrap-line 추정값 사용)
-    ws.addRow(new Array(cols).fill(null));
-    const r2 = ws.getRow(2);
-    const CHAR_PER_LINE = 28;  // sz 10 / 컬럼 width 30 기준
-    let maxLines = 3;
-    for (const d of t.descriptions) {
-      const lines = String(d || '').split('\n');
-      let total = 0;
-      for (const line of lines) {
-        const len = Math.max(1, line.length);
-        total += Math.ceil(len / CHAR_PER_LINE);
-      }
-      if (total > maxLines) maxLines = total;
-    }
-    r2.height = Math.max(60, Math.min(180, maxLines * 13.5 + 8));
-    for (let c = 0; c < cols; c++) {
-      const cell = ws.getCell(2, c + 1);
-      cell.value = { richText: richDescription(t.descriptions[c]) };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF2CD' } };
-      cell.alignment = { wrapText: true, vertical: 'top', horizontal: 'left' };
-      cell.border = thinBorder('FFCCCCCC');
-    }
+  function renderPager(totalPages, totalItems) {
+    $('#otb-page-current').textContent = state.page;
+    $('#otb-page-total').textContent = totalPages;
+    var prev = $('#otb-page-prev');
+    var next = $('#otb-page-next');
+    prev.disabled = state.page <= 1;
+    next.disabled = state.page >= totalPages;
+    var label = $('#otb-pgsize-label');
+    if (label) label.textContent = state.pageSize + '개씩';
+  }
 
-    // Row 3: header
-    const headerRow = ws.addRow(t.columns);
-    headerRow.height = 32;
-    for (let c = 1; c <= cols; c++) {
-      const cell = ws.getCell(3, c);
-      cell.font = { name: 'Pretendard', size: 11, bold: true, color: { argb: 'FF000000' } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
-      cell.alignment = { wrapText: true, vertical: 'middle', horizontal: 'center' };
-      cell.border = thinBorder('FF000000');
+  function renderDetail() {
+    var fullList = filteredBrands();
+    var empty = $('#otb-empty');
+    var host = $('#otb-detail-host');
+    if (fullList.length === 0) {
+      $('#otb-detail-body').innerHTML = '';
+      empty.style.display = 'block';
+      host.style.display = 'none';
+      renderPager(1, 0);
+      return;
     }
+    empty.style.display = 'none';
+    host.style.display = '';
 
-    // Sheet 2: 스토어코드 목록
-    const ws2 = wb.addWorksheet('스토어코드 목록');
-    ws2.columns = [{ width: 30 }, { width: 24 }];
-    const head2 = ws2.addRow(['스토어명', '스토어코드']);
-    head2.height = 28;
-    for (let c = 1; c <= 2; c++) {
-      const cell = ws2.getCell(1, c);
-      cell.font = { name: 'Pretendard', size: 11, bold: true };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
-      cell.alignment = { vertical: 'middle', horizontal: 'center' };
-      cell.border = thinBorder('FF000000');
+    var paged = paginate(fullList);
+    var list = paged.items;
+    renderPager(paged.totalPages, paged.totalItems);
+
+    var html = '';
+    list.forEach(function (b) {
+      var d = calcDerived(b);
+      var isNew = !!b.isNew;
+      var otbYoY  = isNew ? null : calcYoY(b.otb, b.prev && b.prev.otb);
+      var gmvYoY  = isNew ? null : calcYoY(b.gmv, b.prev && b.prev.gmv);
+      var cogsYoY = isNew ? null : calcYoY(b.cogs, b.prev && b.prev.cogs);
+      var ch = function (key) {
+        if (isNew || !b.prev || b.prev[key] === undefined) return '';
+        return b.prev[key] !== b[key] ? ' is-changed' : '';
+      };
+      html += ''
+        + '<tr class="' + (isNew ? 'is-new' : '') + '" data-brand-id="' + b.id + '">'
+        + '<td class="col-frozen-1" style="text-align:left; width:200px;">' + escapeHtml(b.brand) + '</td>'
+        + '<td class="col-frozen-2" style="text-align:center;"><span class="otb-group-pill" data-g="' + b.group + '">' + b.group + '</span></td>'
+        + '<td class="col-frozen-3" style="text-align:left;">' + b.hq.replace('본부', '') + ' / ' + escapeHtml(b.team) + '</td>'
+        + '<td class="cell-numeric">' + fmt(b.base) + '</td>'
+        + '<td class="cell-input cell-numeric' + ch('otb') + '"><input type="number" inputmode="numeric" min="0" step="1" value="' + b.otb + '" data-field="otb" readonly /></td>'
+        + '<td class="cell-numeric">' + fmtYoY(otbYoY) + '</td>'
+        + '<td class="cell-input cell-numeric' + ch('gmv') + '"><input type="number" inputmode="numeric" min="0" step="1" value="' + b.gmv + '" data-field="gmv" readonly /></td>'
+        + '<td class="cell-numeric">' + fmtYoY(gmvYoY) + '</td>'
+        + '<td class="cell-input cell-numeric' + ch('cogs') + '"><input type="number" inputmode="numeric" min="0" step="1" value="' + b.cogs + '" data-field="cogs" readonly /></td>'
+        + '<td class="cell-numeric">' + fmtYoY(cogsYoY) + '</td>'
+        + '<td class="cell-input cell-numeric' + ch('ret') + '"><input type="number" inputmode="numeric" min="0" step="1" value="' + b.ret + '" data-field="ret" readonly /></td>'
+        + '<td class="cell-numeric cell-calc">' + fmtPct(d.cogsPct) + '</td>'
+        + '<td class="cell-numeric cell-calc">' + fmtPct(d.supplyPct) + '</td>'
+        + '<td class="cell-numeric cell-calc">' + fmt(d.final) + '</td>'
+        + '<td class="cell-numeric cell-calc">' + fmtPct(d.turnover) + '</td>'
+        + '<td class="cell-numeric cell-calc">' + d.stockDays + '일</td>'
+        + '<td class="col-spacer" data-empty="true" aria-hidden="true"></td>'
+        + '</tr>';
+    });
+    $('#otb-detail-body').innerHTML = html;
+
+    var table = $('#otb-detail-table');
+    table.classList.toggle('is-diff', state.diff);
+
+    // scm-table 모듈이 있다면 frozen-cols 다시 계산
+    if (window.SCM && SCM.scmTable && typeof SCM.scmTable.relayout === 'function') {
+      try { SCM.scmTable.relayout(table); } catch (_) {}
     }
-    t.storeCodes.forEach(row => {
-      const r = ws2.addRow(row);
-      r.height = 22;
-      for (let c = 1; c <= 2; c++) {
-        const cell = ws2.getCell(r.number, c);
-        cell.font = { name: 'Pretendard', size: 10 };
-        cell.alignment = { vertical: 'middle', horizontal: c === 1 ? 'left' : 'center' };
-        cell.border = thinBorder('FFCCCCCC');
+  }
+
+  function renderApproval() {
+    var line = $('#otb-approval-line');
+    var html = '<span class="otb-approval-label">결재선</span>';
+    approvalSteps.forEach(function (s, i) {
+      var cls = 'otb-approval-step otb-approval-step--' + s.status;
+      var checkmark = s.status === 'done' ? ' <span style="color:#1A6B1A; font-weight:700;">✓</span>' : '';
+      html += '<span class="' + cls + '" title="' + (s.note || '') + '">'
+        + '<span class="num">' + s.idx + '.</span> '
+        + s.role + ' (' + s.name + ')' + checkmark
+        + '</span>';
+      if (i < approvalSteps.length - 1) {
+        html += '<span class="otb-approval-arrow">→</span>';
       }
     });
+    line.innerHTML = html;
+  }
 
-    // 다운로드
-    const buf = await wb.xlsx.writeBuffer();
-    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    link.download = `${t.label}_${today}.xlsx`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(url), 0);
+  function renderStatus() {
+    var t = $('#otb-status-tag');
+    t.setAttribute('data-state', state.status);
+    var labels = { draft: '작성중', review: '검토중', approved: '최종 승인', rejected: '반려됨' };
+    t.textContent = labels[state.status] || state.status;
+  }
 
-    if (window.SCM && SCM.toast) {
-      SCM.toast.show({ variant: 'success', title: '양식 다운로드 완료', desc: t.label });
+  function renderStats() {
+    var list = filteredBrands();
+    var n = list.filter(function (b) { return b.isNew; }).length;
+    var c = list.filter(function (b) {
+      if (b.isNew || !b.prev) return false;
+      return b.prev.otb !== b.otb || b.prev.gmv !== b.gmv || b.prev.cogs !== b.cogs || b.prev.ret !== b.ret;
+    }).length;
+    $('#otb-stat-total').textContent = list.length;
+    $('#otb-stat-new').textContent   = n;
+    $('#otb-stat-changed').textContent = c;
+    // 적용된 필터 개수 — SCM.filterPopoverModes 가 chip count 자동 갱신.
+    // jsdom fallback 환경에선 active 키 개수로 카운트
+    var inst = window.filterModeInstance;
+    var active = inst && typeof inst.getActiveFilters === 'function' ? inst.getActiveFilters() : null;
+    var applied = 0;
+    if (active) {
+      Object.keys(active).forEach(function (k) {
+        var v = active[k];
+        if (Array.isArray(v) ? v.length > 0 : !!v) applied++;
+      });
+    }
+    var fc = $('#otb-filter-count');
+    if (fc) fc.textContent = applied;
+  }
+
+  function renderAll() {
+    renderSummary();
+    renderDetail();
+    renderApproval();
+    renderStatus();
+    renderStats();
+    $('#otb-comments-count').textContent = state.comments.length;
+    $('#otb-version-label').textContent = state.versionLabel;
+  }
+
+  // ============================================================
+  // 7. 인터랙션 — 입력 셀
+  // ============================================================
+  function bindCellInputs() {
+    var body = $('#otb-detail-body');
+    body.addEventListener('change', function (e) {
+      var inp = e.target;
+      if (!inp || inp.tagName !== 'INPUT') return;
+      var tr = inp.closest('tr');
+      if (!tr) return;
+      var id = tr.getAttribute('data-brand-id');
+      var field = inp.getAttribute('data-field');
+      var b = state.brands.find(function (x) { return x.id === id; });
+      if (!b || !field) return;
+      var oldVal = b[field];
+      var newVal = Math.max(0, Math.round(Number(inp.value) || 0));
+      b[field] = newVal;
+      renderAll();
+      toast(b.brand + ' · ' + fieldLabel(field) + ' 수정',  'success', fmt(oldVal) + ' → ' + fmt(newVal) + ' (자동 저장)');
+    });
+  }
+  function fieldLabel(f) {
+    return ({ otb: 'OTB', gmv: 'GMV', cogs: '출고원가', ret: '반품예정' })[f] || f;
+  }
+
+  // ============================================================
+  // 8. 필터 — SCM.filterPopoverModes.init 가 모든 wiring 처리
+  //   (검색/초기화 버튼 디폴트 동작은 모듈이 관리)
+  //   여기서는 OTB 도메인 옵션만 extraRegistry 로 등록.
+  // ============================================================
+  // OTB 데이터에서 unique 값 추출
+  function uniqList(key) {
+    var seen = {};
+    var out = [];
+    state.brands.forEach(function (b) {
+      var v = b[key];
+      if (v && !seen[v]) { seen[v] = 1; out.push(v); }
+    });
+    return out;
+  }
+  // OTB extraRegistry 정의 — REGISTRY 에 없는 키만 등록
+  function buildExtraRegistry() {
+    return {
+      hq: { mode: 'single', options: [
+        { id: 'all', label: '전체', selected: true },
+      ].concat(uniqList('hq').map(function (v, i) {
+        return { id: 'hq_' + (i + 1), label: v, selected: false };
+      })) },
+      team: { mode: 'single', options: [
+        { id: 'all', label: '전체', selected: true },
+      ].concat(uniqList('team').map(function (v, i) {
+        return { id: 'tm_' + (i + 1), label: v, selected: false };
+      })) },
+      group: { mode: 'single', options: [
+        { id: 'all', label: '전체', selected: true },
+        { id: 'g1', label: groupLabels.G1.name, selected: false },
+        { id: 'g2', label: groupLabels.G2.name, selected: false },
+        { id: 'g3', label: groupLabels.G3.name, selected: false },
+      ] },
+      // OTB 의 brand 옵션은 SKU REGISTRY 와 다른 set 이므로 override
+      brand: { mode: 'multi', options: [
+        { id: 'all', label: '전체', selected: true },
+      ].concat(state.brands.map(function (b, i) {
+        return { id: 'br_' + (i + 1), label: b.brand, selected: false };
+      })) },
+    };
+  }
+
+  // ============================================================
+  // 9-bis. 페이지네이션
+  // ============================================================
+  function bindPagination() {
+    $('#otb-page-prev').addEventListener('click', function () {
+      if (state.page > 1) { state.page--; renderDetail(); scrollDetailToTop(); }
+    });
+    $('#otb-page-next').addEventListener('click', function () {
+      var total = Math.max(1, Math.ceil(filteredBrands().length / state.pageSize));
+      if (state.page < total) { state.page++; renderDetail(); scrollDetailToTop(); }
+    });
+
+    // 페이지 크기 셀렉트 (자체 popup — sku-management 의 scm-pgsize-popup 패턴)
+    var wrap = $('#otb-pgsize');
+    var btn = wrap.querySelector('.scm-pgsize');
+    var pop = wrap.querySelector('.scm-pgsize-popup');
+    pop.innerHTML = PAGE_SIZE_OPTIONS.map(function (n) {
+      return '<li role="option" data-v="' + n + '"' + (n === state.pageSize ? ' aria-selected="true" class="is-selected"' : '') + '>' + n + '개씩</li>';
+    }).join('');
+
+    function closePop() {
+      pop.hidden = true;
+      btn.setAttribute('aria-expanded', 'false');
+      document.removeEventListener('mousedown', outsidePop, true);
+    }
+    function outsidePop(e) {
+      if (!wrap.contains(e.target)) closePop();
+    }
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var open = !pop.hidden;
+      if (open) { closePop(); return; }
+      pop.hidden = false;
+      btn.setAttribute('aria-expanded', 'true');
+      setTimeout(function () { document.addEventListener('mousedown', outsidePop, true); }, 0);
+    });
+    pop.addEventListener('click', function (e) {
+      var li = e.target.closest('li[data-v]');
+      if (!li) return;
+      var v = parseInt(li.getAttribute('data-v'), 10);
+      if (!isNaN(v) && v !== state.pageSize) {
+        state.pageSize = v;
+        state.page = 1;
+        // 선택 표시 갱신
+        $$('li', pop).forEach(function (x) {
+          var on = parseInt(x.getAttribute('data-v'), 10) === v;
+          x.classList.toggle('is-selected', on);
+          x.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        renderDetail();
+      }
+      closePop();
+    });
+  }
+  function scrollDetailToTop() {
+    var host = $('#otb-detail-host');
+    if (host && typeof host.scrollIntoView === 'function') {
+      host.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }
 
-  document.getElementById('bu-template-dl')?.addEventListener('click', downloadRestockTemplate);
+  // ============================================================
+  // 9. Diff 모드 토글
+  // ============================================================
+  function bindDiffToggle() {
+    var btn = $('#otb-diff-toggle');
+    btn.addEventListener('click', function () {
+      state.diff = !state.diff;
+      btn.classList.toggle('is-on', state.diff);
+      btn.setAttribute('aria-pressed', state.diff ? 'true' : 'false');
+      btn.textContent = state.diff ? '✓ 1차 대비 변경분 표시중' : '1차 대비 변경분 표시';
+      renderDetail();
+      if (state.diff) toast('변경된 셀과 신규 브랜드가 강조됩니다', 'info');
+    });
+  }
+
+  // ============================================================
+  // 10. 모달 (SCM.confirmModal.open 사용)
+  //     단순 안내/확인 + descHtml 안에 textarea 주입 (SCM 가이드대로)
+  // ============================================================
+  function openConfirmModal(opts) {
+    if (!(window.SCM && SCM.confirmModal && typeof SCM.confirmModal.open === 'function')) {
+      // fallback: 디자인 시스템이 없는 환경
+      if (typeof opts.onConfirm === 'function') opts.onConfirm();
+      return;
+    }
+    SCM.confirmModal.open(opts);
+  }
+  function closeConfirmModal() {
+    if (window.SCM && SCM.confirmModal && typeof SCM.confirmModal.close === 'function') SCM.confirmModal.close();
+  }
+
+  function openVersionModal() {
+    var html = ''
+      + '<div class="otb-modal-section-meta">26Y 시즌 OTB 상신 버전</div>'
+      + '<div class="otb-version-list" id="m-ver-list">'
+      + '<div class="otb-version-item" data-ver="26Y 1차 상신">'
+      + '<div class="otb-version-item__title">26Y 1차 상신</div>'
+      + '<div class="otb-version-item__meta">2026-03-15 본부장 승인 완료</div>'
+      + '</div>'
+      + '<div class="otb-version-item is-current" data-ver="26Y 2차 상신">'
+      + '<div class="otb-version-item__title">26Y 2차 상신 (현재)</div>'
+      + '<div class="otb-version-item__meta">2026-04-28 작성중 · 팀장 검토 대기</div>'
+      + '</div>'
+      + '<div class="otb-version-item otb-version-item--new" data-ver="new">'
+      + '<div class="otb-version-item__title">+ 새 버전 만들기</div>'
+      + '<div class="otb-version-item__meta">현재 버전을 복사하여 3차 상신 시작</div>'
+      + '</div>'
+      + '</div>';
+    openConfirmModal({
+      title: '버전 선택',
+      descHtml: html,
+      cancelLabel: '닫기',
+      confirmLabel: '확인',
+      onConfirm: function () {
+        // 클릭으로 선택. confirm 누르면 단순 닫기와 같음
+      },
+    });
+    // 클릭 핸들러 부착 (open 이후 DOM 사용 가능)
+    setTimeout(function () {
+      $$('#m-ver-list .otb-version-item').forEach(function (it) {
+        it.addEventListener('click', function () {
+          var v = it.getAttribute('data-ver');
+          if (v === 'new') {
+            toast('새 버전 생성은 본부장 승인 후 가능합니다', 'critical');
+            return;
+          }
+          state.versionLabel = v;
+          renderAll();
+          closeConfirmModal();
+          toast('버전이 변경되었습니다', 'info', v);
+        });
+      });
+    }, 0);
+  }
+
+  function openSubmitModal() {
+    if (state.status === 'review') {
+      toast('이미 상신 완료된 상태입니다', 'critical', '검토중');
+      return;
+    }
+    var html = ''
+      + '<div class="otb-modal-line">' + escapeHtml(state.versionLabel) + '을 다음 결재자에게 전달합니다.</div>'
+      + '<div class="otb-approval-summary">'
+      + '<div class="otb-approval-summary__head">결재선</div>'
+      + '<div class="otb-approval-summary__line">'
+      + '① MD 김민지 (작성자) <span class="otb-check">✓</span><br/>'
+      + '<strong class="accent">→ ② 팀장 박지훈 (다음 결재자)</strong><br/>'
+      + '<span class="otb-muted">→ ③ 실장 이수진</span><br/>'
+      + '<span class="otb-muted">→ ④ 본부장 최영호</span>'
+      + '</div></div>'
+      + '<div class="otb-modal-form-row">'
+      +   '<label class="otb-modal-form-label" for="m-sub-comment">상신 코멘트 (선택)</label>'
+      +   '<textarea class="otb-modal-textarea" id="m-sub-comment" rows="4" placeholder="2차 상신 이유, 1차 대비 주요 변경사항 등을 입력하세요"></textarea>'
+      + '</div>'
+      + '<div class="otb-modal-hint">상신 시 다음 결재자에게 슬랙 알림이 자동 발송됩니다.</div>';
+    openConfirmModal({
+      title: '상신하기',
+      descHtml: html,
+      cancelLabel: '취소',
+      confirmLabel: '상신',
+      onConfirm: function () {
+        var el = document.getElementById('m-sub-comment');
+        var cmt = el ? el.value.trim() : '';
+        if (cmt) state.comments.unshift({ author: 'MD 김민지', ts: nowStr(), tag: '상신', text: cmt });
+        state.status = 'review';
+        renderAll();
+        toast('팀장에게 상신되었습니다', 'success');
+      },
+    });
+  }
+
+  function openApproveModal() {
+    if (state.status !== 'review') {
+      toast('아직 상신되지 않은 버전입니다', 'critical');
+      return;
+    }
+    var next = approvalSteps.find(function (s) { return s.status === 'pending'; });
+    var nextRole = next ? (next.role + ' ' + next.name) : '본부장';
+    var html = ''
+      + '<div class="otb-modal-line">현재 단계 검토를 완료하고 다음 결재자(<strong class="accent">' + escapeHtml(nextRole) + '</strong>)에게 전달합니다.</div>'
+      + '<div class="otb-modal-form-row">'
+      +   '<label class="otb-modal-form-label" for="m-app-comment">검토 코멘트 (선택)</label>'
+      +   '<textarea class="otb-modal-textarea" id="m-app-comment" rows="4" placeholder="의견을 남길 수 있습니다"></textarea>'
+      + '</div>';
+    openConfirmModal({
+      title: '검토 완료 처리',
+      descHtml: html,
+      cancelLabel: '취소',
+      confirmLabel: '확인 → 전달',
+      onConfirm: function () {
+        var el = document.getElementById('m-app-comment');
+        var cmt = el ? el.value.trim() : '';
+        var idx = approvalSteps.findIndex(function (s) { return s.status === 'current'; });
+        if (idx >= 0) {
+          approvalSteps[idx].status = 'done';
+          approvalSteps[idx].note = '검토 완료 (' + nowStr() + ')';
+          if (cmt) state.comments.unshift({ author: approvalSteps[idx].role + ' ' + approvalSteps[idx].name, ts: nowStr(), tag: '검토', text: cmt });
+          if (idx + 1 < approvalSteps.length) {
+            approvalSteps[idx + 1].status = 'current';
+          } else {
+            state.status = 'approved';
+          }
+        }
+        renderAll();
+        toast(nextRole + '에게 전달되었습니다', 'success');
+      },
+    });
+  }
+
+  function openRejectModal() {
+    var html = ''
+      + '<div class="otb-modal-line">반려하면 작성자(MD 김민지)가 다시 수정해서 상신해야 합니다.</div>'
+      + '<div class="otb-modal-form-row">'
+      +   '<label class="otb-modal-form-label" for="m-rej-reason">반려 사유 (필수)</label>'
+      +   '<textarea class="otb-modal-textarea" id="m-rej-reason" rows="4" placeholder="구체적인 수정 요청 사유를 입력하세요" required></textarea>'
+      + '</div>';
+    openConfirmModal({
+      title: '반려',
+      descHtml: html,
+      cancelLabel: '취소',
+      confirmLabel: '반려',
+      onConfirm: function () {
+        var el = document.getElementById('m-rej-reason');
+        var v = el ? el.value.trim() : '';
+        if (!v) {
+          toast('반려 사유를 입력하세요', 'critical');
+          // 모달 다시 열기 (사용자가 입력 후 다시 시도하도록)
+          setTimeout(openRejectModal, 100);
+          return;
+        }
+        state.comments.unshift({ author: '팀장 박지훈', ts: nowStr(), tag: '반려', text: v });
+        state.status = 'rejected';
+        approvalSteps.forEach(function (s, i) { if (i > 0) s.status = 'pending'; });
+        approvalSteps[0].status = 'current';
+        renderAll();
+        toast('작성자에게 반려되었습니다', 'critical');
+      },
+    });
+  }
+
+  function openCommentsModal() {
+    var listHtml = state.comments.map(function (c) {
+      return '<div class="otb-comment-item">'
+        + '<div class="otb-comment-meta">' + escapeHtml(c.author) + ' · ' + escapeHtml(c.ts) + ' · ' + escapeHtml(c.tag) + '</div>'
+        + '<div class="otb-comment-text">' + escapeHtml(c.text) + '</div>'
+        + '</div>';
+    }).join('');
+    var html = ''
+      + '<div class="otb-comment-list">' + listHtml + '</div>'
+      + '<div class="otb-modal-form-row">'
+      +   '<label class="otb-modal-form-label" for="m-cmt-new">새 코멘트 작성</label>'
+      +   '<textarea class="otb-modal-textarea" id="m-cmt-new" rows="3" placeholder="버전 전체에 대한 코멘트를 남길 수 있습니다"></textarea>'
+      + '</div>';
+    openConfirmModal({
+      title: '전체 코멘트 (' + state.comments.length + ')',
+      descHtml: html,
+      cancelLabel: '닫기',
+      confirmLabel: '코멘트 저장',
+      onConfirm: function () {
+        var el = document.getElementById('m-cmt-new');
+        var v = el ? el.value.trim() : '';
+        if (!v) {
+          toast('내용을 입력하세요', 'critical');
+          setTimeout(openCommentsModal, 100);
+          return;
+        }
+        state.comments.unshift({ author: 'MD 김민지', ts: nowStr(), tag: '코멘트', text: v });
+        renderAll();
+        toast('코멘트가 저장되었습니다', 'success');
+      },
+    });
+  }
+
+  function openHistoryModal() {
+    var html = ''
+      + '<div class="otb-comment-list" style="max-height:320px;">'
+      + '<div class="otb-comment-item"><div class="otb-comment-meta">2026-04-28 14:30</div><div class="otb-comment-text">MD 김민지 — 26Y 2차 상신 작성 시작</div></div>'
+      + '<div class="otb-comment-item"><div class="otb-comment-meta">2026-04-28 13:15</div><div class="otb-comment-text">톰브라운(공식) 신규 브랜드 추가</div></div>'
+      + '<div class="otb-comment-item"><div class="otb-comment-meta">2026-04-28 12:50</div><div class="otb-comment-text">제임스 펄스 신규 브랜드 추가</div></div>'
+      + '<div class="otb-comment-item"><div class="otb-comment-meta">2026-04-28 11:40</div><div class="otb-comment-text">마르니 OTB 40 → 100 (+150%) 조정</div></div>'
+      + '<div class="otb-comment-item"><div class="otb-comment-meta">2026-03-15 18:00</div><div class="otb-comment-text">26Y 1차 상신 본부장 최종 승인</div></div>'
+      + '</div>';
+    openConfirmModal({
+      title: '변경 이력',
+      descHtml: html,
+      cancelLabel: '닫기',
+      confirmLabel: '확인',
+      onConfirm: function () {},
+    });
+  }
+
+  // ============================================================
+  // 11. 엑셀 다운/업
+  // ============================================================
+  function bindExcel() {
+    $('#otb-excel-down-btn').addEventListener('click', function () {
+      var rows = [['브랜드', '그룹', '본부', '실', '플랫폼', '기초재고', 'OTB', 'GMV', '출고원가', '반품예정', '기말재고', '재고일수']];
+      state.brands.forEach(function (b) {
+        var d = calcDerived(b);
+        rows.push([b.brand, b.group, b.hq, b.team, b.platform, b.base, b.otb, b.gmv, b.cogs, b.ret, d.final, d.stockDays]);
+      });
+      var csv = rows.map(function (r) {
+        return r.map(function (v) {
+          var s = String(v == null ? '' : v).replace(/"/g, '""');
+          return /[",\n]/.test(s) ? '"' + s + '"' : s;
+        }).join(',');
+      }).join('\n');
+      var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'OTB_' + state.versionLabel.replace(/\s/g, '_') + '_' + new Date().toISOString().slice(0, 10) + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      toast('엑셀(CSV) 다운로드 완료', 'success', state.brands.length + '개 브랜드');
+    });
+
+    $('#otb-excel-up-btn').addEventListener('click', function () {
+      var inp = document.createElement('input');
+      inp.type = 'file';
+      inp.accept = '.csv,.xlsx,.xls';
+      inp.addEventListener('change', function () {
+        var f = inp.files && inp.files[0];
+        if (!f) return;
+        toast('업로드 완료', 'info', f.name + ' (목업 — 파싱 미구현)');
+      });
+      inp.click();
+    });
+  }
+
+  // ============================================================
+  // 12. 이벤트 바인딩
+  // ============================================================
+  function bindAll() {
+    bindCellInputs();
+    bindDiffToggle();
+    bindExcel();
+    bindPagination();
+
+    $('#otb-version-btn').addEventListener('click', openVersionModal);
+    $('#otb-submit-btn').addEventListener('click', openSubmitModal);
+    $('#otb-approve-btn').addEventListener('click', openApproveModal);
+    $('#otb-reject-btn').addEventListener('click', openRejectModal);
+    $('#otb-comments-btn').addEventListener('click', openCommentsModal);
+    $('#otb-history-btn').addEventListener('click', openHistoryModal);
+    $('#otb-save-btn').addEventListener('click', function () {
+      toast('임시저장되었습니다', 'success');
+    });
+  }
+
+  // ============================================================
+  // 13. 초기 렌더 + sticky stack 동적 높이
+  // ============================================================
+  renderAll();
+  bindAll();
+
+  // ----- SCM 테이블 모듈 mount (sticky thead, frozen, drag/resize, cell selection) -----
+  // sku-management.html 와 동일한 mount 호출
+  if (window.SCMTable && typeof SCMTable.init === 'function') {
+    try { SCMTable.init({ root: document }); } catch (e) { console.warn('[OTB] SCMTable.init failed', e); }
+  }
+
+  // ----- cell-input (엑셀 패턴: 셀 선택 ↔ 편집 모드 분리, 화살표 네비게이션) -----
+  if (window.SCM && SCM.cellInput && typeof SCM.cellInput.mount === 'function') {
+    try {
+      SCM.cellInput.mount({
+        scope: document,
+        tableSelector: '#otb-detail-host .mp-table-scroll .mp-table',
+        onChange: function (td, input, oldVal, newVal) {
+          // mp-table 의 native change 이벤트는 그대로 발생하므로
+          // 기존 bindCellInputs 핸들러가 데이터/렌더 처리
+          // (여기선 추가 작업 없음 — 모듈 통합 검증용)
+        },
+      });
+    } catch (e) { console.warn('[OTB] cellInput mount failed', e); }
+  }
+
+  // ----- 컬럼 정렬 (sort-ic 클릭 → asc/desc/reset) -----
+  if (window.SCM && SCM.tableSort && typeof SCM.tableSort.mount === 'function') {
+    try {
+      SCM.tableSort.mount({
+        scope: document,
+        tableSelector: '#otb-detail-host .mp-table-scroll .mp-table',
+      });
+    } catch (e) { console.warn('[OTB] tableSort mount failed', e); }
+  }
+
+  // ----- 컬럼 더보기 메뉴 (more-ic ⋮ 클릭) -----
+  if (window.SCM && SCM.columnMoreMenu && typeof SCM.columnMoreMenu.mount === 'function') {
+    try {
+      SCM.columnMoreMenu.mount({
+        scope: document,
+        tableSelector: '#otb-detail-host .mp-table-scroll .mp-table',
+      });
+    } catch (e) { console.warn('[OTB] columnMoreMenu mount failed', e); }
+  }
+
+  // ----- 컬럼 필터 popover (filter-ic 클릭) -----
+  if (window.SCM && SCM.columnFilterPopover && typeof SCM.columnFilterPopover.mount === 'function') {
+    try {
+      SCM.columnFilterPopover.mount({
+        scope: document,
+        tableSelector: '#otb-detail-host .mp-table-scroll .mp-table',
+        placeholder: '값을 줄바꿈으로 구분 (예: 5454, 1600)',
+        helper: '여러 값은 줄바꿈으로 구분',
+      });
+    } catch (e) { console.warn('[OTB] columnFilterPopover mount failed', e); }
+  }
+
+  // ----- 검색 버튼 (디폴트 disabled, popover-modes 가 활성화/비활성화 제어) -----
+  if (window.SCM && SCM.searchBtn && typeof SCM.searchBtn.mount === 'function') {
+    try {
+      SCM.searchBtn.mount(document.getElementById('otb-search-btn'), {
+        disabled: true,
+        onClick: function () {
+          if (window.filterModeInstance && typeof window.filterModeInstance.applyAll === 'function') {
+            window.filterModeInstance.applyAll();
+          }
+          state.page = 1;
+          renderAll();
+        },
+      });
+    } catch (e) { console.warn('[OTB] searchBtn mount failed', e); }
+  }
+
+  // ----- 초기화 버튼 (디폴트 hidden, 필터 적용 시 show — popover-modes 가 호출) -----
+  if (window.SCM && SCM.filterResetBtn && typeof SCM.filterResetBtn.mount === 'function') {
+    try {
+      SCM.filterResetBtn.mount(document.getElementById('otb-reset-btn'), {
+        onClick: function () {
+          if (window.filterModeInstance && typeof window.filterModeInstance.resetAll === 'function') {
+            window.filterModeInstance.resetAll();
+          }
+          state.page = 1;
+          renderAll();
+        },
+      });
+    } catch (e) { console.warn('[OTB] filterResetBtn mount failed', e); }
+  }
+
+  // ----- 전체 필터 popover-modes (단일 source of truth — chip 클릭 / drawer 자동 생성 / chip count 자동) -----
+  window.filterModeInstance = null;
+  if (window.SCM && SCM.filterPopoverModes && typeof SCM.filterPopoverModes.init === 'function') {
+    try {
+      window.filterModeInstance = SCM.filterPopoverModes.init({
+        rootEl: document.getElementById('filter-popover-root'),
+        filterBarEl: document.getElementById('filter-bar'),
+        extraRegistry: buildExtraRegistry(),
+        onSearch: function () {
+          state.page = 1;
+          renderAll();
+        },
+        onReset: function () {
+          state.page = 1;
+          renderAll();
+          if (window.SCM && SCM.toast) SCM.toast.show({ variant: 'info', title: '필터가 초기화되었습니다' });
+        },
+        onApply: function (key) {
+          // 필터 변경 시 1페이지부터 + 합계 자동 갱신
+          state.page = 1;
+          renderAll();
+        },
+      });
+    } catch (e) { console.warn('[OTB] filterPopoverModes init failed', e); }
+  }
+
+  // sticky stack — filter-bar 높이를 CSS var로 (sku-management 패턴)
+  function syncStickyHeights() {
+    var fb = document.getElementById('filter-bar');
+    if (fb) {
+      document.documentElement.style.setProperty('--scm-sticky-filter', fb.offsetHeight + 'px');
+    }
+  }
+  syncStickyHeights();
+  window.addEventListener('resize', syncStickyHeights);
 })();
 </script>
 </body>
