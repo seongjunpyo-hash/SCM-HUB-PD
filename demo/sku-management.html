@@ -52,12 +52,6 @@
     :root {
       --scm-sticky-filter: 76px;
     }
-    body { margin: 0; font-family: var(--ld-font-family-base); color: var(--ld-fg); background: #fff; min-width: 1440px; }
-
-    .app { display: grid; grid-template-columns: var(--scm-lnb-width) minmax(0, 1fr); transition: grid-template-columns 0.2s ease; }
-
-    main { min-width: 0; padding: 0 28px 40px; }
-
     /* sticky stack */
     .scm-filter-bar { top: var(--scm-sticky-gnb); }
     .scm-stats-bar--sticky { top: calc(var(--scm-sticky-gnb) + var(--scm-sticky-filter)); }

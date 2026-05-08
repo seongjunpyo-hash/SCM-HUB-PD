@@ -14,6 +14,26 @@ html.is-lnb-open {
   --scm-lnb-width: 260px;
 }
 
+/* 데모 페이지 공통 shell 룰 — body / .app grid / main padding.
+   각 페이지 인라인 <style> 에 복붙되어 있던 것을 단일 source 로 통합. */
+body {
+  margin: 0;
+  font-family: var(--ld-font-family-base);
+  color: var(--ld-fg);
+  background: #fff;
+  min-width: 1440px;
+}
+.app {
+  display: grid;
+  grid-template-columns: var(--scm-lnb-width) minmax(0, 1fr);
+  transition: grid-template-columns 0.2s ease;
+}
+main {
+  min-width: 0;
+  padding: 0 28px 40px;
+}
+
+
 /* ============================================================
  * scm-lnb — left navigation bar (LNB), 2-level menu
  * ------------------------------------------------------------
