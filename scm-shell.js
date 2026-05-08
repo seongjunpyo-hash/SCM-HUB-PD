@@ -13,6 +13,10 @@
  * 있으므로 별도 동기 로드 유지 — defer 로 늦추면 미인증 상태로
  * 잠시 페이지가 노출될 수 있음.
  *
+ * 추가 책임:
+ *   - sticky-filter / sticky-stats 토큰 dynamic 측정 (이전 각 페이지의
+ *     syncStickyVars 보일러플레이트를 단일 source 로 통합)
+ *
  * 추가/제거할 공통 스크립트는 아래 SCRIPTS 배열만 수정하면 모든
  * 데모 페이지에 일괄 반영.
  * ============================================================ */
@@ -27,12 +31,33 @@
   ];
 
   SCRIPTS.forEach(function (src) {
-    // 이미 로드된 경우 (legacy 페이지가 직접 <script src> 로 박은 케이스)
-    // 중복 로드 방지
     if (document.querySelector('script[src="' + src + '"]')) return;
     var s = document.createElement('script');
     s.src = src;
     s.defer = true;
     document.head.appendChild(s);
   });
+
+  // sticky-filter / sticky-stats 토큰 — 페이지 #filter-bar 와 .scm-stats-bar
+  // 의 실측 높이를 :root 변수로 set. 페이지마다 동일했던 보일러플레이트.
+  function syncStickyVars() {
+    var root = document.documentElement;
+    var fb = document.getElementById('filter-bar');
+    var sb = document.querySelector('.scm-stats-bar');
+    root.style.setProperty('--scm-sticky-filter', (fb ? fb.offsetHeight : 0) + 'px');
+    root.style.setProperty('--scm-sticky-stats',  (sb ? sb.offsetHeight : 0) + 'px');
+  }
+  function bootStickyVars() {
+    syncStickyVars();
+    if (typeof ResizeObserver !== 'undefined') {
+      var ro = new ResizeObserver(syncStickyVars);
+      document.querySelectorAll('#filter-bar, .scm-stats-bar').forEach(function (el) { ro.observe(el); });
+    }
+    window.addEventListener('resize', syncStickyVars);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootStickyVars, { once: true });
+  } else {
+    bootStickyVars();
+  }
 })();
