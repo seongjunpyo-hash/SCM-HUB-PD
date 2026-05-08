@@ -1289,6 +1289,106 @@
       padding: 32px 20px; text-align: center;
       color: #9CA3AF; font-size: 12.5px; line-height: 1.6;
     }
+
+    /* ============================================================
+     * 신규 페이지 (New page) pane
+     * ============================================================ */
+    .side-pane[data-pane="new"] { display: none; flex-direction: column; }
+    .side-pane[data-pane="new"].is-active { display: flex; }
+    .np-form { display: flex; flex-direction: column; gap: 12px; padding: 8px 4px 4px; }
+    .np-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .np-field--row { flex-direction: row; gap: 8px; }
+    .np-field__sub { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .np-field__label {
+      font-size: 11.5px; font-weight: 600; color: #374151;
+      letter-spacing: 0.1px;
+    }
+    .np-input {
+      padding: 8px 10px;
+      background: #fff; color: #1A1A1A;
+      border: 1px solid #D1D5DB; border-radius: 6px;
+      font-family: inherit; font-size: 12.5px;
+      outline: none; min-width: 0;
+    }
+    .np-input--mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+    .np-input--area { resize: vertical; min-height: 56px; }
+    .np-input:focus { border-color: #4F46E5; }
+    .np-hint { font-size: 11px; color: #9CA3AF; }
+    .np-checks {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px;
+      padding: 6px 0;
+    }
+    .np-check {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 6px; border-radius: 4px;
+      font-size: 12px; color: #1A1A1A; cursor: pointer;
+    }
+    .np-check input { accent-color: #4F46E5; }
+    .np-check:hover { background: #F3F4F6; }
+    .np-actions {
+      display: flex; gap: 8px; justify-content: flex-end;
+      margin-top: 4px;
+    }
+    .np-btn {
+      padding: 9px 16px; border-radius: 4px;
+      font-family: inherit; font-size: 12.5px; font-weight: 600;
+      cursor: pointer;
+    }
+    .np-btn--ghost {
+      background: #fff; color: #6B7280; border: 1px solid #E5E7EB;
+    }
+    .np-btn--ghost:hover { color: #1A1A1A; border-color: #1A1A1A; }
+    .np-btn--primary { background: #4F46E5; color: #fff; border: 0; }
+    .np-btn--primary:hover { background: #4338CA; }
+    .np-list {
+      display: flex; flex-direction: column;
+      background: #FAFBFC; border: 1px solid #EBEEF2; border-radius: 8px;
+      overflow: hidden;
+    }
+    .np-list:empty::after {
+      content: '아직 등록된 신규 페이지가 없습니다.';
+      display: block; padding: 14px; text-align: center;
+      font-size: 12px; color: #9CA3AF;
+    }
+    .np-row {
+      display: flex; flex-direction: column; gap: 4px;
+      padding: 12px 14px;
+      border-top: 1px solid #EFF1F4;
+    }
+    .np-row:first-child { border-top: 0; }
+    .np-row__head {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .np-row__name { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; color: #1A1A1A;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .np-row__loc {
+      font-size: 10.5px; font-weight: 700; letter-spacing: 0.3px;
+      padding: 2px 7px; border-radius: 4px;
+      background: #EEF2FF; color: #4F46E5;
+      flex-shrink: 0;
+    }
+    .np-row__del {
+      background: transparent; border: 0; cursor: pointer;
+      font-size: 14px; color: #9CA3AF; padding: 2px 6px; border-radius: 4px;
+      flex-shrink: 0; line-height: 1;
+    }
+    .np-row__del:hover { color: #DC2626; background: #FEE2E2; }
+    .np-row__meta {
+      display: flex; flex-wrap: wrap; gap: 4px 8px;
+      font-size: 11px; color: #6B7280;
+    }
+    .np-row__meta b { color: #374151; font-weight: 600; }
+    .np-row__path {
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 11px; color: #4F46E5;
+      word-break: break-all;
+    }
+    .np-row__chips { display: flex; flex-wrap: wrap; gap: 4px; }
+    .np-row__chip {
+      font-size: 10.5px; font-weight: 600;
+      padding: 2px 7px; border-radius: 999px;
+      background: #F3F4F6; color: #4B5563;
+    }
   </style>
 </head>
 <body>
@@ -1344,22 +1444,29 @@
     <aside class="sidebar">
       <!-- TAB NAV -->
       <div class="side-tabs" id="sideTabs">
-        <button type="button" class="side-tab is-active" data-tab="comments">
-          <svg class="side-tab__icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-            <path d="M10 14.75C14.1421 14.75 17.5 12.1756 17.5 9C17.5 5.82436 14.1421 3.25 10 3.25C5.85786 3.25 2.5 5.82436 2.5 9C2.5 10.658 3.41534 12.1521 4.87973 13.2015L4.55838 16.4119C4.53393 16.6562 4.79734 16.8248 5.00899 16.7003L8.51605 14.6375C8.99574 14.7113 9.49197 14.75 10 14.75Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="square"/>
-          </svg>
-          코멘트
-        </button>
-        <button type="button" class="side-tab" data-tab="edit">
+        <button type="button" class="side-tab is-active" data-tab="edit">
           <svg class="side-tab__icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
             <path d="M10.9402 3.91505H4.0802V15.92H16.0852V9.06004M15.2612 2.92273L17.0802 4.74176L11.0168 10.8052L8.28823 11.7147L9.19774 8.98616L15.2612 2.92273Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
           </svg>
           편집
         </button>
+        <button type="button" class="side-tab" data-tab="new">
+          <svg class="side-tab__icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M10 4.5v11M4.5 10h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            <rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          </svg>
+          신규
+        </button>
+        <button type="button" class="side-tab" data-tab="comments">
+          <svg class="side-tab__icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M10 14.75C14.1421 14.75 17.5 12.1756 17.5 9C17.5 5.82436 14.1421 3.25 10 3.25C5.85786 3.25 2.5 5.82436 2.5 9C2.5 10.658 3.41534 12.1521 4.87973 13.2015L4.55838 16.4119C4.53393 16.6562 4.79734 16.8248 5.00899 16.7003L8.51605 14.6375C8.99574 14.7113 9.49197 14.75 10 14.75Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="square"/>
+          </svg>
+          코멘트
+        </button>
       </div>
 
       <!-- COMMENTS PANE (existing list + detail) -->
-      <div class="side-pane is-active" data-pane="comments">
+      <div class="side-pane" data-pane="comments">
       <!-- LIST VIEW -->
       <div class="sidebar__view" id="listView">
         <div class="side__head">
@@ -1454,7 +1561,7 @@
       </div><!-- /side-pane comments -->
 
       <!-- EDIT PANE -->
-      <div class="side-pane" data-pane="edit">
+      <div class="side-pane is-active" data-pane="edit">
         <div class="edit-head">
           <p class="edit-hint">현재 화면의 요소를 숨기거나 표시할 수 있습니다. 변경 사항은 자동 저장되며, 페이지를 새로고침해도 유지됩니다.</p>
         </div>
@@ -1551,6 +1658,106 @@
           <button type="button" class="edit-foot__btn-revert" id="editRevertBtn" title="편집 사항 되돌리기 / 초기화">되돌리기</button>
           <button type="button" class="edit-foot__btn-save"   id="editSaveBtn"   disabled>저장됨</button>
         </footer>
+      </div>
+
+      <!-- NEW PAGE PANE — 신규 데모 페이지 정의 폼 + 작성된 신규 페이지 리스트.
+           실제 데모 HTML 파일 생성은 dev 핸드오프로 처리하고, 여기선 메뉴
+           위치 + 페이지 메타 + 구성/레이아웃/컴포넌트 사양만 캡처해서
+           localStorage 에 저장한다. -->
+      <div class="side-pane" data-pane="new">
+        <div class="edit-head">
+          <p class="edit-hint">신규 데모 페이지를 만들기 위한 메타 정보를 입력하세요. 저장하면 [신규] 페이지 목록에 추가되고, 메뉴 어디에 들어가는지도 기록됩니다.</p>
+        </div>
+        <div class="edit-body">
+          <section class="edit-sec">
+            <header class="edit-sec__head">
+              <span class="edit-sec__chev" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l3 3 3-3"/></svg></span>
+              <h4>새 페이지 정의</h4>
+            </header>
+            <div class="edit-sec__body">
+              <div class="np-form">
+                <label class="np-field">
+                  <span class="np-field__label">메뉴 위치 (1뎁스)</span>
+                  <select class="np-input" id="npL1"></select>
+                </label>
+                <label class="np-field">
+                  <span class="np-field__label">메뉴명</span>
+                  <input type="text" class="np-input" id="npName" placeholder="예: 신상품 등록" maxlength="30" />
+                </label>
+                <label class="np-field">
+                  <span class="np-field__label">슬러그 (URL 마지막 조각)</span>
+                  <input type="text" class="np-input np-input--mono" id="npSlug" placeholder="예: new-product → /demo/new-product.html" maxlength="40" />
+                  <span class="np-hint">소문자 영문/숫자/하이픈만. 비어있으면 메뉴명 기준으로 자동 생성.</span>
+                </label>
+                <div class="np-field np-field--row">
+                  <label class="np-field__sub">
+                    <span class="np-field__label">페이지 타입</span>
+                    <select class="np-input" id="npType">
+                      <option value="list">리스트 (테이블)</option>
+                      <option value="detail">상세 (상품/주문 등)</option>
+                      <option value="dashboard">대시보드 (KPI/차트)</option>
+                      <option value="form">폼 (등록/수정)</option>
+                      <option value="blank">빈 캔버스</option>
+                    </select>
+                  </label>
+                  <label class="np-field__sub">
+                    <span class="np-field__label">레이아웃</span>
+                    <select class="np-input" id="npLayout">
+                      <option value="single">단일 컬럼</option>
+                      <option value="two-col">2단 (메인 + 사이드)</option>
+                      <option value="grid">카드 그리드</option>
+                      <option value="split">상단/하단 분할</option>
+                    </select>
+                  </label>
+                </div>
+                <fieldset class="np-field">
+                  <legend class="np-field__label">구성 (페이지 섹션 — 다중 선택)</legend>
+                  <div class="np-checks" id="npSections">
+                    <label class="np-check"><input type="checkbox" value="page-head" checked /><span>페이지 헤더 (제목+액션)</span></label>
+                    <label class="np-check"><input type="checkbox" value="filter-bar" /><span>필터 바</span></label>
+                    <label class="np-check"><input type="checkbox" value="stats-bar" /><span>통계 띠</span></label>
+                    <label class="np-check"><input type="checkbox" value="table" /><span>테이블</span></label>
+                    <label class="np-check"><input type="checkbox" value="action-bar" /><span>액션 바</span></label>
+                    <label class="np-check"><input type="checkbox" value="card-list" /><span>카드 리스트</span></label>
+                    <label class="np-check"><input type="checkbox" value="form-block" /><span>폼 블록</span></label>
+                    <label class="np-check"><input type="checkbox" value="info-banner" /><span>안내 배너</span></label>
+                  </div>
+                </fieldset>
+                <fieldset class="np-field">
+                  <legend class="np-field__label">초기 컴포넌트 (작은 단위 — 다중 선택)</legend>
+                  <div class="np-checks" id="npComponents">
+                    <label class="np-check"><input type="checkbox" value="banner-info" /><span>안내 배너</span></label>
+                    <label class="np-check"><input type="checkbox" value="banner-warn" /><span>경고 배너</span></label>
+                    <label class="np-check"><input type="checkbox" value="kpi-card" /><span>KPI 카드</span></label>
+                    <label class="np-check"><input type="checkbox" value="card-info" /><span>정보 카드</span></label>
+                    <label class="np-check"><input type="checkbox" value="cta-box" /><span>CTA 박스</span></label>
+                    <label class="np-check"><input type="checkbox" value="btn-primary" /><span>기본 버튼</span></label>
+                    <label class="np-check"><input type="checkbox" value="form-input" /><span>입력 폼</span></label>
+                    <label class="np-check"><input type="checkbox" value="list-items" /><span>아이템 리스트</span></label>
+                  </div>
+                </fieldset>
+                <label class="np-field">
+                  <span class="np-field__label">메모 (선택)</span>
+                  <textarea class="np-input np-input--area" id="npNote" rows="2" maxlength="300" placeholder="이 페이지의 의도/요건/참고 링크 등"></textarea>
+                </label>
+                <div class="np-actions">
+                  <button type="button" class="np-btn np-btn--ghost" id="npResetBtn">초기화</button>
+                  <button type="button" class="np-btn np-btn--primary" id="npAddBtn">+ 페이지 추가</button>
+                </div>
+              </div>
+            </div>
+          </section>
+          <section class="edit-sec">
+            <header class="edit-sec__head">
+              <span class="edit-sec__chev" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l3 3 3-3"/></svg></span>
+              <h4>등록된 신규 페이지</h4>
+              <span class="edit-sec__count" id="npListCount">0</span>
+            </header>
+            <div class="edit-sec__body">
+              <div class="np-list" id="npList"></div>
+            </div>
+          </section>
+        </div>
       </div>
     </aside>
   </div>
@@ -1702,6 +1909,9 @@
     // Library customizations for built-in small-unit component presets.
     // Keyed by preset id (e.g. 'banner-info'). Holds { html, label } overrides.
     const LIB_KEY      = 'scm:voc:lib:v1';
+    // 신규 페이지 정의 — 사용자가 [신규] 탭에서 작성한 데모 페이지 사양 리스트.
+    // 실제 HTML 파일은 dev 핸드오프 시점에 생성되므로 여기선 메타만 보존.
+    const NEWPAGES_KEY = 'scm:voc:newpages:v1';
     // Page-key normalization. The VOC iframe reads `iframe.contentWindow
     // .location.pathname`, which on Cloudflare Pages clean URLs strips
     // the `.html` extension, while standalone demo pages may report
@@ -2014,6 +2224,13 @@
       // Versioned saves: list of snapshots per page + which is currently active.
       const verRaw = loadJsonKey(VERSIONS_KEY);
       state.versions = (verRaw && typeof verRaw === 'object' && !Array.isArray(verRaw)) ? verRaw : {};
+      // 신규 페이지 정의 리스트.
+      const npRaw = (function () {
+        try { const v = JSON.parse(localStorage.getItem(NEWPAGES_KEY)); return Array.isArray(v) ? v : []; }
+        catch { return []; }
+      })();
+      state.newPages = npRaw;
+      initNewPagePane();
       // L1 chips
       menuL1.innerHTML = MENU.map((m) => `<button type="button" class="menu-l1__chip" data-l1="${m.l1}">${escapeHtml(m.label)}</button>`).join('');
       menuL1.addEventListener('click', (e) => {
@@ -4706,6 +4923,161 @@
       });
       for (const r of map.values()) ordered.push(r);
       return ordered;
+    }
+
+    // ====================================================
+    // 신규(New page) 탭 — 새 데모 페이지 정의 폼
+    // ====================================================
+    function persistNewPages() {
+      try { localStorage.setItem(NEWPAGES_KEY, JSON.stringify(state.newPages || [])); } catch {}
+    }
+    function _slugify(s) {
+      const t = (s || '').toString().trim().toLowerCase();
+      // 한글이 들어오면 영숫자만 남기고, 비어있으면 빈 문자열 반환.
+      return t.replace(/[^a-z0-9가-힣\s-]/g, '')
+              .replace(/\s+/g, '-')
+              .replace(/[가-힣]+/g, '')
+              .replace(/-+/g, '-')
+              .replace(/^-|-$/g, '');
+    }
+    function initNewPagePane() {
+      const l1Sel = document.getElementById('npL1');
+      if (!l1Sel) return;
+      // L1 옵션 — MENU 의 1뎁스 그룹들에서 채움.
+      l1Sel.innerHTML = MENU.map((m) => `<option value="${escapeHtml(m.l1)}">${escapeHtml(m.label)}</option>`).join('');
+      // 기본값: 현재 페이지의 부모 L1.
+      const currentMenu = findMenuByPath(state.currentPage);
+      if (currentMenu) l1Sel.value = currentMenu.l1.l1;
+
+      const nameEl = document.getElementById('npName');
+      const slugEl = document.getElementById('npSlug');
+      // 메뉴명 → 슬러그 자동 생성 (사용자가 슬러그를 직접 수정하지 않은 경우만)
+      let slugTouched = false;
+      slugEl.addEventListener('input', () => { slugTouched = true; });
+      nameEl.addEventListener('input', () => {
+        if (slugTouched) return;
+        const auto = _slugify(nameEl.value);
+        if (auto) slugEl.value = auto;
+      });
+
+      document.getElementById('npResetBtn').addEventListener('click', resetNewPageForm);
+      document.getElementById('npAddBtn').addEventListener('click', submitNewPage);
+
+      renderNewPageList();
+    }
+    function resetNewPageForm() {
+      const ids = ['npName', 'npSlug', 'npNote'];
+      ids.forEach((id) => { const el = document.getElementById(id); if (el) el.value = ''; });
+      const t = document.getElementById('npType'); if (t) t.value = 'list';
+      const l = document.getElementById('npLayout'); if (l) l.value = 'single';
+      // 섹션: page-head 만 default checked
+      document.querySelectorAll('#npSections input[type="checkbox"]').forEach((cb) => {
+        cb.checked = (cb.value === 'page-head');
+      });
+      document.querySelectorAll('#npComponents input[type="checkbox"]').forEach((cb) => {
+        cb.checked = false;
+      });
+    }
+    function _collectChecks(hostId) {
+      const out = [];
+      document.querySelectorAll(`#${hostId} input[type="checkbox"]:checked`).forEach((cb) => out.push(cb.value));
+      return out;
+    }
+    function submitNewPage() {
+      const l1 = document.getElementById('npL1').value;
+      const name = (document.getElementById('npName').value || '').trim();
+      let slug = (document.getElementById('npSlug').value || '').trim();
+      const type = document.getElementById('npType').value;
+      const layout = document.getElementById('npLayout').value;
+      const sections = _collectChecks('npSections');
+      const components = _collectChecks('npComponents');
+      const note = (document.getElementById('npNote').value || '').trim();
+
+      if (!name) {
+        showToast('메뉴명을 입력해 주세요');
+        document.getElementById('npName').focus();
+        return;
+      }
+      if (!slug) slug = _slugify(name);
+      if (!slug) {
+        showToast('슬러그를 입력해 주세요 (영문/숫자/하이픈)');
+        document.getElementById('npSlug').focus();
+        return;
+      }
+      // 슬러그 중복 — 기존 신규 페이지나 MENU 의 기존 path 와 충돌 검사
+      const path = `/demo/${slug}.html`;
+      const dup = (state.newPages || []).some((p) => p.path === path);
+      if (dup) { showToast('이미 같은 슬러그의 신규 페이지가 있습니다'); return; }
+      const existsInMenu = MENU.some((m) => m.children.some((c) => c.path === path));
+      if (existsInMenu) { showToast('해당 슬러그는 기존 메뉴에 이미 있습니다'); return; }
+
+      const entry = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+        l1, name, slug, path, type, layout, sections, components, note,
+        createdAt: Date.now(),
+      };
+      state.newPages = state.newPages || [];
+      state.newPages.push(entry);
+      persistNewPages();
+      renderNewPageList();
+      resetNewPageForm();
+      showToast(`[${name}] 페이지 정의가 추가됐습니다`);
+    }
+    function deleteNewPage(id) {
+      if (!confirm('이 신규 페이지 정의를 삭제할까요?')) return;
+      state.newPages = (state.newPages || []).filter((p) => p.id !== id);
+      persistNewPages();
+      renderNewPageList();
+    }
+    const _NP_TYPE_LABEL = {
+      list: '리스트', detail: '상세', dashboard: '대시보드', form: '폼', blank: '빈 캔버스',
+    };
+    const _NP_LAYOUT_LABEL = {
+      single: '단일', 'two-col': '2단', grid: '그리드', split: '분할',
+    };
+    const _NP_SECTION_LABEL = {
+      'page-head': '헤더', 'filter-bar': '필터', 'stats-bar': '통계', table: '테이블',
+      'action-bar': '액션바', 'card-list': '카드 리스트', 'form-block': '폼', 'info-banner': '배너',
+    };
+    function renderNewPageList() {
+      const host = document.getElementById('npList');
+      const cnt  = document.getElementById('npListCount');
+      if (!host) return;
+      const list = state.newPages || [];
+      if (cnt) cnt.textContent = String(list.length);
+      if (!list.length) { host.innerHTML = ''; return; }
+      const l1Label = (key) => {
+        const m = MENU.find((x) => x.l1 === key);
+        return m ? m.label : key;
+      };
+      host.innerHTML = list.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).map((p) => {
+        const sectionChips = (p.sections || []).map((s) =>
+          `<span class="np-row__chip">${escapeHtml(_NP_SECTION_LABEL[s] || s)}</span>`).join('');
+        const componentChips = (p.components || []).map((c) =>
+          `<span class="np-row__chip">${escapeHtml(c)}</span>`).join('');
+        return `
+          <div class="np-row" data-np-id="${p.id}">
+            <div class="np-row__head">
+              <span class="np-row__loc">${escapeHtml(l1Label(p.l1))}</span>
+              <span class="np-row__name">${escapeHtml(p.name)}</span>
+              <button type="button" class="np-row__del" data-np-del="${p.id}" title="삭제">×</button>
+            </div>
+            <div class="np-row__path">${escapeHtml(p.path)}</div>
+            <div class="np-row__meta">
+              <span><b>타입</b> ${escapeHtml(_NP_TYPE_LABEL[p.type] || p.type)}</span>
+              <span><b>레이아웃</b> ${escapeHtml(_NP_LAYOUT_LABEL[p.layout] || p.layout)}</span>
+            </div>
+            ${sectionChips ? `<div class="np-row__chips">${sectionChips}</div>` : ''}
+            ${componentChips ? `<div class="np-row__chips">${componentChips}</div>` : ''}
+            ${p.note ? `<div class="np-row__meta"><span>${escapeHtml(p.note)}</span></div>` : ''}
+          </div>`;
+      }).join('');
+      host.querySelectorAll('[data-np-del]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          deleteNewPage(btn.dataset.npDel);
+        });
+      });
     }
 
     function renderEditPane() {
