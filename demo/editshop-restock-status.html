@@ -6,6 +6,7 @@
   <title>SCM-Hub · 편집샵 재고 보충 현황 (모듈 기반)</title>
   <script src="/auth-gate.js"></script>
   <script src="/scm-shell.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
   <link rel="stylesheet" href="../design%20system/layer-desktop.css" />
 
@@ -154,7 +155,7 @@
       </div>
       <div class="scm-stats-bar__right">
         <span class="scm-stats-bar__ts">25.10.24 12:00 업데이트</span>
-        <button class="scm-download-btn" type="button">
+        <button class="scm-download-btn" type="button" id="excel-download-btn">
           <svg viewBox="0 0 20 20"><use href="#ic-download"/></svg>
           <span>전체 엑셀 다운로드</span>
         </button>
@@ -691,6 +692,58 @@
       if (sel) sel.clear();
     });
   })();
+
+  // ============================================================
+  // 엑셀 다운로드 — 전체 ROWS 를 xlsx 로 저장
+  // ============================================================
+  const EXCEL_HEADERS = [
+    'SKU번호', '스토어명', '상태', '브랜드', '카테고리', '바코드', 'SKU명', '옵션',
+    '이동요청수량', '출고확정수량', '입고확정수량', '스토어 입고예정일',
+    '출고센터 정보', '출고번호', '입고번호', '팝업명', '팝업기간',
+    '초도입고여부', '자동확정여부', 'UID', '스타일넘버', '매입형태', '처리일시', '처리자',
+  ];
+  function rowToExcel(r) {
+    return [
+      r.sku || '', r.storeName || '', r.status || '', r.brand || '', r.category || '',
+      r.barcode || '', r.name || '',
+      Array.isArray(r.opt) ? r.opt.join(', ') : (r.opt || ''),
+      r.requestQty === '' || r.requestQty == null ? '' : Number(r.requestQty),
+      r.outQty === '' || r.outQty == null ? '' : Number(r.outQty),
+      r.inQty === '' || r.inQty == null ? '' : Number(r.inQty),
+      r.expectedInDate || '', r.center || '', r.outOrderNo || '', r.inOrderNo || '',
+      r.popupName || '', r.popupPeriod || '',
+      r.firstInbound || '', r.autoConfirm || '',
+      r.uid || '', r.styleNo || '', r.costType || '', r.processDate || '', r.processor || '',
+    ];
+  }
+  document.getElementById('excel-download-btn')?.addEventListener('click', async () => {
+    if (!window.ExcelJS) { alert('ExcelJS 라이브러리가 로드되지 않았습니다.'); return; }
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('편집샵 보충 현황');
+    ws.addRow(EXCEL_HEADERS);
+    const head = ws.getRow(1);
+    head.font = { name: 'Pretendard', size: 11, bold: true };
+    head.alignment = { vertical: 'middle', horizontal: 'center' };
+    head.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+    ROWS.forEach(r => ws.addRow(rowToExcel(r)));
+    ws.columns = EXCEL_HEADERS.map(h => ({ width: Math.max(10, Math.min(36, h.length * 2 + 4)) }));
+
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    link.download = `편집샵_재고보충_현황_${today}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+
+    if (window.SCM && SCM.toast) {
+      SCM.toast.show({ variant: 'success', title: '엑셀 다운로드 완료', desc: `${ROWS.length}건 저장됨` });
+    }
+  });
 })();
 </script>
 </body>
