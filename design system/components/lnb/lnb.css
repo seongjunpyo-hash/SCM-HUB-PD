@@ -9,6 +9,11 @@
 :root {
   --scm-lnb-width: 56px;
   --scm-sticky-gnb: 64px;
+  /* sticky stack 기본값 — 페이지가 자기 값으로 override (filter-bar 가 없으면 0)
+     리스트 페이지는 보통 filter-bar 76 + stats-bar 60 — 공용 디폴트 0 으로 두고
+     ResizeObserver 가 dynamic 측정값을 set 한다. */
+  --scm-sticky-filter: 0px;
+  --scm-sticky-stats: 0px;
 }
 html.is-lnb-open {
   --scm-lnb-width: 260px;
