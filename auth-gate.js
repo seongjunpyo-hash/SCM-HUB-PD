@@ -38,6 +38,18 @@
       }
       window.SCM_USER = data.user;
       document.dispatchEvent(new CustomEvent('scm:auth-ready', { detail: { user: data.user } }));
+      // 첫 로그인 사용자에게만 데모 페이지 onboarding 튜토리얼 동적 로드
+      try {
+        if (location.pathname.indexOf('/demo/') === 0) {
+          var seenKey = 'scm:tutorial:seen:' + data.user.id + ':v1';
+          if (!localStorage.getItem(seenKey)) {
+            var s = document.createElement('script');
+            s.src = '/tutorial.js';
+            s.defer = true;
+            document.head.appendChild(s);
+          }
+        }
+      } catch (_) {}
     })
     .catch(function () {
       // 네트워크 오류 시도 일단 로그인으로 — 잘못된 상태로 화면 노출 방지
