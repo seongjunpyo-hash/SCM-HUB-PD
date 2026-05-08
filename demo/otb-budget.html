@@ -312,8 +312,7 @@
       width: 1px; height: 16px; background: var(--ld-border); margin: 0 4px;
     }
 
-    /* === 결재선 (하단 fixed — OTB 도메인 전용 패턴) === */
-    main { padding-bottom: calc(var(--otb-approval-h) + 32px); }
+    /* (결재선 하단 fixed bar 제거됨 — main padding-bottom 정상값) */
     .otb-approval-bar {
       position: fixed;
       bottom: 0; left: var(--scm-lnb-width); right: 0;
@@ -788,6 +787,7 @@
           모든 금액 단위는 백만원(VAT 제외)이며, 임시저장은 자동 적용됩니다.
         </div>
       </div>
+      <button class="scm-button scm-button--sm" type="button" id="otb-history-btn" style="margin-right:8px;flex-shrink:0;">변경 이력</button>
       <button class="scm-info-banner__toggle" type="button" id="otb-info-toggle" aria-label="안내 접기/펼치기">
         <svg viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chevronDown16"/></svg>
       </button>
@@ -923,18 +923,6 @@
       </div>
     </section>
   </main>
-</div>
-
-<!-- ============== 결재선 (하단 fixed) ============== -->
-<div class="otb-approval-bar" id="otb-approval-bar">
-  <div class="otb-approval-line" id="otb-approval-line">
-    <span class="otb-approval-label">결재선</span>
-  </div>
-  <div class="otb-approval-actions">
-    <button class="scm-button" type="button" id="otb-history-btn">변경 이력</button>
-    <button class="scm-button" type="button" id="otb-reject-btn" style="color:#B00020;">반려</button>
-    <button class="scm-button scm-button--primary" type="button" id="otb-approve-btn">검토 완료 → 다음 단계</button>
-  </div>
 </div>
 
 <!-- ============== Filter popover root + drawer (sku-management 와 동일) ============== -->
@@ -1797,8 +1785,9 @@
 
     $('#otb-version-btn').addEventListener('click', openVersionModal);
     $('#otb-submit-btn').addEventListener('click', openSubmitModal);
-    $('#otb-approve-btn').addEventListener('click', openApproveModal);
-    $('#otb-reject-btn').addEventListener('click', openRejectModal);
+    // 하단 결재선 bar 제거됨 — approve / reject 버튼 더 이상 노출 X. 가드.
+    $('#otb-approve-btn')?.addEventListener('click', openApproveModal);
+    $('#otb-reject-btn')?.addEventListener('click', openRejectModal);
     $('#otb-comments-btn').addEventListener('click', openCommentsModal);
     $('#otb-history-btn').addEventListener('click', openHistoryModal);
     $('#otb-save-btn').addEventListener('click', function () {
