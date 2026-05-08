@@ -1760,18 +1760,45 @@
       }
       return null;
     }
-    // Returns " (NEW)" / " (MODIFIED)" / "" depending on the page's status.
-    // Confirmed pages (작업완료) always return ""; otherwise NEW (PRD-marked)
-    // wins over MODIFIED (any saved version).
+    // 페이지 메뉴 라벨 옆에 붙는 상태 태그.
+    //
+    // 우선순위 (mutually exclusive — 단일 태그):
+    //   1. 최종확정  — 관리자(super) 가 최종확정 버튼을 누른 페이지
+    //                  (CONFIRMED_KEY 의 entry.confirmed === true)
+    //   2. 작업중    — 편집 탭에서 [데모 공개] 토글이 OFF — exposed === false
+    //                  (active version 의 applied.settings.exposed 또는
+    //                   state.applied[path].settings.exposed 둘 중 하나)
+    //   3. 검토중    — 버전이 한 개 이상 저장된 상태 (그리고 exposed === true)
+    //   4. (없음)    — 위 어떤 조건도 해당 안 됨
+    //
+    // 반환값은 라벨 뒤에 붙는 suffix (예: ' (작업중)') — 빈 문자열이면 태그 없음.
     function _menuStatusSuffix(path) {
       try {
+        // 1) 최종확정 — admin 의 최종 사인. 다른 모든 상태를 덮어씀.
         const conf = JSON.parse(localStorage.getItem('scm:dev-export:confirmed:v1') || '{}');
-        if (conf && (conf[path] === true || (conf[path] && conf[path].confirmed === true))) return '';
-        const newPages = JSON.parse(localStorage.getItem('scm:prd:newPages:v1') || '[]');
-        if (Array.isArray(newPages) && newPages.indexOf(path) >= 0) return ' (NEW)';
+        if (conf && (conf[path] === true || (conf[path] && conf[path].confirmed === true))) {
+          return ' (최종확정)';
+        }
+        // 2) 데모 노출 여부 — active version 의 applied 를 우선 보고,
+        //    없으면 page-level applied 로 폴백.
         const versions = JSON.parse(localStorage.getItem('scm:voc:versions:v1') || '{}');
         const ver = _verEntryFor(versions, path);
-        if (ver && Array.isArray(ver.list) && ver.list.length > 0) return ' (MODIFIED)';
+        let applied = null;
+        if (ver && ver.activeId && Array.isArray(ver.list)) {
+          const active = ver.list.find((v) => v.id === ver.activeId);
+          applied = (active && active.applied) || null;
+        }
+        if (!applied) {
+          const appliedMap = state.applied || {};
+          applied = appliedMap[path]
+                 || appliedMap[_normalizePageKey(path)]
+                 || appliedMap[path.replace(/\.html?$/i, '')]
+                 || null;
+        }
+        const exposed = !applied || !applied.settings || applied.settings.exposed !== false;
+        if (!exposed) return ' (작업중)';
+        // 3) 검토중 — 버전 1개 이상 + exposed === true
+        if (ver && Array.isArray(ver.list) && ver.list.length > 0) return ' (검토중)';
       } catch (_) {}
       return '';
     }
