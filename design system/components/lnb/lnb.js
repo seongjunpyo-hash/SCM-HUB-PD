@@ -375,6 +375,53 @@
     }
   } catch (_) {}
 
+  // ===== Canonical menu data (for VOC dropdown / sidebar consumers) =====
+  // CANONICAL_LNB_HTML 을 한 번 파싱해 구조화된 메뉴 배열 export. VOC 등
+  // 다른 화면이 자체 navigation UI 를 그릴 때 이걸 single source 로 쓴다.
+  // (메뉴 추가/이동은 CANONICAL_LNB_HTML 수정 한 곳만 → 자동 반영)
+  function parseCanonicalMenu() {
+    if (typeof document === 'undefined') return [];
+    var tmp = document.createElement('div');
+    tmp.innerHTML = CANONICAL_LNB_HTML;
+    var out = [];
+    var items = tmp.querySelectorAll('.scm-lnb-item');
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      var key = item.getAttribute('data-key');
+      var labEl = item.querySelector('.scm-lnb-label');
+      var label = labEl ? labEl.textContent.trim() : '';
+      if (!key || !label) continue;
+      var children = [];
+      var l2s = item.querySelectorAll('.scm-lnb-l2');
+      for (var j = 0; j < l2s.length; j++) {
+        var a = l2s[j];
+        var href = a.getAttribute('href') || '';
+        if (!href || href === '#' || href.charAt(0) === '#') continue; // skip placeholder
+        var txt = a.querySelector('.scm-lnb-l2-text');
+        var l2Label = txt ? txt.textContent.trim() : '';
+        // demo 페이지는 상대 경로(sku-management.html) 로 표기 — VOC 등이
+        // 절대 경로 (/demo/...) 로 조회할 수 있게 정규화
+        var path = href.charAt(0) === '/' ? href : '/demo/' + href;
+        children.push({
+          path: path,
+          label: l2Label,
+          key: a.getAttribute('data-key') || '',
+        });
+      }
+      // L1 자체가 페이지인 케이스 (대시보드처럼 L2 없음): href 가 .scm-lnb-row 에 있음
+      if (children.length === 0) {
+        var row = item.querySelector('.scm-lnb-row[href]');
+        if (row) {
+          var hh = row.getAttribute('href');
+          var pp = hh.charAt(0) === '/' ? hh : '/demo/' + hh;
+          children.push({ path: pp, label: label, key: key });
+        }
+      }
+      out.push({ l1: key, label: label, children: children });
+    }
+    return out;
+  }
+
   root.SCM = root.SCM || {};
   root.SCM.lnb = {
     mount: mount,
@@ -383,5 +430,14 @@
     close: function () { setOpen(false); },
     isOpen: isOpen,
     setActive: setActive,
+    // 메뉴 데이터 (lazy / cached) — VOC navigation 등이 single source 로 사용
+    getMenu: (function () {
+      var cache = null;
+      return function () {
+        if (cache) return cache;
+        cache = parseCanonicalMenu();
+        return cache;
+      };
+    })(),
   };
 })(typeof window !== 'undefined' ? window : globalThis);

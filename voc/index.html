@@ -6,6 +6,9 @@
   <title>SCM HUB · 협업 VOC (작업자)</title>
   <script src="/auth-gate.js"></script>
   <script src="/profile-menu.js" defer></script>
+  <!-- VOC 가 자체 dropdown UI 를 그릴 때 lnb.js 의 메뉴 데이터(SCM.lnb.getMenu) 를 single
+       source 로 사용. lnb.js 를 동기 로드 — IIFE 안 MENU 초기화 시점에 SCM.lnb 가 필요. -->
+  <script src="../design system/components/lnb/lnb.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
   <style>
     :root {
@@ -1313,24 +1316,32 @@
           || null;
     }
     // Two-depth menu mirroring the demo's LNB structure.
-    const MENU = [
-      { l1: 'dashboard', label: '대시보드', children: [
-        { path: '/demo/dashboard.html', label: '대시보드' },
-      ]},
-      { l1: 'store', label: '스토어', children: [
-        { path: '/demo/index.html',                    label: '무탠 전개상품 관리' },
-        { path: '/demo/editshop-restock-request.html', label: '편집샵 보충 요청' },
-        { path: '/demo/editshop-restock-status.html',  label: '편집샵 보충 현황' },
-      ]},
-      { l1: 'hanger', label: '상품 관리', children: [
-        { path: '/demo/sku-management.html', label: 'SKU 관리' },
-        { path: '/demo/sku-register.html',   label: 'SKU 등록' },
-        { path: '/demo/sku-detail.html',     label: 'SKU 상세' },
-      ]},
-      { l1: 'order', label: '발주/입고 관리', children: [
-        { path: '/demo/otb-budget.html', label: 'OTB 예산 관리' },
-      ]},
-    ];
+    // ============================================================
+    // MENU — single source: lnb.js 의 CANONICAL_LNB_HTML 에서 자동 추출.
+    // 메뉴 추가/이동은 lnb.js 한 곳만 수정 → VOC dropdown / 데모 LNB 모두 자동 반영.
+    // 단축 라벨(e.g., '편집샵 재고 보충 요청' → '편집샵 보충 요청') 은
+    // VOC 컨텍스트에서만 짧게 표시되도록 LABEL_OVERRIDES 로 재정의.
+    // ============================================================
+    const LABEL_OVERRIDES = {
+      '/demo/editshop-restock-request.html': '편집샵 보충 요청',
+      '/demo/editshop-restock-status.html': '편집샵 보충 현황',
+    };
+    const MENU = (window.SCM && SCM.lnb && SCM.lnb.getMenu)
+      ? SCM.lnb.getMenu().map(function (g) {
+          return Object.assign({}, g, {
+            children: g.children.map(function (c) {
+              return {
+                // demo 페이지는 .html 형태로 통일 (VOC 가 .html 풀 경로 사용)
+                path: c.path.endsWith('.html') ? c.path : c.path + '.html',
+                label: LABEL_OVERRIDES[c.path] || LABEL_OVERRIDES[c.path + '.html'] || c.label,
+              };
+            }),
+          });
+        })
+      : [];
+    if (!MENU.length) {
+      console.warn('[voc] SCM.lnb.getMenu() 결과가 비어있음 — lnb.js 로드 확인 필요');
+    }
     // Flat list — preserved for label lookups (sidebar 'pageLabel(path)').
     const PAGES = MENU.flatMap((m) => m.children);
     function findMenuByPath(path) {
