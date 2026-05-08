@@ -1,0 +1,94 @@
+/* ============================================================
+ * cell-input — 테이블 셀 안 inline 입력 (Excel 패턴)
+ * ------------------------------------------------------------
+ * scm-input-cell (input + 최대 버튼) 와 다른 패턴: TD 전체가 입력
+ * 영역. 보충요청의 입력창 톤(흰 bg + #E0E0E0 border + tabular-nums)
+ * 그대로 차용. disabled / error 상태 동일 토큰 사용.
+ *
+ * Markup:
+ *   <td class="cell-input cell-numeric">
+ *     <input type="number" inputmode="numeric" ... />
+ *   </td>
+ * ============================================================ */
+
+/* TD 자체 — padding 0 으로 input 이 셀 전체 차지 */
+.mp-table tbody td.cell-input {
+  padding: 0;
+  background: rgba(36, 94, 255, 0.08); /* light blue — 입력 가능 표시 (보충요청 동일) */
+  vertical-align: middle;
+}
+.mp-table tbody tr:hover td.cell-input {
+  background: rgba(36, 94, 255, 0.12);
+}
+
+/* input 자체 — scm-input-cell__input 톤 그대로 */
+.mp-table td.cell-input > input {
+  width: 100%;
+  height: 100%;
+  min-height: 36px;
+  padding: 8px 10px;
+  margin: 0;
+  background: transparent;
+  border: 0;
+  outline: none;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 19.6px;
+  color: #000;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  box-sizing: border-box;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* placeholder */
+.mp-table td.cell-input > input::placeholder {
+  color: rgba(0, 0, 0, 0.30);
+  opacity: 1;
+}
+
+/* focus 상태 — input 자체에 border 강조 */
+.mp-table td.cell-input > input:focus {
+  outline: 1px solid #000;
+  outline-offset: -1px;
+}
+
+/* readonly — 회색 비활성 톤 (수정 불가 안내) */
+.mp-table td.cell-input > input[readonly] {
+  cursor: default;
+}
+
+/* disabled — bg #88888810, fg #00000020, cursor not-allowed (보충요청 동일) */
+.mp-table td.cell-input > input:disabled {
+  background: rgba(138, 138, 138, 0.10);
+  color: rgba(0, 0, 0, 0.20);
+  cursor: not-allowed;
+}
+.mp-table td.cell-input > input:disabled::placeholder {
+  color: rgba(0, 0, 0, 0.20);
+  opacity: 1;
+}
+.mp-table tbody td.cell-input.is-disabled {
+  background: rgba(138, 138, 138, 0.10);
+}
+
+/* error — wrapper td 가 faded red bg, input 자체는 흰 bg + red border + red text */
+.mp-table tbody td.cell-input.is-error,
+.mp-table tbody tr:hover td.cell-input.is-error {
+  background: rgba(243, 17, 16, 0.10);
+}
+.mp-table td.cell-input.is-error > input,
+.mp-table td.cell-input > input.is-error,
+.mp-table td.cell-input > input[aria-invalid="true"] {
+  background: #fff;
+  outline: 1px solid #F31110;
+  outline-offset: -1px;
+  color: #F31110;
+}
+
+/* 셀 단위 변경 표시 (is-changed) — OTB 도메인 보조용. 페이지 레벨 변수 사용 */
+.mp-table.is-diff td.cell-input.is-changed {
+  background: var(--otb-changed-bg, rgba(255, 235, 59, 0.18)) !important;
+}
