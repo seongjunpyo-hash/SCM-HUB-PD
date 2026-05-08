@@ -1284,6 +1284,7 @@ ${jsxBody}
       .scm-dev-version-wrap.is-open .scm-dev-version-menu { display: block; }
       .scm-dev-version-item {
         display: flex; align-items: center; gap: 8px;
+        flex-wrap: wrap;
         padding: 8px 10px; border-radius: 6px;
         font-size: 12px; color: #1A1A1A; cursor: pointer;
       }
@@ -1291,6 +1292,12 @@ ${jsxBody}
       .scm-dev-version-item.is-active { background: #EEF2FF; }
       .scm-dev-version-item__label { font-weight: 600; flex-shrink: 0; }
       .scm-dev-version-item__date  { color: #6B7280; font-size: 11px; flex: 1; }
+      .scm-dev-version-item__note {
+        flex-basis: 100%;
+        margin-top: 2px;
+        font-size: 11.5px; color: #4B5563; line-height: 1.45;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
       .scm-dev-version-item__active-tag {
         font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
         color: #4F46E5; background: #fff; border: 1px solid #C7D2FE;
@@ -1535,11 +1542,18 @@ ${jsxBody}
         ? `<button type="button" class="scm-dev-version-item__del" data-del-version="${v.id}" title="삭제">×</button>`
         : '';
       const dataId = v.id;
+      // 저장 시 입력한 메모는 협업/데모 양쪽에서 어떤 작업이 된 버전인지
+      // 식별할 수 있게 라벨 아래에 한 줄로 표시. 길면 ellipsis + title 로 풀텍스트.
+      const note = (v.note || '').trim();
+      const noteHtml = note
+        ? `<span class="scm-dev-version-item__note" title="${escapeHtml(note)}">${escapeHtml(note)}</span>`
+        : '';
       return `<div class="scm-dev-version-item ${isActive ? 'is-active' : ''}" data-version-id="${dataId}">`
         + `<span class="scm-dev-version-item__label">${label}</span>`
         + `<span class="scm-dev-version-item__date">${date}</span>`
         + tag
         + del
+        + noteHtml
         + '</div>';
     }).join('');
     menu.innerHTML = title + rows;
