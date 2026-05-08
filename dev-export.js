@@ -1834,11 +1834,15 @@ ${jsxBody}
       const a = active && active.applied;
       if (!a || !Array.isArray(a.hidden) || !a.hidden.length) return;
       // 1) CSS — covers per-selector hide + universal data-voc-hidden rules.
-      const css = a.hidden.map((s) => `${s} { display: none !important; }`).join('\n')
-        + '\n[data-voc-hidden="true"] { display: none !important; }'
-        + '\nth[data-voc-hidden="true"], td[data-voc-hidden="true"] { padding: 0 !important; border: 0 !important; width: 0 !important; min-width: 0 !important; max-width: 0 !important; }'
-        + '\ncol[data-voc-hidden="true"] { width: 0 !important; min-width: 0 !important; max-width: 0 !important; }'
-        + '\n.mp-table thead .group-row th[data-voc-hidden="true"] { position: static !important; visibility: hidden !important; font-size: 0 !important; line-height: 0 !important; background: transparent !important; box-shadow: none !important; }';
+      // 모든 hidden 셀렉터를 main 안으로 scope — VOC scanEditTargets 가
+      // main 만 스캔하므로 origin 도 main 내부. 글로벌로 적용하면 LNB /
+      // topbar 등 페이지 chrome 까지 우연히 가릴 위험이 있어 명시적으로
+      // main 자손으로 제한한다.
+      const css = a.hidden.map((s) => `main ${s} { display: none !important; }`).join('\n')
+        + '\nmain [data-voc-hidden="true"] { display: none !important; }'
+        + '\nmain th[data-voc-hidden="true"], main td[data-voc-hidden="true"] { padding: 0 !important; border: 0 !important; width: 0 !important; min-width: 0 !important; max-width: 0 !important; }'
+        + '\nmain col[data-voc-hidden="true"] { width: 0 !important; min-width: 0 !important; max-width: 0 !important; }'
+        + '\nmain .mp-table thead .group-row th[data-voc-hidden="true"] { position: static !important; visibility: hidden !important; font-size: 0 !important; line-height: 0 !important; background: transparent !important; box-shadow: none !important; }';
       const style = document.createElement('style');
       style.id = 'scm-voc-version-hide';
       style.textContent = css;
