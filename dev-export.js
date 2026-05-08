@@ -1885,10 +1885,11 @@ ${jsxBody}
           top: var(--scm-sticky-gnb, 64px);
           left: var(--scm-lnb-width, 56px);
           right: 0; bottom: 0;
-          /* topbar(20) / LNB(15) / sticky filter-bar(12) / stats-bar(11) 보다
-             아래로 두어 dropdown / GNB 모달이 오버레이에 가려지지 않도록.
-             main 컨텐츠(z-auto = 0) 위에만 떠있으면 충분. */
-          z-index: 8;
+          /* topbar(20), LNB(15) 보다 아래 → GNB 드롭다운 / LNB 정상 노출.
+             page-head(12), filter-bar(12), stats-bar(11) 보다는 위 →
+             main 안의 sticky chrome 도 함께 사선 패턴으로 덮여 "이 페이지
+             전체가 비공개" 인 시각 신호 일관됨. */
+          z-index: 14;
           pointer-events: none;
           background: repeating-linear-gradient(
             45deg,
