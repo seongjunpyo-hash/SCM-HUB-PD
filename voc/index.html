@@ -902,6 +902,12 @@
       font-size: 11.5px; color: #6B7280; flex-shrink: 0;
     }
     .edit-row__hint.is-off { color: #DC2626; font-weight: 600; }
+    .edit-row__sub {
+      flex-basis: 100%;
+      margin-top: 4px;
+      font-size: 11px; color: #6B7280; line-height: 1.5;
+    }
+    .edit-row__sub b { color: #1A1A1A; font-weight: 600; }
     .edit-toggle {
       position: relative;
       display: inline-flex; align-items: center;
@@ -934,28 +940,32 @@
     .edit-toggle__input:focus-visible + .edit-toggle__track {
       box-shadow: 0 0 0 3px rgba(79,70,229,0.25);
     }
-    /* "비공개" overlay — iframe 영역 위에 띄워서 데모가 OFF 임을 시각적으로 알림 */
-    .stage.is-private .browser__chrome::after {
-      content: '비공개'; margin-left: 8px;
-      padding: 2px 8px; border-radius: 999px;
-      font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px;
+    /* 편집 화면(VOC) 우측 topbar 에 표시되는 "비공개" 배지 — 작업자가
+       데모를 OFF 시켰을 때 한눈에 알 수 있도록 발도장. 편집 영역(iframe)
+       자체는 가리지 않음 (편집은 가능해야 하므로). */
+    .private-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; margin: 0 6px;
       background: #FEE2E2; color: #B91C1C;
+      border: 1px solid #FECACA; border-radius: 999px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+      flex-shrink: 0;
     }
-    .stage.is-private .browser::before {
-      content: ''; position: absolute; inset: 0; z-index: 5;
-      background: repeating-linear-gradient(45deg, rgba(239,68,68,0.06) 0 12px, rgba(239,68,68,0.12) 12px 24px);
-      pointer-events: none;
+    .private-badge[hidden] { display: none !important; }
+    .private-badge::before {
+      content: ''; width: 6px; height: 6px; border-radius: 999px;
+      background: currentColor;
     }
-    .stage.is-private .browser::after {
-      content: '데모 비공개 — 공개 시 우측 [편집] 탭에서 [데모 노출 여부] 를 ON 하세요';
-      position: absolute; left: 50%; top: 50%; z-index: 6;
-      transform: translate(-50%, -50%);
-      padding: 10px 18px; border-radius: 999px;
-      background: rgba(31,41,55,0.92); color: #fff;
-      font-size: 12px; font-weight: 600; letter-spacing: -0.01em;
-      pointer-events: none;
-      white-space: nowrap;
+    /* urlbar 의 [데모 비공개] 핀 — 미니 데모 미리보기(브라우저 chrome)
+       옆에서도 한눈에 보이도록. */
+    .urlbar__private {
+      flex-shrink: 0;
+      margin-left: 6px;
+      padding: 2px 8px; border-radius: 999px;
+      background: #FEE2E2; color: #B91C1C;
+      font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px;
     }
+    .urlbar__private[hidden] { display: none !important; }
     .edit-list {
       display: flex; flex-direction: column;
       background: #FAFBFC; border: 1px solid #EBEEF2; border-radius: 8px;
@@ -1265,6 +1275,7 @@
     <button class="icon-btn" id="reloadBtn" title="새로고침">
       <svg viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 0 1 15.3-6.4L21 8M21 4v4h-4M21 12a9 9 0 0 1-15.3 6.4L3 16M3 20v-4h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
+    <span id="topbarPrivateBadge" class="private-badge" hidden title="현재 페이지의 데모는 비공개 상태 — 우측 [편집] > [기본 설정] > [데모 공개] 토글로 변경">데모 비공개</span>
     <span id="simStatus" class="sim-status" hidden>
       <span class="dot"></span><span>시뮬 적용 중 <span id="simStatusCount">0</span></span>
       <button id="simResetAll">모두 해제</button>
@@ -1285,6 +1296,7 @@
           <span class="urlbar">
             <svg class="lock" width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M6 11V8a6 6 0 0 1 12 0v3M5 11h14v10H5V11z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             <span class="url" id="urlText">/demo/index.html</span>
+            <span class="urlbar__private" id="urlbarPrivate" hidden title="이 페이지는 비공개 — 다른 사람이 직접 열면 비공개 안내가 보입니다">비공개</span>
             <a class="urlbar__open" id="urlOpen" href="#" target="_blank" rel="noopener" title="새 탭에서 열기">↗</a>
           </span>
         </div>
@@ -1421,11 +1433,16 @@
             <div class="edit-sec__body">
               <div class="edit-list edit-list--settings">
                 <label class="edit-row edit-row--setting" for="settingExposed">
-                  <span class="edit-row__label">데모 노출 여부</span>
+                  <span class="edit-row__label">데모 공개</span>
                   <span class="edit-row__hint" id="settingExposedHint">공개</span>
                   <span class="edit-toggle">
                     <input type="checkbox" id="settingExposed" class="edit-toggle__input" data-setting="exposed" />
                     <span class="edit-toggle__track" aria-hidden="true"><span class="edit-toggle__thumb"></span></span>
+                  </span>
+                  <span class="edit-row__sub">
+                    <b>OFF</b> 시 다른 사람이 <code>/demo/...</code> 페이지를 직접 열면 <b>비공개</b> 안내 화면이 보입니다.
+                    <br/>편집 화면(VOC)에서는 토글 상태와 무관하게 항상 데모가 보이며 자유롭게 편집할 수 있습니다.
+                    <br/>편집을 마치고 <b>저장</b> 한 뒤 ON 으로 바꿔서 공개하세요.
                   </span>
                 </label>
               </div>
@@ -2532,12 +2549,17 @@
       // 라벨/스위치 상태 동기화
       _syncSettingExposedUi();
     }
-    // 데모 화면(stage) 위에 .is-private 토글 — CSS 가 비공개 배지/오버레이를 표시.
+    // 편집 화면(VOC)에서는 iframe 을 가리지 않는다 — 작업자가 항상 데모를
+    // 보면서 편집할 수 있어야 함. 대신 topbar / urlbar 에 [비공개] 배지를
+    // 띄워 현재 페이지의 공개 상태를 시각화한다. 실제로 데모 페이지를
+    // 가리는 건 standalone(`/demo/...`) 측 dev-export.js 가 담당.
     function applyBasicSettings() {
       const d = pageDraft();
-      const stage = document.querySelector('.stage');
       const exposed = !!(d.settings && d.settings.exposed !== false);
-      if (stage) stage.classList.toggle('is-private', !exposed);
+      const topBadge = document.getElementById('topbarPrivateBadge');
+      const urlBadge = document.getElementById('urlbarPrivate');
+      if (topBadge) topBadge.hidden = exposed;
+      if (urlBadge) urlBadge.hidden = exposed;
     }
     function _syncSettingExposedUi() {
       const d = pageDraft();

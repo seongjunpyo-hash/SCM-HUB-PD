@@ -1839,6 +1839,119 @@ ${jsxBody}
       leafIdx += cs;
     });
   }
+  // standalone(`/demo/...`) 페이지에서 active version 의 settings.exposed === false
+  // 일 때 페이지 전체를 가리는 [비공개] 오버레이를 띄운다. VOC iframe 안에서는
+  // 호출되지 않음 (편집자가 항상 데모를 볼 수 있어야 하므로).
+  function applyPrivateOverlayIfNeeded() {
+    try {
+      if (isInIframe()) return;
+      const versions = _loadVersions();
+      const ver = _verEntryFor(versions, location.pathname);
+      // active applied snapshot 의 settings.exposed 를 본다. active 가 없으면
+      // applied map 의 page 엔트리를 본다 (저장 안된 임시 상태일 수 있음).
+      let applied = null;
+      if (ver && ver.activeId) {
+        const active = (ver.list || []).find((v) => v.id === ver.activeId);
+        applied = (active && active.applied) || null;
+      }
+      if (!applied) {
+        const map = _loadAppliedMap();
+        const np = _normalizePageKey(location.pathname);
+        applied = map[np] || map[location.pathname] || null;
+      }
+      const exposed = !applied || !applied.settings || applied.settings.exposed !== false;
+      if (exposed) return;
+      const ensure = () => _renderPrivateOverlay();
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', ensure, { once: true });
+      } else {
+        ensure();
+      }
+    } catch {}
+  }
+  function _renderPrivateOverlay() {
+    if (document.getElementById('scm-voc-private-overlay')) return;
+    const styleId = 'scm-voc-private-overlay-css';
+    if (!document.getElementById(styleId)) {
+      const s = document.createElement('style');
+      s.id = styleId;
+      s.textContent = `
+        #scm-voc-private-overlay {
+          position: fixed; inset: 0; z-index: 99999;
+          display: flex; align-items: center; justify-content: center;
+          background: rgba(15, 23, 42, 0.78);
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+          font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+          letter-spacing: -0.01em;
+        }
+        #scm-voc-private-overlay .scm-pv-card {
+          display: flex; flex-direction: column; align-items: center; gap: 16px;
+          padding: 36px 44px 32px;
+          background: #fff; color: #111827;
+          border-radius: 16px;
+          box-shadow: 0 32px 64px -16px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.06);
+          max-width: 520px; text-align: center;
+        }
+        #scm-voc-private-overlay .scm-pv-icon {
+          display: inline-flex; align-items: center; justify-content: center;
+          width: 56px; height: 56px;
+          background: #FEE2E2; color: #B91C1C;
+          border-radius: 50%;
+          font-size: 26px; font-weight: 800;
+        }
+        #scm-voc-private-overlay .scm-pv-tag {
+          display: inline-flex; align-items: center; gap: 6px;
+          padding: 4px 12px; border-radius: 999px;
+          background: #FEE2E2; color: #B91C1C;
+          font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase;
+        }
+        #scm-voc-private-overlay .scm-pv-title {
+          margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.4px;
+        }
+        #scm-voc-private-overlay .scm-pv-desc {
+          margin: 0; font-size: 13.5px; line-height: 1.65; color: #4B5563; max-width: 420px;
+        }
+        #scm-voc-private-overlay .scm-pv-desc b { color: #111827; font-weight: 600; }
+        #scm-voc-private-overlay .scm-pv-cta {
+          margin-top: 8px;
+          display: inline-flex; align-items: center; gap: 6px;
+          padding: 10px 18px; border-radius: 8px;
+          background: #4F46E5; color: #fff;
+          font-size: 13px; font-weight: 600;
+          text-decoration: none;
+        }
+        #scm-voc-private-overlay .scm-pv-cta:hover { background: #4338CA; }
+        #scm-voc-private-overlay .scm-pv-meta {
+          margin-top: 4px;
+          font-size: 11px; color: #9CA3AF;
+        }
+        body.scm-voc-private-locked { overflow: hidden !important; }
+      `;
+      document.head.appendChild(s);
+    }
+    const root = document.createElement('div');
+    root.id = 'scm-voc-private-overlay';
+    root.setAttribute('role', 'dialog');
+    root.setAttribute('aria-modal', 'true');
+    root.setAttribute('aria-label', '비공개 데모 안내');
+    root.innerHTML = `
+      <div class="scm-pv-card">
+        <span class="scm-pv-icon">🔒</span>
+        <span class="scm-pv-tag">비공개</span>
+        <h2 class="scm-pv-title">아직 공개되지 않은 데모입니다</h2>
+        <p class="scm-pv-desc">
+          이 데모는 현재 <b>비공개</b> 상태로, 작업이 진행 중입니다.<br/>
+          공개되면 같은 URL 에서 바로 열어볼 수 있습니다.
+        </p>
+        <a class="scm-pv-cta" href="/voc/" title="협업(편집) 화면으로 이동">협업 화면 열기</a>
+        <span class="scm-pv-meta">VOC &gt; 편집 &gt; 기본 설정 &gt; 데모 공개 ON 후 저장하면 공개됩니다</span>
+      </div>
+    `;
+    document.body.appendChild(root);
+    document.body.classList.add('scm-voc-private-locked');
+  }
+
   function applyActiveVersionMinimal() {
     try {
       const versions = _loadVersions();
@@ -1969,6 +2082,9 @@ ${jsxBody}
     // iframe load handler runs the full apply pipeline so we don't want
     // to double-apply when embedded.
     if (!isInIframe()) applyActiveVersionMinimal();
+    // standalone 에서만 비공개 오버레이 검사. iframe(VOC 편집) 안에서는 노출
+    // 토글과 무관하게 데모를 그대로 보여줘야 한다.
+    if (!isInIframe()) applyPrivateOverlayIfNeeded();
     if (window.SCM_USER) {
       myRole = window.SCM_USER.role || null;
       refresh();
