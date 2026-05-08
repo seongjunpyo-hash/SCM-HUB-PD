@@ -1,0 +1,80 @@
+# SCM HUB PD — 데모 페이지 아키텍처
+
+이 문서는 `/demo/*.html` 페이지의 공통 셸(GNB / LNB / 공통 스크립트) 아키텍처를 설명한다.
+새 페이지를 만들거나 기존 페이지를 수정할 때 참고.
+
+## 페이지 구조 (정적 HTML, no SSR)
+
+```
+<head>
+  <script src="/auth-gate.js"></script>           ← 동기 (인증 게이트)
+  <script src="/scm-shell.js" defer></script>    ← 공통 스크립트 일괄 로드
+  <link rel="stylesheet" href="../design system/components/.../*.css" /> × N  ← 디자인 시스템 CSS
+  <style>...</style>                              ← 페이지 전용 인라인 스타일
+</head>
+<body>
+  <header class="scm-topbar" role="banner"></header>           ← 빈 placeholder (topbar.js 가 inject)
+  <div class="app">
+    <nav class="scm-lnb" data-active="X" aria-label="주메뉴"></nav>  ← 빈 placeholder (lnb.js 가 inject)
+    <main>...page content...</main>
+  </div>
+
+  <script src="../design system/components/lnb/lnb.js"></script>
+  <script src="../design system/components/topbar/topbar.js"></script>
+  <script src="../design system/components/.../*.js"></script> × N
+
+  <script>
+  (function () {
+    'use strict';
+    // SCM.lnb.mount / SCM.topbar.mount → placeholder 안에 canonical 마크업 inject
+    if (window.SCM && SCM.lnb)    SCM.lnb.mount(document.querySelector('.scm-lnb'), { active: 'X' });
+    if (window.SCM && SCM.topbar) SCM.topbar.mount(document.querySelector('.scm-topbar'));
+    // ... 페이지 로직
+  })();
+  </script>
+</body>
+```
+
+## 공통 자원 — 단일 source of truth
+
+| 자원 | 위치 | 페이지에서 어떻게 |
+|---|---|---|
+| 인증 / 라우팅 / 튜토리얼 트리거 | `/auth-gate.js` | `<script src="/auth-gate.js">` (동기) |
+| 코멘트 / dev-export / 프로필 메뉴 | `/scm-shell.js` 가 일괄 로드 | `<script src="/scm-shell.js" defer>` (1줄) |
+| LNB 마크업 | `lnb.js` 의 `CANONICAL_LNB_HTML` | 빈 `<nav class="scm-lnb">` placeholder. `mount()` 가 자동 inject |
+| topbar 마크업 | `topbar.js` 의 `CANONICAL_TOPBAR_HTML` | 빈 `<header class="scm-topbar">` placeholder |
+
+### 새 메뉴 항목 추가 / LNB 위치 변경
+
+`lnb.js` 의 `CANONICAL_LNB_HTML` 한 곳만 수정 → 모든 데모 페이지에 자동 반영.
+
+### 새 공통 스크립트 추가
+
+`scm-shell.js` 의 `SCRIPTS` 배열에 한 줄만 추가 → 모든 데모 페이지에서 로드.
+
+## 흔한 사고 패턴 — 방지
+
+이 아키텍처가 막아주는 사고들:
+
+1. **공통 스크립트 한 줄 빠뜨림** (예: `profile-menu.js` 누락 → 프로필 모달 안 됨)
+   - 해결: 모든 페이지가 `scm-shell.js` 한 줄로 일괄 로드.
+
+2. **LNB / topbar 마크업 페이지 간 어긋남** (예: 한 페이지만 OTB 메뉴가 다른 그룹)
+   - 해결: 마크업이 `lnb.js` / `topbar.js` 의 단일 상수에서 옴.
+
+3. **VOC 편집모드 hide CSS 가 LNB 메뉴까지 가림**
+   - 해결: `dev-export.applyActiveVersionMinimal` 의 hide 룰을 `main` scope 안으로 한정.
+
+## 페이지 추가 체크리스트
+
+새 데모 페이지 만들 때:
+
+- [ ] `<script src="/auth-gate.js"></script>` 동기 로드
+- [ ] `<script src="/scm-shell.js" defer></script>` 추가
+- [ ] head 에 `<style> :root { --scm-lnb-width: 56px; --scm-sticky-gnb: 64px; ... } html.is-lnb-open { --scm-lnb-width: 260px; } </style>` (FOUC 방지)
+- [ ] 인라인 head script: `try { if (localStorage.getItem('scm-lnb-open') === '1') document.documentElement.classList.add('is-lnb-open'); } catch(_) {}`
+- [ ] body 시작 부분에 `<header class="scm-topbar" role="banner"></header>` placeholder
+- [ ] body main 영역 앞에 `<nav class="scm-lnb" data-active="페이지키" aria-label="주메뉴"></nav>` placeholder
+- [ ] body 끝 design-system script 뒤에 `SCM.lnb.mount(document.querySelector('.scm-lnb'), { active: '페이지키' })` 와 `SCM.topbar.mount(document.querySelector('.scm-topbar'))` 호출
+- [ ] LNB 에 메뉴 등록 — `lnb.js` 의 `CANONICAL_LNB_HTML` 안 적절한 L1 그룹의 L2 list 에 새 `<a class="scm-lnb-l2" href="새페이지.html" data-key="페이지키">...</a>` 추가
+- [ ] VOC 협업 화면에도 노출하려면 `voc/index.html` 의 `MENU` 배열에도 추가
