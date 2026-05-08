@@ -242,7 +242,7 @@
       </div>
       <div class="scm-stats-bar__right">
         <span class="scm-stats-bar__ts">25.10.24 12:00 업데이트</span>
-        <button class="scm-download-btn" type="button">
+        <button class="scm-download-btn" type="button" id="excel-download-btn">
           <svg viewBox="0 0 20 20"><use href="#ic-download"/></svg>
           <span>전체 엑셀 다운로드</span>
         </button>
@@ -1211,6 +1211,65 @@
   }
 
   document.getElementById('bu-template-dl')?.addEventListener('click', downloadRestockTemplate);
+
+  // ============================================================
+  // 전체 엑셀 다운로드 — ROWS 전체를 xlsx 로 저장
+  // ============================================================
+  const EXCEL_HEADERS = [
+    '보충 대상 구분', '스토어명', '브랜드', 'SKU번호', '카테고리', 'UID', '옵션', '바코드', 'SKU명',
+    '직전 7일 판매량', '직전 14일 판매량', '판매예측치',
+    '매장재고', '매장 입고예정수량', '기요청 수량', '이동 요청 수량', '이동 가능 재고',
+    '초도 입고 여부', '프로모션명', '프로모션 기간', '스타일넘버', '매입형태',
+  ];
+  function rowToExcel(r) {
+    const KIND = { target: '대상', nontarget: '비대상' };
+    const FORECAST = { higher: '상승 예측' };
+    return [
+      KIND[r.kind] || r.kind || '',
+      r.storeName || '', r.brand || '', r.sku || '', r.cat || '', r.uid || '',
+      Array.isArray(r.opt) ? r.opt.join(', ') : (r.opt || ''),
+      r.barcode || '', r.name || '',
+      r.sales7 == null ? '' : Number(r.sales7),
+      r.sales14 == null ? '' : Number(r.sales14),
+      FORECAST[r.forecast] || (r.forecast || ''),
+      r.stock == null ? '' : Number(r.stock),
+      r.incoming == null ? '' : Number(r.incoming),
+      r.prevReq == null ? '' : Number(r.prevReq),
+      r.requestQty == null ? '' : Number(r.requestQty),
+      r.available == null ? '' : Number(r.available),
+      r.intro ? '초도' : '',
+      r.promoTitle || '', r.promoDate || '',
+      r.styleNo || '', r.buyType || '',
+    ];
+  }
+  document.getElementById('excel-download-btn')?.addEventListener('click', async () => {
+    if (!window.ExcelJS) { alert('ExcelJS 라이브러리가 로드되지 않았습니다.'); return; }
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('편집샵 보충 요청');
+    ws.addRow(EXCEL_HEADERS);
+    const head = ws.getRow(1);
+    head.font = { name: 'Pretendard', size: 11, bold: true };
+    head.alignment = { vertical: 'middle', horizontal: 'center' };
+    head.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+    ROWS.forEach(r => ws.addRow(rowToExcel(r)));
+    ws.columns = EXCEL_HEADERS.map(h => ({ width: Math.max(10, Math.min(36, h.length * 2 + 4)) }));
+
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    link.download = `편집샵_재고보충_요청_${today}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+
+    if (window.SCM && SCM.toast) {
+      SCM.toast.show({ variant: 'success', title: '엑셀 다운로드 완료', desc: `${ROWS.length}건 저장됨` });
+    }
+  });
 })();
 </script>
 </body>
