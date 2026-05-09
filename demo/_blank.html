@@ -49,7 +49,14 @@
 
   <style>
     body { background: #fff; }
-    main { background: #fff; min-height: 100vh; }
+    main { background: #fff; min-height: 100vh; padding: 16px 28px; }
+    /* sticky stack — filter-bar 의 sticky top 에 사용되는 토큰 */
+    .scm-filter-bar { top: var(--scm-sticky-gnb); }
+    /* voc 자동 생성 filter-bar host — 사용자가 추가 필터를 등록하기 전엔 흔적
+       없이, 등록 후엔 자연스럽게 보이도록 padding/margin 을 native 와 동일하게. */
+    .scm-filter-bar.scm-voc-auto-host:not(:has(.scm-voc-added-filter)) {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -70,8 +77,22 @@
       var lnb = document.querySelector('.scm-lnb');
       if (!lnb) return;
       var p = (location.pathname || '').replace(/\.html$/, '').replace(/^\/demo\//, '');
-      // /demo/x → 'x', /demo/ → '' (이 경우 active 미설정)
-      if (p) lnb.setAttribute('data-active', p);
+      if (!p) return;
+      // 1) URL slug 와 voc 신규 페이지 entry 의 key 매칭 (slug 또는 npEntry id 기준).
+      //    새 페이지 entry 가 가진 key (slug 또는 path 의 파일명) 가 active 키.
+      try {
+        var rawNp = localStorage.getItem('scm:voc:newpages:v1');
+        var nps = rawNp ? JSON.parse(rawNp) : [];
+        if (Array.isArray(nps)) {
+          var match = nps.find(function (np) { return np && np.slug === p; })
+                   || nps.find(function (np) { return np && np.path === '/demo/' + p + '.html'; });
+          if (match) {
+            // 페이지 title 에도 반영해 두면 voc 내비/탭에서 식별 쉬움.
+            if (match.name && document.title) document.title = 'SCM-Hub · ' + match.name;
+          }
+        }
+      } catch (_) {}
+      lnb.setAttribute('data-active', p);
     })();
   </script>
   <script src="../design%20system/components/lnb/lnb.js"></script>

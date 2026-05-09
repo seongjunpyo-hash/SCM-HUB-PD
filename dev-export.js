@@ -2105,9 +2105,13 @@ ${jsxBody}
 
   // ---- 추가 필터 / 컬럼 / 그룹 inject ----
   function _applyAddedFiltersColumnsGroups(doc, a) {
-    // Filters
-    const filterBar = doc.querySelector('.scm-filter-bar');
+    // Filters — 신규 페이지(_blank.html) 같은 빈 캔버스엔 native filter bar 가
+    // 없으니 added 필터가 있을 때 자동으로 host 생성 (added-dom-builders.js).
     const addedFilters = (a.added && a.added.filters) || [];
+    if (addedFilters.length && typeof window !== 'undefined' && window.SCM_VOC_BUILDERS && window.SCM_VOC_BUILDERS.ensureFilterBarHost) {
+      window.SCM_VOC_BUILDERS.ensureFilterBarHost(doc);
+    }
+    const filterBar = doc.querySelector('.scm-filter-bar');
     if (filterBar && addedFilters.length) {
       // wrapper 선택 단일 source: voc/added-dom-builders.js → pickFilterChipWrapper.
       // (.scm-filter-overflow__track 우선 — group 안에 들어가 칩 gap 사라지는 사고 방지.)

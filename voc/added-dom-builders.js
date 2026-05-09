@@ -89,8 +89,33 @@
     return (realChip && realChip.parentElement) || filterBar.firstElementChild || filterBar;
   }
 
+  // ---- (3) 빈 캔버스 (예: /demo/_blank.html → 신규 슬러그) hydrate 헬퍼 ----
+  // 신규 페이지엔 .scm-filter-bar 가 native 로 없어서 사용자가 voc 에서
+  // 추가한 필터가 inject 될 host 가 없음. 이 함수가 main 의 가장 위에
+  // 빈 filter-bar shell 을 만들어 host 역할을 하게 함. 이미 있으면 그대로.
+  // dev-export + voc preview 양쪽이 같이 사용.
+  function ensureFilterBarHost(doc) {
+    if (!doc) return null;
+    let bar = doc.querySelector('.scm-filter-bar');
+    if (bar) return bar;
+    const main = doc.querySelector('main') || doc.body;
+    if (!main) return null;
+    bar = doc.createElement('div');
+    bar.className = 'scm-filter-bar scm-voc-auto-host';
+    bar.innerHTML =
+      '<button class="scm-filter-chip" type="button"><svg viewBox="0 0 20 20"><use href="#ic-filter"/></svg><span>전체 필터</span><span class="scm-filter-chip__count">0</span></button>'
+      + '<div class="scm-filter-overflow"><div class="scm-filter-overflow__track"></div></div>'
+      + '<div class="scm-filter-actions">'
+      +   '<button class="scm-search-btn" type="button">검색</button>'
+      +   '<button class="scm-filter-reset-btn" type="button"><svg viewBox="0 0 20 20"><use href="#ic-refresh"/></svg><span>초기화</span></button>'
+      + '</div>';
+    main.insertBefore(bar, main.firstChild);
+    return bar;
+  }
+
   root.SCM_VOC_BUILDERS = {
     buildAddedTableHTML: buildAddedTableHTML,
     pickFilterChipWrapper: pickFilterChipWrapper,
+    ensureFilterBarHost: ensureFilterBarHost,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

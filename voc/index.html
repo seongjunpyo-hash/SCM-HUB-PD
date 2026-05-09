@@ -4578,6 +4578,11 @@
       // ---- 사용자 추가 테이블 — column/group 인젝션이 이 테이블을 타깃하기 위함 ----
       applyAddedTables(doc, a);
       // ---- Filters ----
+      // 신규 페이지(_blank.html) 같은 빈 캔버스엔 native filter bar 가 없으니
+      // added 필터가 있을 때 자동으로 host 생성.
+      if ((a.added.filters || []).length && window.SCM_VOC_BUILDERS && window.SCM_VOC_BUILDERS.ensureFilterBarHost) {
+        window.SCM_VOC_BUILDERS.ensureFilterBarHost(doc);
+      }
       const filterBar = doc.querySelector('.scm-filter-bar');
       if (filterBar && a.added.filters.length) {
         // wrapper 선택 = .scm-filter-overflow__track 우선 (gap 룰 적용 위치).
