@@ -6659,13 +6659,16 @@
           if (it.anchor) cls.push('is-anchor');
           if (it.renamed) cls.push('is-renamed');
           const sel = escapeHtml(it.selector);
+          // 고정 영역 🔒 — 컬럼 row 의 leftmost (수정 버튼 앞) 위치에 노출.
+          // anchor row(rs>=2) 도 동일 위치에 보이도록 middle 바깥에서 계산.
+          const frozenBadge = (it.kind === 'column' && !it.isGroup && !it.added
+            && it.leafIdx != null && it.leafIdx >= 0 && it.leafIdx < effectiveFrozenCount)
+            ? '<span class="edit-row__frozen-badge" aria-hidden="true" title="고정 영역">🔒</span>' : '';
           let middle = '';
           if (it.kind === 'column' && !it.isGroup) {
             // leaf column (native + added) — 셀타입 + 정렬/필터 토글 모두 노출.
             const sortOn   = showSort.has(it.selector);
             const filterOn = showFilter.has(it.selector);
-            const frozenBadge = (!it.added && it.leafIdx != null && it.leafIdx >= 0 && it.leafIdx < effectiveFrozenCount)
-              ? '<span class="edit-row__frozen-badge" aria-hidden="true" title="고정 영역">🔒</span>' : '';
             const ct = cellTypes[it.selector] || 'basic';
             // added 컬럼이고 다중 테이블 페이지일 때 — 어느 테이블에 있는지
             // 배지로 노출 + 클릭 시 다른 테이블로 이동.
@@ -6678,9 +6681,9 @@
               tableBadge = `<button type="button" class="edit-row__table-badge" data-move-added-col="${escapeHtml(it.added.id)}" data-cur-ti="${ti}" title="다른 테이블로 이동">📍 ${escapeHtml(labelTxt)}</button>`;
             }
             // 정렬 / 필터 토글은 [수정] 모달로 이동 — row 의 자리 부족 해소.
-            // 기본정보(cell-type) select 만 인라인 유지.
+            // 기본정보(cell-type) select 만 인라인 유지. 🔒 frozenBadge 는
+            // row 출력 단계에서 renameBtn 앞에 직접 삽입 (leftmost 위치).
             middle = `
-              ${frozenBadge}
               ${tableBadge}
               <select class="edit-row__cell-type" data-cell-type-key="${sel}" title="셀 타입 — 이 컬럼의 데이터 셀 렌더 스타일">
                 <option value="basic"     ${ct === 'basic'     ? 'selected' : ''}>기본정보</option>
@@ -6791,6 +6794,7 @@
               ${grip}
               <input type="checkbox" class="edit-row__check" data-selector="${sel}" ${isHidden ? '' : 'checked'} />
               <span class="edit-row__label">${escapeHtml(it.label)}</span>
+              ${frozenBadge}
               ${renameBtn}
               ${middle}
               ${widthChip}
