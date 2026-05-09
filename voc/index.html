@@ -926,6 +926,14 @@
       background: #fff; border: 1px solid #FCA5A5;
     }
     .cmp-lib-card__del:hover { background: #FEE2E2; border-color: #DC2626; }
+    .cmp-lib-actions {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      padding: 8px 4px 12px;
+      border-bottom: 1px dashed #E5E7EB;
+      margin-bottom: 8px;
+    }
+    .cmp-lib-actions[hidden] { display: none; }
+    .cmp-lib-actions__hint { font-size: 11px; color: #6B7280; line-height: 1.5; flex: 1; min-width: 0; }
     .cmp-lib-empty {
       grid-column: 1 / -1;
       padding: 24px;
@@ -2282,6 +2290,13 @@
         <p class="cmp-modal__hint">카드를 클릭하면 신규 컴포넌트 form 으로 이동해 이름·너비를 조정하고 저장할 수 있습니다.</p>
         <div class="cmp-lib-leveltabs" role="tablist" id="cmpLibLevelTabs"></div>
         <div class="cmp-lib-levelhint" id="cmpLibLevelHint"></div>
+        <!-- 'user' level 일 때만 노출 — 디자인 시스템 catalog markup 으로 내보내기. -->
+        <div class="cmp-lib-actions" id="cmpLibActions" hidden>
+          <button type="button" class="cmp-modal__btn cmp-modal__btn--ghost" id="cmpLibExportBtn" title="모든 사용자 컴포넌트를 design system / catalog / index.html 에 붙여 넣을 수 있는 markup 으로 변환해 클립보드에 복사">
+            <span aria-hidden="true">📋</span> 디자인 시스템 catalog 마크업 복사
+          </button>
+          <span class="cmp-lib-actions__hint">개발자가 design system / catalog / index.html 의 적절한 섹션에 붙여 넣어 정식 컴포넌트로 승격.</span>
+        </div>
         <div class="cmp-modal__lib" id="cmpLibGrid"></div>
       </div>
     </div>
@@ -3865,6 +3880,36 @@
       state.userComponents = (state.userComponents || []).filter((u) => u.id !== id);
       persistUserComponents();
       _cmpRenderLib();
+    }
+    // 디자인 시스템 catalog (design system/catalog/index.html) 에 붙여 넣을 수
+    // 있는 markup 으로 변환. 사용자 컴포넌트 → catalog section 형식.
+    // 개발자가 결과를 catalog index.html 의 적절한 그룹 (Atoms / Display / etc)
+    // 아래에 paste 하면 정식 컴포넌트로 승격.
+    function exportUserLibraryToCatalog() {
+      const list = state.userComponents || [];
+      if (!list.length) return '';
+      const ts = new Date().toISOString().slice(0, 10);
+      const header = '<!-- VOC 사용자 컴포넌트 export — ' + ts + ' (' + list.length + ' 종) -->\n';
+      const sections = list.map((u) => {
+        const safeId = (u.id || 'voc-user').replace(/[^a-z0-9_-]/gi, '-');
+        const safeLabel = escapeHtml(u.label || '사용자 컴포넌트');
+        const safeSub = escapeHtml(u.sub || '');
+        // 본문 markup 은 그대로 — 사용자가 작성한 그대로 보존.
+        return [
+          '<!-- ============== USER: ' + safeLabel + ' ============== -->',
+          '<section class="cat-section" id="' + safeId + '">',
+          '  <header class="cat-section__head">',
+          '    <h2>' + safeLabel + '</h2>',
+          '    <span class="file">user-library / ' + safeId + '</span>',
+          '  </header>',
+          (safeSub ? '  <p class="cat-section__desc">' + safeSub + '</p>' : ''),
+          '  <div class="cat-preview cat-preview--block">',
+          (u.html || '').split('\n').map((l) => '    ' + l).join('\n'),
+          '  </div>',
+          '</section>',
+        ].filter(Boolean).join('\n');
+      });
+      return header + sections.join('\n\n') + '\n';
     }
     function persistUserComponents() {
       try { localStorage.setItem(USER_LIB_KEY, JSON.stringify(state.userComponents || [])); } catch {}
@@ -5521,6 +5566,9 @@
       if (!host) return;
       // 'user' level → state.userComponents, 그 외 → SMALL_UNITS.
       const isUserLevel = _libActiveLevel === 'user';
+      // user 레벨일 때만 export 액션 바 노출.
+      const actions = document.getElementById('cmpLibActions');
+      if (actions) actions.hidden = !isUserLevel;
       const filtered = isUserLevel
         ? (state.userComponents || []).slice().sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0))
         : SMALL_UNITS.filter((u) => (u.level || 'atom') === _libActiveLevel);
@@ -5639,6 +5687,34 @@
           _libActiveLevel = next;
           _cmpRenderLib();
         }
+        return;
+      }
+      // 디자인 시스템 catalog markup export — '내 컴포넌트' 탭 액션.
+      if (t.id === 'cmpLibExportBtn' || (t.closest && t.closest('#cmpLibExportBtn'))) {
+        e.preventDefault();
+        const text = exportUserLibraryToCatalog();
+        if (!text) { showToast('내보낼 사용자 컴포넌트가 없습니다'); return; }
+        const tryClipboard = () => {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(text).then(() => true).catch(() => false);
+          }
+          return Promise.resolve(false);
+        };
+        tryClipboard().then((ok) => {
+          if (ok) {
+            showToast('Catalog markup 클립보드에 복사 — design system/catalog/index.html 에 붙여 넣으세요');
+            return;
+          }
+          // 클립보드 차단 환경 — fallback: textarea + alert.
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:80vw;height:60vh;z-index:9999;';
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); } catch (_) {}
+          showToast('수동 복사: 텍스트 영역을 닫으면 됩니다');
+          ta.addEventListener('blur', () => ta.remove(), { once: true });
+        });
         return;
       }
       // 라이브러리 카드 pick — 신규 form 으로 prefill 이동.
