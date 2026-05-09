@@ -6,6 +6,7 @@ on:
     paths:
       - 'voc/index.html'
       - 'voc/component-library.js'
+      - 'voc/added-dom-builders.js'
       - 'dev-export.js'
       - 'design system/components/lnb/lnb.js'
       - 'scripts/check-voc-syntax.js'
@@ -14,6 +15,7 @@ on:
     paths:
       - 'voc/index.html'
       - 'voc/component-library.js'
+      - 'voc/added-dom-builders.js'
       - 'dev-export.js'
       - 'design system/components/lnb/lnb.js'
       - 'scripts/check-voc-syntax.js'

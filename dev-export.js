@@ -2076,57 +2076,16 @@ ${jsxBody}
   }
 
   // ---- 추가 테이블 (1단/2단) inject — voc 의 applyAddedTables mirror ----
+  // 빌더는 단일 source: voc/added-dom-builders.js (window.SCM_VOC_BUILDERS).
+  // dev-export 가 standalone 데모 페이지에 inject 되므로 그 페이지가 미리
+  // 모듈을 로드해야 함. scm-shell.js 가 dev-export.js 와 함께 추가 로드.
   function _buildAddedTableHTML_devexport(t) {
-    const klass = `voc-added-table-${t.id}`;
-    const cellStyle = 'min-width:120px;width:120px;padding:12px 16px;';
-    const safeLabel = escapeHtml(t.label || '새 테이블');
-    const withCheck = !!t.withCheck;
-    const withNo = !!t.withNo;
-    const cbHeadCell = `<th class="cb-col"${t.type === 'grouped' ? ' rowspan="2"' : ''}><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="전체 선택"></span></th>`;
-    const noHeadCell = `<th class="col-auto col-no"${t.type === 'grouped' ? ' rowspan="2"' : ''}>No</th>`;
-    const cbBodyCell = '<td class="cb-col"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="선택"></span></td>';
-    const headAnchorPrefix = (withCheck ? cbHeadCell : '') + (withNo ? noHeadCell : '');
-    const cgAnchor = (withCheck ? '<col style="width:36px"/>' : '') + (withNo ? '<col style="width:48px"/>' : '');
-    const colgroup = `<colgroup>${cgAnchor}<col style="width:120px"/><col style="width:120px"/><col class="col-spacer" data-empty="true"/></colgroup>`;
-    let thead;
-    if (t.type === 'grouped') {
-      thead = '<thead>'
-        + '<tr class="group-row">'
-        +   headAnchorPrefix
-        +   `<th colspan="2" style="${cellStyle}">${safeLabel} 그룹</th>`
-        +   '<th class="col-spacer" data-empty="true" rowspan="2" aria-hidden="true"></th>'
-        + '</tr>'
-        + '<tr>'
-        +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 1</div></th>`
-        +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 2</div></th>`
-        + '</tr>'
-        + '</thead>';
-    } else {
-      thead = '<thead>'
-        + '<tr>'
-        +   headAnchorPrefix
-        +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 1</div></th>`
-        +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 2</div></th>`
-        +   '<th class="col-spacer" data-empty="true" aria-hidden="true"></th>'
-        + '</tr>'
-        + '</thead>';
+    if (typeof window !== 'undefined' && window.SCM_VOC_BUILDERS && window.SCM_VOC_BUILDERS.buildAddedTableHTML) {
+      return window.SCM_VOC_BUILDERS.buildAddedTableHTML(t);
     }
-    const tbodyRow = (n) => '<tr>'
-      +   (withCheck ? cbBodyCell : '')
-      +   (withNo ? `<td class="col-auto col-no">${n}</td>` : '')
-      +   `<td style="${cellStyle}">—</td>`
-      +   `<td style="${cellStyle}">—</td>`
-      +   '<td class="col-spacer" data-empty="true"></td>'
-      + '</tr>';
-    const tbody = `<tbody>${tbodyRow(1)}${tbodyRow(2)}${tbodyRow(3)}</tbody>`;
-    return `<section class="scm-page-section scm-voc-added-table ${klass}" id="voc-added-table-${t.id}">`
-      +   `<div class="scm-page-section__title">${safeLabel}</div>`
-      +   '<div class="mp-table-host">'
-      +     '<div class="mp-table-scroll">'
-      +       `<table class="mp-table">${colgroup}${thead}${tbody}</table>`
-      +     '</div>'
-      +   '</div>'
-      + '</section>';
+    // fallback — 모듈 누락 시 안전하게 빈 section.
+    return `<section class="scm-page-section scm-voc-added-table voc-added-table-${t.id}" id="voc-added-table-${t.id}">`
+      + `<div class="scm-page-section__title">${escapeHtml(t.label || '새 테이블')}</div></section>`;
   }
   function _applyAddedTables(doc, a) {
     const list = (a.added && Array.isArray(a.added.tables)) ? a.added.tables : [];
@@ -2150,8 +2109,11 @@ ${jsxBody}
     const filterBar = doc.querySelector('.scm-filter-bar');
     const addedFilters = (a.added && a.added.filters) || [];
     if (filterBar && addedFilters.length) {
-      const realChip = filterBar.querySelector('.scm-filter-select[data-mp-filter]:not(.scm-voc-added-filter)');
-      const wrapper = (realChip && realChip.parentElement) || filterBar.firstElementChild || filterBar;
+      // wrapper 선택 단일 source: voc/added-dom-builders.js → pickFilterChipWrapper.
+      // (.scm-filter-overflow__track 우선 — group 안에 들어가 칩 gap 사라지는 사고 방지.)
+      const wrapper = (typeof window !== 'undefined' && window.SCM_VOC_BUILDERS && window.SCM_VOC_BUILDERS.pickFilterChipWrapper(filterBar))
+        || filterBar.firstElementChild
+        || filterBar;
       const resetBtn = wrapper.querySelector(':scope > .scm-filter-reset-btn');
       addedFilters.forEach((f) => {
         const id = `voc-added-filter-${f.id}`;

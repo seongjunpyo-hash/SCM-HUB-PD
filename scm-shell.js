@@ -25,6 +25,9 @@
   window.__scmShellBooted = true;
 
   var SCRIPTS = [
+    // 추가 DOM 빌더 단일 source — dev-export.js 가 추가 테이블 / 필터 wrapper
+    // 결정 시 사용. 반드시 dev-export.js 앞에 두어야 함.
+    '/voc/added-dom-builders.js',
     '/voc/comment-overlay.js',
     '/dev-export.js',
     '/profile-menu.js',

@@ -66,6 +66,7 @@ if (main.body.length > 0) {
 //    voc 와 같은 파이프라인에 들어가는 파일). 한 곳이라도 깨지면 voc 가 다양한 형태로 깨짐.
 const EXTRA_JS = [
   path.join(__dirname, '..', 'voc', 'component-library.js'),
+  path.join(__dirname, '..', 'voc', 'added-dom-builders.js'),
   path.join(__dirname, '..', 'dev-export.js'),
   path.join(__dirname, '..', 'design system', 'components', 'lnb', 'lnb.js'),
 ];
