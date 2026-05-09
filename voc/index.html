@@ -7001,14 +7001,19 @@
                 <option value="code"   ${currentType === 'code'   ? 'selected' : ''}>코드</option>
               </select>`;
           }
-          // 추가 항목은 entry 자체 삭제, NATIVE 컴포넌트는 hide 로 대체.
+          // 추가 항목은 entry 자체 삭제, NATIVE 항목은 hide 로 대체.
           let del = '';
           if (it.added) {
             const delAttr = it.isGroup ? 'data-del-group' : ('data-del-' + it.kind);
             del = `<button type="button" class="edit-row__del" ${delAttr}="${escapeHtml(it.added.id)}" title="삭제">×</button>`;
           } else if (it.kind === 'component') {
-            // NATIVE 컴포넌트 — 영구 삭제는 안 되지만 hide 시키는 × 버튼.
+            // NATIVE 컴포넌트 — 영구 삭제 X, hide 시키는 × 버튼.
             del = `<button type="button" class="edit-row__del" data-hide-component="${sel}" title="이 컴포넌트 숨김">×</button>`;
+          } else if ((it.kind === 'filter' || it.kind === 'column') && !it.isGroup && !it.anchor) {
+            // NATIVE 필터/컬럼 leaf — × 클릭 = 체크박스 uncheck = hide.
+            // anchor row(rs>=2 No 등) / group header 는 제외.
+            const lbl = it.kind === 'filter' ? '이 필터 숨김' : '이 컬럼 숨김';
+            del = `<button type="button" class="edit-row__del" data-hide-row="${sel}" title="${lbl}">×</button>`;
           }
           // Component rows get an "edit" button — both native components
           // (HTML override editor) and user-added ones (entry editor).
@@ -7417,6 +7422,16 @@
         e.preventDefault();
         e.stopPropagation();
         const sel = hCmp.dataset.hideComponent;
+        if (sel) setHidden(sel, true);
+        return;
+      }
+      // hide a NATIVE filter / column (× on row). 체크박스 uncheck 과 동일한
+      // 효과 — anchor / group 은 row 템플릿에서 이미 제외.
+      const hRow = t.closest && t.closest('[data-hide-row]');
+      if (hRow) {
+        e.preventDefault();
+        e.stopPropagation();
+        const sel = hRow.dataset.hideRow;
         if (sel) setHidden(sel, true);
         return;
       }
