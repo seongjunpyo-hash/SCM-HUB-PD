@@ -3003,22 +3003,37 @@
       }
       return false;
     }
-    function _ensureComponentFlexLayoutCSS(doc) {
+    // main 을 12-column CSS grid 로 만들고 .scm-voc-added-grid 를 dissolve.
+    // 결과: native + added 컴포넌트가 모두 main 의 grid item 으로 동작 →
+    // 각자 grid-column: span N 으로 너비 지정 가능. 자연 순서면 inject 안 함.
+    function _ensureComponentGridLayoutCSS(doc) {
       if (!doc || !doc.head) return;
       if (doc.getElementById('scm-voc-layout-css')) return;
       const style = doc.createElement('style');
       style.id = 'scm-voc-layout-css';
       style.textContent = ''
-        + 'main { display: flex !important; flex-direction: column !important; }\n'
-        + 'main > * { flex: 0 0 auto !important; }\n';
+        // main: 12-col grid
+        + 'main { display: grid !important; grid-template-columns: repeat(12, 1fr) !important; gap: 12px !important; align-content: start !important; }\n'
+        // 모든 자식 디폴트 = 전체 너비 (사용자가 inline style 로 override)
+        + 'main > * { grid-column: span 12; min-width: 0; }\n'
+        // .scm-voc-added-grid 는 dissolve — 안의 added comp / rowbreak 가 main 의
+        // grid item 으로 직접 흐르도록.
+        + 'main > .scm-voc-added-grid { display: contents !important; }\n'
+        + 'main > .scm-voc-added-grid > .scm-voc-added-comp { min-width: 0; }\n'
+        + 'main > .scm-voc-added-grid > .scm-voc-added-rowbreak { grid-column: 1 / -1 !important; height: 0 !important; padding: 0 !important; margin: 0 !important; border: 0 !important; }\n';
       doc.head.appendChild(style);
     }
-    function _removeComponentFlexLayoutCSS(doc) {
+    function _removeComponentGridLayoutCSS(doc) {
       if (!doc) return;
       const style = doc.getElementById('scm-voc-layout-css');
       if (style) style.remove();
       const main = doc.querySelector('main');
-      if (main) [...main.children].forEach((el) => { el.style.order = ''; });
+      if (main) [...main.children].forEach((el) => {
+        el.style.order = '';
+        // Native 컴포넌트의 grid-column 만 정리. .scm-voc-added-grid 안의
+        // added comp 의 inline gridColumn 은 그대로 보존 (자체 grid 모드일 때 동작).
+        if (!el.classList.contains('scm-voc-added-grid')) el.style.gridColumn = '';
+      });
     }
     function applyComponentOrderToIframe() {
       const doc = iframe.contentDocument;
@@ -3032,12 +3047,23 @@
       const targets = scanEditTargets();
       const naturalOrder = (targets.components || []).map((it) => it.selector);
       const customized = _isComponentOrderCustomized(order, naturalOrder);
-      if (!customized) {
-        _removeComponentFlexLayoutCSS(doc);
+      // grid layout 이 필요한 조건: 순서 변경 / native width 설정 / rowbreak / 추가 컴포넌트
+      const edits = a.componentEdits || {};
+      const hasNativeWidth = Object.keys(edits).some((sel) => {
+        const w = edits[sel] && edits[sel].width;
+        return typeof w === 'number' && w >= 1 && w < 12;
+      });
+      const hasAddedComps = ((a.added && a.added.components) || []).length > 0;
+      if (!customized && !hasNativeWidth && !hasAddedComps) {
+        _removeComponentGridLayoutCSS(doc);
         return;
       }
-      _ensureComponentFlexLayoutCSS(doc);
-      [...main.children].forEach((el) => { el.style.order = ''; });
+      _ensureComponentGridLayoutCSS(doc);
+      // Phase 2 — style.order 로 시각 순서 (DOM 순서 안 건드림)
+      [...main.children].forEach((el) => {
+        el.style.order = '';
+        if (!el.classList.contains('scm-voc-added-grid')) el.style.gridColumn = '';
+      });
       let n = 1;
       order.forEach((sel) => {
         if (!sel) return;
@@ -3049,6 +3075,15 @@
       // componentOrder 에 없는 main 자식은 끝
       [...main.children].forEach((el) => {
         if (!el.style.order) el.style.order = String(n++);
+      });
+      // Native 컴포넌트 width 적용 — componentEdits[sel].width.
+      Object.keys(edits).forEach((sel) => {
+        const w = edits[sel] && edits[sel].width;
+        if (typeof w !== 'number' || w < 1 || w > 12) return;
+        try {
+          const el = main.querySelector(sel);
+          if (el && el.parentElement === main) el.style.gridColumn = `span ${w}`;
+        } catch (_) {}
       });
     }
     function rebuildAddedFiltersOnly() {
@@ -3509,8 +3544,10 @@
       d.componentEdits = (d.componentEdits && typeof d.componentEdits === 'object') ? d.componentEdits : {};
       const cur = d.componentEdits[selector] || {};
       const next = Object.assign({}, cur, patch);
-      // empty html + no other fields → drop the entry entirely (revert)
-      if (!next.html && !next.label && !next.type) delete d.componentEdits[selector];
+      // empty html + no other fields → drop the entry entirely (revert).
+      // width 도 고려 — 12 (default) 일 땐 필드 제거.
+      if (typeof next.width === 'number' && next.width === 12) delete next.width;
+      if (!next.html && !next.label && !next.type && next.width == null) delete d.componentEdits[selector];
       else d.componentEdits[selector] = next;
       // Cross-page sync — patch 에 label 이 들어오면 원본 라벨 → 새 라벨 매핑.
       if (Object.prototype.hasOwnProperty.call(patch, 'label')) {
@@ -4677,9 +4714,13 @@
         name = ed.label || _cmpDefaultLabelFor(selector) || '';
         type = ed.type || 'card';
         html = ed.html || _cmpReadOuterHtml(selector) || '';
+        // Native 컴포넌트도 width 적용 가능 — componentEdits[sel].width.
+        // 미설정 = 12 (전체 너비). 사용자가 6 등으로 줄이면 같은 row 에 다른
+        // 컴포넌트가 함께 배치 가능 (예: 액션바 8 + 페이지네이션 4).
+        width = (typeof ed.width === 'number' && ed.width >= 1 && ed.width <= 12) ? ed.width : 12;
         title.textContent = '컴포넌트 편집 (기존 컴포넌트)';
         delBtn.hidden = true;
-        if (widthField) widthField.hidden = true; // 너비는 추가 컴포넌트 전용
+        if (widthField) widthField.hidden = false;
       } else {
         title.textContent = '컴포넌트 추가';
         delBtn.hidden = true;
@@ -4811,14 +4852,20 @@
         updateAddedComponent(_cmpModal.addedId, { label: name, type, html, width });
         showToast('컴포넌트가 갱신됐습니다');
       } else if (_cmpModal.selector) {
-        // Native override
+        // Native override — label / type / html / width 모두 patch.
+        // width 12 = 디폴트 (저장 안 함). 1~11 만 저장.
+        const widthPatch = (width >= 1 && width < 12) ? width : undefined;
         const orig = _cmpReadOuterHtml(_cmpModal.selector) || '';
         if (html.trim() && html.trim() !== orig.trim()) {
-          setNativeComponentEdit(_cmpModal.selector, { label: name, type, html });
+          setNativeComponentEdit(_cmpModal.selector, { label: name, type, html, width: widthPatch });
           showToast('컴포넌트가 갱신됐습니다');
         } else {
-          // No effective change → just update label/type if any
-          setNativeComponentEdit(_cmpModal.selector, { label: name || undefined, type: type || undefined });
+          // HTML 변경 없음 → label/type/width 만 갱신.
+          setNativeComponentEdit(_cmpModal.selector, {
+            label: name || undefined,
+            type: type || undefined,
+            width: widthPatch,
+          });
         }
       }
       closeComponentModal();
@@ -6273,11 +6320,20 @@
           // 추가 컴포넌트 행에 그리드 너비 chip — 한눈에 어떤 폭으로 잡혔는지
           // 보이게. 클릭 시 modal 열어 변경 가능 (= 편집 버튼과 동일).
           const _widthLabel = (w) => {
-            const m = { 12: '전체', 9: '3/4', 8: '2/3', 6: '1/2', 4: '1/3', 3: '1/4' };
+            const m = { 12: '전체', 9: '3/4', 8: '2/3', 6: '1/2', 4: '1/3', 3: '1/4', 2: '1/6' };
             return m[w] || (w + '/12');
           };
-          const widthChip = (it.kind === 'component' && it.added)
-            ? `<span class="edit-row__width-chip" title="그리드 너비 — 편집(✏) 으로 변경">📐 ${_widthLabel((it.added && it.added.width) || 12)}</span>`
+          // 컴포넌트 width chip — added: it.added.width / native: componentEdits[sel].width
+          let _compWidth = 12;
+          if (it.kind === 'component') {
+            if (it.added && typeof it.added.width === 'number') _compWidth = it.added.width;
+            else if (!it.added) {
+              const ed = (d.componentEdits || {})[it.selector];
+              if (ed && typeof ed.width === 'number') _compWidth = ed.width;
+            }
+          }
+          const widthChip = (it.kind === 'component' && !it.isAddedTable && it.kind !== 'rowbreak' && !it.isRowbreak)
+            ? `<span class="edit-row__width-chip" title="그리드 너비 — 편집(✏) 으로 변경">📐 ${_widthLabel(_compWidth)}</span>`
             : '';
           // 필터 / 컬럼 (group 포함) 행은 inline rename 버튼 노출.
           // anchor 행(rs>=2 cb/No 등) + 컴포넌트 행은 제외.
