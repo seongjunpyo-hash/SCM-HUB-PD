@@ -1755,6 +1755,7 @@
                 <div class="edit-add-row">
                   <button type="button" class="edit-add-btn" data-add="column">+ 컬럼 추가</button>
                   <button type="button" class="edit-add-btn" data-add="group" id="addGroupBtn" hidden>+ 그룹 추가</button>
+                  <button type="button" class="edit-add-btn" data-add="table">+ 테이블 추가</button>
                 </div>
                 <div class="edit-add-form" id="addColumnForm">
                   <input type="text" id="addColumnLabel" placeholder="컬럼 라벨 (예: 비고)" maxlength="20" />
@@ -1777,6 +1778,17 @@
                   <div class="edit-add-form__actions">
                     <button type="button" class="edit-add-form__btn edit-add-form__btn--ghost" data-cancel="group">취소</button>
                     <button type="button" class="edit-add-form__btn edit-add-form__btn--primary" data-submit="group">추가</button>
+                  </div>
+                </div>
+                <div class="edit-add-form" id="addTableForm">
+                  <input type="text" id="addTableLabel" placeholder="테이블 라벨 (예: 신규 정보 테이블)" maxlength="20" />
+                  <select id="addTableType" title="테이블 형식">
+                    <option value="flat">1단 — 단일 행 헤더</option>
+                    <option value="grouped">2단 — 그룹 + leaf 2-row 헤더</option>
+                  </select>
+                  <div class="edit-add-form__actions">
+                    <button type="button" class="edit-add-form__btn edit-add-form__btn--ghost" data-cancel="table">취소</button>
+                    <button type="button" class="edit-add-form__btn edit-add-form__btn--primary" data-submit="table">추가</button>
                   </div>
                 </div>
               </div>
@@ -2918,6 +2930,10 @@
       // { id, label, leafLabel, tableIdx } — 새 group 셀 + 그 안의 1개 leaf
       // 가 함께 inject 됨.
       e.added.groups = Array.isArray(e.added.groups) ? e.added.groups : [];
+      // 사용자 추가 테이블 — 빈 1단/2단 mp-table-host 를 main 끝에 inject.
+      // type 은 'flat'(1-row thead) | 'grouped'(2-row thead — group + leaf).
+      // entry: { id, label, type }
+      e.added.tables = Array.isArray(e.added.tables) ? e.added.tables : [];
       // componentEdits: { [selector]: { html, label, type } } — overrides
       // applied to NATIVE components on top of their existing DOM (selectors
       // include data-voc-key paths and arbitrary CSS paths).
@@ -3218,6 +3234,34 @@
       renderEditPane();
       applyColumnSectionToIframe();
     }
+    // 새 (빈) 테이블을 페이지 main 끝에 추가. type='flat' = 1단 thead,
+    // 'grouped' = 2단 thead (group row + leaf row). 사용자가 이후 [+ 컬럼 추가]
+    // / [+ 그룹 추가] 로 이 테이블에 컬럼을 더 붙일 수 있도록 한다.
+    function addTable({ label, type }) {
+      const d = pageDraft();
+      d.added.tables = Array.isArray(d.added.tables) ? d.added.tables : [];
+      d.added.tables.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+        label: label || '새 테이블',
+        type: (type === 'grouped') ? 'grouped' : 'flat',
+      });
+      persistDraft();
+      renderEditPane();
+      // 테이블 자체는 column 슬라이스가 아닌 component 슬라이스에 가까우나,
+      // 컬럼 추가/그룹 추가 셀렉트가 이 테이블을 인지해야 하므로 양쪽 다 적용.
+      applyComponentSectionToIframe();
+      applyColumnSectionToIframe();
+    }
+    function removeAddedTable(id) {
+      const d = pageDraft();
+      d.added.tables = (d.added.tables || []).filter((x) => x.id !== id);
+      const sel = `#voc-added-table-${id}`;
+      d.hidden = d.hidden.filter((s) => s !== sel);
+      persistDraft();
+      renderEditPane();
+      applyComponentSectionToIframe();
+      applyColumnSectionToIframe();
+    }
     function removeAddedFilter(id) {
       const d = pageDraft();
       d.added.filters = d.added.filters.filter((f) => f.id !== id);
@@ -3500,6 +3544,20 @@
           box-shadow: inset 0 0 0 1px #C4B5FD !important;
         }
         td.scm-voc-added-col { color: #6B7280; }
+        /* 사용자 추가 테이블 — 편집 모드에서 어떤 게 새로 만든 테이블인지
+           구분되도록 가벼운 보라색 outline + 라벨 배지. */
+        .scm-voc-added-table {
+          outline: 1px dashed rgba(124, 58, 237, 0.45) !important;
+          outline-offset: 4px !important;
+          margin-top: 16px !important;
+          margin-bottom: 16px !important;
+        }
+        .scm-voc-added-table > .scm-page-section__title {
+          font-size: 14px !important;
+          font-weight: 600 !important;
+          color: #6D28D9 !important;
+          margin-bottom: 8px !important;
+        }
         /* 추가 컴포넌트 grid 컨테이너 — 12-column. 각 컴포넌트는
            grid-column: span N (N=width). 빈 그리드(자식 0)는 표시 X. */
         .scm-voc-added-grid {
@@ -4030,10 +4088,84 @@
       });
     }
 
+    // 사용자 추가 테이블 inject — main 끝에 .mp-table-host 추가.
+    // type 'flat' = 1-row thead (컬럼 1, 컬럼 2)
+    // type 'grouped' = 2-row thead (그룹 1: 컬럼 1, 컬럼 2)
+    // 컬럼/그룹 추가 (applyAddedDom 안의 column/group 인젝션) 보다 먼저 실행돼야
+    // 사용자가 이 테이블을 타깃 인덱스로 골랐을 때 host 가 존재한다.
+    function _buildAddedTableHTML(t) {
+      const klass = `voc-added-table-${t.id}`;
+      const cellStyle = 'min-width:120px;width:120px;padding:12px 16px;';
+      const safeLabel = escapeHtml(t.label || '새 테이블');
+      // colgroup: 2 cols + spacer (이후 컬럼 추가 시 col-spacer 앞에 삽입 가능)
+      const colgroup = `<colgroup><col style="width:120px"/><col style="width:120px"/><col class="col-spacer" data-empty="true"/></colgroup>`;
+      let thead;
+      if (t.type === 'grouped') {
+        thead = ''
+          + '<thead>'
+          + '<tr class="group-row">'
+          +   `<th colspan="2" style="${cellStyle}">${safeLabel} 그룹</th>`
+          +   '<th class="col-spacer" data-empty="true" rowspan="2" aria-hidden="true"></th>'
+          + '</tr>'
+          + '<tr>'
+          +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 1</div></th>`
+          +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 2</div></th>`
+          + '</tr>'
+          + '</thead>';
+      } else {
+        thead = ''
+          + '<thead>'
+          + '<tr>'
+          +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 1</div></th>`
+          +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 2</div></th>`
+          +   '<th class="col-spacer" data-empty="true" aria-hidden="true"></th>'
+          + '</tr>'
+          + '</thead>';
+      }
+      const tbodyRow = ''
+        + '<tr>'
+        +   `<td style="${cellStyle}">—</td>`
+        +   `<td style="${cellStyle}">—</td>`
+        +   '<td class="col-spacer" data-empty="true"></td>'
+        + '</tr>';
+      const tbody = `<tbody>${tbodyRow}${tbodyRow}${tbodyRow}</tbody>`;
+      // section wrapper 가 .scm-page-section__title 을 가지면 scanEditTargets 의
+      // tableLabel 픽업이 사용자 라벨을 본다.
+      return ''
+        + `<section class="scm-page-section scm-voc-added-table ${klass}" id="voc-added-table-${t.id}">`
+        +   `<div class="scm-page-section__title">${safeLabel}</div>`
+        +   '<div class="mp-table-host">'
+        +     '<div class="mp-table-scroll">'
+        +       `<table class="mp-table">${colgroup}${thead}${tbody}</table>`
+        +     '</div>'
+        +   '</div>'
+        + '</section>';
+    }
+    function applyAddedTables(doc, a) {
+      const list = (a.added && Array.isArray(a.added.tables)) ? a.added.tables : [];
+      if (!list.length) return;
+      const main = doc.querySelector('main') || doc.body;
+      if (!main) return;
+      list.forEach((t) => {
+        const id = `voc-added-table-${t.id}`;
+        if (doc.getElementById(id)) return;
+        const tpl = doc.createElement('template');
+        tpl.innerHTML = _buildAddedTableHTML(t);
+        const node = tpl.content.firstElementChild;
+        if (!node) return;
+        // .scm-voc-added-grid 가 있으면 그 직전에, 없으면 main 끝에.
+        const grid = main.querySelector('.scm-voc-added-grid');
+        if (grid) main.insertBefore(node, grid);
+        else main.appendChild(node);
+      });
+    }
+
     function applyAddedDom() {
       const doc = iframe.contentDocument;
       if (!doc) return;
       const a = pageDraft();   // live preview: read draft so iframe reflects pending changes
+      // ---- 사용자 추가 테이블 (먼저 — column/group 인젝션이 이 테이블을 타깃하기 위함) ----
+      applyAddedTables(doc, a);
       // ---- Filters ----
       const filterBar = doc.querySelector('.scm-filter-bar');
       if (filterBar && a.added.filters.length) {
@@ -4227,6 +4359,7 @@
       doc.querySelectorAll('.scm-voc-added-filter').forEach((el) => el.remove());
       doc.querySelectorAll('[class*="voc-added-col-"]').forEach((el) => el.remove());
       doc.querySelectorAll('[class*="voc-added-grp-"]').forEach((el) => el.remove());
+      doc.querySelectorAll('.scm-voc-added-table').forEach((el) => el.remove());
       doc.querySelectorAll('.scm-voc-added-comp').forEach((el) => el.remove());
       doc.querySelectorAll('.scm-voc-added-grid').forEach((el) => { if (!el.children.length) el.remove(); });
       applyAddedDom();
@@ -5475,6 +5608,12 @@
       const compEls = main.querySelectorAll(compSel);
       const taken = new Set();
       let compCounter = 0;
+      // 사용자 추가 테이블 매핑 — DOM id 로 d.added.tables entry 를 찾기 위함.
+      const _addedTablesById = {};
+      try {
+        const _d = pageDraft();
+        ((_d.added && _d.added.tables) || []).forEach((tt) => { _addedTablesById[tt.id] = tt; });
+      } catch (_) {}
       compEls.forEach((el) => {
         // skip elements inside user-added components (they're surfaced via
         // the d.added.components list directly, not via DOM scan)
@@ -5489,7 +5628,17 @@
         ensureVocKey(el, 'comp', compCounter++);
         const rawLabel = pickLabel(el);
         const compLabel = stampOrigLabel(el, rawLabel) || rawLabel;
-        out.components.push({ label: compLabel, selector: ifrCssPath(el) });
+        // 사용자 추가 테이블이면 added 메타를 같이 보내서 row 가 [×=삭제] 를
+        // 노출하도록 한다 (네이티브는 [×=숨김]).
+        const out_entry = { label: compLabel, selector: ifrCssPath(el) };
+        if (el.id && el.id.startsWith('voc-added-table-')) {
+          const tid = el.id.slice('voc-added-table-'.length);
+          if (_addedTablesById[tid]) {
+            out_entry.added = _addedTablesById[tid];
+            out_entry.isAddedTable = true;
+          }
+        }
+        out.components.push(out_entry);
       });
 
       return out;
@@ -6023,7 +6172,9 @@
           }
           // 추가 항목은 entry 자체 삭제, NATIVE 컴포넌트는 hide 로 대체.
           let del = '';
-          if (it.added) {
+          if (it.isAddedTable) {
+            del = `<button type="button" class="edit-row__del" data-del-table="${escapeHtml(it.added.id)}" title="추가 테이블 삭제">×</button>`;
+          } else if (it.added) {
             const delAttr = it.isGroup ? 'data-del-group' : ('data-del-' + it.kind);
             del = `<button type="button" class="edit-row__del" ${delAttr}="${escapeHtml(it.added.id)}" title="삭제">×</button>`;
           } else if (it.kind === 'component') {
@@ -6277,6 +6428,14 @@
         if (confirm('이 추가 그룹과 안의 컬럼을 삭제할까요?')) removeAddedGroup(dG.dataset.delGroup);
         return;
       }
+      const dT = t.closest && t.closest('[data-del-table]');
+      if (dT) {
+        e.preventDefault();
+        if (confirm('이 추가 테이블을 삭제할까요? (안의 컬럼/그룹은 유지되지 않습니다)')) {
+          removeAddedTable(dT.dataset.delTable);
+        }
+        return;
+      }
       // Section collapse / expand — toggles `.is-collapsed` on the section
       // container, persisted in state.ui.collapsedSections (global).
       const sec = t.closest && t.closest('[data-toggle-sec]');
@@ -6394,13 +6553,14 @@
         openComponentModal({ mode: 'add' });
         return;
       }
-      // open / cancel / submit add forms (filter / column / group)
+      // open / cancel / submit add forms (filter / column / group / table)
       const addBtn = t.closest && t.closest('.edit-add-btn[data-add]');
       if (addBtn) {
         e.preventDefault();
         const which = addBtn.dataset.add;
         const formId = which === 'filter' ? 'addFilterForm'
                      : which === 'group'  ? 'addGroupForm'
+                     : which === 'table'  ? 'addTableForm'
                      : 'addColumnForm';
         const form = document.getElementById(formId);
         if (form) {
@@ -6435,6 +6595,7 @@
         const which = cancel.dataset.cancel;
         const formId = which === 'filter' ? 'addFilterForm'
                      : which === 'group'  ? 'addGroupForm'
+                     : which === 'table'  ? 'addTableForm'
                      : 'addColumnForm';
         const form = document.getElementById(formId);
         if (form) {
@@ -6476,6 +6637,19 @@
           document.getElementById('addGroupLeafLabel').value = '';
           document.getElementById('addGroupForm').classList.remove('is-open');
           document.querySelector('.edit-add-btn[data-add="group"]').style.display = '';
+        } else if (which === 'table') {
+          const labEl = document.getElementById('addTableLabel');
+          const typeEl = document.getElementById('addTableType');
+          const label = (labEl.value || '').trim();
+          const type = (typeEl && typeEl.value) || 'flat';
+          if (!label) { labEl.focus(); return; }
+          addTable({ label, type });
+          showToast(`${type === 'grouped' ? '2단' : '1단'} 테이블 [${label}] 추가`);
+          labEl.value = '';
+          if (typeEl) typeEl.value = 'flat';
+          document.getElementById('addTableForm').classList.remove('is-open');
+          const btn = document.querySelector('.edit-add-btn[data-add="table"]');
+          if (btn) btn.style.display = '';
         } else {
           const label = (document.getElementById('addColumnLabel').value || '').trim();
           if (!label) { document.getElementById('addColumnLabel').focus(); return; }
