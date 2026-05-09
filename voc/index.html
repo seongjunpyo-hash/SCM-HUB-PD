@@ -4749,19 +4749,24 @@
           const pad = (n) => String(n).padStart(2, '0');
           return `${String(d.getFullYear()).slice(2)}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
         };
-        const items = [
-          {
-            value: 'new',
-            label: `새 버전으로 저장 (${nextLabelText} 생성)`,
-            sub: '편집 내용이 새 스냅샷으로 추가됩니다',
-          },
-        ];
-        ver.list.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).forEach((v) => {
+        // 디폴트는 "덮어쓰기" — 머지 옵션이 위에 나오고 활성 버전이 첫 번째.
+        // "새 버전으로 저장" 은 맨 아래.
+        const items = [];
+        ver.list.slice().sort((a, b) => {
+          if (a.id === ver.activeId && b.id !== ver.activeId) return -1;
+          if (b.id === ver.activeId && a.id !== ver.activeId) return 1;
+          return (b.createdAt || 0) - (a.createdAt || 0);
+        }).forEach((v) => {
           items.push({
             value: 'merge:' + v.id,
             label: `${display(v.id)} 에 머지(덮어쓰기)`,
             sub: fmt(v.createdAt) + (v.id === ver.finalId ? ' · 최종' : ''),
           });
+        });
+        items.push({
+          value: 'new',
+          label: `새 버전으로 저장 (${nextLabelText} 생성)`,
+          sub: '편집 내용이 새 스냅샷으로 추가됩니다',
         });
         optsHost.innerHTML = items.map((it, i) => (
           `<label class="save-ver-opt">`
@@ -5469,6 +5474,7 @@
       ].join(', ');
       const compEls = main.querySelectorAll(compSel);
       const taken = new Set();
+      let compCounter = 0;
       compEls.forEach((el) => {
         // skip elements inside user-added components (they're surfaced via
         // the d.added.components list directly, not via DOM scan)
@@ -5476,6 +5482,11 @@
         // skip if a parent of `el` is also a detected component
         for (const t of taken) { if (t.contains(el)) return; }
         taken.add(el);
+        // Stable voc-key 도장 — 필터/컬럼처럼 [data-voc-key="comp-N"] 셀렉터를
+        // 만들어 hide/edit 셀렉터가 path-base nth-of-type 가 아닌 안정 키로
+        // 잡히게 한다. 시스템 dom 변형(reorder/inject 등) 후에도 동일 element
+        // 를 가리킨다.
+        ensureVocKey(el, 'comp', compCounter++);
         const rawLabel = pickLabel(el);
         const compLabel = stampOrigLabel(el, rawLabel) || rawLabel;
         out.components.push({ label: compLabel, selector: ifrCssPath(el) });
@@ -6362,7 +6373,18 @@
         e.preventDefault();
         e.stopPropagation();
         const sel = hCmp.dataset.hideComponent;
-        if (sel) setHidden(sel, true);
+        if (sel) {
+          setHidden(sel, true);
+          // 체크박스 핸들러와 동일한 시각 피드백 — 행에 is-hidden 클래스 추가 +
+          // 체크박스 상태도 unchecked 로 동기화. (없으면 사용자는 × 가 안 먹은
+          // 줄 알고 다시 누름.)
+          const row = hCmp.closest('.edit-row');
+          if (row) {
+            row.classList.add('is-hidden');
+            const cb = row.querySelector('.edit-row__check');
+            if (cb) cb.checked = false;
+          }
+        }
         return;
       }
       // open the component-add modal
