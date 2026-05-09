@@ -356,12 +356,107 @@
     }
   }
 
+  // VOC 의 [신규] 탭에서 등록한 신규 페이지를 LNB 에 inject.
+  // localStorage 'scm:voc:newpages:v1' 의 entry 를 읽어 LNB 에 메뉴 항목 추가.
+  // mode='l2' → 기존 L1 그룹의 .scm-lnb-l2-list 에 append.
+  // mode='l1' → 새 L1 그룹 (.scm-lnb-item) 을 LNB 끝에 append.
+  // entry.order (sortable) 우선, 없으면 entry.createdAt (오래된 것이 위).
+  var NEWPAGES_KEY = 'scm:voc:newpages:v1';
+  function _loadNewPages() {
+    try {
+      var raw = localStorage.getItem(NEWPAGES_KEY);
+      var v = raw ? JSON.parse(raw) : [];
+      return Array.isArray(v) ? v : [];
+    } catch (_) { return []; }
+  }
+  function _applyNewPagesToLnb(el) {
+    if (!el) return;
+    var list = _loadNewPages();
+    if (!list.length) return;
+    // 정렬 — order 우선, 없으면 createdAt 오래된 순.
+    var sorted = list.slice().sort(function (a, b) {
+      var oa = (typeof a.order === 'number') ? a.order : Infinity;
+      var ob = (typeof b.order === 'number') ? b.order : Infinity;
+      if (oa !== ob) return oa - ob;
+      return (a.createdAt || 0) - (b.createdAt || 0);
+    });
+    sorted.forEach(function (p) {
+      if (!p || !p.path) return;
+      // 이미 존재하면 (재mount 등) skip — data-voc-np-id 로 마킹.
+      if (el.querySelector('[data-voc-np-id="' + p.id + '"]')) return;
+      var key = ((p.path.match(/\/([^\/]+?)(?:\.html)?$/) || [])[1]) || p.id;
+      if (p.mode === 'l1') {
+        // 새 L1 그룹 — (이미 같은 l1 key 그룹이 있으면 그쪽에 l2 로 append)
+        var existing = el.querySelector('.scm-lnb-item[data-key="' + p.l1 + '"]');
+        if (existing) {
+          var l2List = existing.querySelector('.scm-lnb-l2-list');
+          if (l2List) l2List.appendChild(_buildL2Anchor(p, key));
+        } else {
+          el.appendChild(_buildL1Group(p, key));
+        }
+      } else {
+        // 기존 L1 그룹 아래로 append
+        var group = el.querySelector('.scm-lnb-item[data-key="' + p.l1 + '"]');
+        if (!group) return;   // L1 안 보이면 skip
+        var l2 = group.querySelector('.scm-lnb-l2-list');
+        if (l2) l2.appendChild(_buildL2Anchor(p, key));
+      }
+    });
+  }
+  function _buildL2Anchor(p, key) {
+    var a = document.createElement('a');
+    a.className = 'scm-lnb-l2';
+    a.href = p.path;
+    a.dataset.key = key;
+    a.dataset.vocNpId = p.id;
+    var span = document.createElement('span');
+    span.className = 'scm-lnb-l2-text';
+    span.textContent = p.name || key;
+    a.appendChild(span);
+    // 신규 표시 — voc 의 'NEW' 라벨과 일관.
+    var tag = document.createElement('span');
+    tag.className = 'scm-lnb-tag scm-lnb-tag--wip';
+    tag.textContent = '신규';
+    a.appendChild(tag);
+    return a;
+  }
+  function _buildL1Group(p, key) {
+    var item = document.createElement('div');
+    item.className = 'scm-lnb-item is-open';
+    item.dataset.key = p.l1;
+    item.dataset.vocNpId = p.id;
+    var btn = document.createElement('button');
+    btn.className = 'scm-lnb-row';
+    btn.type = 'button';
+    btn.setAttribute('data-nav-toggle', '');
+    var icon = document.createElement('span');
+    icon.className = 'scm-lnb-icon';
+    icon.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M12 7v10M7 12h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
+    btn.appendChild(icon);
+    var label = document.createElement('span');
+    label.className = 'scm-lnb-label';
+    label.textContent = p.l1Label || p.l1;
+    btn.appendChild(label);
+    var chev = document.createElement('span');
+    chev.className = 'scm-lnb-chev';
+    chev.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>';
+    btn.appendChild(chev);
+    item.appendChild(btn);
+    var l2List = document.createElement('div');
+    l2List.className = 'scm-lnb-l2-list';
+    l2List.appendChild(_buildL2Anchor(p, key));
+    item.appendChild(l2List);
+    return item;
+  }
+
   function mount(el, opts) {
     if (!el) return null;
     // Empty placeholder → inject canonical LNB markup (단일 source).
     if (el.children.length === 0 && CANONICAL_LNB_HTML) {
       el.innerHTML = CANONICAL_LNB_HTML;
     }
+    // VOC 의 [신규] 탭에서 등록한 페이지를 LNB 에 추가 (canonical 위에).
+    _applyNewPagesToLnb(el);
     var options = opts || {};
     var active = options.active || el.getAttribute('data-active');
     if (active) setActive(el, active);

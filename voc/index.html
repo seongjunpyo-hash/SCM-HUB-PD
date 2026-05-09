@@ -1499,10 +1499,25 @@
       font-size: 12px; color: #9CA3AF;
     }
     .np-row {
-      display: flex; flex-direction: column; gap: 4px;
+      display: flex; flex-direction: row; gap: 8px;
       padding: 12px 14px;
       border-top: 1px solid #EFF1F4;
+      cursor: grab;
     }
+    .np-row:active { cursor: grabbing; }
+    .np-row.is-dragging { opacity: 0.4; }
+    .np-row.is-drop-above { box-shadow: inset 0 2px 0 #4F46E5; }
+    .np-row.is-drop-below { box-shadow: inset 0 -2px 0 #4F46E5; }
+    .np-row__grip {
+      flex-shrink: 0;
+      display: inline-flex; align-items: flex-start; justify-content: center;
+      width: 12px; padding-top: 4px;
+      color: #9CA3AF;
+      user-select: none;
+    }
+    .np-row__grip svg { width: 6px; height: 12px; display: block; }
+    .np-row__grip:hover { color: #4F46E5; }
+    .np-row__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
     .np-row:first-child { border-top: 0; }
     .np-row__head {
       display: flex; align-items: center; gap: 8px;
@@ -6006,10 +6021,10 @@
         const m = MENU.find((x) => x.l1 === key);
         return m ? m.label : key;
       };
-      host.innerHTML = list.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).map((p) => {
+      // 배열 순서 = LNB 표시 순서. 드래그-리오더로 순서 변경 가능.
+      host.innerHTML = list.map((p) => {
         const sectionChips = (p.sections || []).map((s) =>
           `<span class="np-row__chip">${escapeHtml(_NP_SECTION_LABEL[s] || s)}</span>`).join('');
-        // 테이블 N 개도 chip 으로 묶음
         const tableChip = (p.tableCount && p.tableCount > 0)
           ? `<span class="np-row__chip">테이블 ${p.tableCount}개</span>` : '';
         const componentChips = (p.components || []).map((c) =>
@@ -6020,20 +6035,23 @@
           : (p.l1Label || l1Label(p.l1));
         const locClass = isL1 ? 'np-row__loc np-row__loc--new-l1' : 'np-row__loc';
         return `
-          <div class="np-row" data-np-id="${p.id}">
-            <div class="np-row__head">
-              <span class="${locClass}" title="${isL1 ? '새 1뎁스 그룹' : '기존 1뎁스 아래'}">${escapeHtml(locLabel)}</span>
-              <span class="np-row__name">${escapeHtml(p.name)}</span>
-              <button type="button" class="np-row__del" data-np-del="${p.id}" title="삭제">×</button>
+          <div class="np-row" data-np-id="${p.id}" draggable="true" data-drag-id="${p.id}" data-drag-kind="newpage" data-drag-depth="0" data-drag-parent="">
+            <span class="np-row__grip" aria-hidden="true" title="드래그하여 순서 변경"><svg viewBox="0 0 6 12" fill="currentColor"><circle cx="1.25" cy="2" r="1"/><circle cx="4.75" cy="2" r="1"/><circle cx="1.25" cy="6" r="1"/><circle cx="4.75" cy="6" r="1"/><circle cx="1.25" cy="10" r="1"/><circle cx="4.75" cy="10" r="1"/></svg></span>
+            <div class="np-row__body">
+              <div class="np-row__head">
+                <span class="${locClass}" title="${isL1 ? '새 1뎁스 그룹' : '기존 1뎁스 아래'}">${escapeHtml(locLabel)}</span>
+                <span class="np-row__name">${escapeHtml(p.name)}</span>
+                <button type="button" class="np-row__del" data-np-del="${p.id}" title="삭제">×</button>
+              </div>
+              <div class="np-row__path">${escapeHtml(p.path)}</div>
+              <div class="np-row__meta">
+                <span><b>타입</b> ${escapeHtml(_NP_TYPE_LABEL[p.type] || p.type)}</span>
+                <span><b>레이아웃</b> ${escapeHtml(_NP_LAYOUT_LABEL[p.layout] || p.layout)}</span>
+              </div>
+              ${(sectionChips || tableChip) ? `<div class="np-row__chips">${sectionChips}${tableChip}</div>` : ''}
+              ${componentChips ? `<div class="np-row__chips">${componentChips}</div>` : ''}
+              ${p.note ? `<div class="np-row__meta"><span>${escapeHtml(p.note)}</span></div>` : ''}
             </div>
-            <div class="np-row__path">${escapeHtml(p.path)}</div>
-            <div class="np-row__meta">
-              <span><b>타입</b> ${escapeHtml(_NP_TYPE_LABEL[p.type] || p.type)}</span>
-              <span><b>레이아웃</b> ${escapeHtml(_NP_LAYOUT_LABEL[p.layout] || p.layout)}</span>
-            </div>
-            ${(sectionChips || tableChip) ? `<div class="np-row__chips">${sectionChips}${tableChip}</div>` : ''}
-            ${componentChips ? `<div class="np-row__chips">${componentChips}</div>` : ''}
-            ${p.note ? `<div class="np-row__meta"><span>${escapeHtml(p.note)}</span></div>` : ''}
           </div>`;
       }).join('');
       host.querySelectorAll('[data-np-del]').forEach((btn) => {
@@ -6042,6 +6060,21 @@
           deleteNewPage(btn.dataset.npDel);
         });
       });
+    }
+    // 신규 페이지 드래그-리오더 — state.newPages 배열을 직접 splice 후 persist.
+    // LNB 가 이 배열 순서대로 inject 하므로 변경 즉시 반영.
+    function moveNewPage(fromId, toId, above) {
+      const list = state.newPages || [];
+      const fromIdx = list.findIndex((p) => p.id === fromId);
+      if (fromIdx < 0) return;
+      const [moved] = list.splice(fromIdx, 1);
+      let toIdx = list.findIndex((p) => p.id === toId);
+      if (toIdx < 0) toIdx = list.length;
+      else if (!above) toIdx += 1;
+      list.splice(toIdx, 0, moved);
+      state.newPages = list;
+      persistNewPages();
+      renderNewPageList();
     }
 
     function renderEditPane() {
@@ -6487,8 +6520,10 @@
       // display: contents) 안에서 재배치. componentSource 검사 제거.
       return true;
     }
+    // np-row 도 drag 대상에 포함 (신규 페이지 reorder).
+    const _DRAG_ROW_SEL = '.edit-row[data-drag-id], .np-row[data-drag-id]';
     document.addEventListener('dragstart', (e) => {
-      const row = e.target.closest && e.target.closest('.edit-row[data-drag-id]');
+      const row = e.target.closest && e.target.closest(_DRAG_ROW_SEL);
       if (!row) return;
       _dragState = {
         kind:   row.dataset.dragKind,
@@ -6505,26 +6540,32 @@
     });
     document.addEventListener('dragover', (e) => {
       if (!_dragState) return;
-      const row = e.target.closest && e.target.closest('.edit-row[data-drag-id]');
+      const row = e.target.closest && e.target.closest(_DRAG_ROW_SEL);
       if (!row || !_dropOk(row)) return;
       e.preventDefault();
       try { e.dataTransfer.dropEffect = 'move'; } catch {}
       const r = row.getBoundingClientRect();
       const above = (e.clientY - r.top) < r.height / 2;
-      document.querySelectorAll('.edit-row.is-drop-above, .edit-row.is-drop-below')
+      document.querySelectorAll('.is-drop-above, .is-drop-below')
         .forEach((el) => el.classList.remove('is-drop-above', 'is-drop-below'));
       row.classList.add(above ? 'is-drop-above' : 'is-drop-below');
     });
     document.addEventListener('dragleave', (e) => {
-      const row = e.target.closest && e.target.closest('.edit-row[data-drag-id]');
+      const row = e.target.closest && e.target.closest(_DRAG_ROW_SEL);
       if (row) row.classList.remove('is-drop-above', 'is-drop-below');
     });
     document.addEventListener('drop', (e) => {
       if (!_dragState) return;
-      const row = e.target.closest && e.target.closest('.edit-row[data-drag-id]');
+      const row = e.target.closest && e.target.closest(_DRAG_ROW_SEL);
       if (!row || !_dropOk(row)) return;
       e.preventDefault();
       const above = row.classList.contains('is-drop-above');
+      // 신규 페이지 reorder — state.newPages 배열 splice → LNB 에 즉시 반영.
+      if (_dragState.kind === 'newpage') {
+        moveNewPage(_dragState.id, row.dataset.dragId, above);
+        _dragState = null;
+        return;
+      }
       // 통합 — kind='component' (native + added + rowbreak) 모두 단일
       // componentOrder 로 재배치. moveItem 이 d.componentOrder 갱신 + iframe
       // grid 의 style.order 적용.
