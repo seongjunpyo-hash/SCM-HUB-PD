@@ -1713,6 +1713,18 @@
       flex-shrink: 0; line-height: 1;
     }
     .np-row__del:hover { color: #DC2626; background: #FEE2E2; }
+    .np-row__restore {
+      background: transparent; border: 0; cursor: pointer;
+      font-size: 14px; color: #4F46E5; padding: 2px 6px; border-radius: 4px;
+      flex-shrink: 0; line-height: 1; font-weight: 700;
+    }
+    .np-row__restore:hover { color: #fff; background: #4F46E5; }
+    /* hide 처리된 캐노니컬 메뉴 — line-through + opacity */
+    .mt-row.is-hidden .mt-row__label,
+    .mt-group.is-hidden .mt-row__l1-label {
+      color: #9CA3AF; text-decoration: line-through;
+    }
+    .mt-group.is-hidden .mt-children { opacity: 0.5; }
     .np-row__meta {
       display: flex; flex-wrap: wrap; gap: 4px 8px;
       font-size: 11px; color: #6B7280;
@@ -2326,6 +2338,11 @@
     // 구조: { l1Order: ['key1', 'key2', ...], l2Order: { l1key: ['l2key1', ...], ... } }
     // 미설정 키는 자연 순서 (canonical 순) 유지.
     const MENU_ORDER_KEY = 'scm:voc:menu-order:v1';
+    // 사용자가 hide 처리한 캐노니컬 LNB 항목.
+    // 구조: { l1: ['key1', ...], l2: ['l2key1', ...] }
+    // canonical CANONICAL_LNB_HTML 은 코드에 박혀있어 진짜 삭제는 안 되고
+    // 런타임에 LNB / 상단 chip / L2 select 에서 필터링.
+    const MENU_HIDDEN_KEY = 'scm:voc:menu-hidden:v1';
     // Page-key normalization. The VOC iframe reads `iframe.contentWindow
     // .location.pathname`, which on Cloudflare Pages clean URLs strips
     // the `.html` extension, while standalone demo pages may report
@@ -2644,6 +2661,18 @@
         catch { return []; }
       })();
       state.newPages = npRaw;
+      // 사용자가 hide 한 캐노니컬 메뉴 항목 (L1 그룹 / L2 페이지).
+      state.menuHidden = (function () {
+        try {
+          const raw = localStorage.getItem(MENU_HIDDEN_KEY);
+          const v = raw ? JSON.parse(raw) : {};
+          const safe = (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
+          return {
+            l1: Array.isArray(safe.l1) ? safe.l1 : [],
+            l2: Array.isArray(safe.l2) ? safe.l2 : [],
+          };
+        } catch { return { l1: [], l2: [] }; }
+      })();
       // 메뉴 순서 — 사용자가 신규 탭에서 드래그 reorder 한 결과.
       state.menuOrder = (function () {
         try {
@@ -2904,13 +2933,15 @@
       menuL1.querySelectorAll('.menu-l1__chip').forEach((b) => {
         b.classList.toggle('is-active', b.dataset.l1 === item.l1);
       });
-      l2Select.innerHTML = item.children
+      // canonical L2 중 hide 된 항목 제외 (신규 페이지는 항상 노출).
+      const visibleChildren = item.children.filter((c) => c.isNewPage || !isMenuHidden('l2', c.key));
+      l2Select.innerHTML = visibleChildren
         .map((c) => {
           const suffix = _menuStatusSuffix(c.path);
           const newBadge = c.isNewPage ? ' [신규]' : '';
           return `<option value="${c.path}">${escapeHtml(c.label + newBadge + suffix)}</option>`;
         }).join('');
-      l2Select.disabled = item.children.length <= 1;
+      l2Select.disabled = visibleChildren.length <= 1;
       // If the caller passed an L3 child path (e.g. /demo/sku-detail.html),
       // resolve it to the parent L2 first so L2 select reflects the parent.
       // The actual L3 child is then chosen below via renderL3Select.
@@ -6626,6 +6657,29 @@
         return (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
       } catch (_) { return {}; }
     }
+    // 메뉴 hide 토글 — level: 'l1' | 'l2', key: data-key. hidden=true 면 추가, false 면 제거.
+    // canonical 메뉴만 대상 (신규 페이지는 deleteNewPage 로 처리).
+    function setMenuHidden(level, key, hidden) {
+      if (!key || (level !== 'l1' && level !== 'l2')) return;
+      state.menuHidden = state.menuHidden || { l1: [], l2: [] };
+      const arr = state.menuHidden[level];
+      const idx = arr.indexOf(key);
+      if (hidden && idx < 0) arr.push(key);
+      else if (!hidden && idx >= 0) arr.splice(idx, 1);
+      persistMenuHidden();
+      renderNewPageList();
+      _renderTopL1Chips();
+      // 메뉴 hide 가 변하면 L2 select 도 다시 그려야 함 — 현재 L1 기준으로 재선택.
+      const activeChip = menuL1.querySelector('.menu-l1__chip.is-active');
+      if (activeChip) selectL1(activeChip.dataset.l1, state.currentPage);
+    }
+    function isMenuHidden(level, key) {
+      const arr = (state.menuHidden && state.menuHidden[level]) || [];
+      return arr.indexOf(key) >= 0;
+    }
+    function persistMenuHidden() {
+      try { localStorage.setItem(MENU_HIDDEN_KEY, JSON.stringify(state.menuHidden || { l1: [], l2: [] })); } catch {}
+    }
     function persistMenuOrder() {
       try { localStorage.setItem(MENU_ORDER_KEY, JSON.stringify(state.menuOrder || {})); } catch {}
     }
@@ -6643,7 +6697,8 @@
       const activeL1 = (menuL1.querySelector('.menu-l1__chip.is-active') || {}).dataset
         ? menuL1.querySelector('.menu-l1__chip.is-active').dataset.l1
         : '';
-      const tree = _buildMenuTree();
+      // canonical 중 hide 된 L1 제외 (신규 그룹은 항상 노출).
+      const tree = _buildMenuTree().filter((g) => g.isNewL1 || !isMenuHidden('l1', g.l1));
       menuL1.innerHTML = tree.map((g) => {
         const cls = ['menu-l1__chip'];
         if (g.l1 === activeL1) cls.push('is-active');
@@ -6727,24 +6782,46 @@
       if (cnt) cnt.textContent = String(newCount);
       if (!tree.length) { host.innerHTML = ''; return; }
       host.innerHTML = tree.map((g) => {
+        const l1Hidden = !g.isNewL1 && isMenuHidden('l1', g.l1);
         const childRows = g.children.map((c) => {
           const newBadge = c.isNewPage ? '<span class="mt-row__badge mt-row__badge--new">신규</span>' : '';
-          const delBtn = c.isNewPage
-            ? `<button type="button" class="np-row__del" data-np-del="${escapeHtml(c.npEntry.id)}" title="신규 페이지 삭제">×</button>`
-            : '';
+          const l2Hidden = !c.isNewPage && isMenuHidden('l2', c.key);
+          // 신규 페이지 = 영구 삭제 (×), 캐노니컬 = hide 토글 (× / ↺).
+          let actionBtn = '';
+          if (c.isNewPage) {
+            actionBtn = `<button type="button" class="np-row__del" data-np-del="${escapeHtml(c.npEntry.id)}" title="신규 페이지 삭제">×</button>`;
+          } else if (l2Hidden) {
+            actionBtn = `<button type="button" class="np-row__restore" data-menu-restore-l2="${escapeHtml(c.key)}" title="메뉴 다시 표시">↺</button>`;
+          } else {
+            actionBtn = `<button type="button" class="np-row__del" data-menu-hide-l2="${escapeHtml(c.key)}" title="메뉴에서 숨김">×</button>`;
+          }
+          const rowCls = ['mt-row', 'mt-row--l2'];
+          if (l2Hidden) rowCls.push('is-hidden');
           return `
-            <div class="mt-row mt-row--l2" draggable="true" data-drag-id="${escapeHtml(c.key)}" data-drag-kind="menu-l2" data-drag-depth="1" data-drag-parent="${escapeHtml(g.l1)}">
+            <div class="${rowCls.join(' ')}" draggable="true" data-drag-id="${escapeHtml(c.key)}" data-drag-kind="menu-l2" data-drag-depth="1" data-drag-parent="${escapeHtml(g.l1)}">
               <span class="np-row__grip" aria-hidden="true" title="드래그하여 순서 변경"><svg viewBox="0 0 6 12" fill="currentColor"><circle cx="1.25" cy="2" r="1"/><circle cx="4.75" cy="2" r="1"/><circle cx="1.25" cy="6" r="1"/><circle cx="4.75" cy="6" r="1"/><circle cx="1.25" cy="10" r="1"/><circle cx="4.75" cy="10" r="1"/></svg></span>
               <span class="mt-row__label">${escapeHtml(c.label)}${newBadge}</span>
-              ${delBtn}
+              ${actionBtn}
             </div>`;
         }).join('');
         const newL1Badge = g.isNewL1 ? '<span class="mt-row__badge mt-row__badge--new">신규 그룹</span>' : '';
+        // L1 hide/restore — canonical 만 (신규 그룹은 deleteNewPage 로 자체 entry 삭제 시 group 도 정리).
+        let l1ActionBtn = '';
+        if (!g.isNewL1) {
+          if (l1Hidden) {
+            l1ActionBtn = `<button type="button" class="np-row__restore" data-menu-restore-l1="${escapeHtml(g.l1)}" title="그룹 다시 표시">↺</button>`;
+          } else {
+            l1ActionBtn = `<button type="button" class="np-row__del" data-menu-hide-l1="${escapeHtml(g.l1)}" title="그룹 메뉴에서 숨김">×</button>`;
+          }
+        }
+        const groupCls = ['mt-group'];
+        if (l1Hidden) groupCls.push('is-hidden');
         return `
-          <div class="mt-group" data-l1="${escapeHtml(g.l1)}">
+          <div class="${groupCls.join(' ')}" data-l1="${escapeHtml(g.l1)}">
             <div class="mt-row mt-row--l1" draggable="true" data-drag-id="${escapeHtml(g.l1)}" data-drag-kind="menu-l1" data-drag-depth="0" data-drag-parent="">
               <span class="np-row__grip" aria-hidden="true" title="드래그하여 순서 변경"><svg viewBox="0 0 6 12" fill="currentColor"><circle cx="1.25" cy="2" r="1"/><circle cx="4.75" cy="2" r="1"/><circle cx="1.25" cy="6" r="1"/><circle cx="4.75" cy="6" r="1"/><circle cx="1.25" cy="10" r="1"/><circle cx="4.75" cy="10" r="1"/></svg></span>
               <span class="mt-row__l1-label">${escapeHtml(g.label)}${newL1Badge}</span>
+              ${l1ActionBtn}
             </div>
             <div class="mt-children">${childRows}</div>
           </div>`;
@@ -6754,6 +6831,19 @@
           e.preventDefault();
           deleteNewPage(btn.dataset.npDel);
         });
+      });
+      // canonical 메뉴 hide / restore 핸들러
+      host.querySelectorAll('[data-menu-hide-l2]').forEach((b) => {
+        b.addEventListener('click', (e) => { e.preventDefault(); setMenuHidden('l2', b.dataset.menuHideL2, true); });
+      });
+      host.querySelectorAll('[data-menu-restore-l2]').forEach((b) => {
+        b.addEventListener('click', (e) => { e.preventDefault(); setMenuHidden('l2', b.dataset.menuRestoreL2, false); });
+      });
+      host.querySelectorAll('[data-menu-hide-l1]').forEach((b) => {
+        b.addEventListener('click', (e) => { e.preventDefault(); setMenuHidden('l1', b.dataset.menuHideL1, true); });
+      });
+      host.querySelectorAll('[data-menu-restore-l1]').forEach((b) => {
+        b.addEventListener('click', (e) => { e.preventDefault(); setMenuHidden('l1', b.dataset.menuRestoreL1, false); });
       });
     }
     // L1 / L2 reorder — drop 핸들러에서 dispatch.
