@@ -5,11 +5,17 @@ on:
     branches: [main]
     paths:
       - 'voc/index.html'
+      - 'voc/component-library.js'
+      - 'dev-export.js'
+      - 'design system/components/lnb/lnb.js'
       - 'scripts/check-voc-syntax.js'
       - '.github/workflows/voc-syntax-check.yml'
   pull_request:
     paths:
       - 'voc/index.html'
+      - 'voc/component-library.js'
+      - 'dev-export.js'
+      - 'design system/components/lnb/lnb.js'
       - 'scripts/check-voc-syntax.js'
       - '.github/workflows/voc-syntax-check.yml'
 

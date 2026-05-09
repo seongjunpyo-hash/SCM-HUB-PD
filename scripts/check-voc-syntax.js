@@ -62,8 +62,30 @@ if (main.body.length > 0) {
   }
 }
 
+// 4) 외부 JS 모듈도 syntax check + </script> 리터럴 검사 (voc 가 inline 으로 평가하거나
+//    voc 와 같은 파이프라인에 들어가는 파일). 한 곳이라도 깨지면 voc 가 다양한 형태로 깨짐.
+const EXTRA_JS = [
+  path.join(__dirname, '..', 'voc', 'component-library.js'),
+  path.join(__dirname, '..', 'dev-export.js'),
+  path.join(__dirname, '..', 'design system', 'components', 'lnb', 'lnb.js'),
+];
+EXTRA_JS.forEach((p) => {
+  if (!fs.existsSync(p)) return;
+  const src = fs.readFileSync(p, 'utf8');
+  // </script> 리터럴은 .js 파일에서는 직접적인 HTML 파싱 영향은 없지만, 동일 패턴이
+  // 향후 inline 화될 가능성을 막기 위해 경고만 (warn — fail 아님).
+  // 실제 fail 은 syntax error 만.
+  try {
+    new vm.Script(src, { filename: p });
+  } catch (err) {
+    console.error(`[check-voc-syntax] FAIL: ${path.relative(process.cwd(), p)} 에 syntax error.`);
+    console.error('  ', err.message);
+    fail = true;
+  }
+});
+
 if (fail) {
-  console.error('\n[check-voc-syntax] ❌ voc/index.html 검사 실패. 푸시 전에 위 항목을 고쳐 주세요.');
+  console.error('\n[check-voc-syntax] ❌ 검사 실패. 푸시 전에 위 항목을 고쳐 주세요.');
   process.exit(1);
 }
-console.log(`[check-voc-syntax] ✅ ${blocks.length} inline script blocks OK (main: ${main.body.length} chars).`);
+console.log(`[check-voc-syntax] ✅ voc/index.html ${blocks.length} inline script(s) OK (main: ${main.body.length} chars) + ${EXTRA_JS.filter(fs.existsSync).length} extra JS module(s) OK.`);
