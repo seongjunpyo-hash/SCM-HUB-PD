@@ -1512,7 +1512,11 @@
      * ============================================================ */
     .side-pane[data-pane="new"] { display: none; flex-direction: column; }
     .side-pane[data-pane="new"].is-active { display: flex; }
-    .np-form { display: flex; flex-direction: column; gap: 12px; padding: 8px 4px 4px; }
+    .np-form {
+      display: flex; flex-direction: column; gap: 12px;
+      padding: 14px;
+      background: #FAFBFC; border: 1px solid #EBEEF2; border-radius: 8px;
+    }
     .np-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
     .np-field--row { flex-direction: row; gap: 8px; }
     .np-field--inline { flex-direction: row; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -1982,8 +1986,8 @@
           <p class="edit-hint">신규 데모 페이지를 만들기 위한 메타 정보를 입력하세요. 저장하면 [신규] 페이지 목록에 추가되고, 메뉴 어디에 들어가는지도 기록됩니다.</p>
         </div>
         <div class="edit-body">
-          <section class="edit-sec">
-            <header class="edit-sec__head">
+          <section class="edit-sec" data-sec="np-form">
+            <header class="edit-sec__head" data-toggle-sec="np-form" role="button" tabindex="0" aria-expanded="true">
               <span class="edit-sec__chev" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l3 3 3-3"/></svg></span>
               <h4>새 페이지 정의</h4>
             </header>
@@ -2026,8 +2030,8 @@
               </div>
             </div>
           </section>
-          <section class="edit-sec">
-            <header class="edit-sec__head">
+          <section class="edit-sec" data-sec="np-list">
+            <header class="edit-sec__head" data-toggle-sec="np-list" role="button" tabindex="0" aria-expanded="true">
               <span class="edit-sec__chev" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l3 3 3-3"/></svg></span>
               <h4>메뉴 구성 (LNB)</h4>
               <span class="edit-sec__count" id="npListCount">0</span>
