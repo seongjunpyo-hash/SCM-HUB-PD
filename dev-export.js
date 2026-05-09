@@ -2407,12 +2407,15 @@ ${jsxBody}
   // Phase 2 — main 의 자식 순서 CSS `order` 로 제어. DOM 무손실.
   // standalone 도 voc 와 동일하게 자연 순서면 flex CSS 안 박고, 사용자가
   // reorder 했을 때만 main 을 flex column 으로 + style.order 부여.
+  // Phase 2 + 그리드 레이아웃 — main 을 12-col CSS grid 로 전환.
+  // .scm-voc-added-grid 는 display: contents 로 dissolve → 안의 added comp /
+  // rowbreak 가 main 의 grid item 으로 직접 흐름.
+  // Native 컴포넌트도 componentEdits[sel].width 로 너비 지정 가능 (1~12, 기본 12).
   function _applyComponentOrder(doc, a) {
     const main = doc.querySelector('main');
     if (!main) return;
     const order = (a.componentOrder || []).slice();
-    if (!order.length) return;
-    // natural order = main 의 visual section 자식의 현재 voc-key 순서.
+    // natural order
     const naturalOrder = [];
     [...main.children].forEach((el) => {
       if (!el || el.nodeType !== 1) return;
@@ -2423,24 +2426,36 @@ ${jsxBody}
       if (!el.dataset.vocKey) return;
       naturalOrder.push(`[data-voc-key="${el.dataset.vocKey}"]`);
     });
-    // customized 판정
     let customized = order.length !== naturalOrder.length;
     if (!customized) {
       for (let i = 0; i < order.length; i++) {
         if (order[i] !== naturalOrder[i]) { customized = true; break; }
       }
     }
-    if (!customized) return;
-    // flex CSS inject (idempotent)
+    // grid layout 발동 조건 — 순서 변경 / native width 설정 / 추가 컴포넌트 존재
+    const edits = a.componentEdits || {};
+    const hasNativeWidth = Object.keys(edits).some((sel) => {
+      const w = edits[sel] && edits[sel].width;
+      return typeof w === 'number' && w >= 1 && w < 12;
+    });
+    const hasAddedComps = ((a.added && a.added.components) || []).length > 0;
+    if (!customized && !hasNativeWidth && !hasAddedComps) return;
+    // grid CSS inject (idempotent)
     if (!doc.getElementById('scm-voc-layout-css')) {
       const style = doc.createElement('style');
       style.id = 'scm-voc-layout-css';
       style.textContent = ''
-        + 'main { display: flex !important; flex-direction: column !important; }\n'
-        + 'main > * { flex: 0 0 auto !important; }\n';
+        + 'main { display: grid !important; grid-template-columns: repeat(12, 1fr) !important; gap: 12px !important; align-content: start !important; }\n'
+        + 'main > * { grid-column: span 12; min-width: 0; }\n'
+        + 'main > .scm-voc-added-grid { display: contents !important; }\n'
+        + 'main > .scm-voc-added-grid > .scm-voc-added-comp { min-width: 0; }\n'
+        + 'main > .scm-voc-added-grid > .scm-voc-added-rowbreak { grid-column: 1 / -1 !important; height: 0 !important; padding: 0 !important; margin: 0 !important; border: 0 !important; }\n';
       doc.head.appendChild(style);
     }
-    [...main.children].forEach((el) => { el.style.order = ''; });
+    [...main.children].forEach((el) => {
+      el.style.order = '';
+      if (!el.classList.contains('scm-voc-added-grid')) el.style.gridColumn = '';
+    });
     let n = 1;
     order.forEach((sel) => {
       if (!sel) return;
@@ -2451,6 +2466,15 @@ ${jsxBody}
     });
     [...main.children].forEach((el) => {
       if (!el.style.order) el.style.order = String(n++);
+    });
+    // Native 컴포넌트 width 적용
+    Object.keys(edits).forEach((sel) => {
+      const w = edits[sel] && edits[sel].width;
+      if (typeof w !== 'number' || w < 1 || w > 12) return;
+      try {
+        const el = main.querySelector(sel);
+        if (el && el.parentElement === main) el.style.gridColumn = `span ${w}`;
+      } catch (_) {}
     });
   }
 
