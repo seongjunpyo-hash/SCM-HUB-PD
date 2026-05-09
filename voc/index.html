@@ -1754,6 +1754,7 @@
                 </div>
                 <div class="edit-add-row">
                   <button type="button" class="edit-add-btn" data-add="column">+ 컬럼 추가</button>
+                  <button type="button" class="edit-add-btn" data-add="group" id="addGroupBtn" hidden>+ 그룹 추가</button>
                 </div>
                 <div class="edit-add-form" id="addColumnForm">
                   <input type="text" id="addColumnLabel" placeholder="컬럼 라벨 (예: 비고)" maxlength="20" />
@@ -1764,6 +1765,18 @@
                   <div class="edit-add-form__actions">
                     <button type="button" class="edit-add-form__btn edit-add-form__btn--ghost" data-cancel="column">취소</button>
                     <button type="button" class="edit-add-form__btn edit-add-form__btn--primary" data-submit="column">추가</button>
+                  </div>
+                </div>
+                <div class="edit-add-form" id="addGroupForm">
+                  <input type="text" id="addGroupLabel" placeholder="그룹 라벨 (예: 출하 정보)" maxlength="20" />
+                  <input type="text" id="addGroupLeafLabel" placeholder="그룹 안 첫 컬럼 라벨 (예: 출하일)" maxlength="20" />
+                  <label class="edit-add-form__label" id="addGroupTableLabel" hidden>
+                    <span>추가할 테이블</span>
+                    <select id="addGroupTable" title="추가할 테이블 선택"></select>
+                  </label>
+                  <div class="edit-add-form__actions">
+                    <button type="button" class="edit-add-form__btn edit-add-form__btn--ghost" data-cancel="group">취소</button>
+                    <button type="button" class="edit-add-form__btn edit-add-form__btn--primary" data-submit="group">추가</button>
                   </div>
                 </div>
               </div>
@@ -2863,6 +2876,10 @@
       e.added.filters = Array.isArray(e.added.filters) ? e.added.filters : [];
       e.added.columns = Array.isArray(e.added.columns) ? e.added.columns : [];
       e.added.components = Array.isArray(e.added.components) ? e.added.components : [];
+      // 사용자 추가 그룹 (2-row table 의 1뎁스 group 헤더). 각 entry 는
+      // { id, label, leafLabel, tableIdx } — 새 group 셀 + 그 안의 1개 leaf
+      // 가 함께 inject 됨.
+      e.added.groups = Array.isArray(e.added.groups) ? e.added.groups : [];
       // componentEdits: { [selector]: { html, label, type } } — overrides
       // applied to NATIVE components on top of their existing DOM (selectors
       // include data-voc-key paths and arbitrary CSS paths).
@@ -2903,6 +2920,7 @@
       const doc = iframe.contentDocument;
       if (!doc) return;
       doc.querySelectorAll('[class*="voc-added-col-"]').forEach((el) => el.remove());
+      doc.querySelectorAll('[class*="voc-added-grp-"]').forEach((el) => el.remove());
       applyAddedDom();
     }
     function applyFilterSectionToIframe() {
@@ -3100,6 +3118,45 @@
       const c = (d.added.columns || []).find((x) => x.id === id);
       if (!c) return;
       c.tableIdx = (typeof tableIdx === 'number' && tableIdx >= 0) ? tableIdx : 0;
+      persistDraft();
+      renderEditPane();
+      applyColumnSectionToIframe();
+    }
+    // 새 group 헤더 추가 (2-row table 전용). 새 group 안에 1개 leaf 도 함께 생성.
+    function addGroup({ label, leafLabel, tableIdx }) {
+      const d = pageDraft();
+      d.added.groups = Array.isArray(d.added.groups) ? d.added.groups : [];
+      d.added.groups.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+        label: label || '새 그룹',
+        leafLabel: leafLabel || '항목 1',
+        tableIdx: (typeof tableIdx === 'number' && tableIdx >= 0) ? tableIdx : 0,
+      });
+      persistDraft();
+      renderEditPane();
+      applyColumnSectionToIframe();
+    }
+    function removeAddedGroup(id) {
+      const d = pageDraft();
+      d.added.groups = (d.added.groups || []).filter((x) => x.id !== id);
+      const gsel = `#voc-added-grp-${id}`;
+      const lsel = `#voc-added-grp-${id}-leaf`;
+      d.hidden = d.hidden.filter((s) => s !== gsel && s !== lsel);
+      d.columnOrder = d.columnOrder.filter((s) => s !== gsel);
+      if (d.columnLeafOrder) {
+        Object.keys(d.columnLeafOrder).forEach((g) => {
+          if (g === gsel) delete d.columnLeafOrder[g];
+        });
+      }
+      persistDraft();
+      renderEditPane();
+      applyColumnSectionToIframe();
+    }
+    function moveAddedGroupToTable(id, tableIdx) {
+      const d = pageDraft();
+      const g = (d.added.groups || []).find((x) => x.id === id);
+      if (!g) return;
+      g.tableIdx = (typeof tableIdx === 'number' && tableIdx >= 0) ? tableIdx : 0;
       persistDraft();
       renderEditPane();
       applyColumnSectionToIframe();
@@ -3923,6 +3980,78 @@
           });
         });
       });
+      // ---- 사용자 추가 그룹 (2-row table 전용) ----
+      // entry { id, label, leafLabel, tableIdx } → group <th> (row1) + leaf <th>
+      // (row2 — 그룹 안 첫 leaf) + tbody td 1개씩 + colgroup col 1개씩.
+      const addedGroups = (a.added && Array.isArray(a.added.groups)) ? a.added.groups : [];
+      addedGroups.forEach((g) => {
+        const gid = `voc-added-grp-${g.id}`;
+        const lid = `voc-added-grp-${g.id}-leaf`;
+        if (doc.getElementById(gid)) return;
+        const gKlass = `voc-added-grp-${g.id}`;
+        const lKlass = `voc-added-col-${g.id}-leaf`;
+        const ti = (typeof g.tableIdx === 'number' && g.tableIdx >= 0) ? g.tableIdx : 0;
+        const target = hostsByIdx[ti] || hostsByIdx[0];
+        if (!target) return;
+        const tablesInTarget = target.tables;
+        // 2-row 검사 — head-bearing table 의 thead tr 가 2개 이상이어야 group 추가 가능.
+        const headTable = tablesInTarget.find((t) => t.querySelector('thead'));
+        if (!headTable) return;
+        const headTr = headTable.querySelectorAll('thead > tr');
+        if (headTr.length < 2) return;  // 1-row table 엔 group 추가 불가
+        tablesInTarget.forEach((tbl) => {
+          const thead = tbl.querySelector('thead');
+          if (!thead) return;
+          const trs = thead.querySelectorAll('tr');
+          if (trs.length < 2) return;
+          const groupTr = trs[0];
+          const leafTr  = trs[trs.length - 1];
+          // group 셀 (row1)
+          const gth = doc.createElement('th');
+          gth.id = gid;
+          gth.className = `scm-voc-added-col ${gKlass}`;
+          gth.setAttribute('colspan', '1');
+          gth.textContent = g.label;
+          gth.setAttribute('style', cellStyle);
+          const gSpacer = groupTr.querySelector('.col-spacer');
+          groupTr.insertBefore(gth, gSpacer || null);
+          // leaf 셀 (row2)
+          const lth = doc.createElement('th');
+          lth.id = lid;
+          lth.className = `col-auto scm-voc-added-col ${lKlass}`;
+          lth.innerHTML =
+            '<div class="cell-clamp">'
+            + escapeHtml(g.leafLabel || '항목 1')
+            + '<svg class="sort-ic" viewBox="0 0 16 16" style="display:none;"><use href="#ic-arrowUpDown"/></svg>'
+            + '<span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20" style="display:none;"><use href="#ic-funnel"/></svg></span>'
+            + '</div>';
+          lth.setAttribute('style', cellStyle);
+          const lSpacer = leafTr.querySelector('.col-spacer');
+          leafTr.insertBefore(lth, lSpacer || null);
+        });
+        tablesInTarget.forEach((tbl) => {
+          const tbody = tbl.querySelector('tbody');
+          if (!tbody) return;
+          tbody.querySelectorAll('tr').forEach((tr) => {
+            const td = doc.createElement('td');
+            td.className = `scm-voc-added-col ${lKlass}`;
+            td.textContent = '—';
+            td.setAttribute('style', cellStyle);
+            const tdSpacer = tr.querySelector('.col-spacer, [data-empty="true"]');
+            tr.insertBefore(td, tdSpacer || null);
+          });
+        });
+        tablesInTarget.forEach((tbl) => {
+          tbl.querySelectorAll(':scope > colgroup').forEach((cg) => {
+            if (cg.querySelector(`col.${lKlass}`)) return;
+            const col = doc.createElement('col');
+            col.className = `scm-voc-added-col ${lKlass}`;
+            col.style.width = '120px';
+            const spacerCol = cg.querySelector('col.col-spacer') || cg.lastElementChild;
+            cg.insertBefore(col, spacerCol);
+          });
+        });
+      });
     }
     // Wipe injected DOM and re-inject from applied — used after Save when
     // the applied state may have lost an entry that was previously on disk.
@@ -3931,6 +4060,7 @@
       if (!doc) return;
       doc.querySelectorAll('.scm-voc-added-filter').forEach((el) => el.remove());
       doc.querySelectorAll('[class*="voc-added-col-"]').forEach((el) => el.remove());
+      doc.querySelectorAll('[class*="voc-added-grp-"]').forEach((el) => el.remove());
       doc.querySelectorAll('.scm-voc-added-comp').forEach((el) => el.remove());
       applyAddedDom();
       applyAddedComponents();
@@ -3952,7 +4082,7 @@
       return false;
     }
     function _isFilterSel(s) { return /^\[data-voc-key="flt-/.test(s) || /^#voc-added-filter-/.test(s); }
-    function _isColumnSel(s) { return /^\[data-voc-key="(col|grp)-/.test(s) || /^#voc-added-col-/.test(s); }
+    function _isColumnSel(s) { return /^\[data-voc-key="(col|grp)-/.test(s) || /^#voc-added-col-/.test(s) || /^#voc-added-grp-/.test(s); }
     function _filterSlice(p) {
       return JSON.stringify({
         filterOrder: p.filterOrder || [],
@@ -3969,6 +4099,7 @@
         showSort:          p.showSort || [],
         showFilter:        p.showFilter || [],
         added:             (p.added && p.added.columns) || [],
+        addedGroups:       (p.added && p.added.groups) || [],
         hidden:            (p.hidden || []).filter(_isColumnSel),
         frozenCount:       (p.frozenCount == null ? null : p.frozenCount),
         labels:            (p.labels && p.labels.column) || {},
@@ -5459,11 +5590,21 @@
         tableIdx: (typeof c.tableIdx === 'number' && c.tableIdx >= 0) ? c.tableIdx : 0,
       }));
       const addedBySel = Object.fromEntries(addedColMeta.map((c) => [c.selector, c]));
+      // 사용자 추가 그룹 — 각 entry 가 group row + 1 leaf 로 펼쳐짐.
+      const addedGroupMeta = (d.added.groups || []).map((g) => ({
+        label: g.label, kind: 'column', isGroup: true, isAdded: true,
+        selector: `#voc-added-grp-${g.id}`,
+        leafSelector: `#voc-added-grp-${g.id}-leaf`,
+        leafLabel: g.leafLabel || '항목 1',
+        added: g, parent: null, draggable: true,
+        tableIdx: (typeof g.tableIdx === 'number' && g.tableIdx >= 0) ? g.tableIdx : 0,
+      }));
+      const addedGroupBySel = Object.fromEntries(addedGroupMeta.map((g) => [g.selector, g]));
       // Effective top-level order: user's saved columnOrder, falling back to
       // natural topOrder when empty. Append any items missing from saved
       // order (e.g. user-added cols added since save) at the end.
       const naturalTop = (targets.topOrder || []).slice();
-      const allTop = [...naturalTop, ...addedColMeta.map((c) => c.selector)];
+      const allTop = [...naturalTop, ...addedGroupMeta.map((g) => g.selector), ...addedColMeta.map((c) => c.selector)];
       const allTopSet = new Set(allTop);
       const savedTop = (d.columnOrder || []).filter((s) => allTopSet.has(s));
       const savedSet = new Set(savedTop);
@@ -5491,8 +5632,32 @@
       effectiveTop.forEach((sel) => {
         const grp = groupBySel[sel];
         const colHere = colBySel[sel];
-        const seenItem = grp || colHere;
+        const aGrp = addedGroupBySel[sel];
+        const seenItem = grp || colHere || aGrp;
         if (seenItem) _maybeEmitTableHeader(seenItem);
+        // 사용자 추가 그룹 — 자체 group 행 + 안의 leaf 1개 렌더.
+        if (aGrp) {
+          columnRows.push(_applyColLabel({
+            kind: 'column', isGroup: true, depth: 0,
+            label: aGrp.label, selector: aGrp.selector,
+            childCount: 1,
+            visibleCount: hidden.has(aGrp.leafSelector) ? 0 : 1,
+            parent: null, draggable: true,
+            collapsed: false,
+            added: aGrp.added,
+            tableIdx: aGrp.tableIdx,
+          }));
+          columnRows.push(_applyColLabel({
+            kind: 'column', depth: 1,
+            label: aGrp.leafLabel,
+            selector: aGrp.leafSelector,
+            parent: aGrp.selector, draggable: true,
+            tableIdx: aGrp.tableIdx,
+            // 사용자 추가 leaf 처럼 다루도록 added 마커는 group 자체에만
+            // 두고, leaf 행은 단순 child 로 렌더 (sort/filter/cell-type 가능).
+          }));
+          return;
+        }
         if (grp) {
           // group header row
           const naturalLeaves = naturalLeavesByGroup[sel] || [];
@@ -5619,8 +5784,10 @@
                 <option value="code"   ${currentType === 'code'   ? 'selected' : ''}>코드</option>
               </select>`;
           }
+          // 추가 그룹은 별도 핸들러 (안의 leaf 까지 같이 제거).
+          const delAttr = it.isGroup ? 'data-del-group' : ('data-del-' + it.kind);
           const del = it.added
-            ? `<button type="button" class="edit-row__del" data-del-${it.kind}="${escapeHtml(it.added.id)}" title="삭제">×</button>`
+            ? `<button type="button" class="edit-row__del" ${delAttr}="${escapeHtml(it.added.id)}" title="삭제">×</button>`
             : '';
           // Component rows get an "edit" pencil button — both native components
           // (HTML override editor) and user-added ones (entry editor).
@@ -5686,6 +5853,10 @@
       renderFrozenSelect(targets, effectiveFrozenCount, hidden);
       _syncSectionCollapseDom();
       _syncSettingExposedUi();
+      // [+ 그룹 추가] 버튼은 2-row table (groups 가 있는 페이지) 일 때만 노출.
+      const hasGroups = (targets.groups || []).length > 0;
+      const grpBtn = document.getElementById('addGroupBtn');
+      if (grpBtn) grpBtn.hidden = !hasGroups;
       refreshSaveBtn();
     }
     // Populate "마지막 고정 컬럼" select with the current leaves (in leaf-idx
@@ -5859,6 +6030,12 @@
         if (confirm('이 추가 컬럼을 삭제할까요?')) removeAddedColumn(dC.dataset.delColumn);
         return;
       }
+      const dG = t.closest && t.closest('[data-del-group]');
+      if (dG) {
+        e.preventDefault();
+        if (confirm('이 추가 그룹과 안의 컬럼을 삭제할까요?')) removeAddedGroup(dG.dataset.delGroup);
+        return;
+      }
       // Section collapse / expand — toggles `.is-collapsed` on the section
       // container, persisted in state.ui.collapsedSections (global).
       const sec = t.closest && t.closest('[data-toggle-sec]');
@@ -5955,19 +6132,24 @@
         openComponentModal({ mode: 'add' });
         return;
       }
-      // open / cancel / submit add forms (filter / column)
+      // open / cancel / submit add forms (filter / column / group)
       const addBtn = t.closest && t.closest('.edit-add-btn[data-add]');
       if (addBtn) {
         e.preventDefault();
         const which = addBtn.dataset.add;
-        const form = document.getElementById(which === 'filter' ? 'addFilterForm' : 'addColumnForm');
+        const formId = which === 'filter' ? 'addFilterForm'
+                     : which === 'group'  ? 'addGroupForm'
+                     : 'addColumnForm';
+        const form = document.getElementById(formId);
         if (form) {
           form.classList.add('is-open');
           addBtn.style.display = 'none';
-          // 컬럼 추가 form: 다중 테이블이면 타깃 select 노출.
-          if (which === 'column') {
-            const tSel = document.getElementById('addColumnTable');
-            const tLab = document.getElementById('addColumnTableLabel');
+          // 컬럼/그룹 추가 form: 다중 테이블이면 타깃 select 노출.
+          if (which === 'column' || which === 'group') {
+            const selId = which === 'group' ? 'addGroupTable' : 'addColumnTable';
+            const labId = which === 'group' ? 'addGroupTableLabel' : 'addColumnTableLabel';
+            const tSel = document.getElementById(selId);
+            const tLab = document.getElementById(labId);
             const tables = (scanEditTargets().tables) || [];
             if (tSel) {
               if (tables.length > 1) {
@@ -5989,11 +6171,14 @@
       if (cancel) {
         e.preventDefault();
         const which = cancel.dataset.cancel;
-        const form = document.getElementById(which === 'filter' ? 'addFilterForm' : 'addColumnForm');
+        const formId = which === 'filter' ? 'addFilterForm'
+                     : which === 'group'  ? 'addGroupForm'
+                     : 'addColumnForm';
+        const form = document.getElementById(formId);
         if (form) {
           form.classList.remove('is-open');
           form.querySelectorAll('input').forEach((i) => (i.value = ''));
-          const btn = form.parentElement.querySelector('.edit-add-btn');
+          const btn = form.parentElement.querySelector(`.edit-add-btn[data-add="${which}"]`);
           if (btn) btn.style.display = '';
         }
         return;
@@ -6010,6 +6195,25 @@
           document.getElementById('addFilterLabel').value = '';
           document.getElementById('addFilterForm').classList.remove('is-open');
           document.querySelector('.edit-add-btn[data-add="filter"]').style.display = '';
+        } else if (which === 'group') {
+          const label = (document.getElementById('addGroupLabel').value || '').trim();
+          const leafLabel = (document.getElementById('addGroupLeafLabel').value || '').trim() || '항목 1';
+          if (!label) { document.getElementById('addGroupLabel').focus(); return; }
+          const tLab = document.getElementById('addGroupTableLabel');
+          const tSel = document.getElementById('addGroupTable');
+          const multi = tLab && !tLab.hidden;
+          const ti = multi ? parseInt(tSel.value, 10) : 0;
+          const finalTi = Number.isFinite(ti) ? ti : 0;
+          addGroup({ label, leafLabel, tableIdx: finalTi });
+          if (multi) {
+            const tables = (scanEditTargets().tables) || [];
+            const tt = tables.find((x) => x.idx === finalTi);
+            showToast(`[${(tt && tt.label) || '테이블'}] 에 그룹 [${label}] 추가`);
+          }
+          document.getElementById('addGroupLabel').value = '';
+          document.getElementById('addGroupLeafLabel').value = '';
+          document.getElementById('addGroupForm').classList.remove('is-open');
+          document.querySelector('.edit-add-btn[data-add="group"]').style.display = '';
         } else {
           const label = (document.getElementById('addColumnLabel').value || '').trim();
           if (!label) { document.getElementById('addColumnLabel').focus(); return; }
