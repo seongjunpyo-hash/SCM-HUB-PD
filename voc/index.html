@@ -811,11 +811,12 @@
     }
     .cmp-lib-card__edit {
       flex-shrink: 0;
-      background: transparent; border: 0; cursor: pointer;
-      width: 24px; height: 24px; border-radius: 4px;
-      font-size: 12px; color: #6B7280;
+      cursor: pointer;
+      padding: 3px 8px; border-radius: 4px;
+      font-size: 11px; font-weight: 600; color: #4F46E5;
+      background: #EEF2FF; border: 1px solid #C7D2FE;
     }
-    .cmp-lib-card__edit:hover { background: #EEF2FF; color: #4F46E5; }
+    .cmp-lib-card__edit:hover { background: #E0E7FF; border-color: #A5B4FC; }
     .cmp-lib-empty {
       grid-column: 1 / -1;
       padding: 24px;
@@ -1166,6 +1167,17 @@
     .edit-row:hover .edit-row__rename,
     .edit-row.is-renamed .edit-row__rename { opacity: 1; }
     .edit-row__rename:hover { background: #EEF2FF; color: #4F46E5; }
+    /* 텍스트 라벨 ('수정') 형태 — 컴포넌트 row 의 .edit-row__edit--text 와 통일. */
+    .edit-row__rename--text {
+      font-size: 11px; font-weight: 600; color: #4F46E5;
+      padding: 3px 8px;
+      border: 1px solid #C7D2FE;
+      background: #EEF2FF;
+      opacity: 0.65;
+    }
+    .edit-row:hover .edit-row__rename--text,
+    .edit-row.is-renamed .edit-row__rename--text { opacity: 1; }
+    .edit-row__rename--text:hover { background: #E0E7FF; border-color: #A5B4FC; }
     .edit-row.is-renamed .edit-row__label::after {
       content: '·'; margin-left: 6px; color: #4F46E5; font-weight: 700;
     }
@@ -4900,7 +4912,7 @@
                 <span class="cmp-lib-card__title">${escapeHtml(cur.label || u.label)}</span>
                 <span class="cmp-lib-card__sub">${escapeHtml(cur.sub || u.sub || '')}</span>
               </div>
-              <button type="button" class="cmp-lib-card__edit" data-cmp-lib-edit="${u.id}" title="이 작은 컴포넌트의 HTML 수정">✏</button>
+              <button type="button" class="cmp-lib-card__edit" data-cmp-lib-edit="${u.id}" title="이 작은 컴포넌트의 HTML 수정">수정</button>
             </div>
           </div>`;
       }).join('');
@@ -6543,7 +6555,7 @@
             : ` data-rename-kind="${it.kind}" data-rename-selector="${sel}"`;
           const canRename = (it.kind === 'filter' || it.kind === 'column') && !it.anchor;
           const renameBtn = canRename
-            ? `<button type="button" class="edit-row__rename"${renameAttrs} title="라벨 수정">✏</button>`
+            ? `<button type="button" class="edit-row__rename edit-row__rename--text"${renameAttrs} title="라벨 수정">수정</button>`
             : '';
           // Reorderable iff kind is filter/column AND it.draggable !== false.
           // Anchor row1 cells (rs>=2 like "No") have draggable=false — we
