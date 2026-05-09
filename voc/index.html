@@ -2091,6 +2091,11 @@
     // 신규 페이지 정의 — 사용자가 [신규] 탭에서 작성한 데모 페이지 사양 리스트.
     // 실제 HTML 파일은 dev 핸드오프 시점에 생성되므로 여기선 메타만 보존.
     const NEWPAGES_KEY = 'scm:voc:newpages:v1';
+    // Cross-page label sync — 한 페이지에서 컴포넌트(필터/컬럼/native 컴포넌트)의
+    // 라벨을 바꾸면 다른 페이지의 동일 컴포넌트(원래 라벨이 같은 것)도 따라
+    // 바뀌도록 원래라벨 → 새라벨 매핑을 페이지 무관하게 보관.
+    // 구조: { filter: {orig: new}, column: {orig: new}, component: {orig: new} }
+    const GLOBAL_LABELS_KEY = 'scm:voc:global-labels:v1';
     // Page-key normalization. The VOC iframe reads `iframe.contentWindow
     // .location.pathname`, which on Cloudflare Pages clean URLs strips
     // the `.html` extension, while standalone demo pages may report
@@ -2400,6 +2405,13 @@
       // Library customizations for small-unit components — keyed by preset id.
       const libRaw = loadJsonKey(LIB_KEY);
       state.lib = (libRaw && typeof libRaw === 'object' && !Array.isArray(libRaw)) ? libRaw : {};
+      // Cross-page 라벨 매핑 — 원래라벨 → 새라벨. 다른 페이지 iframe 로드 시
+      // 동일 원래라벨을 가진 컴포넌트에도 자동 적용된다.
+      const glRaw = loadJsonKey(GLOBAL_LABELS_KEY);
+      state.globalLabels = (glRaw && typeof glRaw === 'object' && !Array.isArray(glRaw)) ? glRaw : {};
+      state.globalLabels.filter    = (state.globalLabels.filter    && typeof state.globalLabels.filter    === 'object') ? state.globalLabels.filter    : {};
+      state.globalLabels.column    = (state.globalLabels.column    && typeof state.globalLabels.column    === 'object') ? state.globalLabels.column    : {};
+      state.globalLabels.component = (state.globalLabels.component && typeof state.globalLabels.component === 'object') ? state.globalLabels.component : {};
       // Versioned saves: list of snapshots per page + which is currently active.
       const verRaw = loadJsonKey(VERSIONS_KEY);
       state.versions = (verRaw && typeof verRaw === 'object' && !Array.isArray(verRaw)) ? verRaw : {};
@@ -2458,6 +2470,12 @@
         // the user starts clean against the new version baseline.
         state.applied = loadJsonKey(EDIT_KEY) || {};
         state.versions = loadJsonKey(VERSIONS_KEY) || {};
+        // Cross-page 라벨 sync — 다른 탭/세션에서 추가된 글로벌 rename 도 픽업.
+        const _glRaw = loadJsonKey(GLOBAL_LABELS_KEY);
+        state.globalLabels = (_glRaw && typeof _glRaw === 'object' && !Array.isArray(_glRaw)) ? _glRaw : {};
+        state.globalLabels.filter    = (state.globalLabels.filter    && typeof state.globalLabels.filter    === 'object') ? state.globalLabels.filter    : {};
+        state.globalLabels.column    = (state.globalLabels.column    && typeof state.globalLabels.column    === 'object') ? state.globalLabels.column    : {};
+        state.globalLabels.component = (state.globalLabels.component && typeof state.globalLabels.component === 'object') ? state.globalLabels.component : {};
         state.draft = JSON.parse(JSON.stringify(state.applied));
         _clearPreviewed();
         // page change resets sim tracking (style tags died with previous doc)
@@ -2478,6 +2496,8 @@
         applyFilterOrderToIframe();
         applyColumnOrderToIframe();
         applyFilterTypesToIframe();
+        // Cross-page sync 먼저 — 그 위에 per-page override 가 덮음.
+        applyGlobalLabelsToIframe();
         applyFilterLabelsToIframe();
         applyColumnLabelsToIframe();
         applyCellTypesToIframe();
@@ -2789,6 +2809,13 @@
     function persistDraft()    { try { localStorage.setItem(DRAFT_KEY,    JSON.stringify(state.draft));    } catch {} }
     function persistUi()       { try { localStorage.setItem(UI_KEY,       JSON.stringify(state.ui));       } catch {} }
     function persistVersions() { try { localStorage.setItem(VERSIONS_KEY, JSON.stringify(state.versions)); } catch {} }
+    function persistGlobalLabels() {
+      try { localStorage.setItem(GLOBAL_LABELS_KEY, JSON.stringify(state.globalLabels)); } catch {}
+    }
+    // 원래 라벨 정규화 — 공백/줄바꿈 압축. 매칭 키로 쓰임.
+    function _normLabel(s) {
+      return String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
+    }
     // Group collapse/expand — UI-only, not part of edit dirty flow.
     function isGroupCollapsed(groupSel) {
       const map = state.ui && state.ui.collapsedGroups;
@@ -2914,6 +2941,7 @@
       applyFilterOrderToIframe();
       applyColumnOrderToIframe();
       applyFilterTypesToIframe();
+      applyGlobalLabelsToIframe();
       applyFilterLabelsToIframe();
       applyColumnLabelsToIframe();
       applyCellTypesToIframe();
@@ -2938,6 +2966,7 @@
       rebuildAddedFiltersOnly();
       applyFilterOrderToIframe();
       applyFilterTypesToIframe();
+      applyGlobalLabelsToIframe();
       applyFilterLabelsToIframe();
       applyEditCss();
       // Snapshot the filter slice we just pushed; per-section [적용] dirty
@@ -2949,6 +2978,7 @@
     function applyColumnSectionToIframe() {
       rebuildAddedColumnsOnly();
       applyColumnOrderToIframe();
+      applyGlobalLabelsToIframe();
       applyColumnLabelsToIframe();
       applyCellTypesToIframe();
       applyEditCss();
@@ -2961,6 +2991,7 @@
     // component pane is immediately visible in the iframe.
     function applyComponentSectionToIframe() {
       rebuildAddedComponentsOnly();
+      applyGlobalLabelsToIframe();
       applyNativeComponentEdits();
       applyEditCss();
       _setPreviewedComponent();
@@ -3234,6 +3265,21 @@
       const v = (label || '').trim();
       if (v) d.labels[kind][selector] = v;
       else delete d.labels[kind][selector];
+      // Cross-page sync — element 의 stamp 된 원래라벨을 키로 globalLabels 에
+      // 기록. 다른 페이지의 같은 원래라벨 컴포넌트가 자동으로 같은 새 라벨을
+      // 받게 된다. 원래라벨 stamp 가 없으면 sync 못 함 (선택 항목이 native 가
+      // 아니거나 scan 전이거나).
+      try {
+        const doc = iframe.contentDocument;
+        const el = doc && doc.querySelector(selector);
+        const orig = el && _normLabel(el.getAttribute('data-voc-orig-label'));
+        if (orig) {
+          state.globalLabels[kind] = state.globalLabels[kind] || {};
+          if (v && v !== orig) state.globalLabels[kind][orig] = v;
+          else delete state.globalLabels[kind][orig];
+          persistGlobalLabels();
+        }
+      } catch (_) {}
       persistDraft();
       renderEditPane();
       if (kind === 'filter') applyFilterSectionToIframe();
@@ -3303,6 +3349,21 @@
       // empty html + no other fields → drop the entry entirely (revert)
       if (!next.html && !next.label && !next.type) delete d.componentEdits[selector];
       else d.componentEdits[selector] = next;
+      // Cross-page sync — patch 에 label 이 들어오면 원래라벨 → 새라벨 매핑.
+      if (Object.prototype.hasOwnProperty.call(patch, 'label')) {
+        try {
+          const doc = iframe.contentDocument;
+          const el = doc && doc.querySelector(selector);
+          const orig = el && _normLabel(el.getAttribute('data-voc-orig-label'));
+          if (orig) {
+            const v = _normLabel(patch.label);
+            state.globalLabels.component = state.globalLabels.component || {};
+            if (v && v !== orig) state.globalLabels.component[orig] = v;
+            else delete state.globalLabels.component[orig];
+            persistGlobalLabels();
+          }
+        } catch (_) {}
+      }
       persistDraft();
       renderEditPane();
       applyComponentSectionToIframe();
@@ -3828,6 +3889,62 @@
           });
         }
       });
+    }
+
+    // Cross-page 라벨 sync — globalLabels 의 (원래라벨 → 새라벨) 매핑을
+    // 모든 stamp 된 native 필터/컬럼/컴포넌트에 일괄 적용. 페이지별
+    // applyXxxLabelsToIframe 가 이 다음에 돌아 per-page override 가 위에 덮음.
+    // scanEditTargets 가 먼저 실행돼서 data-voc-orig-label 이 stamp 되어
+    // 있어야 한다 (renderEditPane → scanEditTargets 흐름 직후 호출).
+    function applyGlobalLabelsToIframe() {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      const g = state.globalLabels || {};
+      // Filters
+      if (g.filter && Object.keys(g.filter).length) {
+        doc.querySelectorAll('.scm-filter-bar .scm-filter-select[data-voc-orig-label]').forEach((el) => {
+          const orig = _normLabel(el.getAttribute('data-voc-orig-label'));
+          const v = orig && g.filter[orig];
+          if (!v) return;
+          const labEl = el.querySelector('.scm-filter-select__label');
+          if (labEl) labEl.textContent = v;
+          const valEl = el.querySelector('.scm-filter-select__value');
+          if (valEl && valEl !== labEl) valEl.textContent = v;
+        });
+      }
+      // Columns — stamp 은 thead th 에. 텍스트 노드만 교체.
+      if (g.column && Object.keys(g.column).length) {
+        doc.querySelectorAll('.mp-table thead th[data-voc-orig-label]').forEach((cell) => {
+          const orig = _normLabel(cell.getAttribute('data-voc-orig-label'));
+          const v = orig && g.column[orig];
+          if (!v) return;
+          const host = cell.querySelector(':scope > .cell-clamp, :scope > .cell-clamp-2') || cell;
+          let textNode = null;
+          for (const n of host.childNodes) {
+            if (n.nodeType === 3 && n.textContent.trim()) { textNode = n; break; }
+          }
+          if (textNode) textNode.textContent = v;
+          else host.insertBefore(doc.createTextNode(v), host.firstChild);
+        });
+      }
+      // Components — pickLabel 이 찾는 title 엘리먼트의 텍스트만 교체.
+      if (g.component && Object.keys(g.component).length) {
+        doc.querySelectorAll('[data-voc-orig-label]').forEach((el) => {
+          // 필터/컬럼은 위에서 이미 처리. 여기선 native 컴포넌트만.
+          if (el.matches('.scm-filter-select, .mp-table thead th')) return;
+          const orig = _normLabel(el.getAttribute('data-voc-orig-label'));
+          const v = orig && g.component[orig];
+          if (!v) return;
+          const head = el.querySelector('.scm-card-title, .scm-page-section__title, .scm-page-head__title, h1, h2, h3, h4');
+          if (!head) return;
+          let textNode = null;
+          for (const n of head.childNodes) {
+            if (n.nodeType === 3 && n.textContent.trim()) { textNode = n; break; }
+          }
+          if (textNode) textNode.textContent = v;
+          else head.insertBefore(doc.createTextNode(v), head.firstChild);
+        });
+      }
     }
 
     // 사용자 라벨 오버라이드 — 필터 chip 의 .scm-filter-select__label /
@@ -5118,6 +5235,20 @@
       if (!el.dataset.vocKey) el.dataset.vocKey = `${prefix}-${idx}`;
       return el.dataset.vocKey;
     }
+    // 첫 스캔 때 원본 라벨을 element 에 stamp. 이후엔 라벨이 override 로
+    // 바뀌어도 원본은 그대로 남아 cross-page sync 매칭 키로 쓰임.
+    // Return: 정규화된 원본 라벨 (이미 stamp 돼 있으면 stamp 된 값, 아니면 새 값).
+    // 호출부가 이 반환값을 라벨로 쓰면 두 번째 scan 부터는 DOM 텍스트가
+    // 오버라이드돼도 원본 라벨이 일관되게 나온다.
+    function stampOrigLabel(el, label) {
+      if (!el) return _normLabel(label);
+      const existing = el.getAttribute && el.getAttribute('data-voc-orig-label');
+      if (existing) return _normLabel(existing);
+      const norm = _normLabel(label);
+      if (!norm) return '';
+      try { el.setAttribute('data-voc-orig-label', norm); } catch (_) {}
+      return norm;
+    }
     function ifrCssPath(el) {
       if (!el || el.nodeType !== 1) return '';
       const doc = el.ownerDocument;
@@ -5198,6 +5329,9 @@
                  || (valEl && valEl.textContent.trim())
                  || el.dataset.mpFilter || '필터';
         label = label.replace(/\s+/g, ' ').slice(0, 28);
+        // 이미 stamp 가 있으면 그 원본 라벨을 쓴다 (DOM 이 override 로 바뀌어도
+        // sidebar 가 일관된 원본을 갖고 그 위에 per-page/global 을 layer 함).
+        label = stampOrigLabel(el, label) || label;
         out.filters.push({ label, selector: sel });
       });
 
@@ -5265,6 +5399,7 @@
                 let label = (cell.textContent || '').trim().replace(/\s+/g, ' ');
                 if (!label) label = '(빈 컬럼)';
                 if (label.length > 28) label = label.slice(0, 28) + '…';
+                label = stampOrigLabel(cell, label) || label;
                 out.columns.push({ label, selector: sel, parent: null, draggable: false, anchor: true, leafIdx: leafIdxOf(cell), tableIdx: curTable.idx, tableLabel: curTable.label });
                 out.topOrder.push(sel);
               }
@@ -5288,6 +5423,7 @@
                 let label = (cell.textContent || '').trim().replace(/\s+/g, ' ');
                 if (!label) label = '(빈 컬럼)';
                 if (label.length > 28) label = label.slice(0, 28) + '…';
+                label = stampOrigLabel(cell, label) || label;
                 out.columns.push({ label, selector: sel, parent: null, draggable: true, anchor: false, leafIdx: leafIdxOf(cell), tableIdx: curTable.idx, tableLabel: curTable.label });
                 out.topOrder.push(sel);
               }
@@ -5310,6 +5446,7 @@
             let label = (th.textContent || '').trim().replace(/\s+/g, ' ');
             if (!label) label = '(빈 컬럼)';
             if (label.length > 28) label = label.slice(0, 28) + '…';
+            label = stampOrigLabel(th, label) || label;
             out.columns.push({ label, selector: sel, parent, draggable: true, anchor: false, leafIdx: leafIdxOf(th), tableIdx: curTable.idx, tableLabel: curTable.label });
             if (!groupTr) out.topOrder.push(sel);
           });
@@ -5339,7 +5476,9 @@
         // skip if a parent of `el` is also a detected component
         for (const t of taken) { if (t.contains(el)) return; }
         taken.add(el);
-        out.components.push({ label: pickLabel(el), selector: ifrCssPath(el) });
+        const rawLabel = pickLabel(el);
+        const compLabel = stampOrigLabel(el, rawLabel) || rawLabel;
+        out.components.push({ label: compLabel, selector: ifrCssPath(el) });
       });
 
       return out;
@@ -5620,13 +5759,23 @@
       // merge native + user-added items, then sort by saved order
       const filterLabelOverride = (d.labels && d.labels.filter) || {};
       const columnLabelOverride = (d.labels && d.labels.column) || {};
+      // Cross-page sync — 원본 라벨 키로 globalLabels 매핑. per-page 가 없을 때
+      // 위에 layer 됨. (it.label 은 scanEditTargets 가 stamp 된 원본을 돌려줌.)
+      const globalFilter = (state.globalLabels && state.globalLabels.filter) || {};
+      const globalColumn = (state.globalLabels && state.globalLabels.column) || {};
       const filterRowsRaw = [
-        ...targets.filters.map((it) => ({
-          ...it,
-          kind: 'filter',
-          label: filterLabelOverride[it.selector] || it.label,
-          renamed: !!filterLabelOverride[it.selector],
-        })),
+        ...targets.filters.map((it) => {
+          const orig = _normLabel(it.label);
+          const perPage = filterLabelOverride[it.selector];
+          const global  = orig && globalFilter[orig];
+          const finalLabel = perPage || global || it.label;
+          return {
+            ...it,
+            kind: 'filter',
+            label: finalLabel,
+            renamed: !!(perPage || global),
+          };
+        }),
         ...d.added.filters.map((f) => ({
           label: f.label, kind: 'filter',
           selector: `#voc-added-filter-${f.id}`,
@@ -5675,7 +5824,11 @@
       const columnRows = [];
       const _applyColLabel = (row) => {
         const ovr = columnLabelOverride[row.selector];
-        if (ovr) { row.label = ovr; row.renamed = true; }
+        if (ovr) { row.label = ovr; row.renamed = true; return row; }
+        // per-page 가 없으면 cross-page 매핑 확인. row.label 은 원본 라벨.
+        const orig = _normLabel(row.label);
+        const g = orig && globalColumn[orig];
+        if (g) { row.label = g; row.renamed = true; }
         return row;
       };
       // 페이지에 .mp-table 이 여러 개면 컬럼 행 사이에 [테이블 N] 헤더를 삽입.
@@ -5766,11 +5919,23 @@
       // Components row list: native scanned components + user-added components.
       // Native rows carry only `selector`; added rows carry `added` so the
       // delete button + edit button can be wired.
+      const globalComponent = (state.globalLabels && state.globalLabels.component) || {};
       const componentRows = [
         ...targets.components.map((it) => {
           const editEntry = (d.componentEdits || {})[it.selector];
-          const label = (editEntry && editEntry.label) || it.label;
-          return { ...it, label, kind: 'component', edited: !!editEntry, type: editEntry && editEntry.type };
+          // per-page edit > cross-page sync > 원본
+          const orig = _normLabel(it.label);
+          const perPageLabel = editEntry && editEntry.label;
+          const globalLabel  = orig && globalComponent[orig];
+          const label = perPageLabel || globalLabel || it.label;
+          return {
+            ...it,
+            label,
+            kind: 'component',
+            edited: !!editEntry,
+            renamed: !!(perPageLabel || globalLabel),
+            type: editEntry && editEntry.type,
+          };
         }),
         ...(d.added.components || []).map((c) => ({
           kind: 'component',
