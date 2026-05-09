@@ -558,6 +558,57 @@
     }
     .toast.is-on { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+    /* 라벨 수정 모달 */
+    .rn-modal-backdrop {
+      position: fixed; inset: 0; z-index: 998;
+      background: rgba(0, 0, 0, 0.36);
+      backdrop-filter: blur(2px);
+    }
+    .rn-modal-backdrop[hidden] { display: none !important; }
+    .rn-modal {
+      position: fixed; left: 50%; top: 50%; z-index: 999;
+      transform: translate(-50%, -50%);
+      min-width: 380px; max-width: 480px;
+      background: #fff; border-radius: 10px;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
+      display: flex; flex-direction: column;
+    }
+    .rn-modal[hidden] { display: none !important; }
+    .rn-modal__head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid #EFF1F4;
+    }
+    .rn-modal__head h3 { margin: 0; font-size: 15px; font-weight: 700; color: #1A1A1A; }
+    .rn-modal__close {
+      background: transparent; border: 0; cursor: pointer;
+      width: 28px; height: 28px; border-radius: 4px;
+      font-size: 18px; color: #6B7280;
+    }
+    .rn-modal__close:hover { background: #F3F4F6; color: #1A1A1A; }
+    .rn-modal__body { padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; }
+    .rn-modal__field { display: flex; flex-direction: column; gap: 6px; }
+    .rn-modal__field-label { font-size: 12px; font-weight: 600; color: #374151; }
+    .rn-modal__input {
+      width: 100%; padding: 9px 11px;
+      font-size: 13px; color: #1A1A1A;
+      border: 1px solid #D1D5DB; border-radius: 6px;
+      box-sizing: border-box;
+    }
+    .rn-modal__input:focus { outline: none; border-color: #4F46E5; box-shadow: 0 0 0 3px rgba(79,70,229,0.15); }
+    .rn-modal__hint { margin: 4px 0 0; font-size: 11px; color: #6B7280; }
+    .rn-modal__foot {
+      display: flex; justify-content: flex-end; gap: 8px;
+      padding: 12px 20px 16px; border-top: 1px solid #EFF1F4;
+    }
+    .rn-modal__btn {
+      cursor: pointer; padding: 7px 16px; border-radius: 6px;
+      font-size: 13px; font-weight: 600;
+    }
+    .rn-modal__btn--ghost { background: #fff; color: #4B5563; border: 1px solid #D1D5DB; }
+    .rn-modal__btn--ghost:hover { background: #F9FAFB; }
+    .rn-modal__btn--primary { background: #4F46E5; color: #fff; border: 1px solid #4F46E5; }
+    .rn-modal__btn--primary:hover { background: #4338CA; border-color: #4338CA; }
+
     /* Save-version modal */
     .save-ver-backdrop {
       position: fixed; inset: 0; z-index: 998;
@@ -1981,6 +2032,28 @@
   <!-- Save-version modal — opens when user clicks 저장 in the edit tab.
        Lets them choose whether to fork into a new version or merge into
        any of the existing saved versions. -->
+  <!-- 라벨 수정 모달 — 필터 / 컬럼 라벨을 인라인 input 대신 모달에서 편집.
+       row 가 cell-type / 정렬 / 필터 toggle 등으로 좁아 인라인 편집이 잘려
+       보이는 케이스를 위해 별도 모달로 분리. -->
+  <div class="rn-modal-backdrop" id="rnModalBackdrop" hidden></div>
+  <div class="rn-modal" id="rnModal" hidden role="dialog" aria-labelledby="rnModalTitle">
+    <header class="rn-modal__head">
+      <h3 id="rnModalTitle">라벨 수정</h3>
+      <button type="button" class="rn-modal__close" data-rn-act="close" aria-label="닫기">×</button>
+    </header>
+    <div class="rn-modal__body">
+      <label class="rn-modal__field">
+        <span class="rn-modal__field-label" id="rnModalKindLabel">라벨</span>
+        <input type="text" class="rn-modal__input" id="rnModalInput" maxlength="40" placeholder="라벨" />
+      </label>
+      <p class="rn-modal__hint" id="rnModalHint"></p>
+    </div>
+    <footer class="rn-modal__foot">
+      <button type="button" class="rn-modal__btn rn-modal__btn--ghost" data-rn-act="cancel">취소</button>
+      <button type="button" class="rn-modal__btn rn-modal__btn--primary" data-rn-act="save">저장</button>
+    </footer>
+  </div>
+
   <div class="save-ver-backdrop" id="saveVerBackdrop" hidden></div>
   <div class="save-ver-modal" id="saveVerModal" hidden role="dialog" aria-labelledby="saveVerTitle">
     <header class="save-ver-modal__head">
@@ -4741,6 +4814,62 @@
     // save handler knows whether to mutate an added entry, set a native
     // override, or create a brand-new added component.
     const _cmpModal = { mode: 'add', selector: null, addedId: null };
+    // 라벨 수정 모달 — 필터 / 컬럼 (native + added) 라벨을 모달에서 편집.
+    let _rnModalCtx = null;
+    function openRenameModal(ctx) {
+      _rnModalCtx = ctx || null;
+      const modal = document.getElementById('rnModal');
+      const bd = document.getElementById('rnModalBackdrop');
+      const inp = document.getElementById('rnModalInput');
+      const kindLab = document.getElementById('rnModalKindLabel');
+      const hint = document.getElementById('rnModalHint');
+      if (!modal || !bd || !inp) return;
+      const kindKo = ctx && ctx.kind === 'filter' ? '필터' : (ctx && ctx.kind === 'column' ? '컬럼' : '항목');
+      if (kindLab) kindLab.textContent = kindKo + ' 라벨';
+      inp.value = (ctx && ctx.orig) || '';
+      if (hint) hint.textContent = '저장 시 사이드바와 좌측 데모에 즉시 반영됩니다.';
+      bd.hidden = false;
+      modal.hidden = false;
+      setTimeout(() => { inp.focus(); inp.select(); }, 0);
+    }
+    function closeRenameModal() {
+      const modal = document.getElementById('rnModal');
+      const bd = document.getElementById('rnModalBackdrop');
+      if (modal) modal.hidden = true;
+      if (bd) bd.hidden = true;
+      _rnModalCtx = null;
+    }
+    function _rnModalSave() {
+      if (!_rnModalCtx) { closeRenameModal(); return; }
+      const inp = document.getElementById('rnModalInput');
+      const val = ((inp && inp.value) || '').trim();
+      const ctx = _rnModalCtx;
+      if (val && val !== ctx.orig) {
+        if (ctx.addedId) setAddedLabel(ctx.kind, ctx.addedId, val);
+        else if (ctx.selector) setNativeLabel(ctx.kind, ctx.selector, val);
+      }
+      closeRenameModal();
+    }
+    // 모달 click + key 핸들러 (한 번만 등록).
+    document.addEventListener('click', (e) => {
+      const act = e.target && e.target.closest && e.target.closest('[data-rn-act]');
+      if (act) {
+        e.preventDefault();
+        const a = act.dataset.rnAct;
+        if (a === 'save') _rnModalSave();
+        else closeRenameModal();
+        return;
+      }
+      const bd = document.getElementById('rnModalBackdrop');
+      if (bd && !bd.hidden && e.target === bd) closeRenameModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      const modal = document.getElementById('rnModal');
+      if (!modal || modal.hidden) return;
+      if (e.key === 'Enter') { e.preventDefault(); _rnModalSave(); }
+      else if (e.key === 'Escape') { e.preventDefault(); closeRenameModal(); }
+    });
+
     function openComponentModal({ mode, selector, addedId }) {
       _cmpModal.mode = mode || 'add';
       _cmpModal.selector = selector || null;
@@ -6853,8 +6982,9 @@
         showToast(`[${(target && target.label) || '테이블'}] 으로 이동`);
         return;
       }
-      // 필터 / 컬럼 라벨 inline 수정 — ✏ 버튼 클릭 시 label span 을 input
-      // 으로 swap. blur / Enter 로 저장, Esc 로 취소.
+      // 필터 / 컬럼 라벨 수정 — ✏ 버튼 클릭 시 모달 열기 (이전엔 인라인 input
+      // 이었지만 row 가 cell-type / 정렬 / 필터 toggle 등으로 좁아 입력칸이 잘려
+      // 보이는 문제로 모달로 분리).
       const ren = t.closest && t.closest('[data-rename-kind]');
       if (ren) {
         e.preventDefault();
@@ -6862,38 +6992,12 @@
         const row = ren.closest('.edit-row');
         if (!row) return;
         const labelEl = row.querySelector('.edit-row__label');
-        if (!labelEl || labelEl.dataset.editing === '1') return;
-        labelEl.dataset.editing = '1';
-        const orig = labelEl.textContent;
-        const inp = document.createElement('input');
-        inp.type = 'text';
-        inp.className = 'edit-row__label-input';
-        inp.value = orig;
-        inp.maxLength = 28;
-        labelEl.replaceWith(inp);
-        // checkbox click 으로 이어지지 않도록 stopPropagation 등록
-        inp.addEventListener('click', (ev) => ev.stopPropagation());
-        inp.addEventListener('mousedown', (ev) => ev.stopPropagation());
-        const finish = (commit) => {
-          if (inp.dataset.done) return; inp.dataset.done = '1';
-          const val = (inp.value || '').trim();
-          if (commit && val && val !== orig) {
-            const kind = ren.dataset.renameKind;
-            if (ren.dataset.renameAddedId) {
-              setAddedLabel(kind, ren.dataset.renameAddedId, val);
-            } else if (ren.dataset.renameSelector) {
-              setNativeLabel(kind, ren.dataset.renameSelector, val);
-            }
-          } else {
-            renderEditPane();
-          }
-        };
-        inp.addEventListener('keydown', (ev) => {
-          if (ev.key === 'Enter') { ev.preventDefault(); finish(true); }
-          else if (ev.key === 'Escape') { ev.preventDefault(); finish(false); }
-        });
-        inp.addEventListener('blur', () => finish(true));
-        setTimeout(() => { inp.focus(); inp.select(); }, 0);
+        const orig = labelEl ? labelEl.textContent : '';
+        const kind = ren.dataset.renameKind;
+        const ctx = ren.dataset.renameAddedId
+          ? { kind, addedId: ren.dataset.renameAddedId, orig }
+          : { kind, selector: ren.dataset.renameSelector, orig };
+        openRenameModal(ctx);
         return;
       }
       // edit a component (native or added) — opens the component editor
