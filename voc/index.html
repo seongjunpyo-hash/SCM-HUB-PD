@@ -3121,24 +3121,17 @@
       }
       _ensureFlexLayoutCSS(doc);
       // 4) main 자식 모두 order 초기화 후, componentOrder 따라 order 부여.
+      //    Phase 3 부터 added comp 도 main 직속 자식이라 동일 처리.
       [...main.children].forEach((el) => { el.style.order = ''; });
       let n = 1;
-      const grid = main.querySelector('.scm-voc-added-grid');
       order.forEach((sel) => {
         if (!sel) return;
         let el = null;
         if (sel.startsWith('#voc-added-divider-')) {
           const id = sel.slice('#voc-added-divider-'.length);
           el = doc.getElementById(`voc-added-divider-${id}`);
-        } else if (sel.startsWith('#voc-added-comp-')) {
-          // added comp 자체는 grid 안. grid 안에서 reorder (order 부여).
-          if (grid) {
-            const entry = doc.querySelector(sel);
-            if (entry && entry.parentElement === grid) entry.style.order = String(n++);
-          }
-          return;
         } else {
-          // native: main 직속까지 walk up.
+          // native + added comp: main 직속까지 walk up.
           try { el = main.querySelector(sel); } catch (_) {}
           while (el && el.parentElement !== main) el = el.parentElement;
           if (el && el.parentElement !== main) el = null;
@@ -3149,20 +3142,21 @@
       [...main.children].forEach((el) => {
         if (!el.style.order) el.style.order = String(n++);
       });
-      // grid 자체를 항상 마지막으로 (안에 added comps 있을 때 시각 일관성).
-      if (grid && grid.parentElement === main) grid.style.order = String(n + 100);
     }
     function rebuildAddedComponentsOnly() {
       const doc = iframe.contentDocument;
       if (!doc) return;
       doc.querySelectorAll('.scm-voc-added-comp').forEach((el) => el.remove());
-      doc.querySelectorAll('.scm-voc-added-grid').forEach((el) => { if (!el.children.length) el.remove(); });
+      // Phase 3: 12-column grid wrapper 폐기 (남아있던 것도 제거).
+      doc.querySelectorAll('.scm-voc-added-grid').forEach((el) => el.remove());
       applyAddedComponents();
     }
-    // Inject added components into <main> at the bottom. Each component
-    // is wrapped in a div with id voc-added-comp-{id} carrying the user's
-    // raw HTML so the same selector logic (#voc-added-comp-{id}) can target
-    // it for hide / edit / locate.
+    // Phase 3 — 추가 컴포넌트를 main 직속 자식으로 inject.
+    // 이전엔 12-column .scm-voc-added-grid 안에 갇혀 있어 native 컴포넌트
+    // 사이에 끼워 넣을 수 없었음. 이제 각 컴포넌트가 main 의 1급 자식으로
+    // 들어가 native + divider 와 같은 reorder 시스템 (CSS order) 에 참여.
+    // 사용자가 [+ 컴포넌트 추가] → 끝에 추가됨 → 사이드바 드래그로 원하는
+    // 위치로 이동.
     function applyAddedComponents() {
       const doc = iframe.contentDocument;
       if (!doc) return;
@@ -3171,31 +3165,18 @@
       if (!list.length) return;
       const main = doc.querySelector('main') || doc.body;
       if (!main) return;
-      // 12-column grid 컨테이너 — main 끝에 한 번만 만들고 그 안에 entry
-      // 별로 wrap 을 추가. 각 entry.width (1~12) 가 grid-column span 결정.
-      // 컨테이너 자체는 .scm-voc-added-grid 단일.
-      let grid = doc.querySelector('.scm-voc-added-grid');
-      if (!grid) {
-        grid = doc.createElement('div');
-        grid.className = 'scm-voc-added-grid';
-        // 그리드 라벨 (편집 컨텍스트 도움말). standalone 데모에선 dev-export
-        // 가 hide 처리할 수 있게 별도 클래스.
-        main.appendChild(grid);
-      }
       list.forEach((c) => {
         const id = `voc-added-comp-${c.id}`;
         if (doc.getElementById(id)) return;
-        const wrap = doc.createElement('div');
+        // <section> 으로 wrap — semantic 하고 main 자식으로 자연스러움.
+        const wrap = doc.createElement('section');
         wrap.id = id;
         wrap.className = 'scm-voc-added-comp';
         wrap.dataset.vocAddedCompId = c.id;
         wrap.dataset.vocAddedCompType = c.type || 'card';
         wrap.dataset.vocAddedCompLabel = c.label || '';
-        const w = (typeof c.width === 'number' && c.width >= 1 && c.width <= 12) ? c.width : 12;
-        wrap.style.gridColumn = `span ${w}`;
-        wrap.dataset.vocCompWidth = String(w);
         wrap.innerHTML = c.html || '';
-        grid.appendChild(wrap);
+        main.appendChild(wrap);
       });
     }
     // Apply user HTML overrides on top of native components. We replace
@@ -3748,22 +3729,11 @@
           height: 0 !important;
           background: transparent !important;
         }
-        /* 추가 컴포넌트 grid 컨테이너 — 12-column. 각 컴포넌트는
-           grid-column: span N (N=width). 빈 그리드(자식 0)는 표시 X. */
-        .scm-voc-added-grid {
-          display: grid;
-          grid-template-columns: repeat(12, 1fr);
-          gap: 12px;
-          padding: 16px 0;
-        }
-        .scm-voc-added-grid:empty { display: none; }
+        /* Phase 3 — 추가 컴포넌트는 main 직속 자식 section. 편집 모드에서
+           어떤 게 user 가 추가한 컴포넌트인지 시각 구분되도록 점선 테두리. */
         .scm-voc-added-comp {
-          /* default span = 12 (full width), per-instance style overrides */
-          grid-column: span 12;
           min-width: 0;
-        }
-        /* hover 시 grid 셀 경계 시각화 — 편집 모드에서 어디에 자리 잡았는지 보이게 */
-        .scm-voc-added-grid:hover .scm-voc-added-comp {
+          margin: 8px 0;
           outline: 1px dashed rgba(99, 102, 241, 0.35);
           outline-offset: 2px;
         }
@@ -4343,10 +4313,9 @@
         tpl.innerHTML = _buildAddedTableHTML(t);
         const node = tpl.content.firstElementChild;
         if (!node) return;
-        // .scm-voc-added-grid 가 있으면 그 직전에, 없으면 main 끝에.
-        const grid = main.querySelector('.scm-voc-added-grid');
-        if (grid) main.insertBefore(node, grid);
-        else main.appendChild(node);
+        // Phase 3 — main 직속으로 append. 시각 위치는 componentOrder 의
+        // style.order 가 결정.
+        main.appendChild(node);
       });
     }
 
@@ -4552,7 +4521,8 @@
       doc.querySelectorAll('.scm-voc-added-table').forEach((el) => el.remove());
       doc.querySelectorAll('.scm-voc-divider').forEach((el) => el.remove());
       doc.querySelectorAll('.scm-voc-added-comp').forEach((el) => el.remove());
-      doc.querySelectorAll('.scm-voc-added-grid').forEach((el) => { if (!el.children.length) el.remove(); });
+      // Phase 3 폐기 마커 — 남아 있을 수 있는 옛 grid 컨테이너 정리.
+      doc.querySelectorAll('.scm-voc-added-grid').forEach((el) => el.remove());
       applyAddedDom();
       applyAddedComponents();
     }
@@ -5812,7 +5782,10 @@
         if (tag === 'script' || tag === 'style' || tag === 'template' || tag === 'noscript' || tag === 'link' || tag === 'meta') return false;
         if (el.classList && (
           el.classList.contains('scm-voc-divider') ||
-          el.classList.contains('scm-voc-added-grid')
+          el.classList.contains('scm-voc-added-grid') ||
+          // Phase 3: 추가 컴포넌트는 d.added.components 통해서 surface 되므로
+          // main scan 에서 중복 노출 안 되도록 제외.
+          el.classList.contains('scm-voc-added-comp')
         )) return false;
         // display:none / hidden 직속 자식은 제외 (대시보드의 kpi-card template
         // 같은 비주얼-아닌 wrapper).
