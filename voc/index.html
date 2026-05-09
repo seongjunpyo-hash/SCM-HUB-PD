@@ -1779,6 +1779,7 @@
                 <div class="edit-add-row">
                   <button type="button" class="edit-add-btn" data-add="column">+ 컬럼 추가</button>
                   <button type="button" class="edit-add-btn" data-add="group" id="addGroupBtn" hidden>+ 그룹 추가</button>
+                  <button type="button" class="edit-add-btn" data-add="table">+ 테이블 추가</button>
                 </div>
                 <div class="edit-add-form" id="addColumnForm">
                   <input type="text" id="addColumnLabel" placeholder="컬럼 라벨 (예: 비고)" maxlength="20" />
@@ -1801,6 +1802,17 @@
                   <div class="edit-add-form__actions">
                     <button type="button" class="edit-add-form__btn edit-add-form__btn--ghost" data-cancel="group">취소</button>
                     <button type="button" class="edit-add-form__btn edit-add-form__btn--primary" data-submit="group">추가</button>
+                  </div>
+                </div>
+                <div class="edit-add-form" id="addTableForm">
+                  <input type="text" id="addTableLabel" placeholder="테이블 라벨 (예: 신규 정보 테이블)" maxlength="20" />
+                  <select id="addTableType" title="테이블 형식">
+                    <option value="flat">1단 — 단일 행 헤더</option>
+                    <option value="grouped">2단 — 그룹 + leaf 2-row 헤더</option>
+                  </select>
+                  <div class="edit-add-form__actions">
+                    <button type="button" class="edit-add-form__btn edit-add-form__btn--ghost" data-cancel="table">취소</button>
+                    <button type="button" class="edit-add-form__btn edit-add-form__btn--primary" data-submit="table">추가</button>
                   </div>
                 </div>
               </div>
@@ -2110,6 +2122,10 @@
     //       list: [{ id, label, createdAt, updatedAt, applied }]
     //   }}
     const VERSIONS_KEY = 'scm:voc:versions:v1';
+    // Cross-page 라벨 sync — 한 페이지에서 native 컴포넌트(필터/컬럼/컴포넌트)의
+    // 라벨을 바꾸면 다른 페이지의 동일 컴포넌트(원래 라벨이 같은 것)도 따라
+    // 바뀌도록 원래라벨 → 새라벨 매핑을 페이지 무관하게 보관.
+    const GLOBAL_LABELS_KEY = 'scm:voc:global-labels:v1';
     // Library customizations for built-in small-unit component presets.
     // Keyed by preset id (e.g. 'banner-info'). Holds { html, label } overrides.
     const LIB_KEY      = 'scm:voc:lib:v1';
@@ -2434,6 +2450,13 @@
         catch { return []; }
       })();
       state.newPages = npRaw;
+      // Cross-page 라벨 매핑 — 원래라벨 → 새라벨. 다른 페이지 iframe 로드 시
+      // 동일 원래라벨을 가진 컴포넌트에도 자동 적용.
+      const glRaw = loadJsonKey(GLOBAL_LABELS_KEY);
+      state.globalLabels = (glRaw && typeof glRaw === 'object' && !Array.isArray(glRaw)) ? glRaw : {};
+      state.globalLabels.filter    = (state.globalLabels.filter    && typeof state.globalLabels.filter    === 'object') ? state.globalLabels.filter    : {};
+      state.globalLabels.column    = (state.globalLabels.column    && typeof state.globalLabels.column    === 'object') ? state.globalLabels.column    : {};
+      state.globalLabels.component = (state.globalLabels.component && typeof state.globalLabels.component === 'object') ? state.globalLabels.component : {};
       initNewPagePane();
       // L1 chips
       menuL1.innerHTML = MENU.map((m) => `<button type="button" class="menu-l1__chip" data-l1="${m.l1}">${escapeHtml(m.label)}</button>`).join('');
@@ -2507,6 +2530,7 @@
         applyColumnLabelsToIframe();
         applyCellTypesToIframe();
         applyNativeComponentEdits();
+        applyComponentOrderToIframe();
         applyEditCss();
         applyBasicSettings();
         renderVersionSelect();
@@ -2814,6 +2838,13 @@
     function persistDraft()    { try { localStorage.setItem(DRAFT_KEY,    JSON.stringify(state.draft));    } catch {} }
     function persistUi()       { try { localStorage.setItem(UI_KEY,       JSON.stringify(state.ui));       } catch {} }
     function persistVersions() { try { localStorage.setItem(VERSIONS_KEY, JSON.stringify(state.versions)); } catch {} }
+    function persistGlobalLabels() {
+      try { localStorage.setItem(GLOBAL_LABELS_KEY, JSON.stringify(state.globalLabels)); } catch {}
+    }
+    // 원래 라벨 정규화 — 매칭 키로 쓰임.
+    function _normLabel(s) {
+      return String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
+    }
     // Group collapse/expand — UI-only, not part of edit dirty flow.
     function isGroupCollapsed(groupSel) {
       const map = state.ui && state.ui.collapsedGroups;
@@ -2916,10 +2947,17 @@
       // { id, label, leafLabel, tableIdx } — 새 group 셀 + 그 안의 1개 leaf
       // 가 함께 inject 됨.
       e.added.groups = Array.isArray(e.added.groups) ? e.added.groups : [];
+      // 사용자 추가 테이블 — 빈 1단/2단 mp-table-host 를 main 끝에 inject.
+      // type: 'flat' (1-row thead) | 'grouped' (2-row thead)
+      // entry: { id, label, type }
+      e.added.tables = Array.isArray(e.added.tables) ? e.added.tables : [];
       // componentEdits: { [selector]: { html, label, type } } — overrides
       // applied to NATIVE components on top of their existing DOM (selectors
       // include data-voc-key paths and arbitrary CSS paths).
       e.componentEdits = (e.componentEdits && typeof e.componentEdits === 'object' && !Array.isArray(e.componentEdits)) ? e.componentEdits : {};
+      // 컴포넌트 통합 order — native + 추가 컴포넌트(grid 단위) 의 main 안 시각
+      // 순서를 결정. 빈 배열 = 자연 순서 (CSS order 미적용 → 원본 block 레이아웃).
+      e.componentOrder = Array.isArray(e.componentOrder) ? e.componentOrder : [];
       // 기본 설정 (per-page) — 데모 노출 여부 등.
       // exposed: true (기본 — 협업/공개 노출) | false (비공개 — 데모 가림 + 비공개 배지)
       e.settings = (e.settings && typeof e.settings === 'object' && !Array.isArray(e.settings)) ? e.settings : {};
@@ -2939,12 +2977,79 @@
       applyFilterOrderToIframe();
       applyColumnOrderToIframe();
       applyFilterTypesToIframe();
+      applyGlobalLabelsToIframe();
       applyFilterLabelsToIframe();
       applyColumnLabelsToIframe();
       applyCellTypesToIframe();
       applyNativeComponentEdits();
+      applyComponentOrderToIframe();
       applyEditCss();
       applyBasicSettings();
+    }
+    // Phase 2 — main 의 자식 순서를 CSS `order` 로 제어.
+    // ====================================================================
+    // **DOM 순서는 절대 안 건드린다.** 대신 main 을 `display: flex; flex-direction:
+    // column;` 로 만들고 각 자식에 inline `style.order` 만 박아 시각 순서만 바꾼다.
+    // 이벤트 리스너 / sticky / scroll / sibling-CSS 모두 안전.
+    //
+    // 사용자가 reorder 안 했고 컴포넌트가 자연 순서면 flex CSS 자체를 inject 안
+    // 해서 페이지가 원본 block 레이아웃 그대로 (margin collapsing 등 미세한 시각
+    // 차이 없음).
+    function _isComponentOrderCustomized(order, naturalOrder) {
+      if (!order || !naturalOrder) return false;
+      if (order.length !== naturalOrder.length) return true;
+      for (let i = 0; i < order.length; i++) {
+        if (order[i] !== naturalOrder[i]) return true;
+      }
+      return false;
+    }
+    function _ensureComponentFlexLayoutCSS(doc) {
+      if (!doc || !doc.head) return;
+      if (doc.getElementById('scm-voc-layout-css')) return;
+      const style = doc.createElement('style');
+      style.id = 'scm-voc-layout-css';
+      style.textContent = ''
+        + 'main { display: flex !important; flex-direction: column !important; }\n'
+        + 'main > * { flex: 0 0 auto !important; }\n';
+      doc.head.appendChild(style);
+    }
+    function _removeComponentFlexLayoutCSS(doc) {
+      if (!doc) return;
+      const style = doc.getElementById('scm-voc-layout-css');
+      if (style) style.remove();
+      const main = doc.querySelector('main');
+      if (main) [...main.children].forEach((el) => { el.style.order = ''; });
+    }
+    function applyComponentOrderToIframe() {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      const main = doc.querySelector('main');
+      if (!main) return;
+      // 항상 sync — 누락된 native 가 있으면 자연 순서로 추가됨.
+      syncOrderArr('component');
+      const a = pageDraft();
+      const order = (a.componentOrder || []).slice();
+      const targets = scanEditTargets();
+      const naturalOrder = (targets.components || []).map((it) => it.selector);
+      const customized = _isComponentOrderCustomized(order, naturalOrder);
+      if (!customized) {
+        _removeComponentFlexLayoutCSS(doc);
+        return;
+      }
+      _ensureComponentFlexLayoutCSS(doc);
+      [...main.children].forEach((el) => { el.style.order = ''; });
+      let n = 1;
+      order.forEach((sel) => {
+        if (!sel) return;
+        let el = null;
+        try { el = main.querySelector(sel); } catch (_) {}
+        while (el && el.parentElement !== main) el = el.parentElement;
+        if (el && el.parentElement === main) el.style.order = String(n++);
+      });
+      // componentOrder 에 없는 main 자식은 끝
+      [...main.children].forEach((el) => {
+        if (!el.style.order) el.style.order = String(n++);
+      });
     }
     function rebuildAddedFiltersOnly() {
       const doc = iframe.contentDocument;
@@ -2987,6 +3092,7 @@
     function applyComponentSectionToIframe() {
       rebuildAddedComponentsOnly();
       applyNativeComponentEdits();
+      applyComponentOrderToIframe();
       applyEditCss();
       _setPreviewedComponent();
       refreshSaveBtn();
@@ -3220,6 +3326,32 @@
       renderEditPane();
       applyColumnSectionToIframe();
     }
+    // 새 빈 테이블을 페이지 main 끝에 추가. type='flat' = 1단 thead,
+    // 'grouped' = 2단 thead (group row + leaf row). 사용자가 이후 [+ 컬럼 추가]
+    // / [+ 그룹 추가] 로 이 테이블에 컬럼을 더 붙일 수 있도록.
+    function addTable({ label, type }) {
+      const d = pageDraft();
+      d.added.tables = Array.isArray(d.added.tables) ? d.added.tables : [];
+      d.added.tables.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+        label: label || '새 테이블',
+        type: (type === 'grouped') ? 'grouped' : 'flat',
+      });
+      persistDraft();
+      renderEditPane();
+      applyComponentSectionToIframe();
+      applyColumnSectionToIframe();
+    }
+    function removeAddedTable(id) {
+      const d = pageDraft();
+      d.added.tables = (d.added.tables || []).filter((x) => x.id !== id);
+      const sel = `#voc-added-table-${id}`;
+      d.hidden = d.hidden.filter((s) => s !== sel);
+      persistDraft();
+      renderEditPane();
+      applyComponentSectionToIframe();
+      applyColumnSectionToIframe();
+    }
     function removeAddedFilter(id) {
       const d = pageDraft();
       d.added.filters = d.added.filters.filter((f) => f.id !== id);
@@ -3267,6 +3399,19 @@
       const v = (label || '').trim();
       if (v) d.labels[kind][selector] = v;
       else delete d.labels[kind][selector];
+      // Cross-page sync — element 의 stamp 된 원래 라벨로 globalLabels 갱신.
+      // 다른 페이지의 같은 원래 라벨 컴포넌트가 자동으로 같은 새 라벨을 받음.
+      try {
+        const doc = iframe.contentDocument;
+        const el = doc && doc.querySelector(selector);
+        const orig = el && _normLabel(el.getAttribute('data-voc-orig-label'));
+        if (orig) {
+          state.globalLabels[kind] = state.globalLabels[kind] || {};
+          if (v && v !== orig) state.globalLabels[kind][orig] = v;
+          else delete state.globalLabels[kind][orig];
+          persistGlobalLabels();
+        }
+      } catch (_) {}
       persistDraft();
       renderEditPane();
       if (kind === 'filter') applyFilterSectionToIframe();
@@ -3367,6 +3512,21 @@
       // empty html + no other fields → drop the entry entirely (revert)
       if (!next.html && !next.label && !next.type) delete d.componentEdits[selector];
       else d.componentEdits[selector] = next;
+      // Cross-page sync — patch 에 label 이 들어오면 원본 라벨 → 새 라벨 매핑.
+      if (Object.prototype.hasOwnProperty.call(patch, 'label')) {
+        try {
+          const doc = iframe.contentDocument;
+          const el = doc && doc.querySelector(selector);
+          const orig = el && _normLabel(el.getAttribute('data-voc-orig-label'));
+          if (orig) {
+            const v = _normLabel(patch.label);
+            state.globalLabels.component = state.globalLabels.component || {};
+            if (v && v !== orig) state.globalLabels.component[orig] = v;
+            else delete state.globalLabels.component[orig];
+            persistGlobalLabels();
+          }
+        } catch (_) {}
+      }
       persistDraft();
       renderEditPane();
       applyComponentSectionToIframe();
@@ -3414,14 +3574,29 @@
         return cleaned;
       }
       // top-level: groups + ungrouped natives + added cols
-      const top = targets.topOrder.slice();
-      const added = d.added.columns.map((c) => `#voc-added-col-${c.id}`);
-      const all = new Set([...top, ...added]);
-      const cleaned = (d.columnOrder || []).filter((s) => all.has(s));
-      const inArr = new Set(cleaned);
-      [...top, ...added].forEach((s) => { if (!inArr.has(s)) cleaned.push(s); });
-      d.columnOrder = cleaned;
-      return cleaned;
+      if (kind === 'column') {
+        const top = targets.topOrder.slice();
+        const added = d.added.columns.map((c) => `#voc-added-col-${c.id}`);
+        const all = new Set([...top, ...added]);
+        const cleaned = (d.columnOrder || []).filter((s) => all.has(s));
+        const inArr = new Set(cleaned);
+        [...top, ...added].forEach((s) => { if (!inArr.has(s)) cleaned.push(s); });
+        d.columnOrder = cleaned;
+        return cleaned;
+      }
+      // ---- components: native (main 직속 자식) ----
+      // 추가 컴포넌트는 .scm-voc-added-grid 안에서 자체 reorder (#100 의
+      // moveAddedComponent) 하므로 여기 native 순서엔 grid 자체가 한 entry.
+      if (kind === 'component') {
+        const natives = (targets.components || []).map((it) => it.selector);
+        const all = new Set(natives);
+        const cleaned = (d.componentOrder || []).filter((s) => all.has(s));
+        const inArr = new Set(cleaned);
+        natives.forEach((s) => { if (!inArr.has(s)) cleaned.push(s); });
+        d.componentOrder = cleaned;
+        return cleaned;
+      }
+      return [];
     }
 
     // Unified reorder for filter / column rows.
@@ -3445,8 +3620,9 @@
       persistDraft();
       renderEditPane();
       // 즉시 적용 — drag-drop 으로 순서 바꾸자마자 좌측 데모도 동일 순서로 갱신.
-      if (kind === 'filter') applyFilterSectionToIframe();
-      else applyColumnSectionToIframe();
+      if (kind === 'filter')         applyFilterSectionToIframe();
+      else if (kind === 'component') applyComponentSectionToIframe();
+      else                           applyColumnSectionToIframe();
     }
 
     // ---- inject CSS / DOM into iframe (read APPLIED only) ----
@@ -3910,6 +4086,56 @@
     // 사용자 라벨 오버라이드 — 필터 chip 의 .scm-filter-select__label /
     // __value 텍스트를 교체. 추가 필터는 applyAddedDom 이 이미 사용자
     // 라벨로 inject 하므로 여기선 native 만 처리.
+    // Cross-page 라벨 sync — globalLabels 의 (원래라벨 → 새라벨) 매핑을
+    // 모든 stamp 된 native 필터/컬럼/컴포넌트에 일괄 적용. 페이지별
+    // applyXxxLabelsToIframe 가 이 다음에 돌아 per-page override 가 위에 덮음.
+    function applyGlobalLabelsToIframe() {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      const g = state.globalLabels || {};
+      if (g.filter && Object.keys(g.filter).length) {
+        doc.querySelectorAll('.scm-filter-bar .scm-filter-select[data-voc-orig-label]').forEach((el) => {
+          const orig = _normLabel(el.getAttribute('data-voc-orig-label'));
+          const v = orig && g.filter[orig];
+          if (!v) return;
+          const labEl = el.querySelector('.scm-filter-select__label');
+          if (labEl) labEl.textContent = v;
+          const valEl = el.querySelector('.scm-filter-select__value');
+          if (valEl && valEl !== labEl) valEl.textContent = v;
+        });
+      }
+      if (g.column && Object.keys(g.column).length) {
+        doc.querySelectorAll('.mp-table thead th[data-voc-orig-label]').forEach((cell) => {
+          const orig = _normLabel(cell.getAttribute('data-voc-orig-label'));
+          const v = orig && g.column[orig];
+          if (!v) return;
+          const host = cell.querySelector(':scope > .cell-clamp, :scope > .cell-clamp-2') || cell;
+          let textNode = null;
+          for (const n of host.childNodes) {
+            if (n.nodeType === 3 && n.textContent.trim()) { textNode = n; break; }
+          }
+          if (textNode) textNode.textContent = v;
+          else host.insertBefore(doc.createTextNode(v), host.firstChild);
+        });
+      }
+      if (g.component && Object.keys(g.component).length) {
+        doc.querySelectorAll('[data-voc-orig-label]').forEach((el) => {
+          if (el.matches('.scm-filter-select, .mp-table thead th')) return;
+          const orig = _normLabel(el.getAttribute('data-voc-orig-label'));
+          const v = orig && g.component[orig];
+          if (!v) return;
+          const head = el.querySelector('.scm-card-title, .scm-page-section__title, .scm-page-head__title, h1, h2, h3, h4');
+          if (!head) return;
+          let textNode = null;
+          for (const n of head.childNodes) {
+            if (n.nodeType === 3 && n.textContent.trim()) { textNode = n; break; }
+          }
+          if (textNode) textNode.textContent = v;
+          else head.insertBefore(doc.createTextNode(v), head.firstChild);
+        });
+      }
+    }
+
     function applyFilterLabelsToIframe() {
       const doc = iframe.contentDocument;
       if (!doc) return;
@@ -3990,10 +4216,72 @@
       });
     }
 
+    // 사용자 추가 테이블 inject — main 끝에 .mp-table-host 추가.
+    // type 'flat' = 1-row thead, 'grouped' = 2-row thead (group + leaf).
+    // column/group 인젝션 보다 먼저 실행돼야 그 host 가 존재.
+    function _buildAddedTableHTML(t) {
+      const klass = `voc-added-table-${t.id}`;
+      const cellStyle = 'min-width:120px;width:120px;padding:12px 16px;';
+      const safeLabel = escapeHtml(t.label || '새 테이블');
+      const colgroup = `<colgroup><col style="width:120px"/><col style="width:120px"/><col class="col-spacer" data-empty="true"/></colgroup>`;
+      let thead;
+      if (t.type === 'grouped') {
+        thead = '<thead>'
+          + '<tr class="group-row">'
+          +   `<th colspan="2" style="${cellStyle}">${safeLabel} 그룹</th>`
+          +   '<th class="col-spacer" data-empty="true" rowspan="2" aria-hidden="true"></th>'
+          + '</tr>'
+          + '<tr>'
+          +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 1</div></th>`
+          +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 2</div></th>`
+          + '</tr>'
+          + '</thead>';
+      } else {
+        thead = '<thead>'
+          + '<tr>'
+          +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 1</div></th>`
+          +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 2</div></th>`
+          +   '<th class="col-spacer" data-empty="true" aria-hidden="true"></th>'
+          + '</tr>'
+          + '</thead>';
+      }
+      const tbodyRow = '<tr>'
+        +   `<td style="${cellStyle}">—</td>`
+        +   `<td style="${cellStyle}">—</td>`
+        +   '<td class="col-spacer" data-empty="true"></td>'
+        + '</tr>';
+      const tbody = `<tbody>${tbodyRow}${tbodyRow}${tbodyRow}</tbody>`;
+      return `<section class="scm-page-section scm-voc-added-table ${klass}" id="voc-added-table-${t.id}">`
+        +   `<div class="scm-page-section__title">${safeLabel}</div>`
+        +   '<div class="mp-table-host">'
+        +     '<div class="mp-table-scroll">'
+        +       `<table class="mp-table">${colgroup}${thead}${tbody}</table>`
+        +     '</div>'
+        +   '</div>'
+        + '</section>';
+    }
+    function applyAddedTables(doc, a) {
+      const list = (a.added && Array.isArray(a.added.tables)) ? a.added.tables : [];
+      if (!list.length) return;
+      const main = doc.querySelector('main') || doc.body;
+      if (!main) return;
+      list.forEach((t) => {
+        const id = `voc-added-table-${t.id}`;
+        if (doc.getElementById(id)) return;
+        const tpl = doc.createElement('template');
+        tpl.innerHTML = _buildAddedTableHTML(t);
+        const node = tpl.content.firstElementChild;
+        if (!node) return;
+        main.appendChild(node);
+      });
+    }
+
     function applyAddedDom() {
       const doc = iframe.contentDocument;
       if (!doc) return;
       const a = pageDraft();   // live preview: read draft so iframe reflects pending changes
+      // ---- 사용자 추가 테이블 — column/group 인젝션이 이 테이블을 타깃하기 위함 ----
+      applyAddedTables(doc, a);
       // ---- Filters ----
       const filterBar = doc.querySelector('.scm-filter-bar');
       if (filterBar && a.added.filters.length) {
@@ -4187,6 +4475,7 @@
       doc.querySelectorAll('.scm-voc-added-filter').forEach((el) => el.remove());
       doc.querySelectorAll('[class*="voc-added-col-"]').forEach((el) => el.remove());
       doc.querySelectorAll('[class*="voc-added-grp-"]').forEach((el) => el.remove());
+      doc.querySelectorAll('.scm-voc-added-table').forEach((el) => el.remove());
       doc.querySelectorAll('.scm-voc-added-comp').forEach((el) => el.remove());
       doc.querySelectorAll('.scm-voc-added-grid').forEach((el) => { if (!el.children.length) el.remove(); });
       applyAddedDom();
@@ -5195,6 +5484,17 @@
       if (!el.dataset.vocKey) el.dataset.vocKey = `${prefix}-${idx}`;
       return el.dataset.vocKey;
     }
+    // Cross-page sync 매칭 키 — 첫 스캔 때 원본 라벨을 element 에 stamp.
+    // 이후 라벨이 override 로 바뀌어도 원본은 그대로 남음.
+    function stampOrigLabel(el, label) {
+      if (!el) return _normLabel(label);
+      const existing = el.getAttribute && el.getAttribute('data-voc-orig-label');
+      if (existing) return _normLabel(existing);
+      const norm = _normLabel(label);
+      if (!norm) return '';
+      try { el.setAttribute('data-voc-orig-label', norm); } catch (_) {}
+      return norm;
+    }
     function ifrCssPath(el) {
       if (!el || el.nodeType !== 1) return '';
       const doc = el.ownerDocument;
@@ -5275,6 +5575,8 @@
                  || (valEl && valEl.textContent.trim())
                  || el.dataset.mpFilter || '필터';
         label = label.replace(/\s+/g, ' ').slice(0, 28);
+        // Cross-page sync 매칭 키 — 원본 라벨 stamp.
+        label = stampOrigLabel(el, label) || label;
         out.filters.push({ label, selector: sel });
       });
 
@@ -5342,6 +5644,7 @@
                 let label = (cell.textContent || '').trim().replace(/\s+/g, ' ');
                 if (!label) label = '(빈 컬럼)';
                 if (label.length > 28) label = label.slice(0, 28) + '…';
+                label = stampOrigLabel(cell, label) || label;
                 out.columns.push({ label, selector: sel, parent: null, draggable: false, anchor: true, leafIdx: leafIdxOf(cell), tableIdx: curTable.idx, tableLabel: curTable.label });
                 out.topOrder.push(sel);
               }
@@ -5365,6 +5668,7 @@
                 let label = (cell.textContent || '').trim().replace(/\s+/g, ' ');
                 if (!label) label = '(빈 컬럼)';
                 if (label.length > 28) label = label.slice(0, 28) + '…';
+                label = stampOrigLabel(cell, label) || label;
                 out.columns.push({ label, selector: sel, parent: null, draggable: true, anchor: false, leafIdx: leafIdxOf(cell), tableIdx: curTable.idx, tableLabel: curTable.label });
                 out.topOrder.push(sel);
               }
@@ -5387,6 +5691,7 @@
             let label = (th.textContent || '').trim().replace(/\s+/g, ' ');
             if (!label) label = '(빈 컬럼)';
             if (label.length > 28) label = label.slice(0, 28) + '…';
+            label = stampOrigLabel(th, label) || label;
             out.columns.push({ label, selector: sel, parent, draggable: true, anchor: false, leafIdx: leafIdxOf(th), tableIdx: curTable.idx, tableLabel: curTable.label });
             if (!groupTr) out.topOrder.push(sel);
           });
@@ -5394,29 +5699,36 @@
         tableIdx++;
       });
 
-      // Components — top-level scm-* / db-* 컨테이너.
-      // dashboard 의 card/section/kpi 외에, 테이블 기반 데모(sku-management,
-      // editshop-restock-*, otb-budget 등)에서도 편집 모드에 컴포넌트가
-      // 잡히도록 page-head / info-banner / filter-bar / stats-bar /
-      // mp-table-host / table-action-bar / info-table 추가.
-      const compSel = [
-        '.scm-card', '.scm-page-section', '.scm-kpi-card',
-        '.scm-bar-chart', '.db-pending-list', '.db-schedule-list', '.db-quick-grid',
-        '.scm-page-head', '.scm-info-banner',
-        '.scm-filter-bar', '.scm-stats-bar',
-        '.mp-table-host', '.scm-table-action-bar',
-        '.scm-info-table',
-      ].join(', ');
-      const compEls = main.querySelectorAll(compSel);
-      const taken = new Set();
-      compEls.forEach((el) => {
-        // skip elements inside user-added components (they're surfaced via
-        // the d.added.components list directly, not via DOM scan)
-        if (el.closest && el.closest('.scm-voc-added-comp')) return;
-        // skip if a parent of `el` is also a detected component
-        for (const t of taken) { if (t.contains(el)) return; }
-        taken.add(el);
-        out.components.push({ label: pickLabel(el), selector: ifrCssPath(el) });
+      // ====================================================
+      // Components (Phase 1) — main 의 모든 직속 자식이 편집 단위.
+      // ====================================================
+      // 이전엔 정해진 compSel (`.scm-card, .scm-page-head, ...`) 만 잡았는데,
+      // OTB 의 `.otb-section` 같은 데모 고유 wrapper 가 사이드바에 안 보여
+      // hide / 편집 / 위치 이동이 불가능했음. 페이지 빌더 모드로 가려면 main
+      // 의 모든 직속 자식이 편집 가능해야 함.
+      //
+      // 제외:
+      //  - 비주얼-아닌 노드 (script / style / template / noscript / link / meta)
+      //  - VOC 가 inject 한 자체 마커 (.scm-voc-added-grid — 그 안의 entry 들은
+      //    d.added.components 로 따로 surface 됨)
+      //  - display:none / hidden 직속 자식 (대시보드의 kpi-card template 등)
+      const _isVisualSection = (el) => {
+        if (!el || el.nodeType !== 1) return false;
+        const tag = (el.tagName || '').toLowerCase();
+        if (tag === 'script' || tag === 'style' || tag === 'template' || tag === 'noscript' || tag === 'link' || tag === 'meta') return false;
+        if (el.classList && el.classList.contains('scm-voc-added-grid')) return false;
+        if (!_isElVisible(el)) return false;
+        return true;
+      };
+      let compCounter = 0;
+      [...main.children].filter(_isVisualSection).forEach((el) => {
+        // Stable voc-key — saved selector 가 [data-voc-key="comp-N"] 가 되어
+        // path-based nth-of-type 보다 안정적.
+        ensureVocKey(el, 'comp', compCounter++);
+        const rawLabel = pickLabel(el);
+        // Cross-page sync 매칭 키 — 원본 라벨 stamp.
+        const compLabel = stampOrigLabel(el, rawLabel) || rawLabel;
+        out.components.push({ label: compLabel, selector: ifrCssPath(el) });
       });
 
       return out;
@@ -5981,17 +6293,21 @@
           // surface them in the list (so the user sees them) but disallow
           // drag because scm-table itself rejects drops on rs>=2 cells.
           const isAnchor = it.kind === 'column' && it.draggable === false;
-          // 추가 컴포넌트 (added=true) 도 드래그-리오더 대상 — 그리드 안에서
-          // 순서를 바꾸기 위해. NATIVE 컴포넌트는 페이지 DOM 위치라 드래그 X.
+          // 추가 컴포넌트 (added=true) 는 그리드 안에서 자체 reorder.
+          // Phase 2: NATIVE 컴포넌트도 드래그 가능 — CSS order 로 시각 순서만
+          // 바꾸므로 OTB 같은 페이지 레이아웃 안전하게 보존됨.
+          // native vs added 가 같은 kind='component' 라 drop 핸들러는
+          // data-drag-component-source 로 분기.
           const isAddedComponent = it.kind === 'component' && it.added;
-          const reorderable = ((it.kind === 'filter' || it.kind === 'column') && !isAnchor) || isAddedComponent;
+          const componentSource = it.kind === 'component' ? (isAddedComponent ? 'added' : 'native') : '';
+          const reorderable = ((it.kind === 'filter' || it.kind === 'column') && !isAnchor) || it.kind === 'component';
           const depth = it.kind === 'column' ? (it.depth | 0) : 0;
           const dragParent = (it.kind === 'column' && depth === 1 && it.parent) ? it.parent : '';
           // added component 는 entry id 를 drag-id 로 사용 (selector 가 아닌
           // 직접 identifier — moveAddedComponent 가 id 로 처리).
           const dragId = isAddedComponent ? it.added.id : sel;
           const dragAttrs = reorderable
-            ? ` draggable="true" data-drag-id="${dragId}" data-drag-kind="${it.kind}" data-drag-depth="${depth}" data-drag-parent="${escapeHtml(dragParent)}"`
+            ? ` draggable="true" data-drag-id="${dragId}" data-drag-kind="${it.kind}" data-drag-depth="${depth}" data-drag-parent="${escapeHtml(dragParent)}"${componentSource ? ` data-drag-component-source="${componentSource}"` : ''}`
             : '';
           const grip = reorderable
             ? '<span class="edit-row__grip" aria-hidden="true" title="드래그하여 순서 변경"><svg viewBox="0 0 6 12" fill="currentColor"><circle cx="1.25" cy="2" r="1"/><circle cx="4.75" cy="2" r="1"/><circle cx="1.25" cy="6" r="1"/><circle cx="4.75" cy="6" r="1"/><circle cx="1.25" cy="10" r="1"/><circle cx="4.75" cy="10" r="1"/></svg></span>'
@@ -6078,6 +6394,13 @@
       if ((row.dataset.dragDepth  || '0') !== _dragState.depth)  return false;
       if ((row.dataset.dragParent || '') !== _dragState.parent) return false;
       if (row.dataset.dragId     === _dragState.id)     return false;
+      // component: native 와 added 는 다른 layout 컨테이너 (main vs grid) 라
+      // 서로 drop 안 됨. componentSource 가 다르면 reject.
+      if (_dragState.kind === 'component') {
+        const srcA = (row.dataset.dragComponentSource || '');
+        const srcB = (_dragState.componentSource || '');
+        if (srcA !== srcB) return false;
+      }
       return true;
     }
     document.addEventListener('dragstart', (e) => {
@@ -6088,6 +6411,7 @@
         id:     row.dataset.dragId,
         depth:  row.dataset.dragDepth  || '0',
         parent: row.dataset.dragParent || '',
+        componentSource: row.dataset.dragComponentSource || '',
       };
       row.classList.add('is-dragging');
       try {
@@ -6117,9 +6441,15 @@
       if (!row || !_dropOk(row)) return;
       e.preventDefault();
       const above = row.classList.contains('is-drop-above');
-      // 추가 컴포넌트는 별도 mutator — d.added.components 배열을 직접 재배열.
-      if (_dragState.kind === 'component') {
+      // 추가 컴포넌트 (그리드 안 reorder) — d.added.components 배열 재배열.
+      if (_dragState.kind === 'component' && _dragState.componentSource === 'added') {
         moveAddedComponent(_dragState.id, row.dataset.dragId, above);
+        _dragState = null;
+        return;
+      }
+      // Phase 2: NATIVE 컴포넌트 reorder — d.componentOrder 갱신, CSS order 적용.
+      if (_dragState.kind === 'component' && _dragState.componentSource === 'native') {
+        moveItem('component', _dragState.id, row.dataset.dragId, above, null);
         _dragState = null;
         return;
       }
@@ -6352,6 +6682,7 @@
         const which = addBtn.dataset.add;
         const formId = which === 'filter' ? 'addFilterForm'
                      : which === 'group'  ? 'addGroupForm'
+                     : which === 'table'  ? 'addTableForm'
                      : 'addColumnForm';
         const form = document.getElementById(formId);
         if (form) {
@@ -6386,6 +6717,7 @@
         const which = cancel.dataset.cancel;
         const formId = which === 'filter' ? 'addFilterForm'
                      : which === 'group'  ? 'addGroupForm'
+                     : which === 'table'  ? 'addTableForm'
                      : 'addColumnForm';
         const form = document.getElementById(formId);
         if (form) {
@@ -6427,6 +6759,19 @@
           document.getElementById('addGroupLeafLabel').value = '';
           document.getElementById('addGroupForm').classList.remove('is-open');
           document.querySelector('.edit-add-btn[data-add="group"]').style.display = '';
+        } else if (which === 'table') {
+          const labEl = document.getElementById('addTableLabel');
+          const typeEl = document.getElementById('addTableType');
+          const label = (labEl.value || '').trim();
+          const type = (typeEl && typeEl.value) || 'flat';
+          if (!label) { labEl.focus(); return; }
+          addTable({ label, type });
+          showToast(`${type === 'grouped' ? '2단' : '1단'} 테이블 [${label}] 추가`);
+          labEl.value = '';
+          if (typeEl) typeEl.value = 'flat';
+          document.getElementById('addTableForm').classList.remove('is-open');
+          const btn = document.querySelector('.edit-add-btn[data-add="table"]');
+          if (btn) btn.style.display = '';
         } else {
           const label = (document.getElementById('addColumnLabel').value || '').trim();
           if (!label) { document.getElementById('addColumnLabel').focus(); return; }
