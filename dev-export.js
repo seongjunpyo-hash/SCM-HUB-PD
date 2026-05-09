@@ -2364,6 +2364,34 @@ ${jsxBody}
   }
 
   // ---- native 컴포넌트 HTML override ----
+  // saved HTML 에서 voc 내부 marker 제거 — scm-voc-flash 같은 게 baked-in 돼있으면
+  // 매번 re-inject 시 애니메이션이 재실행돼 H1 계속 깜빡거리는 부작용 방지.
+  function _stripVocMarkersFromHtml(doc, html) {
+    if (!html) return html;
+    try {
+      const tpl = doc.createElement('template');
+      tpl.innerHTML = html;
+      const root = tpl.content.firstElementChild;
+      if (!root) return html;
+      const VOC_ATTRS = ['data-voc-key', 'data-voc-comp-hash', 'data-voc-orig-label', 'data-voc-cell-type', 'data-voc-hidden', 'data-voc-orig-width', 'data-voc-orig-col-width', 'data-voc-filter-type', 'data-voc-comp-width', 'data-voc-added-comp-id', 'data-voc-added-comp-type', 'data-voc-added-comp-label', 'data-voc-flash', 'data-voc-np-id'];
+      const visit = (el) => {
+        if (!el || el.nodeType !== 1) return;
+        VOC_ATTRS.forEach((a) => { try { el.removeAttribute(a); } catch (_) {} });
+        if (el.classList && el.classList.length) {
+          [...el.classList].forEach((c) => {
+            if (c.indexOf('scm-voc-') === 0) el.classList.remove(c);
+          });
+          if (!el.classList.length) el.removeAttribute('class');
+        }
+        if (el.hasAttribute && el.hasAttribute('style') && !el.getAttribute('style').trim()) {
+          el.removeAttribute('style');
+        }
+      };
+      visit(root);
+      if (root.querySelectorAll) root.querySelectorAll('*').forEach(visit);
+      return tpl.innerHTML;
+    } catch (_) { return html; }
+  }
   function _applyNativeComponentEdits(doc, a) {
     const edits = a.componentEdits || {};
     Object.keys(edits).forEach((sel) => {
@@ -2372,12 +2400,13 @@ ${jsxBody}
       let el;
       try { el = doc.querySelector(sel); } catch { return; }
       if (!el) return;
-      if (el.dataset && el.dataset.vocCompHash === _hashStr(ed.html)) return;
+      const cleanHtml = _stripVocMarkersFromHtml(doc, ed.html);
+      if (el.dataset && el.dataset.vocCompHash === _hashStr(cleanHtml)) return;
       try {
-        el.outerHTML = ed.html;
+        el.outerHTML = cleanHtml;
         let newEl;
         try { newEl = doc.querySelector(sel); } catch {}
-        if (newEl && newEl.dataset) newEl.dataset.vocCompHash = _hashStr(ed.html);
+        if (newEl && newEl.dataset) newEl.dataset.vocCompHash = _hashStr(cleanHtml);
       } catch (_) {}
     });
   }
