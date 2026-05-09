@@ -1986,6 +1986,17 @@
           </select>
         </label>
       </div>
+      <label class="cmp-modal__field" id="cmpWidthField">
+        <span>너비 (12-column 그리드 — 추가 컴포넌트 전용)</span>
+        <select id="cmpWidth">
+          <option value="12">전체 (12 / 12)</option>
+          <option value="9">3/4 (9 / 12)</option>
+          <option value="8">2/3 (8 / 12)</option>
+          <option value="6">1/2 (6 / 12)</option>
+          <option value="4">1/3 (4 / 12)</option>
+          <option value="3">1/4 (3 / 12)</option>
+        </select>
+      </label>
       <div class="cmp-modal__tabs" role="tablist">
         <button type="button" class="cmp-modal__tab is-active" data-cmp-tab="html">HTML 직접 입력</button>
         <button type="button" class="cmp-modal__tab" data-cmp-tab="ai">AI 프롬프트로 생성</button>
@@ -2959,6 +2970,7 @@
       const doc = iframe.contentDocument;
       if (!doc) return;
       doc.querySelectorAll('.scm-voc-added-comp').forEach((el) => el.remove());
+      doc.querySelectorAll('.scm-voc-added-grid').forEach((el) => { if (!el.children.length) el.remove(); });
       applyAddedComponents();
     }
     // Inject added components into <main> at the bottom. Each component
@@ -2973,6 +2985,17 @@
       if (!list.length) return;
       const main = doc.querySelector('main') || doc.body;
       if (!main) return;
+      // 12-column grid 컨테이너 — main 끝에 한 번만 만들고 그 안에 entry
+      // 별로 wrap 을 추가. 각 entry.width (1~12) 가 grid-column span 결정.
+      // 컨테이너 자체는 .scm-voc-added-grid 단일.
+      let grid = doc.querySelector('.scm-voc-added-grid');
+      if (!grid) {
+        grid = doc.createElement('div');
+        grid.className = 'scm-voc-added-grid';
+        // 그리드 라벨 (편집 컨텍스트 도움말). standalone 데모에선 dev-export
+        // 가 hide 처리할 수 있게 별도 클래스.
+        main.appendChild(grid);
+      }
       list.forEach((c) => {
         const id = `voc-added-comp-${c.id}`;
         if (doc.getElementById(id)) return;
@@ -2982,8 +3005,11 @@
         wrap.dataset.vocAddedCompId = c.id;
         wrap.dataset.vocAddedCompType = c.type || 'card';
         wrap.dataset.vocAddedCompLabel = c.label || '';
+        const w = (typeof c.width === 'number' && c.width >= 1 && c.width <= 12) ? c.width : 12;
+        wrap.style.gridColumn = `span ${w}`;
+        wrap.dataset.vocCompWidth = String(w);
         wrap.innerHTML = c.html || '';
-        main.appendChild(wrap);
+        grid.appendChild(wrap);
       });
     }
     // Apply user HTML overrides on top of native components. We replace
@@ -3237,11 +3263,15 @@
     }
     // Component mutators — added components live in d.added.components,
     // native-component edits live in d.componentEdits[selector] = { html, label, type }.
-    function addComponent({ label, type, html }) {
+    function addComponent({ label, type, html, width }) {
       const d = pageDraft();
       d.added.components = Array.isArray(d.added.components) ? d.added.components : [];
       const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
-      d.added.components.push({ id, label: label || '새 컴포넌트', type: type || 'card', html: html || '' });
+      const w = (typeof width === 'number' && width >= 1 && width <= 12) ? width : 12;
+      d.added.components.push({
+        id, label: label || '새 컴포넌트', type: type || 'card',
+        html: html || '', width: w,
+      });
       persistDraft();
       renderEditPane();
       applyComponentSectionToIframe();
@@ -3409,6 +3439,25 @@
           box-shadow: inset 0 0 0 1px #C4B5FD !important;
         }
         td.scm-voc-added-col { color: #6B7280; }
+        /* 추가 컴포넌트 grid 컨테이너 — 12-column. 각 컴포넌트는
+           grid-column: span N (N=width). 빈 그리드(자식 0)는 표시 X. */
+        .scm-voc-added-grid {
+          display: grid;
+          grid-template-columns: repeat(12, 1fr);
+          gap: 12px;
+          padding: 16px 0;
+        }
+        .scm-voc-added-grid:empty { display: none; }
+        .scm-voc-added-comp {
+          /* default span = 12 (full width), per-instance style overrides */
+          grid-column: span 12;
+          min-width: 0;
+        }
+        /* hover 시 grid 셀 경계 시각화 — 편집 모드에서 어디에 자리 잡았는지 보이게 */
+        .scm-voc-added-grid:hover .scm-voc-added-comp {
+          outline: 1px dashed rgba(99, 102, 241, 0.35);
+          outline-offset: 2px;
+        }
         .scm-filter-select[data-voc-filter-type="multi"]::after {
           content: 'M'; margin-left: 4px;
           font-size: 9px; font-weight: 700; color: #4F46E5;
@@ -4062,6 +4111,7 @@
       doc.querySelectorAll('[class*="voc-added-col-"]').forEach((el) => el.remove());
       doc.querySelectorAll('[class*="voc-added-grp-"]').forEach((el) => el.remove());
       doc.querySelectorAll('.scm-voc-added-comp').forEach((el) => el.remove());
+      doc.querySelectorAll('.scm-voc-added-grid').forEach((el) => { if (!el.children.length) el.remove(); });
       applyAddedDom();
       applyAddedComponents();
     }
@@ -4241,31 +4291,40 @@
       const aiPromptEl = document.getElementById('cmpAiPrompt');
       const delBtn   = document.getElementById('cmpDeleteBtn');
       // Default values
-      let name = '', type = 'card', html = '';
+      let name = '', type = 'card', html = '', width = 12;
+      const widthField = document.getElementById('cmpWidthField');
       if (mode === 'edit' && addedId) {
         const d = pageDraft();
         const c = (d.added.components || []).find((x) => x.id === addedId);
-        if (c) { name = c.label || ''; type = c.type || 'card'; html = c.html || ''; }
+        if (c) {
+          name = c.label || '';
+          type = c.type || 'card';
+          html = c.html || '';
+          width = (typeof c.width === 'number' && c.width >= 1 && c.width <= 12) ? c.width : 12;
+        }
         title.textContent = '컴포넌트 편집';
         delBtn.hidden = false;
+        if (widthField) widthField.hidden = false;
       } else if (mode === 'edit' && selector) {
         const d = pageDraft();
         const ed = (d.componentEdits || {})[selector] || {};
         name = ed.label || _cmpDefaultLabelFor(selector) || '';
         type = ed.type || 'card';
-        // If there's no override yet, pull current outerHTML from iframe
-        // so the user can edit the live markup directly.
         html = ed.html || _cmpReadOuterHtml(selector) || '';
         title.textContent = '컴포넌트 편집 (기존 컴포넌트)';
         delBtn.hidden = true;
+        if (widthField) widthField.hidden = true; // 너비는 추가 컴포넌트 전용
       } else {
         title.textContent = '컴포넌트 추가';
         delBtn.hidden = true;
+        if (widthField) widthField.hidden = false;
       }
       nameEl.value   = name;
       typeEl.value   = type;
       htmlEl.value   = html;
       aiPromptEl.value = '';
+      const widthEl = document.getElementById('cmpWidth');
+      if (widthEl) widthEl.value = String(width);
       _cmpSwitchTab('html');
       _cmpRenderLib();
       backdrop.hidden = false;
@@ -4373,15 +4432,17 @@
       const name = (document.getElementById('cmpName').value || '').trim();
       const type = document.getElementById('cmpType').value || 'card';
       const html = document.getElementById('cmpHtml').value || '';
+      const widthRaw = parseInt(document.getElementById('cmpWidth').value, 10);
+      const width = (Number.isFinite(widthRaw) && widthRaw >= 1 && widthRaw <= 12) ? widthRaw : 12;
       if (!name && _cmpModal.mode === 'add') {
         document.getElementById('cmpName').focus();
         return;
       }
       if (_cmpModal.mode === 'add') {
-        addComponent({ label: name, type, html });
+        addComponent({ label: name, type, html, width });
         showToast('컴포넌트가 추가됐습니다');
       } else if (_cmpModal.addedId) {
-        updateAddedComponent(_cmpModal.addedId, { label: name, type, html });
+        updateAddedComponent(_cmpModal.addedId, { label: name, type, html, width });
         showToast('컴포넌트가 갱신됐습니다');
       } else if (_cmpModal.selector) {
         // Native override
@@ -5784,11 +5845,15 @@
                 <option value="code"   ${currentType === 'code'   ? 'selected' : ''}>코드</option>
               </select>`;
           }
-          // 추가 그룹은 별도 핸들러 (안의 leaf 까지 같이 제거).
-          const delAttr = it.isGroup ? 'data-del-group' : ('data-del-' + it.kind);
-          const del = it.added
-            ? `<button type="button" class="edit-row__del" ${delAttr}="${escapeHtml(it.added.id)}" title="삭제">×</button>`
-            : '';
+          // 추가 항목은 entry 자체 삭제, NATIVE 컴포넌트는 hide 로 대체.
+          let del = '';
+          if (it.added) {
+            const delAttr = it.isGroup ? 'data-del-group' : ('data-del-' + it.kind);
+            del = `<button type="button" class="edit-row__del" ${delAttr}="${escapeHtml(it.added.id)}" title="삭제">×</button>`;
+          } else if (it.kind === 'component') {
+            // NATIVE 컴포넌트 — 영구 삭제는 안 되지만 hide 시키는 × 버튼.
+            del = `<button type="button" class="edit-row__del" data-hide-component="${sel}" title="이 컴포넌트 숨김">×</button>`;
+          }
           // Component rows get an "edit" pencil button — both native components
           // (HTML override editor) and user-added ones (entry editor).
           const editBtn = it.kind === 'component'
@@ -6123,6 +6188,16 @@
       if (dCmp) {
         e.preventDefault();
         if (confirm('이 컴포넌트를 삭제할까요?')) removeAddedComponent(dCmp.dataset.delComponent);
+        return;
+      }
+      // hide a NATIVE component (× on a scanned page section). 체크박스
+      // unchecking 과 같은 효과 — 라벨에 line-through + iframe 에서 숨김.
+      const hCmp = t.closest && t.closest('[data-hide-component]');
+      if (hCmp) {
+        e.preventDefault();
+        e.stopPropagation();
+        const sel = hCmp.dataset.hideComponent;
+        if (sel) setHidden(sel, true);
         return;
       }
       // open the component-add modal
