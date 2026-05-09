@@ -3055,6 +3055,10 @@
       if (!doc) return;
       const main = doc.querySelector('main');
       if (!main) return;
+      // 항상 sync — 누락된 native/divider 가 있으면 자연 순서로 추가됨.
+      // 이게 없으면 iframe load 직후 (saved order 가 비어있는 케이스) divider 가
+      // 등록만 돼있고 componentOrder 에는 없어서 inject 가 누락될 수 있음.
+      syncOrderArr('component');
       const a = pageDraft();
       const order = (a.componentOrder || []).slice();
       if (!order.length) return;
