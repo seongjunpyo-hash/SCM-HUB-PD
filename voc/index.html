@@ -660,6 +660,8 @@
       box-shadow: 0 20px 48px rgba(0, 0, 0, 0.28);
       font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
     }
+    /* main 컴포넌트 모달은 30개 라이브러리 카드 + iframe 프리뷰를 위해 더 넓게. */
+    .cmp-modal { width: min(960px, 94vw); max-height: 92vh; }
     .cmp-modal[hidden], .cmp-unit-modal[hidden] { display: none !important; }
     .cmp-modal__head {
       display: flex; align-items: center; justify-content: space-between;
@@ -756,10 +758,14 @@
       margin: 0 4px 8px; line-height: 1.4;
     }
 
-    /* lib grid — 2-up, 카드 안에 iframe 미리보기 */
+    /* lib grid — 3-up (모달 폭 960px 기준), 카드 안에 iframe 미리보기.
+       모달이 좁아지는 모바일/창 축소 시엔 자동으로 2열로 떨어짐. */
     .cmp-modal__lib {
-      display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;
       margin-top: 4px;
+    }
+    @media (max-width: 720px) {
+      .cmp-modal__lib { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     .cmp-lib-card {
       position: relative;
@@ -777,7 +783,7 @@
     }
     /* iframe 미리보기 (sandboxed — script 차단) */
     .cmp-lib-card__preview {
-      width: 100%; height: 90px;
+      width: 100%; height: 110px;
       border: 0;
       background:
         linear-gradient(45deg, #F9FAFB 25%, transparent 25%) 0 0/16px 16px,
@@ -4142,7 +4148,7 @@
         'body{display:flex;align-items:center;justify-content:center;min-height:100%;padding:8px 12px;',
           'font-family:Pretendard,system-ui,sans-serif;font-size:13px;color:#111827;background:#fff;',
           'overflow:hidden;box-sizing:border-box;}',
-        'body > *{max-width:100%;max-height:84px;}',
+        'body > *{max-width:100%;max-height:104px;}',
         '*{box-sizing:border-box;}',
         '</style></head><body>',
         html || '',
