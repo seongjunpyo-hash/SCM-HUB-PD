@@ -539,7 +539,7 @@
 
     wireNavToggle(el);
     applyStatusTags(el);
-    // re-apply when versions / confirmed state changes from another tab
+    // re-apply when versions / confirmed / 메뉴 hidden / order state 가 다른 탭에서 바뀌면.
     if (!root.__scmLnbStorageWired) {
       // cross-tab — localStorage storage event
       window.addEventListener('storage', function (e) {
@@ -547,6 +547,14 @@
         if (e.key === CONFIRMED_KEY || e.key === VERSIONS_KEY) {
           var nodes = document.querySelectorAll('.scm-lnb');
           for (var i = 0; i < nodes.length; i++) applyStatusTags(nodes[i]);
+        }
+        // voc 가 메뉴 hidden / order 변경 시 — 다른 탭의 LNB 도 즉시 재반영.
+        if (e.key === 'scm:voc:menu-hidden:v1' || e.key === 'scm:voc:menu-order:v1' || e.key === 'scm:voc:newpages:v1') {
+          var nodes = document.querySelectorAll('.scm-lnb');
+          for (var i = 0; i < nodes.length; i++) {
+            nodes[i].innerHTML = '';
+            mount(nodes[i]);
+          }
         }
       });
       // same-tab — dev-export.js 가 confirm/unfinalize 시 dispatch

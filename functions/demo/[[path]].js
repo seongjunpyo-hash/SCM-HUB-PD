@@ -27,10 +27,19 @@ export async function onRequest(context) {
   // 404 → /demo/_blank.html 로 fallback (URL 은 그대로, 200 으로 응답).
   try {
     const blankUrl = new URL('/demo/_blank.html', url.origin).toString();
-    const blankReq = new Request(blankUrl, { headers: request.headers });
+    // 클라이언트가 보낸 If-None-Match / If-Modified-Since 는 _blank.html 의 ETag 와
+    // 우연히 일치할 수 있으니 제거 — 304 가 다른 slug 응답으로 흘러가는 사고 방지.
+    const cleanHeaders = new Headers(request.headers);
+    cleanHeaders.delete('if-none-match');
+    cleanHeaders.delete('if-modified-since');
+    const blankReq = new Request(blankUrl, { headers: cleanHeaders });
     const blankRes = await env.ASSETS.fetch(blankReq);
-    // status 만 200 으로 강제, 본문/헤더는 _blank.html 그대로.
+    // status 200 강제. ETag / Last-Modified 는 _blank.html 의 메타라 임의 slug 응답에
+    // 같은 값을 주면 캐시 오염 → 제거. Cache-Control 도 'no-store' 로 명시.
     const newHeaders = new Headers(blankRes.headers);
+    newHeaders.delete('etag');
+    newHeaders.delete('last-modified');
+    newHeaders.set('cache-control', 'no-store');
     return new Response(blankRes.body, { status: 200, headers: newHeaders });
   } catch (e) {
     // env.ASSETS 없거나 fetch 실패 시 원래 404 그대로.

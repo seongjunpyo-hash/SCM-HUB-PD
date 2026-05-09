@@ -2690,11 +2690,11 @@
       // 컴포넌트 cross-page 라벨 sync 는 폐기 — 사이드바 컴포넌트명과 페이지의
       // H1 텍스트는 별개 개념. 이전에 기록된 매핑이 있으면 무시 + 디스크에서도
       // 정리해서 다시는 적용 안 되게 함.
-      if (state.globalLabels.component && Object.keys(state.globalLabels.component).length) {
-        delete state.globalLabels.component;
+      // 기록이 있으면 디스크에서도 정리 → 같은 코드는 noop 으로 통합.
+      const hadStaleComponent = !!(state.globalLabels.component && Object.keys(state.globalLabels.component).length);
+      delete state.globalLabels.component;
+      if (hadStaleComponent) {
         try { localStorage.setItem(GLOBAL_LABELS_KEY, JSON.stringify(state.globalLabels)); } catch (_) {}
-      } else {
-        delete state.globalLabels.component;
       }
       initNewPagePane();
       // L1 chips — canonical + 신규 L1 그룹 모두 포함 (사용자 정의 순서 적용).
@@ -3399,7 +3399,9 @@
     function rebuildAddedComponentsOnly() {
       const doc = iframe.contentDocument;
       if (!doc) return;
-      doc.querySelectorAll('.scm-voc-added-comp').forEach((el) => el.remove());
+      // rowbreak 도 d.added.components 에 들어 있으니 같이 nuke — 사용자가
+      // ×로 삭제했을 때 좀비 element 가 남는 문제 (삭제 후 layout 어긋남) 방지.
+      doc.querySelectorAll('.scm-voc-added-comp, .scm-voc-added-rowbreak').forEach((el) => el.remove());
       doc.querySelectorAll('.scm-voc-added-grid').forEach((el) => { if (!el.children.length) el.remove(); });
       applyAddedComponents();
     }
@@ -4815,7 +4817,8 @@
       doc.querySelectorAll('[class*="voc-added-col-"]').forEach((el) => el.remove());
       doc.querySelectorAll('[class*="voc-added-grp-"]').forEach((el) => el.remove());
       doc.querySelectorAll('.scm-voc-added-table').forEach((el) => el.remove());
-      doc.querySelectorAll('.scm-voc-added-comp').forEach((el) => el.remove());
+      // rowbreak 도 d.added.components 에 함께 살므로 같이 nuke.
+      doc.querySelectorAll('.scm-voc-added-comp, .scm-voc-added-rowbreak').forEach((el) => el.remove());
       doc.querySelectorAll('.scm-voc-added-grid').forEach((el) => { if (!el.children.length) el.remove(); });
       applyAddedDom();
       applyAddedComponents();
@@ -5411,11 +5414,15 @@
     ];
     // sandboxed iframe 미리보기 srcdoc 생성 — 디자인 시스템 CSS + scm-icons 스프
     // 라이트를 모두 로드해서 카드 안에서 실제 페이지와 동일한 시각으로 렌더.
-    // allow-scripts 부여 = scm-icons.js 가 sprite injection 가능 (라이브러리
-    // HTML 은 component-library.js 에서 큐레이트한 정적 마크업이라 XSS 우려 X).
+    // sandbox="allow-scripts" 만 부여 (allow-same-origin 없음) → iframe 의
+    // origin 이 unique null 이라 부모 storage / cookies 접근 불가. 사용자가
+    // libUnit override 로 임의 HTML 을 박더라도 셀프-XSS 통로 차단.
+    // origin null 인 srcdoc 안에선 '/foo' 같은 absolute path 가 안 풀리므로
+    // parent location.origin 으로 절대 URL 을 생성해 link / script src 에 넣음.
+    const _PARENT_ORIGIN = (typeof location !== 'undefined' && location.origin) || '';
     function _libPreviewSrcdoc(html) {
       const linkTags = _LIB_DS_CSS.map((p) =>
-        `<link rel="stylesheet" href="${encodeURI(p)}" />`
+        `<link rel="stylesheet" href="${_PARENT_ORIGIN + encodeURI(p)}" />`
       ).join('');
       return [
         '<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8" />',
@@ -5432,7 +5439,7 @@
         // 주의: 닫는 script 태그가 외부 script 블록을 조기 종료시키지 않도록
         // 문자열을 두 조각으로 split — HTML 파서가 라이브러리 코드 안에서 닫는
         // 태그를 발견하면 outer script 가 통째로 깨짐.
-        '<script src="/scm-icons.js"></scr' + 'ipt>',
+        '<script src="' + _PARENT_ORIGIN + '/scm-icons.js"></scr' + 'ipt>',
         html || '',
         '</body></html>',
       ].join('');
@@ -5470,7 +5477,7 @@
         const previewHtml = cur.html || u.html || '';
         return `
           <div class="cmp-lib-card" data-cmp-lib-pick="${u.id}" title="이 컴포넌트를 HTML 입력 탭에 불러옵니다">
-            <iframe class="cmp-lib-card__preview" sandbox="allow-same-origin allow-scripts" loading="lazy" srcdoc="${escapeHtml(_libPreviewSrcdoc(previewHtml))}" title="${escapeHtml(cur.label || u.label || '')} 미리보기"></iframe>
+            <iframe class="cmp-lib-card__preview" sandbox="allow-scripts" loading="lazy" srcdoc="${escapeHtml(_libPreviewSrcdoc(previewHtml))}" title="${escapeHtml(cur.label || u.label || '')} 미리보기"></iframe>
             <div class="cmp-lib-card__info">
               <div class="cmp-lib-card__body">
                 <span class="cmp-lib-card__title">${escapeHtml(cur.label || u.label)}</span>
@@ -6672,6 +6679,7 @@
       // 메뉴 hide 가 변하면 L2 select 도 다시 그려야 함 — 현재 L1 기준으로 재선택.
       const activeChip = menuL1.querySelector('.menu-l1__chip.is-active');
       if (activeChip) selectL1(activeChip.dataset.l1, state.currentPage);
+      _refreshIframeLnb();
     }
     function isMenuHidden(level, key) {
       const arr = (state.menuHidden && state.menuHidden[level]) || [];
@@ -6682,6 +6690,18 @@
     }
     function persistMenuOrder() {
       try { localStorage.setItem(MENU_ORDER_KEY, JSON.stringify(state.menuOrder || {})); } catch {}
+    }
+    // iframe 안 LNB 가 hidden / order 변경을 즉시 반영하도록 lnb.js 의 mount 재호출.
+    // mount() 는 idempotent — DOM 이 이미 칠해져 있어도 다시 정렬/숨김만 적용.
+    function _refreshIframeLnb() {
+      try {
+        const doc = iframe.contentDocument;
+        const win = iframe.contentWindow;
+        if (!doc || !win || !win.SCM || !win.SCM.lnb) return;
+        const els = doc.querySelectorAll('.scm-lnb');
+        // 가장 안전한 방법은 LNB markup 을 비우고 재mount — canonical / 신규 / order / hidden 이 처음부터 적용됨.
+        els.forEach((el) => { el.innerHTML = ''; win.SCM.lnb.mount(el); });
+      } catch (_) {}
     }
     // 신규 페이지의 LNB key — slug (path 의 마지막 조각, 확장자 제외).
     function _newpageL2Key(p) {
@@ -6863,6 +6883,7 @@
       persistMenuOrder();
       renderNewPageList();
       _renderTopL1Chips();
+      _refreshIframeLnb();
     }
     function moveMenuL2(fromKey, toKey, above, l1Parent) {
       const tree = _buildMenuTree();
@@ -6882,6 +6903,7 @@
       persistMenuOrder();
       renderNewPageList();
       _renderTopL1Chips();
+      _refreshIframeLnb();
     }
 
     function renderEditPane() {
