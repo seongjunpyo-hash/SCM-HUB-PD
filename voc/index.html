@@ -1125,6 +1125,13 @@
       flex-shrink: 0; line-height: 1;
     }
     .edit-row__edit:hover { background: #EEF2FF; }
+    .edit-row__edit--text {
+      font-size: 11px; font-weight: 600;
+      padding: 3px 8px;
+      border: 1px solid #C7D2FE;
+      background: #EEF2FF;
+    }
+    .edit-row__edit--text:hover { background: #E0E7FF; border-color: #A5B4FC; }
     .edit-row__width-chip {
       flex-shrink: 0;
       padding: 2px 8px; border-radius: 999px;
@@ -2476,8 +2483,8 @@
         delete state.globalLabels.component;
       }
       initNewPagePane();
-      // L1 chips
-      menuL1.innerHTML = MENU.map((m) => `<button type="button" class="menu-l1__chip" data-l1="${m.l1}">${escapeHtml(m.label)}</button>`).join('');
+      // L1 chips — canonical + 신규 L1 그룹 모두 포함 (사용자 정의 순서 적용).
+      _renderTopL1Chips();
       menuL1.addEventListener('click', (e) => {
         const btn = e.target.closest('.menu-l1__chip');
         if (!btn) return;
@@ -2705,14 +2712,18 @@
     // Pure UI update — picks the appropriate L2 path and returns it.
     // Caller decides whether to actually navigate.
     function selectL1(l1id, preferL2Path) {
-      const item = MENU.find((m) => m.l1 === l1id) || MENU[0];
+      // canonical + 신규 통합 트리에서 lookup — 신규 L1 그룹도 chip 으로 노출.
+      const tree = _buildMenuTree();
+      const item = tree.find((m) => m.l1 === l1id) || tree[0];
+      if (!item) return null;
       menuL1.querySelectorAll('.menu-l1__chip').forEach((b) => {
         b.classList.toggle('is-active', b.dataset.l1 === item.l1);
       });
       l2Select.innerHTML = item.children
         .map((c) => {
           const suffix = _menuStatusSuffix(c.path);
-          return `<option value="${c.path}">${escapeHtml(c.label + suffix)}</option>`;
+          const newBadge = c.isNewPage ? ' [신규]' : '';
+          return `<option value="${c.path}">${escapeHtml(c.label + newBadge + suffix)}</option>`;
         }).join('');
       l2Select.disabled = item.children.length <= 1;
       // If the caller passed an L3 child path (e.g. /demo/sku-detail.html),
@@ -6000,6 +6011,7 @@
       state.newPages.push(entry);
       persistNewPages();
       renderNewPageList();
+      _renderTopL1Chips();
       resetNewPageForm();
       const tagPrefix = mode === 'l1' ? `[1뎁스: ${l1Label}] ` : '';
       showToast(`${tagPrefix}[${name}] 페이지 정의가 추가됐습니다`);
@@ -6009,6 +6021,7 @@
       state.newPages = (state.newPages || []).filter((p) => p.id !== id);
       persistNewPages();
       renderNewPageList();
+      _renderTopL1Chips();
     }
     const _NP_TYPE_LABEL = {
       list: '리스트', detail: '상세', dashboard: '대시보드', form: '폼', blank: '빈 캔버스',
@@ -6040,6 +6053,20 @@
       if (p.slug) return p.slug;
       const m = (p.path || '').match(/\/([^\/]+?)(?:\.html)?$/);
       return (m && m[1]) || p.id;
+    }
+    // 상단 L1 chips 재렌더 — _buildMenuTree() 결과 사용 (canonical + 신규).
+    // 활성 chip 상태는 보존: 변경 전 .is-active 가 있던 l1 키를 다시 적용.
+    function _renderTopL1Chips() {
+      if (!menuL1) return;
+      const activeL1 = (menuL1.querySelector('.menu-l1__chip.is-active') || {}).dataset
+        ? menuL1.querySelector('.menu-l1__chip.is-active').dataset.l1
+        : '';
+      const tree = _buildMenuTree();
+      menuL1.innerHTML = tree.map((g) => {
+        const cls = ['menu-l1__chip'];
+        if (g.l1 === activeL1) cls.push('is-active');
+        return `<button type="button" class="${cls.join(' ')}" data-l1="${escapeHtml(g.l1)}">${escapeHtml(g.label)}</button>`;
+      }).join('');
     }
     // 통합 트리 빌드 — { l1Order: [{l1, label, isNewL1, children:[...]}], }
     // children = [{ key, label, path, isNewPage, npEntry? }]
@@ -6163,6 +6190,7 @@
       state.menuOrder.l1Order = allL1;
       persistMenuOrder();
       renderNewPageList();
+      _renderTopL1Chips();
     }
     function moveMenuL2(fromKey, toKey, above, l1Parent) {
       const tree = _buildMenuTree();
@@ -6181,6 +6209,7 @@
       state.menuOrder.l2Order[l1Parent] = keys;
       persistMenuOrder();
       renderNewPageList();
+      _renderTopL1Chips();
     }
 
     function renderEditPane() {
@@ -6483,10 +6512,11 @@
             // NATIVE 컴포넌트 — 영구 삭제는 안 되지만 hide 시키는 × 버튼.
             del = `<button type="button" class="edit-row__del" data-hide-component="${sel}" title="이 컴포넌트 숨김">×</button>`;
           }
-          // Component rows get an "edit" pencil button — both native components
+          // Component rows get an "edit" button — both native components
           // (HTML override editor) and user-added ones (entry editor).
+          // 텍스트 라벨 '수정' 으로 — 아이콘보다 명시적.
           const editBtn = it.kind === 'component'
-            ? `<button type="button" class="edit-row__edit" data-edit-component="${sel}"${it.added ? ` data-edit-added-id="${escapeHtml(it.added.id)}"` : ''} title="컴포넌트 편집">✏</button>`
+            ? `<button type="button" class="edit-row__edit edit-row__edit--text" data-edit-component="${sel}"${it.added ? ` data-edit-added-id="${escapeHtml(it.added.id)}"` : ''} title="컴포넌트 편집">수정</button>`
             : '';
           // 추가 컴포넌트 행에 그리드 너비 chip — 한눈에 어떤 폭으로 잡혔는지
           // 보이게. 클릭 시 modal 열어 변경 가능 (= 편집 버튼과 동일).
@@ -6564,8 +6594,8 @@
               ${renameBtn}
               ${middle}
               ${widthChip}
-              <button type="button" class="edit-row__locate" data-locate="${sel}" title="화면에서 위치 확인">↗</button>
               ${editBtn}
+              <button type="button" class="edit-row__locate" data-locate="${sel}" title="화면에서 위치 확인">↗</button>
               ${del}
             </label>`;
         }).join('');
