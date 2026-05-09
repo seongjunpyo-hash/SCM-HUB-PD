@@ -2452,20 +2452,38 @@ ${jsxBody}
         + 'main > .scm-voc-added-grid > .scm-voc-added-rowbreak { grid-column: 1 / -1 !important; height: 0 !important; padding: 0 !important; margin: 0 !important; border: 0 !important; }\n';
       doc.head.appendChild(style);
     }
-    [...main.children].forEach((el) => {
+    // 통합 — main 직속 자식 + .scm-voc-added-grid 안의 자식 (display:contents 로
+    // main grid 의 layout-자식이 됨) 모두 layout-item.
+    const grid = main.querySelector(':scope > .scm-voc-added-grid');
+    const _allItems = [...main.children];
+    if (grid) [...grid.children].forEach((c) => _allItems.push(c));
+    _allItems.forEach((el) => {
       el.style.order = '';
-      if (!el.classList.contains('scm-voc-added-grid')) el.style.gridColumn = '';
+      // Native 의 inline gridColumn 만 reset. added comp / rowbreak 는 자체 보존.
+      if (!el.classList.contains('scm-voc-added-grid')
+          && !el.classList.contains('scm-voc-added-comp')
+          && !el.classList.contains('scm-voc-added-rowbreak')) {
+        el.style.gridColumn = '';
+      }
     });
     let n = 1;
     order.forEach((sel) => {
       if (!sel) return;
       let el = null;
-      try { el = main.querySelector(sel); } catch (_) {}
-      while (el && el.parentElement !== main) el = el.parentElement;
-      if (el && el.parentElement === main) el.style.order = String(n++);
+      try { el = doc.querySelector(sel); } catch (_) {}
+      if (!el) return;
+      // walk up: stop at main 직속 OR .scm-voc-added-grid 직속.
+      while (el && el.parentElement !== main &&
+             !(el.parentElement && el.parentElement.classList.contains('scm-voc-added-grid'))) {
+        el = el.parentElement;
+      }
+      if (!el) return;
+      el.style.order = String(n++);
     });
-    [...main.children].forEach((el) => {
-      if (!el.style.order) el.style.order = String(n++);
+    _allItems.forEach((el) => {
+      if (!el.style.order && !el.classList.contains('scm-voc-added-grid')) {
+        el.style.order = String(n++);
+      }
     });
     // Native 컴포넌트 width 적용
     Object.keys(edits).forEach((sel) => {
