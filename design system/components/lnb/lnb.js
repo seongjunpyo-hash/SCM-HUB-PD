@@ -449,6 +449,44 @@
     return item;
   }
 
+  // VOC 의 [신규] 탭에서 사용자가 드래그-리오더 한 결과를 LNB 에 적용.
+  // localStorage 'scm:voc:menu-order:v1' = { l1Order: [], l2Order: { l1key: [] } }
+  // L1 그룹 / L2 항목을 그 순서대로 재배치. 미설정 항목은 자연 위치 유지.
+  var MENU_ORDER_KEY = 'scm:voc:menu-order:v1';
+  function _loadMenuOrder() {
+    try {
+      var raw = localStorage.getItem(MENU_ORDER_KEY);
+      var v = raw ? JSON.parse(raw) : {};
+      return (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
+    } catch (_) { return {}; }
+  }
+  function _applyMenuOrderToLnb(el) {
+    if (!el) return;
+    var order = _loadMenuOrder();
+    // L1 그룹 reorder
+    if (Array.isArray(order.l1Order) && order.l1Order.length) {
+      order.l1Order.forEach(function (l1key) {
+        var item = el.querySelector('.scm-lnb-item[data-key="' + l1key + '"]');
+        if (item) el.appendChild(item);   // appendChild 가 같은 parent 면 끝으로 이동
+      });
+    }
+    // L2 reorder per L1
+    if (order.l2Order && typeof order.l2Order === 'object') {
+      Object.keys(order.l2Order).forEach(function (l1key) {
+        var arr = order.l2Order[l1key];
+        if (!Array.isArray(arr) || !arr.length) return;
+        var group = el.querySelector('.scm-lnb-item[data-key="' + l1key + '"]');
+        if (!group) return;
+        var l2List = group.querySelector('.scm-lnb-l2-list');
+        if (!l2List) return;
+        arr.forEach(function (l2key) {
+          var anchor = l2List.querySelector('.scm-lnb-l2[data-key="' + l2key + '"]');
+          if (anchor) l2List.appendChild(anchor);
+        });
+      });
+    }
+  }
+
   function mount(el, opts) {
     if (!el) return null;
     // Empty placeholder → inject canonical LNB markup (단일 source).
@@ -457,6 +495,8 @@
     }
     // VOC 의 [신규] 탭에서 등록한 페이지를 LNB 에 추가 (canonical 위에).
     _applyNewPagesToLnb(el);
+    // 사용자가 드래그-리오더 한 메뉴 순서 적용 (canonical + 신규 모두 대상).
+    _applyMenuOrderToLnb(el);
     var options = opts || {};
     var active = options.active || el.getAttribute('data-active');
     if (active) setActive(el, active);

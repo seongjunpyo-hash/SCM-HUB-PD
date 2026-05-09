@@ -1494,10 +1494,43 @@
       overflow: hidden;
     }
     .np-list:empty::after {
-      content: '아직 등록된 신규 페이지가 없습니다.';
+      content: '아직 메뉴가 없습니다.';
       display: block; padding: 14px; text-align: center;
       font-size: 12px; color: #9CA3AF;
     }
+    /* 메뉴 트리 — canonical + 신규 페이지 통합 표시. */
+    .mt-group {
+      border-top: 1px solid #EFF1F4;
+      padding: 4px 0 8px;
+    }
+    .mt-group:first-child { border-top: 0; }
+    .mt-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px;
+      cursor: grab;
+      font-size: 12.5px;
+    }
+    .mt-row:hover { background: #F9FAFB; }
+    .mt-row:active { cursor: grabbing; }
+    .mt-row.is-dragging { opacity: 0.4; }
+    .mt-row.is-drop-above { box-shadow: inset 0 2px 0 #4F46E5; }
+    .mt-row.is-drop-below { box-shadow: inset 0 -2px 0 #4F46E5; }
+    .mt-row--l1 { font-weight: 700; color: #1A1A1A; }
+    .mt-row--l2 { padding-left: 28px; color: #374151; }
+    .mt-row__l1-label, .mt-row__label {
+      flex: 1; min-width: 0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .mt-row__badge {
+      font-size: 9.5px; font-weight: 700;
+      padding: 2px 6px; border-radius: 3px;
+      letter-spacing: 0.3px;
+    }
+    .mt-row__badge--new {
+      background: #FEF3C7; color: #92400E; border: 1px solid #F59E0B;
+    }
+    .mt-children { padding-left: 0; }
     .np-row {
       display: flex; flex-direction: row; gap: 8px;
       padding: 12px 14px;
@@ -1903,61 +1936,6 @@
                   <input type="text" class="np-input np-input--mono" id="npSlug" placeholder="예: new-product → /demo/new-product.html" maxlength="40" />
                   <span class="np-hint">소문자 영문/숫자/하이픈만. 비어있으면 메뉴명 기준으로 자동 생성.</span>
                 </label>
-                <div class="np-field np-field--row">
-                  <label class="np-field__sub">
-                    <span class="np-field__label">페이지 타입</span>
-                    <select class="np-input" id="npType">
-                      <option value="blank">빈 캔버스 (제목만)</option>
-                      <option value="list">리스트 (테이블)</option>
-                      <option value="detail">상세 (상품/주문 등)</option>
-                      <option value="dashboard">대시보드 (KPI/차트)</option>
-                      <option value="form">폼 (등록/수정)</option>
-                    </select>
-                  </label>
-                  <label class="np-field__sub">
-                    <span class="np-field__label">레이아웃</span>
-                    <select class="np-input" id="npLayout">
-                      <option value="single">단일 컬럼</option>
-                      <option value="two-col">2단 (메인 + 사이드)</option>
-                      <option value="grid">카드 그리드</option>
-                      <option value="split">상단/하단 분할</option>
-                    </select>
-                  </label>
-                </div>
-                <fieldset class="np-field">
-                  <legend class="np-field__label">구성 (페이지 섹션 — 다중 선택)</legend>
-                  <div class="np-checks" id="npSections">
-                    <label class="np-check"><input type="checkbox" value="page-head" checked /><span>페이지 헤더 (제목+액션)</span></label>
-                    <label class="np-check"><input type="checkbox" value="filter-bar" /><span>필터 바</span></label>
-                    <label class="np-check"><input type="checkbox" value="stats-bar" /><span>통계 띠</span></label>
-                    <label class="np-check"><input type="checkbox" value="action-bar" /><span>액션 바</span></label>
-                    <label class="np-check"><input type="checkbox" value="card-list" /><span>카드 리스트</span></label>
-                    <label class="np-check"><input type="checkbox" value="form-block" /><span>폼 블록</span></label>
-                    <label class="np-check"><input type="checkbox" value="info-banner" /><span>안내 배너</span></label>
-                  </div>
-                </fieldset>
-                <label class="np-field np-field--inline">
-                  <span class="np-field__label">테이블 개수</span>
-                  <input type="number" class="np-input np-input--num" id="npTableCount" min="0" max="6" value="1" />
-                  <span class="np-hint">0 = 테이블 없음. 1 이상이면 그 수만큼 테이블 섹션 포함.</span>
-                </label>
-                <fieldset class="np-field">
-                  <legend class="np-field__label">초기 컴포넌트 (작은 단위 — 다중 선택)</legend>
-                  <div class="np-checks" id="npComponents">
-                    <label class="np-check"><input type="checkbox" value="banner-info" /><span>안내 배너</span></label>
-                    <label class="np-check"><input type="checkbox" value="banner-warn" /><span>경고 배너</span></label>
-                    <label class="np-check"><input type="checkbox" value="kpi-card" /><span>KPI 카드</span></label>
-                    <label class="np-check"><input type="checkbox" value="card-info" /><span>정보 카드</span></label>
-                    <label class="np-check"><input type="checkbox" value="cta-box" /><span>CTA 박스</span></label>
-                    <label class="np-check"><input type="checkbox" value="btn-primary" /><span>기본 버튼</span></label>
-                    <label class="np-check"><input type="checkbox" value="form-input" /><span>입력 폼</span></label>
-                    <label class="np-check"><input type="checkbox" value="list-items" /><span>아이템 리스트</span></label>
-                  </div>
-                </fieldset>
-                <label class="np-field">
-                  <span class="np-field__label">메모 (선택)</span>
-                  <textarea class="np-input np-input--area" id="npNote" rows="2" maxlength="300" placeholder="이 페이지의 의도/요건/참고 링크 등"></textarea>
-                </label>
                 <div class="np-actions">
                   <button type="button" class="np-btn np-btn--ghost" id="npResetBtn">초기화</button>
                   <button type="button" class="np-btn np-btn--primary" id="npAddBtn">+ 페이지 추가</button>
@@ -1968,10 +1946,11 @@
           <section class="edit-sec">
             <header class="edit-sec__head">
               <span class="edit-sec__chev" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l3 3 3-3"/></svg></span>
-              <h4>등록된 신규 페이지</h4>
+              <h4>메뉴 구성 (LNB)</h4>
               <span class="edit-sec__count" id="npListCount">0</span>
             </header>
             <div class="edit-sec__body">
+              <p class="np-hint" style="padding: 6px 4px 8px; margin: 0;">기존 메뉴 + 신규 페이지 모두 노출. 그립을 잡고 끌어 순서 변경 — 좌측 데모의 LNB 에 즉시 반영.</p>
               <div class="np-list" id="npList"></div>
             </div>
           </section>
@@ -2151,6 +2130,10 @@
     // 신규 페이지 정의 — 사용자가 [신규] 탭에서 작성한 데모 페이지 사양 리스트.
     // 실제 HTML 파일은 dev 핸드오프 시점에 생성되므로 여기선 메타만 보존.
     const NEWPAGES_KEY = 'scm:voc:newpages:v1';
+    // LNB 메뉴 순서 — 사용자가 voc 신규 탭에서 드래그-리오더 한 결과 보관.
+    // 구조: { l1Order: ['key1', 'key2', ...], l2Order: { l1key: ['l2key1', ...], ... } }
+    // 미설정 키는 자연 순서 (canonical 순) 유지.
+    const MENU_ORDER_KEY = 'scm:voc:menu-order:v1';
     // Page-key normalization. The VOC iframe reads `iframe.contentWindow
     // .location.pathname`, which on Cloudflare Pages clean URLs strips
     // the `.html` extension, while standalone demo pages may report
@@ -2469,6 +2452,14 @@
         catch { return []; }
       })();
       state.newPages = npRaw;
+      // 메뉴 순서 — 사용자가 신규 탭에서 드래그 reorder 한 결과.
+      state.menuOrder = (function () {
+        try {
+          const raw = localStorage.getItem(MENU_ORDER_KEY);
+          const v = raw ? JSON.parse(raw) : {};
+          return (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
+        } catch (_) { return {}; }
+      })();
       // Cross-page 라벨 매핑 — 원래라벨 → 새라벨. 다른 페이지 iframe 로드 시
       // 동일 원래라벨을 가진 컴포넌트에도 자동 적용.
       const glRaw = loadJsonKey(GLOBAL_LABELS_KEY);
@@ -5907,18 +5898,8 @@
       renderNewPageList();
     }
     function resetNewPageForm() {
-      const ids = ['npName', 'npSlug', 'npNote', 'npL1Label', 'npL1Key'];
+      const ids = ['npName', 'npSlug', 'npL1Label', 'npL1Key'];
       ids.forEach((id) => { const el = document.getElementById(id); if (el) el.value = ''; });
-      const t = document.getElementById('npType'); if (t) t.value = 'blank';
-      const l = document.getElementById('npLayout'); if (l) l.value = 'single';
-      const tc = document.getElementById('npTableCount'); if (tc) tc.value = '0';
-      // 섹션: page-head 만 default checked
-      document.querySelectorAll('#npSections input[type="checkbox"]').forEach((cb) => {
-        cb.checked = (cb.value === 'page-head');
-      });
-      document.querySelectorAll('#npComponents input[type="checkbox"]').forEach((cb) => {
-        cb.checked = false;
-      });
       const form = document.querySelector('.np-form');
       if (form) form.dataset.mode = 'l2';
       const r = document.querySelector('input[name="npMode"][value="l2"]');
@@ -5934,12 +5915,15 @@
       const mode = (form && form.dataset.mode) || 'l2';
       const name = (document.getElementById('npName').value || '').trim();
       let slug = (document.getElementById('npSlug').value || '').trim();
-      const type = document.getElementById('npType').value;
-      const layout = document.getElementById('npLayout').value;
-      const sections = _collectChecks('npSections');
-      const components = _collectChecks('npComponents');
-      const note = (document.getElementById('npNote').value || '').trim();
-      const tableCount = Math.max(0, Math.min(6, parseInt(document.getElementById('npTableCount').value, 10) || 0));
+      // 폼 간소화 — type/layout/sections/components/note/tableCount 제거.
+      // 메뉴명 + 슬러그만 받고, LNB 메뉴 등록이 주 목적. 페이지 타입 등은 voc 의
+      // 다른 흐름에서 처리.
+      const type = 'blank';
+      const layout = 'single';
+      const sections = [];
+      const components = [];
+      const note = '';
+      const tableCount = 0;
 
       let l1 = '', l1Label = '';
       if (mode === 'l1') {
@@ -6017,48 +6001,124 @@
       'page-head': '헤더', 'filter-bar': '필터', 'stats-bar': '통계', table: '테이블',
       'action-bar': '액션바', 'card-list': '카드 리스트', 'form-block': '폼', 'info-banner': '배너',
     };
+    // ======================== 메뉴 구성 (LNB) ========================
+    // canonical 메뉴(MENU) + state.newPages 를 통합한 트리. 사용자가 드래그로
+    // L1 그룹 / L2 항목 순서 변경. 변경 결과는 scm:voc:menu-order:v1 에 저장,
+    // lnb.js mount 가 적용. 신규 페이지(.scm-voc-newpage) 는 ×로 삭제도 가능.
+    function loadMenuOrder() {
+      try {
+        const raw = localStorage.getItem(MENU_ORDER_KEY);
+        const v = raw ? JSON.parse(raw) : {};
+        return (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
+      } catch (_) { return {}; }
+    }
+    function persistMenuOrder() {
+      try { localStorage.setItem(MENU_ORDER_KEY, JSON.stringify(state.menuOrder || {})); } catch {}
+    }
+    // 신규 페이지의 LNB key — slug (path 의 마지막 조각, 확장자 제외).
+    function _newpageL2Key(p) {
+      if (!p) return '';
+      if (p.slug) return p.slug;
+      const m = (p.path || '').match(/\/([^\/]+?)(?:\.html)?$/);
+      return (m && m[1]) || p.id;
+    }
+    // 통합 트리 빌드 — { l1Order: [{l1, label, isNewL1, children:[...]}], }
+    // children = [{ key, label, path, isNewPage, npEntry? }]
+    function _buildMenuTree() {
+      // 1. canonical L1 그룹들
+      const groups = {};
+      const canonicalL1Order = MENU.map((m) => m.l1);
+      MENU.forEach((m) => {
+        groups[m.l1] = {
+          l1: m.l1,
+          label: m.label,
+          isNewL1: false,
+          children: m.children.map((c) => ({
+            key: c.key || _newpageL2Key({ path: c.path }),
+            label: c.label,
+            path: c.path,
+            isNewPage: false,
+          })),
+        };
+      });
+      // 2. newPages mapping into existing or new L1
+      const newL1Order = [];
+      ((state.newPages) || []).forEach((p) => {
+        if (p.mode === 'l1') {
+          if (!groups[p.l1]) {
+            groups[p.l1] = {
+              l1: p.l1, label: p.l1Label || p.l1, isNewL1: true, children: [],
+            };
+            newL1Order.push(p.l1);
+          }
+          groups[p.l1].children.push({
+            key: _newpageL2Key(p),
+            label: p.name,
+            path: p.path,
+            isNewPage: true,
+            npEntry: p,
+          });
+        } else {
+          if (!groups[p.l1]) return;   // L1 모르면 skip
+          groups[p.l1].children.push({
+            key: _newpageL2Key(p),
+            label: p.name,
+            path: p.path,
+            isNewPage: true,
+            npEntry: p,
+          });
+        }
+      });
+      // 3. 사용자 저장 순서 적용
+      const ord = state.menuOrder || {};
+      const allL1 = [...canonicalL1Order, ...newL1Order];
+      const orderL1 = Array.isArray(ord.l1Order) ? ord.l1Order.filter((k) => groups[k]) : [];
+      const seenL1 = new Set(orderL1);
+      allL1.forEach((k) => { if (!seenL1.has(k) && groups[k]) { orderL1.push(k); seenL1.add(k); } });
+      const tree = orderL1.map((l1) => {
+        const g = groups[l1];
+        const children = g.children.slice();
+        const l2order = (ord.l2Order && Array.isArray(ord.l2Order[l1])) ? ord.l2Order[l1] : [];
+        const childMap = new Map(children.map((c) => [c.key, c]));
+        const ordered = [];
+        l2order.forEach((k) => {
+          if (childMap.has(k)) { ordered.push(childMap.get(k)); childMap.delete(k); }
+        });
+        for (const c of childMap.values()) ordered.push(c);
+        return Object.assign({}, g, { children: ordered });
+      });
+      return tree;
+    }
     function renderNewPageList() {
       const host = document.getElementById('npList');
       const cnt  = document.getElementById('npListCount');
       if (!host) return;
-      const list = state.newPages || [];
-      if (cnt) cnt.textContent = String(list.length);
-      if (!list.length) { host.innerHTML = ''; return; }
-      const l1Label = (key) => {
-        const m = MENU.find((x) => x.l1 === key);
-        return m ? m.label : key;
-      };
-      // 배열 순서 = LNB 표시 순서. 드래그-리오더로 순서 변경 가능.
-      host.innerHTML = list.map((p) => {
-        const sectionChips = (p.sections || []).map((s) =>
-          `<span class="np-row__chip">${escapeHtml(_NP_SECTION_LABEL[s] || s)}</span>`).join('');
-        const tableChip = (p.tableCount && p.tableCount > 0)
-          ? `<span class="np-row__chip">테이블 ${p.tableCount}개</span>` : '';
-        const componentChips = (p.components || []).map((c) =>
-          `<span class="np-row__chip">${escapeHtml(c)}</span>`).join('');
-        const isL1 = p.mode === 'l1';
-        const locLabel = isL1
-          ? `🆕 ${p.l1Label || p.l1}`
-          : (p.l1Label || l1Label(p.l1));
-        const locClass = isL1 ? 'np-row__loc np-row__loc--new-l1' : 'np-row__loc';
+      const tree = _buildMenuTree();
+      // 카운트 — 신규 페이지 수만 (canonical 빼고)
+      const newCount = ((state.newPages) || []).length;
+      if (cnt) cnt.textContent = String(newCount);
+      if (!tree.length) { host.innerHTML = ''; return; }
+      host.innerHTML = tree.map((g) => {
+        const childRows = g.children.map((c) => {
+          const newBadge = c.isNewPage ? '<span class="mt-row__badge mt-row__badge--new">신규</span>' : '';
+          const delBtn = c.isNewPage
+            ? `<button type="button" class="np-row__del" data-np-del="${escapeHtml(c.npEntry.id)}" title="신규 페이지 삭제">×</button>`
+            : '';
+          return `
+            <div class="mt-row mt-row--l2" draggable="true" data-drag-id="${escapeHtml(c.key)}" data-drag-kind="menu-l2" data-drag-depth="1" data-drag-parent="${escapeHtml(g.l1)}">
+              <span class="np-row__grip" aria-hidden="true" title="드래그하여 순서 변경"><svg viewBox="0 0 6 12" fill="currentColor"><circle cx="1.25" cy="2" r="1"/><circle cx="4.75" cy="2" r="1"/><circle cx="1.25" cy="6" r="1"/><circle cx="4.75" cy="6" r="1"/><circle cx="1.25" cy="10" r="1"/><circle cx="4.75" cy="10" r="1"/></svg></span>
+              <span class="mt-row__label">${escapeHtml(c.label)}${newBadge}</span>
+              ${delBtn}
+            </div>`;
+        }).join('');
+        const newL1Badge = g.isNewL1 ? '<span class="mt-row__badge mt-row__badge--new">신규 그룹</span>' : '';
         return `
-          <div class="np-row" data-np-id="${p.id}" draggable="true" data-drag-id="${p.id}" data-drag-kind="newpage" data-drag-depth="0" data-drag-parent="">
-            <span class="np-row__grip" aria-hidden="true" title="드래그하여 순서 변경"><svg viewBox="0 0 6 12" fill="currentColor"><circle cx="1.25" cy="2" r="1"/><circle cx="4.75" cy="2" r="1"/><circle cx="1.25" cy="6" r="1"/><circle cx="4.75" cy="6" r="1"/><circle cx="1.25" cy="10" r="1"/><circle cx="4.75" cy="10" r="1"/></svg></span>
-            <div class="np-row__body">
-              <div class="np-row__head">
-                <span class="${locClass}" title="${isL1 ? '새 1뎁스 그룹' : '기존 1뎁스 아래'}">${escapeHtml(locLabel)}</span>
-                <span class="np-row__name">${escapeHtml(p.name)}</span>
-                <button type="button" class="np-row__del" data-np-del="${p.id}" title="삭제">×</button>
-              </div>
-              <div class="np-row__path">${escapeHtml(p.path)}</div>
-              <div class="np-row__meta">
-                <span><b>타입</b> ${escapeHtml(_NP_TYPE_LABEL[p.type] || p.type)}</span>
-                <span><b>레이아웃</b> ${escapeHtml(_NP_LAYOUT_LABEL[p.layout] || p.layout)}</span>
-              </div>
-              ${(sectionChips || tableChip) ? `<div class="np-row__chips">${sectionChips}${tableChip}</div>` : ''}
-              ${componentChips ? `<div class="np-row__chips">${componentChips}</div>` : ''}
-              ${p.note ? `<div class="np-row__meta"><span>${escapeHtml(p.note)}</span></div>` : ''}
+          <div class="mt-group" data-l1="${escapeHtml(g.l1)}">
+            <div class="mt-row mt-row--l1" draggable="true" data-drag-id="${escapeHtml(g.l1)}" data-drag-kind="menu-l1" data-drag-depth="0" data-drag-parent="">
+              <span class="np-row__grip" aria-hidden="true" title="드래그하여 순서 변경"><svg viewBox="0 0 6 12" fill="currentColor"><circle cx="1.25" cy="2" r="1"/><circle cx="4.75" cy="2" r="1"/><circle cx="1.25" cy="6" r="1"/><circle cx="4.75" cy="6" r="1"/><circle cx="1.25" cy="10" r="1"/><circle cx="4.75" cy="10" r="1"/></svg></span>
+              <span class="mt-row__l1-label">${escapeHtml(g.label)}${newL1Badge}</span>
             </div>
+            <div class="mt-children">${childRows}</div>
           </div>`;
       }).join('');
       host.querySelectorAll('[data-np-del]').forEach((btn) => {
@@ -6068,19 +6128,39 @@
         });
       });
     }
-    // 신규 페이지 드래그-리오더 — state.newPages 배열을 직접 splice 후 persist.
-    // LNB 가 이 배열 순서대로 inject 하므로 변경 즉시 반영.
-    function moveNewPage(fromId, toId, above) {
-      const list = state.newPages || [];
-      const fromIdx = list.findIndex((p) => p.id === fromId);
-      if (fromIdx < 0) return;
-      const [moved] = list.splice(fromIdx, 1);
-      let toIdx = list.findIndex((p) => p.id === toId);
-      if (toIdx < 0) toIdx = list.length;
+    // L1 / L2 reorder — drop 핸들러에서 dispatch.
+    function moveMenuL1(fromKey, toKey, above) {
+      const tree = _buildMenuTree();
+      const allL1 = tree.map((g) => g.l1);
+      const fromIdx = allL1.indexOf(fromKey);
+      const toIdxRaw = allL1.indexOf(toKey);
+      if (fromIdx < 0 || toIdxRaw < 0) return;
+      allL1.splice(fromIdx, 1);
+      let toIdx = allL1.indexOf(toKey);
+      if (toIdx < 0) toIdx = allL1.length;
       else if (!above) toIdx += 1;
-      list.splice(toIdx, 0, moved);
-      state.newPages = list;
-      persistNewPages();
+      allL1.splice(toIdx, 0, fromKey);
+      state.menuOrder = state.menuOrder || {};
+      state.menuOrder.l1Order = allL1;
+      persistMenuOrder();
+      renderNewPageList();
+    }
+    function moveMenuL2(fromKey, toKey, above, l1Parent) {
+      const tree = _buildMenuTree();
+      const g = tree.find((x) => x.l1 === l1Parent);
+      if (!g) return;
+      const keys = g.children.map((c) => c.key);
+      const fromIdx = keys.indexOf(fromKey);
+      if (fromIdx < 0) return;
+      keys.splice(fromIdx, 1);
+      let toIdx = keys.indexOf(toKey);
+      if (toIdx < 0) toIdx = keys.length;
+      else if (!above) toIdx += 1;
+      keys.splice(toIdx, 0, fromKey);
+      state.menuOrder = state.menuOrder || {};
+      state.menuOrder.l2Order = state.menuOrder.l2Order || {};
+      state.menuOrder.l2Order[l1Parent] = keys;
+      persistMenuOrder();
       renderNewPageList();
     }
 
@@ -6528,7 +6608,7 @@
       return true;
     }
     // np-row 도 drag 대상에 포함 (신규 페이지 reorder).
-    const _DRAG_ROW_SEL = '.edit-row[data-drag-id], .np-row[data-drag-id]';
+    const _DRAG_ROW_SEL = '.edit-row[data-drag-id], .np-row[data-drag-id], .mt-row[data-drag-id]';
     document.addEventListener('dragstart', (e) => {
       const row = e.target.closest && e.target.closest(_DRAG_ROW_SEL);
       if (!row) return;
@@ -6567,9 +6647,14 @@
       if (!row || !_dropOk(row)) return;
       e.preventDefault();
       const above = row.classList.contains('is-drop-above');
-      // 신규 페이지 reorder — state.newPages 배열 splice → LNB 에 즉시 반영.
-      if (_dragState.kind === 'newpage') {
-        moveNewPage(_dragState.id, row.dataset.dragId, above);
+      // 메뉴 구성 reorder — L1 그룹 / L2 항목.
+      if (_dragState.kind === 'menu-l1') {
+        moveMenuL1(_dragState.id, row.dataset.dragId, above);
+        _dragState = null;
+        return;
+      }
+      if (_dragState.kind === 'menu-l2') {
+        moveMenuL2(_dragState.id, row.dataset.dragId, above, _dragState.parent);
         _dragState = null;
         return;
       }
