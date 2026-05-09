@@ -2022,8 +2022,10 @@
                     <option value="grouped">2단 — 그룹 + leaf 2-row 헤더</option>
                   </select>
                   <div class="edit-add-form__check-row">
-                    <label class="edit-add-form__check"><input type="checkbox" id="addTableWithCheck" /><span>체크박스 컬럼 포함</span></label>
-                    <label class="edit-add-form__check"><input type="checkbox" id="addTableWithNo" /><span>No 컬럼 포함</span></label>
+                    <label class="edit-add-form__check"><input type="checkbox" id="addTableWithCheck" /><span>체크박스 컬럼</span></label>
+                    <label class="edit-add-form__check"><input type="checkbox" id="addTableWithNo" /><span>No 컬럼</span></label>
+                    <label class="edit-add-form__check"><input type="checkbox" id="addTableWithDelta" /><span>변동률 컬럼</span></label>
+                    <label class="edit-add-form__check"><input type="checkbox" id="addTableWithSum" /><span>합계 행 (tfoot)</span></label>
                   </div>
                   <div class="edit-add-form__actions">
                     <button type="button" class="edit-add-form__btn edit-add-form__btn--ghost" data-cancel="table">취소</button>
@@ -3689,7 +3691,7 @@
     // 새 빈 테이블을 페이지 main 끝에 추가. type='flat' = 1단 thead,
     // 'grouped' = 2단 thead (group row + leaf row). 사용자가 이후 [+ 컬럼 추가]
     // / [+ 그룹 추가] 로 이 테이블에 컬럼을 더 붙일 수 있도록.
-    function addTable({ label, type, withCheck, withNo }) {
+    function addTable({ label, type, withCheck, withNo, withDelta, withSum }) {
       const d = pageDraft();
       d.added.tables = Array.isArray(d.added.tables) ? d.added.tables : [];
       d.added.tables.push({
@@ -3698,6 +3700,8 @@
         type: (type === 'grouped') ? 'grouped' : 'flat',
         withCheck: !!withCheck,
         withNo: !!withNo,
+        withDelta: !!withDelta,
+        withSum: !!withSum,
       });
       persistDraft();
       renderEditPane();
@@ -7800,17 +7804,23 @@
           const typeEl = document.getElementById('addTableType');
           const cbEl = document.getElementById('addTableWithCheck');
           const noEl = document.getElementById('addTableWithNo');
+          const dlEl = document.getElementById('addTableWithDelta');
+          const sumEl = document.getElementById('addTableWithSum');
           const label = (labEl.value || '').trim();
           const type = (typeEl && typeEl.value) || 'flat';
           const withCheck = !!(cbEl && cbEl.checked);
           const withNo = !!(noEl && noEl.checked);
+          const withDelta = !!(dlEl && dlEl.checked);
+          const withSum = !!(sumEl && sumEl.checked);
           if (!label) { labEl.focus(); return; }
-          addTable({ label, type, withCheck, withNo });
+          addTable({ label, type, withCheck, withNo, withDelta, withSum });
           showToast(`${type === 'grouped' ? '2단' : '1단'} 테이블 [${label}] 추가`);
           labEl.value = '';
           if (typeEl) typeEl.value = 'flat';
           if (cbEl) cbEl.checked = false;
           if (noEl) noEl.checked = false;
+          if (dlEl) dlEl.checked = false;
+          if (sumEl) sumEl.checked = false;
           document.getElementById('addTableForm').classList.remove('is-open');
           const btn = document.querySelector('.edit-add-btn[data-add="table"]');
           if (btn) btn.style.display = '';

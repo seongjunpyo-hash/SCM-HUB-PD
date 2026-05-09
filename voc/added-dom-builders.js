@@ -26,19 +26,27 @@
     const safeLabel = _escapeHtml(t.label || '새 테이블');
     const withCheck = !!t.withCheck;
     const withNo = !!t.withNo;
+    const withDelta = !!t.withDelta;
+    const withSum = !!t.withSum;
     // 앵커 컬럼 markup — sku-management 와 동일 패턴.
     const cbHeadCell = `<th class="cb-col"${t.type === 'grouped' ? ' rowspan="2"' : ''}><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="전체 선택"></span></th>`;
     const noHeadCell = `<th class="col-auto col-no"${t.type === 'grouped' ? ' rowspan="2"' : ''}>No</th>`;
     const cbBodyCell = '<td class="cb-col"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="선택"></span></td>';
     const headAnchorPrefix = (withCheck ? cbHeadCell : '') + (withNo ? noHeadCell : '');
+    // 변동률 컬럼 head — 2단(group) 일 땐 rowspan=2 로 group/leaf 모두 차지.
+    const deltaHeadCell = withDelta
+      ? `<th class="col-auto"${t.type === 'grouped' ? ' rowspan="2"' : ''} style="${cellStyle}"><div class="cell-clamp">변동률</div></th>`
+      : '';
     const cgAnchor = (withCheck ? '<col style="width:36px"/>' : '') + (withNo ? '<col style="width:48px"/>' : '');
-    const colgroup = `<colgroup>${cgAnchor}<col style="width:120px"/><col style="width:120px"/><col class="col-spacer" data-empty="true"/></colgroup>`;
+    const cgDelta = withDelta ? '<col style="width:100px"/>' : '';
+    const colgroup = `<colgroup>${cgAnchor}<col style="width:120px"/><col style="width:120px"/>${cgDelta}<col class="col-spacer" data-empty="true"/></colgroup>`;
     let thead;
     if (t.type === 'grouped') {
       thead = '<thead>'
         + '<tr class="group-row">'
         +   headAnchorPrefix
         +   `<th colspan="2" style="${cellStyle}">${safeLabel} 그룹</th>`
+        +   deltaHeadCell
         +   '<th class="col-spacer" data-empty="true" rowspan="2" aria-hidden="true"></th>'
         + '</tr>'
         + '<tr>'
@@ -52,23 +60,49 @@
         +   headAnchorPrefix
         +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 1</div></th>`
         +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 2</div></th>`
+        +   deltaHeadCell
         +   '<th class="col-spacer" data-empty="true" aria-hidden="true"></th>'
         + '</tr>'
         + '</thead>';
     }
+    // 변동률 셀 sample — row index 별로 ▲/▼ 회전, 색상도 함께.
+    const _DELTA_SAMPLES = [
+      { txt: '▲ 5.2%', up: true },
+      { txt: '▼ 1.8%', up: false },
+      { txt: '▲ 3.4%', up: true },
+    ];
+    const deltaBodyCell = (n) => {
+      const s = _DELTA_SAMPLES[(n - 1) % _DELTA_SAMPLES.length];
+      const color = s.up ? '#10B981' : '#EF4444';
+      return `<td class="col-auto" style="${cellStyle}color:${color};font-weight:600;">${s.txt}</td>`;
+    };
     const tbodyRow = (n) => '<tr>'
       +   (withCheck ? cbBodyCell : '')
       +   (withNo ? `<td class="col-auto col-no">${n}</td>` : '')
       +   `<td style="${cellStyle}">—</td>`
       +   `<td style="${cellStyle}">—</td>`
+      +   (withDelta ? deltaBodyCell(n) : '')
       +   '<td class="col-spacer" data-empty="true"></td>'
       + '</tr>';
     const tbody = `<tbody>${tbodyRow(1)}${tbodyRow(2)}${tbodyRow(3)}</tbody>`;
+    // 합계 행 (tfoot) — withNo 가 있으면 No 자리에 "합계", 아니면 col1 자리에.
+    const tfoot = withSum
+      ? '<tfoot>'
+        + '<tr style="font-weight:700;background:#F9FAFB;">'
+        +   (withCheck ? '<td class="cb-col"></td>' : '')
+        +   (withNo ? '<td class="col-auto col-no" style="font-weight:700;">합계</td>' : '')
+        +   `<td style="${cellStyle}">${withNo ? '—' : '합계'}</td>`
+        +   `<td style="${cellStyle}">—</td>`
+        +   (withDelta ? `<td class="col-auto" style="${cellStyle}">—</td>` : '')
+        +   '<td class="col-spacer" data-empty="true"></td>'
+        + '</tr>'
+        + '</tfoot>'
+      : '';
     return `<section class="scm-page-section scm-voc-added-table ${klass}" id="voc-added-table-${t.id}">`
       +   `<div class="scm-page-section__title">${safeLabel}</div>`
       +   '<div class="mp-table-host">'
       +     '<div class="mp-table-scroll">'
-      +       `<table class="mp-table">${colgroup}${thead}${tbody}</table>`
+      +       `<table class="mp-table">${colgroup}${thead}${tbody}${tfoot}</table>`
       +     '</div>'
       +   '</div>'
       + '</section>';
