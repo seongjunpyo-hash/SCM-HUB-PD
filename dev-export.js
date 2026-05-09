@@ -2113,16 +2113,17 @@ ${jsxBody}
     }
     const filterBar = doc.querySelector('.scm-filter-bar');
     if (filterBar && addedFilters.length) {
-      // wrapper 선택 단일 source: voc/added-dom-builders.js → pickFilterChipWrapper.
-      // (.scm-filter-overflow__track 우선 — group 안에 들어가 칩 gap 사라지는 사고 방지.)
-      const wrapper = (typeof window !== 'undefined' && window.SCM_VOC_BUILDERS && window.SCM_VOC_BUILDERS.pickFilterChipWrapper(filterBar))
+      // wrapper 선택 + 그룹 묶기 단일 source: voc/added-dom-builders.js.
+      const builders = (typeof window !== 'undefined' && window.SCM_VOC_BUILDERS) || null;
+      const wrapper = (builders && builders.pickFilterChipWrapper(filterBar))
         || filterBar.firstElementChild
         || filterBar;
-      const resetBtn = wrapper.querySelector(':scope > .scm-filter-reset-btn');
+      const _filterLastRef = { el: null };
       addedFilters.forEach((f) => {
         const id = `voc-added-filter-${f.id}`;
-        if (doc.getElementById(id)) return;
-        const btn = doc.createElement('button');
+        let btn = doc.getElementById(id);
+        if (btn) { _filterLastRef.el = btn; return; }
+        btn = doc.createElement('button');
         btn.id = id;
         btn.type = 'button';
         btn.className = 'scm-filter-select scm-voc-added-filter';
@@ -2134,8 +2135,12 @@ ${jsxBody}
           <span class="scm-filter-select__value">${escapeHtml(f.label)}</span>
           <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
         `;
-        if (resetBtn && resetBtn.parentNode === wrapper) wrapper.insertBefore(btn, resetBtn);
-        else wrapper.appendChild(btn);
+        if (builders && builders.placeAddedFilter) {
+          builders.placeAddedFilter(wrapper, btn, !!f.connectPrev, _filterLastRef);
+        } else {
+          wrapper.appendChild(btn);
+          _filterLastRef.el = btn;
+        }
       });
     }
     // Columns + groups

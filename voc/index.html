@@ -1966,6 +1966,7 @@
                     <option value="multi">멀티 — 다중 선택</option>
                     <option value="code">코드 — 입력형</option>
                   </select>
+                  <label class="edit-add-form__check"><input type="checkbox" id="addFilterConnectPrev" /><span>이전 필터와 시각적으로 묶기 (그룹)</span></label>
                   <div class="edit-add-form__actions">
                     <button type="button" class="edit-add-form__btn edit-add-form__btn--ghost" data-cancel="filter">취소</button>
                     <button type="button" class="edit-add-form__btn edit-add-form__btn--primary" data-submit="filter">추가</button>
@@ -3617,11 +3618,13 @@
       renderEditPane();
       applyColumnSectionToIframe();
     }
-    function addFilter(label, type) {
+    function addFilter(label, type, connectPrev) {
       const d = pageDraft();
       d.added.filters.push({
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
         label, type: type || 'single',
+        // connectPrev: 이전 필터와 .scm-filter-group 으로 묶기 (gap=0 시각).
+        connectPrev: !!connectPrev,
       });
       persistDraft();
       renderEditPane();
@@ -4667,11 +4670,12 @@
         // 단일 source: voc/added-dom-builders.js → pickFilterChipWrapper.
         const wrapper = (window.SCM_VOC_BUILDERS && window.SCM_VOC_BUILDERS.pickFilterChipWrapper(filterBar))
           || filterBar;
-        const resetBtn = wrapper.querySelector(':scope > .scm-filter-reset-btn');
+        const _filterLastRef = { el: null };
         a.added.filters.forEach((f) => {
           const id = `voc-added-filter-${f.id}`;
-          if (doc.getElementById(id)) return;
-          const btn = doc.createElement('button');
+          let btn = doc.getElementById(id);
+          if (btn) { _filterLastRef.el = btn; return; }
+          btn = doc.createElement('button');
           btn.id = id;
           btn.type = 'button';
           btn.className = 'scm-filter-select scm-voc-added-filter';
@@ -4683,11 +4687,14 @@
             <span class="scm-filter-select__value">${escapeHtml(f.label)}</span>
             <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
           `;
-          if (resetBtn && resetBtn.parentNode === wrapper) {
-            wrapper.insertBefore(btn, resetBtn);
-          } else {
-            wrapper.appendChild(btn);
+          // 시각 그룹 묶기 — connectPrev=true 면 직전 필터와 .scm-filter-group 으로 wrap.
+          if (window.SCM_VOC_BUILDERS && window.SCM_VOC_BUILDERS.placeAddedFilter) {
+            window.SCM_VOC_BUILDERS.placeAddedFilter(wrapper, btn, !!f.connectPrev, _filterLastRef);
+            return;
           }
+          // fallback (모듈 누락 시) — 단순 append.
+          wrapper.appendChild(btn);
+          _filterLastRef.el = btn;
         });
       }
       // ---- Columns ----
@@ -7775,9 +7782,12 @@
         if (which === 'filter') {
           const label = (document.getElementById('addFilterLabel').value || '').trim();
           const type  = document.getElementById('addFilterType').value || 'single';
+          const cpEl  = document.getElementById('addFilterConnectPrev');
+          const connectPrev = !!(cpEl && cpEl.checked);
           if (!label) { document.getElementById('addFilterLabel').focus(); return; }
-          addFilter(label, type);
+          addFilter(label, type, connectPrev);
           document.getElementById('addFilterLabel').value = '';
+          if (cpEl) cpEl.checked = false;
           document.getElementById('addFilterForm').classList.remove('is-open');
           document.querySelector('.edit-add-btn[data-add="filter"]').style.display = '';
         } else if (which === 'group') {
