@@ -4852,35 +4852,57 @@
     // 컴포넌트 type 별 기본 HTML 스니펫 — "컴포넌트" select 변경 시 자동 fill.
     // textarea 가 비어 있거나 다른 TYPE_TEMPLATES 값일 때만 silently 교체;
     // 사용자가 직접 작성한 HTML 은 confirm 후 덮어씀.
+    // 자주 쓰는 컴포넌트들 — 디자인 시스템 클래스 (scm-page-head, scm-filter-bar,
+    // scm-stats-bar, mp-table, scm-button, scm-info-banner, scm-stat) 를 그대로
+    // 사용해서 다른 데모 페이지의 동일 컴포넌트와 시각이 일치하도록 함.
+    // CSS 는 각 demo 페이지에서 design-system/components/* 로 이미 로드 중.
     const TYPE_TEMPLATES = {
-      title: `<h1 style="margin:0 0 12px;font-size:24px;font-weight:700;color:#111827;line-height:1.3;">제목을 입력하세요</h1>`,
-      banner: `<div style="display:flex;gap:12px;align-items:center;padding:14px 18px;border-radius:8px;background:#FFF7ED;color:#9A3412;border:1px solid #FED7AA;font-size:13px;margin:12px 0;">
-  <span style="font-size:18px;line-height:1;">⚠️</span>
-  <div style="flex:1;"><b>안내</b> — 사용자에게 전달할 메시지를 입력하세요.</div>
-</div>`,
-      button: `<button type="button" style="display:inline-flex;align-items:center;gap:6px;padding:10px 18px;background:#4F46E5;color:#fff;border:0;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">버튼 텍스트</button>`,
-      kpi: `<div style="display:flex;gap:12px;flex-wrap:wrap;margin:12px 0;">
-  <div style="display:flex;flex-direction:column;gap:6px;padding:18px 20px;border-radius:10px;background:#fff;border:1px solid #E5E7EB;min-width:180px;">
-    <span style="font-size:11px;font-weight:600;color:#6B7280;letter-spacing:0.4px;text-transform:uppercase;">총 SKU</span>
-    <span style="font-size:28px;font-weight:700;color:#111827;line-height:1;">12,486</span>
-    <span style="font-size:11.5px;color:#10B981;">▲ 4.2% vs 전월</span>
-  </div>
-  <div style="display:flex;flex-direction:column;gap:6px;padding:18px 20px;border-radius:10px;background:#fff;border:1px solid #E5E7EB;min-width:180px;">
-    <span style="font-size:11px;font-weight:600;color:#6B7280;letter-spacing:0.4px;text-transform:uppercase;">활성 SKU</span>
-    <span style="font-size:28px;font-weight:700;color:#111827;line-height:1;">9,231</span>
-    <span style="font-size:11.5px;color:#6B7280;">전체의 74%</span>
+      title: `<div class="scm-page-head scm-page-head--list">
+  <h1 class="scm-page-head__title">제목을 입력하세요</h1>
+  <div class="scm-page-head__actions">
+    <button class="scm-button" type="button">보조 동작</button>
+    <button class="scm-button scm-button--primary" type="button">기본 동작</button>
   </div>
 </div>`,
-      filter: `<div class="scm-filter-bar" style="display:flex;gap:8px;align-items:center;padding:12px;background:#fff;border:1px solid #E5E7EB;border-radius:8px;margin:12px 0;">
-  <button type="button" class="scm-filter-select" data-state="placeholder" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px;background:#fff;border:1px solid #D1D5DB;border-radius:6px;font-size:12.5px;color:#1A1A1A;cursor:pointer;">
-    <span>필터 1</span>
-    <span style="opacity:0.5;">⌄</span>
+      banner: `<div class="scm-info-banner scm-info-banner--full">
+  <svg class="scm-info-banner__icon" viewBox="0 0 20 20" aria-hidden="true"><use href="#ic-alertCircle"/></svg>
+  <div class="scm-info-banner__body">
+    <div class="scm-info-banner__title">안내 제목</div>
+    <div class="scm-info-banner__text">사용자에게 전달할 내용을 입력하세요.</div>
+  </div>
+  <button class="scm-info-banner__toggle" type="button" aria-label="안내 접기/펼치기">
+    <svg viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chevronDown16"/></svg>
   </button>
-  <button type="button" class="scm-filter-select" data-state="placeholder" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px;background:#fff;border:1px solid #D1D5DB;border-radius:6px;font-size:12.5px;color:#1A1A1A;cursor:pointer;">
-    <span>필터 2</span>
-    <span style="opacity:0.5;">⌄</span>
+</div>`,
+      button: `<div style="display:flex;gap:8px;align-items:center;margin:12px 0;">
+  <button class="scm-button" type="button">보조 동작</button>
+  <button class="scm-button scm-button--primary" type="button">기본 동작</button>
+</div>`,
+      kpi: `<div class="scm-stats-bar__counts" style="display:flex;gap:16px;flex-wrap:wrap;margin:12px 0;">
+  <span class="scm-stat scm-stat--all"><span class="scm-stat__label">전체</span> <span class="scm-stat__num">0</span></span>
+  <span class="scm-stat"><span class="scm-stat__label">활성</span> <span class="scm-stat__num">0</span></span>
+  <span class="scm-stat"><span class="scm-stat__label">미매핑</span> <span class="scm-stat__num">0</span></span>
+</div>`,
+      filter: `<div class="scm-filter-bar">
+  <button class="scm-filter-chip" type="button">
+    <svg viewBox="0 0 20 20"><use href="#ic-filter"/></svg>
+    <span>전체 필터</span>
+    <span class="scm-filter-chip__count">0</span>
   </button>
-  <button type="button" style="margin-left:auto;padding:8px 14px;background:#4F46E5;color:#fff;border:0;border-radius:6px;font-size:12.5px;font-weight:600;cursor:pointer;">검색</button>
+  <div class="scm-filter-overflow">
+    <div class="scm-filter-overflow__track">
+      <button class="scm-filter-select" type="button" data-state="placeholder"><span class="scm-filter-select__label">필터 1</span><span class="scm-filter-select__value">필터 1</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+      <button class="scm-filter-select" type="button" data-state="placeholder"><span class="scm-filter-select__label">필터 2</span><span class="scm-filter-select__value">필터 2</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+      <button class="scm-filter-select" type="button" data-state="placeholder"><span class="scm-filter-select__label">필터 3</span><span class="scm-filter-select__value">필터 3</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+    </div>
+  </div>
+  <div class="scm-filter-actions">
+    <button class="scm-search-btn" type="button">검색</button>
+    <button class="scm-filter-reset-btn" type="button">
+      <svg viewBox="0 0 20 20"><use href="#ic-refresh"/></svg>
+      <span>초기화</span>
+    </button>
+  </div>
 </div>`,
       form: `<form style="display:flex;flex-direction:column;gap:12px;padding:16px;background:#fff;border:1px solid #E5E7EB;border-radius:8px;margin:12px 0;">
   <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:#374151;">
@@ -4893,32 +4915,56 @@
       <option>선택 1</option><option>선택 2</option>
     </select>
   </label>
-  <button type="submit" style="align-self:flex-start;padding:9px 18px;background:#4F46E5;color:#fff;border:0;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">제출</button>
+  <button class="scm-button scm-button--primary" type="submit" style="align-self:flex-start;">제출</button>
 </form>`,
       list: `<ul style="list-style:none;padding:0;margin:12px 0;border:1px solid #E5E7EB;border-radius:8px;background:#fff;overflow:hidden;">
   <li style="padding:12px 16px;border-bottom:1px solid #F3F4F6;font-size:13px;color:#1A1A1A;">아이템 1</li>
   <li style="padding:12px 16px;border-bottom:1px solid #F3F4F6;font-size:13px;color:#1A1A1A;">아이템 2</li>
   <li style="padding:12px 16px;font-size:13px;color:#1A1A1A;">아이템 3</li>
 </ul>`,
-      table: `<table style="width:100%;border-collapse:collapse;margin:12px 0;background:#fff;border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;font-size:12.5px;">
-  <thead>
-    <tr style="background:#F9FAFB;">
-      <th style="padding:10px 12px;text-align:left;font-weight:600;color:#374151;border-bottom:1px solid #E5E7EB;">컬럼 A</th>
-      <th style="padding:10px 12px;text-align:left;font-weight:600;color:#374151;border-bottom:1px solid #E5E7EB;">컬럼 B</th>
-      <th style="padding:10px 12px;text-align:right;font-weight:600;color:#374151;border-bottom:1px solid #E5E7EB;">수량</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr><td style="padding:10px 12px;border-bottom:1px solid #F3F4F6;">행 1-A</td><td style="padding:10px 12px;border-bottom:1px solid #F3F4F6;">행 1-B</td><td style="padding:10px 12px;text-align:right;border-bottom:1px solid #F3F4F6;">120</td></tr>
-    <tr><td style="padding:10px 12px;border-bottom:1px solid #F3F4F6;">행 2-A</td><td style="padding:10px 12px;border-bottom:1px solid #F3F4F6;">행 2-B</td><td style="padding:10px 12px;text-align:right;border-bottom:1px solid #F3F4F6;">85</td></tr>
-    <tr><td style="padding:10px 12px;">행 3-A</td><td style="padding:10px 12px;">행 3-B</td><td style="padding:10px 12px;text-align:right;">42</td></tr>
-  </tbody>
-</table>`,
-      'table-action-bar': `<div style="display:flex;gap:8px;align-items:center;padding:10px 12px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;margin:12px 0;">
-  <span style="font-size:12.5px;color:#6B7280;"><b style="color:#111827;">3</b> 건 선택됨</span>
-  <button type="button" style="margin-left:auto;padding:7px 12px;background:#fff;color:#374151;border:1px solid #D1D5DB;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">엑셀 다운로드</button>
-  <button type="button" style="padding:7px 12px;background:#fff;color:#374151;border:1px solid #D1D5DB;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">일괄 업로드</button>
-  <button type="button" style="padding:7px 14px;background:#4F46E5;color:#fff;border:0;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">+ 추가</button>
+      table: `<div class="mp-table-host">
+  <div class="mp-table-scroll">
+    <table class="mp-table">
+      <thead>
+        <tr>
+          <th>컬럼 A</th>
+          <th>컬럼 B</th>
+          <th class="cell-numeric">수량</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>행 1-A</td><td>행 1-B</td><td class="cell-numeric">120</td></tr>
+        <tr><td>행 2-A</td><td>행 2-B</td><td class="cell-numeric">85</td></tr>
+        <tr><td>행 3-A</td><td>행 3-B</td><td class="cell-numeric">42</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>`,
+      'table-action-bar': `<div class="scm-stats-bar">
+  <div class="scm-stats-bar__left">
+    <div class="scm-stats-bar__counts-wrap">
+      <div class="scm-stats-bar__counts">
+        <span class="scm-stat scm-stat--all"><span class="scm-stat__label">전체</span> <span class="scm-stat__num">0</span></span>
+      </div>
+    </div>
+    <div class="scm-stats-bar__mini-actions">
+      <button class="scm-mini-action" type="button">선택 항목 동작</button>
+      <button class="scm-mini-action scm-mini-action--primary" type="button">기본 동작</button>
+    </div>
+  </div>
+  <div class="scm-stats-bar__right">
+    <button class="scm-download-btn" type="button">
+      <svg viewBox="0 0 20 20"><use href="#ic-download"/></svg>
+      <span>전체 엑셀 다운로드</span>
+    </button>
+    <span class="scm-stats-bar__v-divider"></span>
+    <span class="scm-pager">
+      <strong class="scm-pager__current">1</strong>
+      <span class="scm-pager__total">/ <span>1</span> 페이지</span>
+      <button class="scm-pager-btn" type="button" aria-label="이전 페이지" disabled><svg viewBox="0 0 20 20"><use href="#ic-chevronLeft"/></svg></button>
+      <button class="scm-pager-btn" type="button" aria-label="다음 페이지" disabled><svg viewBox="0 0 20 20"><use href="#ic-chevronRight"/></svg></button>
+    </span>
+  </div>
 </div>`,
       card: `<div style="padding:16px 18px;border-radius:10px;background:#fff;border:1px solid #E5E7EB;margin:12px 0;">
   <h4 style="margin:0 0 8px;font-size:14px;font-weight:700;color:#111827;">카드 제목</h4>
