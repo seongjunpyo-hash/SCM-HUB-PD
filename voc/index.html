@@ -5753,44 +5753,44 @@
         tableIdx++;
       });
 
-      // Components — top-level scm-* / db-* 컨테이너.
-      // dashboard 의 card/section/kpi 외에, 테이블 기반 데모(sku-management,
-      // editshop-restock-*, otb-budget 등)에서도 편집 모드에 컴포넌트가
-      // 잡히도록 page-head / info-banner / filter-bar / stats-bar /
-      // mp-table-host / table-action-bar / info-table 추가.
-      const compSel = [
-        '.scm-card', '.scm-page-section', '.scm-kpi-card',
-        '.scm-bar-chart', '.db-pending-list', '.db-schedule-list', '.db-quick-grid',
-        '.scm-page-head', '.scm-info-banner',
-        '.scm-filter-bar', '.scm-stats-bar',
-        '.mp-table-host', '.scm-table-action-bar',
-        '.scm-info-table',
-      ].join(', ');
-      const compEls = main.querySelectorAll(compSel);
-      const taken = new Set();
-      let compCounter = 0;
-      // 사용자 추가 테이블 매핑 — DOM id 로 d.added.tables entry 를 찾기 위함.
+      // ====================================================
+      // Components (Phase 1) — main 의 모든 직속 자식이 편집 단위.
+      // ====================================================
+      // 기존엔 정해진 compSel (`.scm-card, .scm-page-head, ...`) 만 잡았는데,
+      // 이러면 OTB 의 `.otb-section` 처럼 데모 고유 wrapper 가 사이드바에
+      // 안 나와서 hide / 편집 / 위치 이동 자체가 불가능했음.
+      // 페이지 빌더 모드로 가려면 main 의 모든 직속 자식이 편집 가능해야 함.
+      //
+      // 제외:
+      //  - 비주얼-아닌 노드 (script / style / template / noscript / link / meta)
+      //  - VOC 가 inject 한 자체 마커 (.scm-voc-divider, .scm-voc-added-grid)
+      //    grid 안의 added 컴포넌트는 d.added.components 에서 따로 surface.
+      //
+      // voc-key 는 첫 스캔 때만 stamp 되므로 기존 페이지의 comp-0/1/2/... 은
+      // 그대로 유지. 새로 잡히는 자식 (예: .otb-section) 은 다음 번호부터.
       const _addedTablesById = {};
       try {
         const _d = pageDraft();
         ((_d.added && _d.added.tables) || []).forEach((tt) => { _addedTablesById[tt.id] = tt; });
       } catch (_) {}
-      compEls.forEach((el) => {
-        // skip elements inside user-added components (they're surfaced via
-        // the d.added.components list directly, not via DOM scan)
-        if (el.closest && el.closest('.scm-voc-added-comp')) return;
-        // skip if a parent of `el` is also a detected component
-        for (const t of taken) { if (t.contains(el)) return; }
-        taken.add(el);
-        // Stable voc-key 도장 — 필터/컬럼처럼 [data-voc-key="comp-N"] 셀렉터를
-        // 만들어 hide/edit 셀렉터가 path-base nth-of-type 가 아닌 안정 키로
-        // 잡히게 한다. 시스템 dom 변형(reorder/inject 등) 후에도 동일 element
-        // 를 가리킨다.
+      const _isVisualSection = (el) => {
+        if (!el || el.nodeType !== 1) return false;
+        const tag = (el.tagName || '').toLowerCase();
+        if (tag === 'script' || tag === 'style' || tag === 'template' || tag === 'noscript' || tag === 'link' || tag === 'meta') return false;
+        if (el.classList && (
+          el.classList.contains('scm-voc-divider') ||
+          el.classList.contains('scm-voc-added-grid')
+        )) return false;
+        // display:none / hidden 직속 자식은 제외 (대시보드의 kpi-card template
+        // 같은 비주얼-아닌 wrapper).
+        if (!_isElVisible(el)) return false;
+        return true;
+      };
+      let compCounter = 0;
+      [...main.children].filter(_isVisualSection).forEach((el) => {
         ensureVocKey(el, 'comp', compCounter++);
         const rawLabel = pickLabel(el);
         const compLabel = stampOrigLabel(el, rawLabel) || rawLabel;
-        // 사용자 추가 테이블이면 added 메타를 같이 보내서 row 가 [×=삭제] 를
-        // 노출하도록 한다 (네이티브는 [×=숨김]).
         const out_entry = { label: compLabel, selector: ifrCssPath(el) };
         if (el.id && el.id.startsWith('voc-added-table-')) {
           const tid = el.id.slice('voc-added-table-'.length);
