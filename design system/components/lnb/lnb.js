@@ -460,6 +460,40 @@
       return (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
     } catch (_) { return {}; }
   }
+  // 사용자가 hide 한 캐노니컬 메뉴 항목을 LNB 에서 제거.
+  // voc 의 setMenuHidden() 으로 저장된 'scm:voc:menu-hidden:v1' 키와 동기.
+  // 구조: { l1: [...], l2: [...] }
+  function _loadMenuHidden() {
+    try {
+      if (typeof localStorage === 'undefined') return { l1: [], l2: [] };
+      var raw = localStorage.getItem('scm:voc:menu-hidden:v1');
+      var v = raw ? JSON.parse(raw) : null;
+      if (!v || typeof v !== 'object' || Array.isArray(v)) return { l1: [], l2: [] };
+      return {
+        l1: Array.isArray(v.l1) ? v.l1 : [],
+        l2: Array.isArray(v.l2) ? v.l2 : [],
+      };
+    } catch (_) { return { l1: [], l2: [] }; }
+  }
+  function _applyMenuHiddenToLnb(el) {
+    if (!el) return;
+    var hidden = _loadMenuHidden();
+    // L1 그룹 hide → 그 .scm-lnb-item 제거
+    if (hidden.l1.length) {
+      hidden.l1.forEach(function (l1key) {
+        var item = el.querySelector('.scm-lnb-item[data-key="' + l1key + '"]');
+        if (item && item.parentNode) item.parentNode.removeChild(item);
+      });
+    }
+    // L2 hide → 해당 .scm-lnb-l2 anchor 제거 (그 후 빈 group 은 그대로 두되
+    // 추후 user 가 restore 할 수 있게 markup 자체는 유지 — voc 만 hide 토글).
+    if (hidden.l2.length) {
+      hidden.l2.forEach(function (l2key) {
+        var a = el.querySelector('.scm-lnb-l2[data-key="' + l2key + '"]');
+        if (a && a.parentNode) a.parentNode.removeChild(a);
+      });
+    }
+  }
   function _applyMenuOrderToLnb(el) {
     if (!el) return;
     var order = _loadMenuOrder();
@@ -495,6 +529,8 @@
     }
     // VOC 의 [신규] 탭에서 등록한 페이지를 LNB 에 추가 (canonical 위에).
     _applyNewPagesToLnb(el);
+    // VOC 에서 hide 한 캐노니컬 메뉴 항목 제거 (그룹 / L2 페이지).
+    _applyMenuHiddenToLnb(el);
     // 사용자가 드래그-리오더 한 메뉴 순서 적용 (canonical + 신규 모두 대상).
     _applyMenuOrderToLnb(el);
     var options = opts || {};
