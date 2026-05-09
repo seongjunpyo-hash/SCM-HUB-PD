@@ -3043,12 +3043,44 @@
       _setPreviewedComponent();
       refreshSaveBtn();
     }
-    // 컴포넌트 순서 + 행 나누기를 iframe <main> 에 반영. divider 는
-    // componentOrder 상의 위치를 따라가 native 컴포넌트 사이에 inject 되며,
-    // **native 컴포넌트 자체는 물리적으로 이동시키지 않는다** — main 안의
-    // unscanned 자식 (예: OTB 의 `.otb-section`) 의 절대 위치를 보존하기 위함.
-    // 사이드바 상의 native 재정렬은 정보(어디 사이에 divider 가 가는지) 표시
-    // 용이며 iframe DOM 자체에는 반영되지 않는다.
+    // Phase 2 — main 의 자식 순서를 CSS `order` 로 제어.
+    // ====================================================================
+    // 핵심 원칙: **DOM 순서는 절대 안 건드린다.** 대신 main 을
+    // `display: flex; flex-direction: column;` 로 만들고 각 자식에 inline
+    // `style.order` 만 박아 시각 순서만 바꾼다. 이벤트 리스너 / sticky / scroll /
+    // sibling-selector CSS 모두 영향 없음.
+    //
+    // - native + divider + (필요 시) added comp 모두 같은 방식으로 order 부여.
+    // - 사용자가 reorder/divider 추가 안 했고 dividers 도 없으면 flex CSS 자체를
+    //   inject 안 해서 페이지가 원본 block 레이아웃 그대로 (margin collapsing 등
+    //   미세한 시각 차이 없음).
+    function _isOrderCustomized(order, naturalOrder) {
+      if (!order || !naturalOrder) return false;
+      if (order.length !== naturalOrder.length) return true;
+      for (let i = 0; i < order.length; i++) {
+        if (order[i] !== naturalOrder[i]) return true;
+      }
+      return false;
+    }
+    function _ensureFlexLayoutCSS(doc) {
+      if (!doc || !doc.head) return;
+      let style = doc.getElementById('scm-voc-layout-css');
+      if (style) return;
+      style = doc.createElement('style');
+      style.id = 'scm-voc-layout-css';
+      style.textContent = ''
+        + 'main { display: flex !important; flex-direction: column !important; }\n'
+        + 'main > * { flex: 0 0 auto !important; }\n';
+      doc.head.appendChild(style);
+    }
+    function _removeFlexLayoutCSS(doc) {
+      if (!doc) return;
+      const style = doc.getElementById('scm-voc-layout-css');
+      if (style) style.remove();
+      // inline order 도 제거 (페이지가 원본 block 레이아웃으로 복구).
+      const main = doc.querySelector('main');
+      if (main) [...main.children].forEach((el) => { el.style.order = ''; });
+    }
     function applyComponentOrderToIframe() {
       const doc = iframe.contentDocument;
       if (!doc) return;
@@ -3058,66 +3090,67 @@
       syncOrderArr('component');
       const a = pageDraft();
       const order = (a.componentOrder || []).slice();
-      if (!order.length) return;
-      // 1) 죽은 divider 제거.
+      // 1) 죽은 divider 제거 (id 가 d.added.dividers 에 없는 hr).
       const aliveDivIds = new Set((a.added.dividers || []).map((dv) => dv.id));
       doc.querySelectorAll('.scm-voc-divider').forEach((el) => {
         const id = (el.id || '').replace(/^voc-added-divider-/, '');
         if (!aliveDivIds.has(id)) el.remove();
       });
-      // 2) 각 divider 를 order 상의 다음 native 앞에 insertBefore. 다음 native 가
-      //    없으면 마지막 본 native 의 nextSibling 앞에. 그것도 없으면 main 끝
-      //    (grid 가 있으면 그 앞). 추가 컴포넌트는 grid 안에서만 reorder.
+      // 2) 살아있는 divider hr 노드 보장 (DOM 위치는 main 끝 — order 가 시각 위치 결정).
+      (a.added.dividers || []).forEach((dv) => {
+        let hr = doc.getElementById(`voc-added-divider-${dv.id}`);
+        if (!hr) {
+          hr = doc.createElement('hr');
+          hr.id = `voc-added-divider-${dv.id}`;
+          hr.className = 'scm-voc-divider';
+          hr.setAttribute('role', 'separator');
+          main.appendChild(hr);
+        }
+      });
+      // 3) flex layout 이 필요한지 판정. 자연 순서면 flex 불필요 (block 그대로).
+      const targets = scanEditTargets();
+      const naturalNatives  = (targets.components || []).map((it) => it.selector);
+      const naturalAdded    = (a.added.components || []).map((c) => `#voc-added-comp-${c.id}`);
+      const naturalDividers = (a.added.dividers || []).map((dv) => `#voc-added-divider-${dv.id}`);
+      const naturalOrder = [...naturalNatives, ...naturalAdded, ...naturalDividers];
+      const customized = _isOrderCustomized(order, naturalOrder);
+      const hasDivider = (a.added.dividers || []).length > 0;
+      if (!customized && !hasDivider) {
+        _removeFlexLayoutCSS(doc);
+        return;
+      }
+      _ensureFlexLayoutCSS(doc);
+      // 4) main 자식 모두 order 초기화 후, componentOrder 따라 order 부여.
+      [...main.children].forEach((el) => { el.style.order = ''; });
+      let n = 1;
       const grid = main.querySelector('.scm-voc-added-grid');
-      let lastNativeEl = null;
-      for (let i = 0; i < order.length; i++) {
-        const sel = order[i];
-        if (!sel) continue;
+      order.forEach((sel) => {
+        if (!sel) return;
+        let el = null;
         if (sel.startsWith('#voc-added-divider-')) {
           const id = sel.slice('#voc-added-divider-'.length);
-          let hr = doc.getElementById(`voc-added-divider-${id}`);
-          if (!hr) {
-            hr = doc.createElement('hr');
-            hr.id = `voc-added-divider-${id}`;
-            hr.className = 'scm-voc-divider';
-            hr.setAttribute('role', 'separator');
+          el = doc.getElementById(`voc-added-divider-${id}`);
+        } else if (sel.startsWith('#voc-added-comp-')) {
+          // added comp 자체는 grid 안. grid 안에서 reorder (order 부여).
+          if (grid) {
+            const entry = doc.querySelector(sel);
+            if (entry && entry.parentElement === grid) entry.style.order = String(n++);
           }
-          // order 상 다음 native 찾기 (divider/added-comp 건너뜀).
-          let nextNative = null;
-          for (let j = i + 1; j < order.length; j++) {
-            const s = order[j];
-            if (!s) continue;
-            if (s.startsWith('#voc-added-divider-')) continue;
-            if (s.startsWith('#voc-added-comp-')) continue;
-            try {
-              const nat = main.querySelector(s);
-              if (nat && nat.parentElement === main) { nextNative = nat; break; }
-            } catch (_) {}
-          }
-          if (nextNative) {
-            main.insertBefore(hr, nextNative);
-          } else if (lastNativeEl && lastNativeEl.parentElement === main) {
-            if (lastNativeEl.nextSibling) main.insertBefore(hr, lastNativeEl.nextSibling);
-            else main.appendChild(hr);
-          } else {
-            if (grid && grid.parentElement === main) main.insertBefore(hr, grid);
-            else main.appendChild(hr);
-          }
-          continue;
+          return;
+        } else {
+          // native: main 직속까지 walk up.
+          try { el = main.querySelector(sel); } catch (_) {}
+          while (el && el.parentElement !== main) el = el.parentElement;
+          if (el && el.parentElement !== main) el = null;
         }
-        if (sel.startsWith('#voc-added-comp-')) {
-          // grid 안의 entry — grid 안에서만 reorder.
-          if (!grid) continue;
-          const entry = doc.querySelector(sel);
-          if (entry && entry.parentElement === grid) grid.appendChild(entry);
-          continue;
-        }
-        // native — lastNativeEl 추적용 (이동 X — main 의 unscanned 자식 위치 보존).
-        try {
-          const nat = main.querySelector(sel);
-          if (nat && nat.parentElement === main) lastNativeEl = nat;
-        } catch (_) {}
-      }
+        if (el) el.style.order = String(n++);
+      });
+      // 5) componentOrder 에 없는 main 자식은 끝 (큰 order 부여).
+      [...main.children].forEach((el) => {
+        if (!el.style.order) el.style.order = String(n++);
+      });
+      // grid 자체를 항상 마지막으로 (안에 added comps 있을 때 시각 일관성).
+      if (grid && grid.parentElement === main) grid.style.order = String(n + 100);
     }
     function rebuildAddedComponentsOnly() {
       const doc = iframe.contentDocument;
@@ -6372,16 +6405,10 @@
           // drag because scm-table itself rejects drops on rs>=2 cells.
           const isAnchor = it.kind === 'column' && it.draggable === false;
           const reorderable = (it.kind === 'filter' || it.kind === 'column' || it.kind === 'component') && !isAnchor;
-          // Native 컴포넌트 (added 가 아닌 component) 는 iframe 의 페이지 레이아웃을
-          // 깨뜨릴 수 있어 직접 드래그 불가 — drop target 으로만 동작 (divider 가
-          // 그 사이에 끼어들 수 있도록). 사용자가 끌 수 있는 건 filter/column/divider
-          // /added component (grid 안) 만.
-          const canDrag = reorderable && (
-            it.kind === 'filter'
-            || it.kind === 'column'
-            || it.isDivider
-            || (it.kind === 'component' && it.added && !it.isAddedTable)
-          );
+          // Phase 2: native 컴포넌트도 드래그 가능. 물리적 DOM 이동이 아닌 CSS
+          // `order` 로 시각 순서만 바꾸므로 OTB 같은 페이지 레이아웃이 안전하게
+          // 보존됨. (이전엔 main.appendChild 가 unscanned 자식을 위로 밀어 깨뜨림.)
+          const canDrag = reorderable;
           const depth = it.kind === 'column' ? (it.depth | 0) : 0;
           const dragParent = (it.kind === 'column' && depth === 1 && it.parent) ? it.parent : '';
           const dragAttrs = reorderable
