@@ -918,6 +918,14 @@
       background: #EEF2FF; border: 1px solid #C7D2FE;
     }
     .cmp-lib-card__edit:hover { background: #E0E7FF; border-color: #A5B4FC; }
+    .cmp-lib-card__del {
+      flex-shrink: 0;
+      cursor: pointer;
+      padding: 3px 8px; border-radius: 4px;
+      font-size: 11px; font-weight: 600; color: #DC2626;
+      background: #fff; border: 1px solid #FCA5A5;
+    }
+    .cmp-lib-card__del:hover { background: #FEE2E2; border-color: #DC2626; }
     .cmp-lib-empty {
       grid-column: 1 / -1;
       padding: 24px;
@@ -2346,6 +2354,10 @@
     // canonical CANONICAL_LNB_HTML 은 코드에 박혀있어 진짜 삭제는 안 되고
     // 런타임에 LNB / 상단 chip / L2 select 에서 필터링.
     const MENU_HIDDEN_KEY = 'scm:voc:menu-hidden:v1';
+    // 사용자가 신규 컴포넌트를 저장한 라이브러리 — 다른 페이지에서 [라이브러리] 탭의
+    // "내 컴포넌트" 그룹에서 다시 불러올 수 있게 됨. addComponent 시 자동 저장,
+    // dedupe 는 HTML 해시 기준.
+    const USER_LIB_KEY = 'scm:voc:user-components:v1';
     // Page-key normalization. The VOC iframe reads `iframe.contentWindow
     // .location.pathname`, which on Cloudflare Pages clean URLs strips
     // the `.html` extension, while standalone demo pages may report
@@ -2664,6 +2676,12 @@
         catch { return []; }
       })();
       state.newPages = npRaw;
+      // 사용자 정의 컴포넌트 라이브러리 — addComponent 호출 시마다 자동 누적.
+      // 다른 voc 페이지에서 [라이브러리] 탭의 "내 컴포넌트" 그룹으로 노출.
+      state.userComponents = (function () {
+        try { const v = JSON.parse(localStorage.getItem(USER_LIB_KEY)); return Array.isArray(v) ? v : []; }
+        catch { return []; }
+      })();
       // 사용자가 hide 한 캐노니컬 메뉴 항목 (L1 그룹 / L2 페이지).
       state.menuHidden = (function () {
         try {
@@ -3795,10 +3813,66 @@
         html: html || '', width: w,
       });
       persistDraft();
+      // 사용자 라이브러리에 자동 등록 — dedupe 는 HTML 해시 기준.
+      // TYPE_TEMPLATES 그대로면 시스템 템플릿이라 저장 안 함 — 의미 있는
+      // 사용자 정의만 보관.
+      if (html && html.trim() && !_isTypeTemplateHtml(html)) {
+        saveToUserLibrary({ label, type, html });
+      }
       renderEditPane();
       applyComponentSectionToIframe();
       return id;
     }
+    // 컴포넌트 HTML 의 짧은 해시 — dedupe 용. 중복 등록 방지.
+    function _userCompKey(html) {
+      let h = 0;
+      const s = String(html || '');
+      for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+      return 'user-' + (h >>> 0).toString(36);
+    }
+    function saveToUserLibrary({ label, type, html }) {
+      const t = (html || '').trim();
+      if (!t) return;
+      state.userComponents = state.userComponents || [];
+      const id = _userCompKey(t);
+      const existing = state.userComponents.find((u) => u.id === id);
+      if (existing) {
+        // 같은 HTML 의 라벨/타입이 새로워졌으면 갱신, 시각상 중복은 막음.
+        if (label) existing.label = label;
+        if (type) existing.type = type;
+        existing.savedAt = Date.now();
+      } else {
+        state.userComponents.push({
+          id,
+          label: label || '내 컴포넌트',
+          type: type || 'custom',
+          html: t,
+          level: 'user',
+          sub: '내가 저장한 컴포넌트',
+          savedAt: Date.now(),
+        });
+      }
+      persistUserComponents();
+    }
+    function deleteUserComponent(id) {
+      state.userComponents = (state.userComponents || []).filter((u) => u.id !== id);
+      persistUserComponents();
+      _cmpRenderLib();
+    }
+    function persistUserComponents() {
+      try { localStorage.setItem(USER_LIB_KEY, JSON.stringify(state.userComponents || [])); } catch {}
+    }
+    // 다른 voc 탭에서 사용자 컴포넌트가 추가/삭제됐을 때 cross-tab 동기.
+    // (cmpModal 라이브러리 step 이 열려 있으면 그리드 즉시 재렌더.)
+    window.addEventListener('storage', (e) => {
+      if (!e || e.key !== USER_LIB_KEY) return;
+      try {
+        const v = JSON.parse(e.newValue);
+        state.userComponents = Array.isArray(v) ? v : [];
+      } catch { state.userComponents = []; }
+      const modal = document.getElementById('cmpModal');
+      if (modal && !modal.hidden) _cmpRenderLib();
+    });
     function updateAddedComponent(id, patch) {
       const d = pageDraft();
       const c = (d.added.components || []).find((x) => x.id === id);
@@ -4887,12 +4961,20 @@
     // 30개 atomic 컴포넌트는 voc/component-library.js 에서 단일 source 로 관리.
     // window.SCM_VOC_LIB.UNITS 가 로드되면 그걸 쓰고, 미로드 시 빈 배열 fallback.
     const SMALL_UNITS = (window.SCM_VOC_LIB && window.SCM_VOC_LIB.UNITS) || [];
-    const LIB_LEVELS  = (window.SCM_VOC_LIB && window.SCM_VOC_LIB.LEVELS) || [
+    // LIB_LEVELS 에 'user' (내 컴포넌트) 추가 — addComponent 시 자동 누적되는
+    // 사용자 라이브러리. component-library.js 에서 받은 LEVELS 끝에 append.
+    const _BASE_LIB_LEVELS = (window.SCM_VOC_LIB && window.SCM_VOC_LIB.LEVELS) || [
       { key: 'atom',     label: 'Atoms',     hint: '기본 UI 요소' },
       { key: 'molecule', label: 'Molecules', hint: '조합 컴포넌트' },
       { key: 'organism', label: 'Organisms', hint: '복합 섹션' },
     ];
+    const LIB_LEVELS = _BASE_LIB_LEVELS.concat([
+      { key: 'user', label: '내 컴포넌트', hint: '신규 컴포넌트로 만들면 자동 누적됩니다 — 다른 페이지에서도 불러오기 가능' },
+    ]);
     function libUnit(id) {
+      // 사용자 컴포넌트가 우선 — addComponent 가 누적한 entry 검색.
+      const userU = (state.userComponents || []).find((u) => u.id === id);
+      if (userU) return Object.assign({}, userU);
       const base = SMALL_UNITS.find((u) => u.id === id);
       const ovr = (state.lib && state.lib[id]) || null;
       return Object.assign({}, base, ovr || {});
@@ -5408,6 +5490,7 @@
       if (!host) return;
       const counts = {};
       SMALL_UNITS.forEach((u) => { const k = u.level || 'atom'; counts[k] = (counts[k] || 0) + 1; });
+      counts.user = (state.userComponents || []).length;
       host.innerHTML = LIB_LEVELS.map((lv) => {
         const isActive = lv.key === _libActiveLevel;
         const cnt = counts[lv.key] || 0;
@@ -5425,23 +5508,34 @@
       _libRenderLevelTabs();
       const host = document.getElementById('cmpLibGrid');
       if (!host) return;
-      const filtered = SMALL_UNITS.filter((u) => (u.level || 'atom') === _libActiveLevel);
+      // 'user' level → state.userComponents, 그 외 → SMALL_UNITS.
+      const isUserLevel = _libActiveLevel === 'user';
+      const filtered = isUserLevel
+        ? (state.userComponents || []).slice().sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0))
+        : SMALL_UNITS.filter((u) => (u.level || 'atom') === _libActiveLevel);
       if (!filtered.length) {
-        host.innerHTML = '<div class="cmp-lib-empty">이 레벨에 등록된 컴포넌트가 없습니다.</div>';
+        host.innerHTML = isUserLevel
+          ? '<div class="cmp-lib-empty">아직 저장된 사용자 컴포넌트가 없습니다 — [+ 컴포넌트 추가] 후 [신규 컴포넌트 만들기] 로 새로 만들면 여기에 자동 누적됩니다.</div>'
+          : '<div class="cmp-lib-empty">이 레벨에 등록된 컴포넌트가 없습니다.</div>';
         return;
       }
       host.innerHTML = filtered.map((u) => {
-        const cur = libUnit(u.id);
+        const cur = libUnit(u.id) || u;
         const previewHtml = cur.html || u.html || '';
+        // 사용자 컴포넌트는 [수정] 대신 [삭제] (× 톤) 노출 — 라이브러리에서 제거.
+        // 시스템 컴포넌트(atom/molecule/organism) 는 기존대로 [수정].
+        const actionBtn = isUserLevel
+          ? `<button type="button" class="cmp-lib-card__del" data-cmp-lib-del="${escapeHtml(u.id)}" title="이 사용자 컴포넌트 삭제">삭제</button>`
+          : `<button type="button" class="cmp-lib-card__edit" data-cmp-lib-edit="${u.id}" title="이 작은 컴포넌트의 HTML 수정">수정</button>`;
         return `
-          <div class="cmp-lib-card" data-cmp-lib-pick="${u.id}" title="이 컴포넌트를 HTML 입력 탭에 불러옵니다">
+          <div class="cmp-lib-card" data-cmp-lib-pick="${escapeHtml(u.id)}" title="이 컴포넌트를 HTML 입력 탭에 불러옵니다">
             <iframe class="cmp-lib-card__preview" sandbox="allow-scripts" loading="lazy" srcdoc="${escapeHtml(_libPreviewSrcdoc(previewHtml))}" title="${escapeHtml(cur.label || u.label || '')} 미리보기"></iframe>
             <div class="cmp-lib-card__info">
               <div class="cmp-lib-card__body">
                 <span class="cmp-lib-card__title">${escapeHtml(cur.label || u.label)}</span>
                 <span class="cmp-lib-card__sub">${escapeHtml(cur.sub || u.sub || '')}</span>
               </div>
-              <button type="button" class="cmp-lib-card__edit" data-cmp-lib-edit="${u.id}" title="이 작은 컴포넌트의 HTML 수정">수정</button>
+              ${actionBtn}
             </div>
           </div>`;
       }).join('');
@@ -5537,9 +5631,20 @@
         return;
       }
       // 라이브러리 카드 pick — 신규 form 으로 prefill 이동.
+      // 내 컴포넌트 삭제 — 라이브러리에서 제거 (페이지에 적용된 entry 는 그대로).
+      const ldel = t.closest && t.closest('[data-cmp-lib-del]');
+      if (ldel) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (confirm('이 사용자 컴포넌트를 라이브러리에서 삭제할까요?')) {
+          deleteUserComponent(ldel.dataset.cmpLibDel);
+          showToast('사용자 컴포넌트가 라이브러리에서 삭제됐습니다');
+        }
+        return;
+      }
       // 사용자가 이름·너비 조정 후 저장할 수 있게 함.
       const pick = t.closest && t.closest('[data-cmp-lib-pick]');
-      if (pick && !t.closest('[data-cmp-lib-edit]')) {
+      if (pick && !t.closest('[data-cmp-lib-edit]') && !t.closest('[data-cmp-lib-del]')) {
         e.preventDefault();
         const u = libUnit(pick.dataset.cmpLibPick);
         const nameEl = document.getElementById('cmpName');
