@@ -6659,9 +6659,10 @@
           if (it.anchor) cls.push('is-anchor');
           if (it.renamed) cls.push('is-renamed');
           const sel = escapeHtml(it.selector);
-          // 고정 영역 🔒 — 컬럼 row 의 leftmost (수정 버튼 앞) 위치에 노출.
-          // anchor row(rs>=2) 도 동일 위치에 보이도록 middle 바깥에서 계산.
-          const frozenBadge = (it.kind === 'column' && !it.isGroup && !it.added
+          // 고정 영역 🔒 — 컬럼 row 의 맨 앞 (grip 보다도 앞) 위치에 노출.
+          // anchor row(rs>=2, No 등) 는 grip 자체가 locked-🔒 이므로 중복
+          // 방지 위해 제외 — 시각적으로는 anchor 와 동일한 leftmost 위치에 정렬됨.
+          const frozenBadge = (it.kind === 'column' && !it.isGroup && !it.added && !it.anchor
             && it.leafIdx != null && it.leafIdx >= 0 && it.leafIdx < effectiveFrozenCount)
             ? '<span class="edit-row__frozen-badge" aria-hidden="true" title="고정 영역">🔒</span>' : '';
           let middle = '';
@@ -6791,10 +6792,10 @@
           }
           return `
             <label class="${cls.join(' ')}"${dragAttrs}>
+              ${frozenBadge}
               ${grip}
               <input type="checkbox" class="edit-row__check" data-selector="${sel}" ${isHidden ? '' : 'checked'} />
               <span class="edit-row__label">${escapeHtml(it.label)}</span>
-              ${frozenBadge}
               ${renameBtn}
               ${middle}
               ${widthChip}
