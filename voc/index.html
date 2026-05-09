@@ -5398,7 +5398,10 @@
         'body > *{max-width:100%;max-height:170px;}',
         '*{box-sizing:border-box;}',
         '</style></head><body>',
-        '<script src="/scm-icons.js"></script>',
+        // 주의: 닫는 script 태그가 외부 script 블록을 조기 종료시키지 않도록
+        // 문자열을 두 조각으로 split — HTML 파서가 라이브러리 코드 안에서 닫는
+        // 태그를 발견하면 outer script 가 통째로 깨짐.
+        '<script src="/scm-icons.js"></scr' + 'ipt>',
         html || '',
         '</body></html>',
       ].join('');
