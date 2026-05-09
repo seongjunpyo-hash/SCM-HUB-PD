@@ -1131,6 +1131,24 @@
       background: #F3F4F6; color: #4B5563;
       font-size: 10.5px; font-weight: 700; letter-spacing: 0.2px;
     }
+    /* 행 나누기 row — 얇은 separator. drag handle + 라인 + 라벨 + ×. */
+    .edit-row--rowbreak {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 12px;
+      background: #FAF5FF;
+      border-top: 1px dashed #C4B5FD;
+      border-bottom: 1px dashed #C4B5FD;
+      cursor: grab;
+    }
+    .edit-row--rowbreak:active { cursor: grabbing; }
+    .edit-row__rowbreak-line {
+      flex: 1; height: 1px; background: #C4B5FD;
+    }
+    .edit-row__rowbreak-label {
+      font-size: 10.5px; font-weight: 700; letter-spacing: 0.5px;
+      color: #6D28D9; text-transform: uppercase;
+      flex-shrink: 0;
+    }
     .edit-row__rename {
       background: transparent; border: 0; cursor: pointer;
       font-size: 11px; color: #6B7280; padding: 2px 6px; border-radius: 4px;
@@ -1799,6 +1817,7 @@
               <div class="edit-add">
                 <div class="edit-add-row">
                   <button type="button" class="edit-add-btn" data-add-component="new">+ 컴포넌트 추가</button>
+                  <button type="button" class="edit-add-btn" data-add-rowbreak title="현재 위치에 새 행을 추가 — 다음 컴포넌트는 새 줄에서 시작">+ 행 나누기</button>
                 </div>
               </div>
             </div>
@@ -3007,6 +3026,14 @@
         if (doc.getElementById(id)) return;
         const wrap = doc.createElement('div');
         wrap.id = id;
+        // rowbreak — span 12 + height 0 (다음 entry 가 새 줄에서 시작).
+        if (c.kind === 'rowbreak') {
+          wrap.className = 'scm-voc-added-rowbreak';
+          wrap.dataset.vocAddedCompId = c.id;
+          wrap.style.gridColumn = '1 / -1';
+          grid.appendChild(wrap);
+          return;
+        }
         wrap.className = 'scm-voc-added-comp';
         wrap.dataset.vocAddedCompId = c.id;
         wrap.dataset.vocAddedCompType = c.type || 'card';
@@ -3301,6 +3328,20 @@
       renderEditPane();
       applyComponentSectionToIframe();
     }
+    // 명시적 row-break 추가 — 그리드 안에서 다음 컴포넌트를 새 줄에서
+    // 시작하도록 강제하는 sentinel entry. addComponent 와 같은 배열을
+    // 공유해 drag-drop 순서 변경도 그대로 적용.
+    function addRowbreak() {
+      const d = pageDraft();
+      d.added.components = Array.isArray(d.added.components) ? d.added.components : [];
+      d.added.components.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+        kind: 'rowbreak',
+      });
+      persistDraft();
+      renderEditPane();
+      applyComponentSectionToIframe();
+    }
     // 추가 컴포넌트 순서 변경 — 사용자가 편집 패널에서 drag-drop 으로 순서를
     // 바꾸면 d.added.components 배열을 재정렬. 그리드 컨테이너는 array
     // 순서대로 inject 되므로 재배치 즉시 반영.
@@ -3480,6 +3521,19 @@
         .scm-voc-added-grid:hover .scm-voc-added-comp {
           outline: 1px dashed rgba(99, 102, 241, 0.35);
           outline-offset: 2px;
+        }
+        /* rowbreak — full-width sentinel, height 0, 다음 컴포넌트가 새 줄
+           에서 시작하도록 함. 편집 hover 시에만 살짝 보이게. */
+        .scm-voc-added-rowbreak {
+          grid-column: 1 / -1;
+          height: 0;
+          margin: 0; padding: 0; border: 0;
+        }
+        .scm-voc-added-grid:hover .scm-voc-added-rowbreak {
+          height: 4px;
+          background: linear-gradient(90deg, transparent 0%, rgba(99,102,241,0.20) 50%, transparent 100%);
+          border-radius: 2px;
+          margin: 4px 0;
         }
         .scm-filter-select[data-voc-filter-type="multi"]::after {
           content: 'M'; margin-left: 4px;
@@ -5795,12 +5849,23 @@
           const label = (editEntry && editEntry.label) || it.label;
           return { ...it, label, kind: 'component', edited: !!editEntry, type: editEntry && editEntry.type };
         }),
-        ...(d.added.components || []).map((c) => ({
-          kind: 'component',
-          label: c.label || '컴포넌트',
-          selector: `#voc-added-comp-${c.id}`,
-          added: c, type: c.type,
-        })),
+        ...(d.added.components || []).map((c) => {
+          // rowbreak entry — 행 나누기 sentinel. 별도 kind 로 markup 만 다르게.
+          if (c.kind === 'rowbreak') {
+            return {
+              kind: 'rowbreak',
+              label: '— 행 나누기 —',
+              selector: `#voc-added-comp-${c.id}`,
+              added: c,
+            };
+          }
+          return {
+            kind: 'component',
+            label: c.label || '컴포넌트',
+            selector: `#voc-added-comp-${c.id}`,
+            added: c, type: c.type,
+          };
+        }),
       ];
 
       const cellTypes = d.cellTypes || {};
@@ -5814,6 +5879,17 @@
         list.innerHTML = items.map((it) => {
           if (it.kind === 'table-header') {
             return `<div class="edit-table-header"><span class="edit-table-header__dot"></span>${escapeHtml(it.label)}</div>`;
+          }
+          // rowbreak — drag-reorder + 삭제 가능한 얇은 separator row.
+          if (it.kind === 'rowbreak') {
+            const rid = it.added && it.added.id;
+            return `<div class="edit-row edit-row--rowbreak" draggable="true" data-drag-id="${escapeHtml(rid || '')}" data-drag-kind="component" data-drag-depth="0" data-drag-parent="">`
+              + `<span class="edit-row__grip" aria-hidden="true" title="드래그하여 순서 변경"><svg viewBox="0 0 6 12" fill="currentColor"><circle cx="1.25" cy="2" r="1"/><circle cx="4.75" cy="2" r="1"/><circle cx="1.25" cy="6" r="1"/><circle cx="4.75" cy="6" r="1"/><circle cx="1.25" cy="10" r="1"/><circle cx="4.75" cy="10" r="1"/></svg></span>`
+              + `<span class="edit-row__rowbreak-line" aria-hidden="true"></span>`
+              + `<span class="edit-row__rowbreak-label">${escapeHtml(it.label)}</span>`
+              + `<span class="edit-row__rowbreak-line" aria-hidden="true"></span>`
+              + `<button type="button" class="edit-row__del" data-del-rowbreak="${escapeHtml(rid || '')}" title="행 나누기 제거">×</button>`
+              + `</div>`;
           }
           const isHidden = hidden.has(it.selector);
           const cls = ['edit-row'];
@@ -6235,6 +6311,15 @@
         if (confirm('이 컴포넌트를 삭제할까요?')) removeAddedComponent(dCmp.dataset.delComponent);
         return;
       }
+      // 행 나누기 제거 — rowbreak 도 d.added.components 안의 entry 라
+      // removeAddedComponent 그대로 사용 가능.
+      const dRb = t.closest && t.closest('[data-del-rowbreak]');
+      if (dRb) {
+        e.preventDefault();
+        e.stopPropagation();
+        removeAddedComponent(dRb.dataset.delRowbreak);
+        return;
+      }
       // hide a NATIVE component (× on a scanned page section). 체크박스
       // unchecking 과 같은 효과 — 라벨에 line-through + iframe 에서 숨김.
       const hCmp = t.closest && t.closest('[data-hide-component]');
@@ -6250,6 +6335,14 @@
       if (addCmp) {
         e.preventDefault();
         openComponentModal({ mode: 'add' });
+        return;
+      }
+      // 명시적 row-break 추가 — 그리드에서 다음 컴포넌트를 새 줄로 떨어뜨림.
+      const addRb = t.closest && t.closest('[data-add-rowbreak]');
+      if (addRb) {
+        e.preventDefault();
+        addRowbreak();
+        showToast('행 나누기 추가 — 다음 컴포넌트가 새 줄에서 시작합니다');
         return;
       }
       // open / cancel / submit add forms (filter / column / group)
