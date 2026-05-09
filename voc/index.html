@@ -746,6 +746,34 @@
       flex: 1; min-height: 0;
     }
     .cmp-modal__grid { display: grid; grid-template-columns: 1fr 180px; gap: 10px; }
+    /* Native 컴포넌트 편집 모드 — 컴포넌트명 hide → 컴포넌트(타입) 가 한 줄 차지. */
+    .cmp-modal__grid:has(#cmpNameField[hidden]) { grid-template-columns: 1fr; }
+    /* 라이브러리 토글 버튼 (이전엔 탭이었음 — 이제 prominent 한 상단 버튼). */
+    .cmp-modal__lib-bar { margin: 4px 0 12px; }
+    .cmp-modal__lib-toggle {
+      display: flex; align-items: center; gap: 8px; width: 100%;
+      padding: 10px 14px;
+      background: #F8F9FF; color: #4F46E5;
+      border: 1px solid #E0E7FF; border-radius: 8px;
+      font-family: inherit; font-size: 13px; font-weight: 600;
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s;
+    }
+    .cmp-modal__lib-toggle:hover { background: #EEF2FF; border-color: #C7D2FE; }
+    .cmp-modal__lib-toggle-icon { font-size: 14px; }
+    .cmp-modal__lib-toggle-chev {
+      margin-left: auto; font-size: 12px; opacity: 0.7;
+      transition: transform 0.16s ease;
+    }
+    .cmp-modal__lib-toggle[aria-expanded="true"] .cmp-modal__lib-toggle-chev { transform: rotate(180deg); }
+    .cmp-modal__lib-toggle[aria-expanded="true"] {
+      background: #EEF2FF; border-color: #4F46E5;
+    }
+    .cmp-modal__lib-panel {
+      padding: 12px;
+      background: #FAFBFF; border: 1px solid #E0E7FF; border-radius: 8px;
+      margin-bottom: 12px;
+    }
     .cmp-modal__field {
       display: flex; flex-direction: column; gap: 4px;
       font-size: 12px; font-weight: 600; color: #374151;
@@ -2127,12 +2155,12 @@
     </header>
     <div class="cmp-modal__body">
       <div class="cmp-modal__grid">
-        <label class="cmp-modal__field">
+        <label class="cmp-modal__field" id="cmpNameField">
           <span>컴포넌트명</span>
           <input type="text" id="cmpName" placeholder="예: 알림 배너" maxlength="40" />
         </label>
-        <label class="cmp-modal__field">
-          <span>타입</span>
+        <label class="cmp-modal__field" id="cmpTypeField">
+          <span>컴포넌트</span>
           <select id="cmpType">
             <option value="card">카드</option>
             <option value="title">타이틀</option>
@@ -2159,10 +2187,24 @@
           <option value="3">1/4 (3 / 12)</option>
         </select>
       </label>
+      <!-- 라이브러리 토글 — 기존 탭에서 분리, 상단 prominent 버튼으로 승격.
+           누르면 아래 그리드가 펼쳐지고, 카드 선택 시 HTML 입력 탭에 채움 + 자동 접힘. -->
+      <div class="cmp-modal__lib-bar">
+        <button type="button" class="cmp-modal__lib-toggle" id="cmpLibToggle" aria-expanded="false">
+          <span class="cmp-modal__lib-toggle-icon" aria-hidden="true">📚</span>
+          <span>컴포넌트 라이브러리에서 불러오기</span>
+          <span class="cmp-modal__lib-toggle-chev" aria-hidden="true">⌄</span>
+        </button>
+      </div>
+      <div class="cmp-modal__lib-panel" id="cmpLibPanel" hidden>
+        <p class="cmp-modal__hint">카드를 클릭하면 HTML 입력에 자동으로 채워지고 라이브러리는 닫힙니다.</p>
+        <div class="cmp-lib-leveltabs" role="tablist" id="cmpLibLevelTabs"></div>
+        <div class="cmp-lib-levelhint" id="cmpLibLevelHint"></div>
+        <div class="cmp-modal__lib" id="cmpLibGrid"></div>
+      </div>
       <div class="cmp-modal__tabs" role="tablist">
         <button type="button" class="cmp-modal__tab is-active" data-cmp-tab="html">HTML 직접 입력</button>
         <button type="button" class="cmp-modal__tab" data-cmp-tab="ai">AI 프롬프트로 생성</button>
-        <button type="button" class="cmp-modal__tab" data-cmp-tab="lib">작은 컴포넌트 라이브러리</button>
       </div>
       <div class="cmp-modal__pane is-active" data-cmp-pane="html">
         <label class="cmp-modal__field">
@@ -2187,12 +2229,6 @@
           <button type="button" class="cmp-modal__btn cmp-modal__btn--primary" id="cmpAiGenBtn">AI 생성 → HTML 입력 채우기</button>
         </div>
         <p class="cmp-modal__hint">프롬프트와 템플릿을 골라 [AI 생성] 을 누르면 HTML 입력 탭에 결과가 채워집니다. 그 다음 자유롭게 수정 가능합니다.</p>
-      </div>
-      <div class="cmp-modal__pane" data-cmp-pane="lib">
-        <p class="cmp-modal__hint">아토믹 디자인 단위로 묶인 컴포넌트를 골라 불러오면 HTML 입력 탭에 채워지며, 이후 자유롭게 편집/저장할 수 있습니다.</p>
-        <div class="cmp-lib-leveltabs" role="tablist" id="cmpLibLevelTabs"></div>
-        <div class="cmp-lib-levelhint" id="cmpLibLevelHint"></div>
-        <div class="cmp-modal__lib" id="cmpLibGrid"></div>
       </div>
     </div>
     <footer class="cmp-modal__foot">
@@ -4813,6 +4849,88 @@
     }
     function persistLib() { try { localStorage.setItem(LIB_KEY, JSON.stringify(state.lib)); } catch {} }
 
+    // 컴포넌트 type 별 기본 HTML 스니펫 — "컴포넌트" select 변경 시 자동 fill.
+    // textarea 가 비어 있거나 다른 TYPE_TEMPLATES 값일 때만 silently 교체;
+    // 사용자가 직접 작성한 HTML 은 confirm 후 덮어씀.
+    const TYPE_TEMPLATES = {
+      title: `<h1 style="margin:0 0 12px;font-size:24px;font-weight:700;color:#111827;line-height:1.3;">제목을 입력하세요</h1>`,
+      banner: `<div style="display:flex;gap:12px;align-items:center;padding:14px 18px;border-radius:8px;background:#FFF7ED;color:#9A3412;border:1px solid #FED7AA;font-size:13px;margin:12px 0;">
+  <span style="font-size:18px;line-height:1;">⚠️</span>
+  <div style="flex:1;"><b>안내</b> — 사용자에게 전달할 메시지를 입력하세요.</div>
+</div>`,
+      button: `<button type="button" style="display:inline-flex;align-items:center;gap:6px;padding:10px 18px;background:#4F46E5;color:#fff;border:0;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">버튼 텍스트</button>`,
+      kpi: `<div style="display:flex;gap:12px;flex-wrap:wrap;margin:12px 0;">
+  <div style="display:flex;flex-direction:column;gap:6px;padding:18px 20px;border-radius:10px;background:#fff;border:1px solid #E5E7EB;min-width:180px;">
+    <span style="font-size:11px;font-weight:600;color:#6B7280;letter-spacing:0.4px;text-transform:uppercase;">총 SKU</span>
+    <span style="font-size:28px;font-weight:700;color:#111827;line-height:1;">12,486</span>
+    <span style="font-size:11.5px;color:#10B981;">▲ 4.2% vs 전월</span>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:6px;padding:18px 20px;border-radius:10px;background:#fff;border:1px solid #E5E7EB;min-width:180px;">
+    <span style="font-size:11px;font-weight:600;color:#6B7280;letter-spacing:0.4px;text-transform:uppercase;">활성 SKU</span>
+    <span style="font-size:28px;font-weight:700;color:#111827;line-height:1;">9,231</span>
+    <span style="font-size:11.5px;color:#6B7280;">전체의 74%</span>
+  </div>
+</div>`,
+      filter: `<div class="scm-filter-bar" style="display:flex;gap:8px;align-items:center;padding:12px;background:#fff;border:1px solid #E5E7EB;border-radius:8px;margin:12px 0;">
+  <button type="button" class="scm-filter-select" data-state="placeholder" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px;background:#fff;border:1px solid #D1D5DB;border-radius:6px;font-size:12.5px;color:#1A1A1A;cursor:pointer;">
+    <span>필터 1</span>
+    <span style="opacity:0.5;">⌄</span>
+  </button>
+  <button type="button" class="scm-filter-select" data-state="placeholder" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px;background:#fff;border:1px solid #D1D5DB;border-radius:6px;font-size:12.5px;color:#1A1A1A;cursor:pointer;">
+    <span>필터 2</span>
+    <span style="opacity:0.5;">⌄</span>
+  </button>
+  <button type="button" style="margin-left:auto;padding:8px 14px;background:#4F46E5;color:#fff;border:0;border-radius:6px;font-size:12.5px;font-weight:600;cursor:pointer;">검색</button>
+</div>`,
+      form: `<form style="display:flex;flex-direction:column;gap:12px;padding:16px;background:#fff;border:1px solid #E5E7EB;border-radius:8px;margin:12px 0;">
+  <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:#374151;">
+    <span>항목 1</span>
+    <input type="text" placeholder="값을 입력하세요" style="padding:8px 10px;border:1px solid #D1D5DB;border-radius:6px;font-size:13px;outline:none;" />
+  </label>
+  <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:#374151;">
+    <span>항목 2</span>
+    <select style="padding:8px 10px;border:1px solid #D1D5DB;border-radius:6px;font-size:13px;outline:none;background:#fff;">
+      <option>선택 1</option><option>선택 2</option>
+    </select>
+  </label>
+  <button type="submit" style="align-self:flex-start;padding:9px 18px;background:#4F46E5;color:#fff;border:0;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">제출</button>
+</form>`,
+      list: `<ul style="list-style:none;padding:0;margin:12px 0;border:1px solid #E5E7EB;border-radius:8px;background:#fff;overflow:hidden;">
+  <li style="padding:12px 16px;border-bottom:1px solid #F3F4F6;font-size:13px;color:#1A1A1A;">아이템 1</li>
+  <li style="padding:12px 16px;border-bottom:1px solid #F3F4F6;font-size:13px;color:#1A1A1A;">아이템 2</li>
+  <li style="padding:12px 16px;font-size:13px;color:#1A1A1A;">아이템 3</li>
+</ul>`,
+      table: `<table style="width:100%;border-collapse:collapse;margin:12px 0;background:#fff;border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;font-size:12.5px;">
+  <thead>
+    <tr style="background:#F9FAFB;">
+      <th style="padding:10px 12px;text-align:left;font-weight:600;color:#374151;border-bottom:1px solid #E5E7EB;">컬럼 A</th>
+      <th style="padding:10px 12px;text-align:left;font-weight:600;color:#374151;border-bottom:1px solid #E5E7EB;">컬럼 B</th>
+      <th style="padding:10px 12px;text-align:right;font-weight:600;color:#374151;border-bottom:1px solid #E5E7EB;">수량</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td style="padding:10px 12px;border-bottom:1px solid #F3F4F6;">행 1-A</td><td style="padding:10px 12px;border-bottom:1px solid #F3F4F6;">행 1-B</td><td style="padding:10px 12px;text-align:right;border-bottom:1px solid #F3F4F6;">120</td></tr>
+    <tr><td style="padding:10px 12px;border-bottom:1px solid #F3F4F6;">행 2-A</td><td style="padding:10px 12px;border-bottom:1px solid #F3F4F6;">행 2-B</td><td style="padding:10px 12px;text-align:right;border-bottom:1px solid #F3F4F6;">85</td></tr>
+    <tr><td style="padding:10px 12px;">행 3-A</td><td style="padding:10px 12px;">행 3-B</td><td style="padding:10px 12px;text-align:right;">42</td></tr>
+  </tbody>
+</table>`,
+      'table-action-bar': `<div style="display:flex;gap:8px;align-items:center;padding:10px 12px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;margin:12px 0;">
+  <span style="font-size:12.5px;color:#6B7280;"><b style="color:#111827;">3</b> 건 선택됨</span>
+  <button type="button" style="margin-left:auto;padding:7px 12px;background:#fff;color:#374151;border:1px solid #D1D5DB;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">엑셀 다운로드</button>
+  <button type="button" style="padding:7px 12px;background:#fff;color:#374151;border:1px solid #D1D5DB;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">일괄 업로드</button>
+  <button type="button" style="padding:7px 14px;background:#4F46E5;color:#fff;border:0;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">+ 추가</button>
+</div>`,
+      card: `<div style="padding:16px 18px;border-radius:10px;background:#fff;border:1px solid #E5E7EB;margin:12px 0;">
+  <h4 style="margin:0 0 8px;font-size:14px;font-weight:700;color:#111827;">카드 제목</h4>
+  <p style="margin:0;font-size:12.5px;color:#4B5563;line-height:1.6;">카드의 본문 내용을 입력하세요.</p>
+</div>`,
+    };
+    function _isTypeTemplateHtml(html) {
+      const t = (html || '').trim();
+      if (!t) return true;  // 빈 값도 자유롭게 교체 OK
+      return Object.values(TYPE_TEMPLATES).some((tpl) => tpl.trim() === t);
+    }
+
     // AI prompt → HTML stub. Without a real backend we synthesize a
     // template-based HTML that embeds the prompt text so the user can see
     // their intent reflected and then refine in the HTML tab.
@@ -4963,6 +5081,11 @@
       // Default values
       let name = '', type = 'card', html = '', width = 12;
       const widthField = document.getElementById('cmpWidthField');
+      // 컴포넌트명 field — 신규/추가 컴포넌트(addedId) 일 때만 노출.
+      // Native 기존 컴포넌트는 selector 가 식별자이므로 라벨은 변경 가능하나
+      // 별도 modal 입력으로 받을 필요 없음 (편집 핵심은 HTML/타입/너비).
+      const nameField = document.getElementById('cmpNameField');
+      let showNameField = true;
       if (mode === 'edit' && addedId) {
         const d = pageDraft();
         const c = (d.added.components || []).find((x) => x.id === addedId);
@@ -4985,9 +5108,10 @@
         // 미설정 = 12 (전체 너비). 사용자가 6 등으로 줄이면 같은 row 에 다른
         // 컴포넌트가 함께 배치 가능 (예: 액션바 8 + 페이지네이션 4).
         width = (typeof ed.width === 'number' && ed.width >= 1 && ed.width <= 12) ? ed.width : 12;
-        title.textContent = '컴포넌트 편집 (기존 컴포넌트)';
+        title.textContent = '컴포넌트 편집' + (name ? ` — ${name}` : '');
         delBtn.hidden = true;
         if (widthField) widthField.hidden = false;
+        showNameField = false;  // native: 컴포넌트명 input hide
       } else {
         title.textContent = '컴포넌트 추가';
         delBtn.hidden = true;
@@ -4996,14 +5120,24 @@
       nameEl.value   = name;
       typeEl.value   = type;
       htmlEl.value   = html;
+      // ADD 모드 + 빈 HTML → 현재 type 의 템플릿으로 시드 (사용자가 시작점 갖도록).
+      if (_cmpModal.mode === 'add' && !html.trim() && TYPE_TEMPLATES[type]) {
+        htmlEl.value = TYPE_TEMPLATES[type];
+      }
       aiPromptEl.value = '';
+      if (nameField) nameField.hidden = !showNameField;
       const widthEl = document.getElementById('cmpWidth');
       if (widthEl) widthEl.value = String(width);
       _cmpSwitchTab('html');
       _cmpRenderLib();
+      // 라이브러리 패널은 항상 닫힌 상태로 시작 (이전 세션의 펼침 상태 잔존 방지).
+      const libPanel = document.getElementById('cmpLibPanel');
+      const libToggle = document.getElementById('cmpLibToggle');
+      if (libPanel) libPanel.hidden = true;
+      if (libToggle) libToggle.setAttribute('aria-expanded', 'false');
       backdrop.hidden = false;
       modal.hidden = false;
-      setTimeout(() => nameEl.focus(), 0);
+      setTimeout(() => (showNameField ? nameEl : typeEl).focus(), 0);
     }
     function closeComponentModal() {
       document.getElementById('cmpModal').hidden = true;
@@ -5125,7 +5259,7 @@
       }).join('');
     }
     function _cmpSave() {
-      const name = (document.getElementById('cmpName').value || '').trim();
+      let name = (document.getElementById('cmpName').value || '').trim();
       const type = document.getElementById('cmpType').value || 'card';
       const html = document.getElementById('cmpHtml').value || '';
       const widthRaw = parseInt(document.getElementById('cmpWidth').value, 10);
@@ -5133,6 +5267,11 @@
       if (!name && _cmpModal.mode === 'add') {
         document.getElementById('cmpName').focus();
         return;
+      }
+      // Native 편집 모드는 name input 을 hide — fallback 라벨로 채워 saved entry
+      // 가 빈 라벨이 되지 않도록.
+      if (_cmpModal.mode === 'edit' && _cmpModal.selector && !name) {
+        name = _cmpDefaultLabelFor(_cmpModal.selector) || '';
       }
       if (_cmpModal.mode === 'add') {
         addComponent({ label: name, type, html, width });
@@ -5173,6 +5312,18 @@
       // tabs
       const tab = t.closest && t.closest('#cmpModal [data-cmp-tab]');
       if (tab) { e.preventDefault(); _cmpSwitchTab(tab.dataset.cmpTab); return; }
+      // 라이브러리 토글 — 펼침/접힘
+      if (t.closest && t.closest('#cmpLibToggle')) {
+        e.preventDefault();
+        const btn = document.getElementById('cmpLibToggle');
+        const panel = document.getElementById('cmpLibPanel');
+        if (!btn || !panel) return;
+        const willOpen = btn.getAttribute('aria-expanded') !== 'true';
+        btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        panel.hidden = !willOpen;
+        if (willOpen) _cmpRenderLib();
+        return;
+      }
       // atomic level sub-tabs (Atom / Molecule / Organism)
       const lvtab = t.closest && t.closest('[data-cmp-lib-level]');
       if (lvtab) {
@@ -5184,7 +5335,8 @@
         }
         return;
       }
-      // lib pick — load preset HTML into the HTML tab + set name/type
+      // lib pick — load preset HTML into the HTML tab + set name/type,
+      // 라이브러리 패널 자동 접힘 → 사용자가 바로 결과 확인 가능.
       const pick = t.closest && t.closest('[data-cmp-lib-pick]');
       if (pick && !t.closest('[data-cmp-lib-edit]')) {
         e.preventDefault();
@@ -5192,10 +5344,15 @@
         const nameEl = document.getElementById('cmpName');
         const typeEl = document.getElementById('cmpType');
         const htmlEl = document.getElementById('cmpHtml');
-        if (!nameEl.value.trim()) nameEl.value = u.label || '';
+        if (nameEl && !nameEl.value.trim()) nameEl.value = u.label || '';
         if (typeEl) typeEl.value = u.type || typeEl.value;
         htmlEl.value = u.html || '';
         _cmpSwitchTab('html');
+        // 패널 자동 접힘
+        const libPanel = document.getElementById('cmpLibPanel');
+        const libToggle = document.getElementById('cmpLibToggle');
+        if (libPanel) libPanel.hidden = true;
+        if (libToggle) libToggle.setAttribute('aria-expanded', 'false');
         showToast('라이브러리에서 불러왔습니다 — 필요시 수정 후 [저장]');
         return;
       }
@@ -6998,6 +7155,23 @@
       if (rbH) {
         const v = parseInt(rbH.value, 10);
         updateRowbreakHeight(rbH.dataset.rowbreakHeightId, Number.isFinite(v) ? v : 0);
+        return;
+      }
+      // 컴포넌트 모달 — 컴포넌트(타입) 변경 시 HTML 자동 채움.
+      // textarea 가 비어있거나 다른 type-template 값일 땐 silently 교체.
+      // 사용자 작성 HTML 이면 confirm 받고 덮어씀.
+      if (t.id === 'cmpType') {
+        const newType = t.value;
+        const tpl = TYPE_TEMPLATES[newType];
+        if (!tpl) return;  // 'custom' 등 — 템플릿 없음
+        const htmlEl = document.getElementById('cmpHtml');
+        if (!htmlEl) return;
+        const cur = htmlEl.value || '';
+        const safe = _isTypeTemplateHtml(cur);
+        if (safe || confirm('현재 입력한 HTML 을 [' + newType + '] 기본 템플릿으로 교체할까요?')) {
+          htmlEl.value = tpl;
+          _cmpSwitchTab('html');
+        }
         return;
       }
     });
