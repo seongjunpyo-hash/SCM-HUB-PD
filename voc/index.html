@@ -8,6 +8,9 @@
   <script src="/profile-menu.js" defer></script>
   <!-- 편집 탭 컴포넌트 라이브러리 (단일 source — 30개 atomic 컴포넌트). -->
   <script src="component-library.js"></script>
+  <!-- voc 와 dev-export.js 가 단일 source 로 사용하는 추가 DOM 빌더
+       (추가 테이블 HTML / 필터 칩 wrapper picker). -->
+  <script src="added-dom-builders.js"></script>
   <!-- VOC 가 자체 dropdown UI 를 그릴 때 lnb.js 의 메뉴 데이터(SCM.lnb.getMenu) 를 single
        source 로 사용. lnb.js 를 동기 로드 — IIFE 안 MENU 초기화 시점에 SCM.lnb 가 필요. -->
   <script src="../design system/components/lnb/lnb.js"></script>
@@ -4544,62 +4547,13 @@
     }
 
     // 사용자 추가 테이블 inject — main 끝에 .mp-table-host 추가.
-    // type 'flat' = 1-row thead, 'grouped' = 2-row thead (group + leaf).
-    // column/group 인젝션 보다 먼저 실행돼야 그 host 가 존재.
+    // 빌더 본체는 voc/added-dom-builders.js 에서 단일 source 로 관리
+    // (voc + dev-export 가 공유). column/group 인젝션 보다 먼저 실행돼야
+    // 그 host 가 존재.
     function _buildAddedTableHTML(t) {
-      const klass = `voc-added-table-${t.id}`;
-      const cellStyle = 'min-width:120px;width:120px;padding:12px 16px;';
-      const safeLabel = escapeHtml(t.label || '새 테이블');
-      const withCheck = !!t.withCheck;
-      const withNo = !!t.withNo;
-      // 앵커 컬럼 markup — sku-management 와 동일 패턴.
-      const cbHeadCell = `<th class="cb-col"${t.type === 'grouped' ? ' rowspan="2"' : ''}><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="전체 선택"></span></th>`;
-      const noHeadCell = `<th class="col-auto col-no"${t.type === 'grouped' ? ' rowspan="2"' : ''}>No</th>`;
-      const cbBodyCell = '<td class="cb-col"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="선택"></span></td>';
-      const headAnchorPrefix = (withCheck ? cbHeadCell : '') + (withNo ? noHeadCell : '');
-      // colgroup — 앵커 col 추가.
-      const cgAnchor = (withCheck ? '<col style="width:36px"/>' : '') + (withNo ? '<col style="width:48px"/>' : '');
-      const colgroup = `<colgroup>${cgAnchor}<col style="width:120px"/><col style="width:120px"/><col class="col-spacer" data-empty="true"/></colgroup>`;
-      let thead;
-      if (t.type === 'grouped') {
-        thead = '<thead>'
-          + '<tr class="group-row">'
-          +   headAnchorPrefix   // rs=2 anchor 셀들 — group row 에서 시작해 leaf row 까지 차지
-          +   `<th colspan="2" style="${cellStyle}">${safeLabel} 그룹</th>`
-          +   '<th class="col-spacer" data-empty="true" rowspan="2" aria-hidden="true"></th>'
-          + '</tr>'
-          + '<tr>'
-          +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 1</div></th>`
-          +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 2</div></th>`
-          + '</tr>'
-          + '</thead>';
-      } else {
-        thead = '<thead>'
-          + '<tr>'
-          +   headAnchorPrefix
-          +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 1</div></th>`
-          +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 2</div></th>`
-          +   '<th class="col-spacer" data-empty="true" aria-hidden="true"></th>'
-          + '</tr>'
-          + '</thead>';
-      }
-      // tbody — 행마다 cb / No 셀 prepend (No 는 1,2,3).
-      const tbodyRow = (n) => '<tr>'
-        +   (withCheck ? cbBodyCell : '')
-        +   (withNo ? `<td class="col-auto col-no">${n}</td>` : '')
-        +   `<td style="${cellStyle}">—</td>`
-        +   `<td style="${cellStyle}">—</td>`
-        +   '<td class="col-spacer" data-empty="true"></td>'
-        + '</tr>';
-      const tbody = `<tbody>${tbodyRow(1)}${tbodyRow(2)}${tbodyRow(3)}</tbody>`;
-      return `<section class="scm-page-section scm-voc-added-table ${klass}" id="voc-added-table-${t.id}">`
-        +   `<div class="scm-page-section__title">${safeLabel}</div>`
-        +   '<div class="mp-table-host">'
-        +     '<div class="mp-table-scroll">'
-        +       `<table class="mp-table">${colgroup}${thead}${tbody}</table>`
-        +     '</div>'
-        +   '</div>'
-        + '</section>';
+      return (window.SCM_VOC_BUILDERS && window.SCM_VOC_BUILDERS.buildAddedTableHTML)
+        ? window.SCM_VOC_BUILDERS.buildAddedTableHTML(t)
+        : '';
     }
     function applyAddedTables(doc, a) {
       const list = (a.added && Array.isArray(a.added.tables)) ? a.added.tables : [];
@@ -4626,11 +4580,10 @@
       // ---- Filters ----
       const filterBar = doc.querySelector('.scm-filter-bar');
       if (filterBar && a.added.filters.length) {
-        // pick the wrapper that already contains real chips so layout matches
-        const realChip = filterBar.querySelector(
-          '.scm-filter-select[data-mp-filter]:not(.scm-voc-added-filter)'
-        );
-        const wrapper = (realChip && realChip.parentElement) || filterBar.firstElementChild || filterBar;
+        // wrapper 선택 = .scm-filter-overflow__track 우선 (gap 룰 적용 위치).
+        // 단일 source: voc/added-dom-builders.js → pickFilterChipWrapper.
+        const wrapper = (window.SCM_VOC_BUILDERS && window.SCM_VOC_BUILDERS.pickFilterChipWrapper(filterBar))
+          || filterBar;
         const resetBtn = wrapper.querySelector(':scope > .scm-filter-reset-btn');
         a.added.filters.forEach((f) => {
           const id = `voc-added-filter-${f.id}`;
@@ -5865,15 +5818,9 @@
       if (!a.filterOrder || !a.filterOrder.length) return;
       const filterBar = doc.querySelector('.scm-filter-bar');
       if (!filterBar) return;
-      // wrapper 는 .scm-filter-overflow__track 우선 — 거기엔 칩 사이 8px gap
-      // 룰이 적용됨. 첫 칩의 parent 가 .scm-filter-group (display:inline-flex,
-      // gap=0 — 인접 칩 시각적 연결용) 일 때 그걸 wrapper 로 잡으면 모든
-      // 칩이 group 으로 들어가 flush 로 붙어 보이는 버그.
-      const track = filterBar.querySelector('.scm-filter-overflow__track');
-      const realChip = filterBar.querySelector(
-        '.scm-filter-select[data-mp-filter]:not(.scm-voc-added-filter)'
-      );
-      const wrapper = track || (realChip && realChip.parentElement) || filterBar.firstElementChild || filterBar;
+      // wrapper 선택은 단일 source: voc/added-dom-builders.js → pickFilterChipWrapper.
+      const wrapper = (window.SCM_VOC_BUILDERS && window.SCM_VOC_BUILDERS.pickFilterChipWrapper(filterBar))
+        || filterBar;
       const resetBtn = wrapper.querySelector(':scope > .scm-filter-reset-btn');
       a.filterOrder.forEach((sel) => {
         try {
