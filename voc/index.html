@@ -2475,7 +2475,15 @@
       state.globalLabels = (glRaw && typeof glRaw === 'object' && !Array.isArray(glRaw)) ? glRaw : {};
       state.globalLabels.filter    = (state.globalLabels.filter    && typeof state.globalLabels.filter    === 'object') ? state.globalLabels.filter    : {};
       state.globalLabels.column    = (state.globalLabels.column    && typeof state.globalLabels.column    === 'object') ? state.globalLabels.column    : {};
-      state.globalLabels.component = (state.globalLabels.component && typeof state.globalLabels.component === 'object') ? state.globalLabels.component : {};
+      // 컴포넌트 cross-page 라벨 sync 는 폐기 — 사이드바 컴포넌트명과 페이지의
+      // H1 텍스트는 별개 개념. 이전에 기록된 매핑이 있으면 무시 + 디스크에서도
+      // 정리해서 다시는 적용 안 되게 함.
+      if (state.globalLabels.component && Object.keys(state.globalLabels.component).length) {
+        delete state.globalLabels.component;
+        try { localStorage.setItem(GLOBAL_LABELS_KEY, JSON.stringify(state.globalLabels)); } catch (_) {}
+      } else {
+        delete state.globalLabels.component;
+      }
       initNewPagePane();
       // L1 chips
       menuL1.innerHTML = MENU.map((m) => `<button type="button" class="menu-l1__chip" data-l1="${m.l1}">${escapeHtml(m.label)}</button>`).join('');
@@ -3589,21 +3597,9 @@
       if (typeof next.width === 'number' && next.width === 12) delete next.width;
       if (!next.html && !next.label && !next.type && next.width == null) delete d.componentEdits[selector];
       else d.componentEdits[selector] = next;
-      // Cross-page sync — patch 에 label 이 들어오면 원본 라벨 → 새 라벨 매핑.
-      if (Object.prototype.hasOwnProperty.call(patch, 'label')) {
-        try {
-          const doc = iframe.contentDocument;
-          const el = doc && doc.querySelector(selector);
-          const orig = el && _normLabel(el.getAttribute('data-voc-orig-label'));
-          if (orig) {
-            const v = _normLabel(patch.label);
-            state.globalLabels.component = state.globalLabels.component || {};
-            if (v && v !== orig) state.globalLabels.component[orig] = v;
-            else delete state.globalLabels.component[orig];
-            persistGlobalLabels();
-          }
-        } catch (_) {}
-      }
+      // 컴포넌트명(라벨)은 사이드바 식별자일 뿐, 페이지의 H1/타이틀 텍스트와
+      // 별개. cross-page sync 는 filter/column 만 — 컴포넌트는 페이지마다 의미가
+      // 다를 수 있으므로 sync 안 함. (이전엔 sync 가 H1 텍스트 덮어쓰는 부작용 있었음.)
       persistDraft();
       renderEditPane();
       applyComponentSectionToIframe();
@@ -4197,22 +4193,11 @@
           else host.insertBefore(doc.createTextNode(v), host.firstChild);
         });
       }
-      if (g.component && Object.keys(g.component).length) {
-        doc.querySelectorAll('[data-voc-orig-label]').forEach((el) => {
-          if (el.matches('.scm-filter-select, .mp-table thead th')) return;
-          const orig = _normLabel(el.getAttribute('data-voc-orig-label'));
-          const v = orig && g.component[orig];
-          if (!v) return;
-          const head = el.querySelector('.scm-card-title, .scm-page-section__title, .scm-page-head__title, h1, h2, h3, h4');
-          if (!head) return;
-          let textNode = null;
-          for (const n of head.childNodes) {
-            if (n.nodeType === 3 && n.textContent.trim()) { textNode = n; break; }
-          }
-          if (textNode) textNode.textContent = v;
-          else head.insertBefore(doc.createTextNode(v), head.firstChild);
-        });
-      }
+      // 컴포넌트 cross-page 라벨 sync 는 제거 (비활성화).
+      // 컴포넌트의 라벨 (사이드바 표시명) 과 실제 페이지의 H1/타이틀 텍스트는
+      // 별개 — 컴포넌트명은 그냥 사이드바 식별자, 실제 시각 변경은 HTML 편집
+      // 으로. 이전엔 globalLabels.component 가 H1 텍스트까지 덮어 "SKU 관리"
+      // 가 "Title" 로 보이는 등 의도와 다른 부작용 있었음.
     }
 
     function applyFilterLabelsToIframe() {

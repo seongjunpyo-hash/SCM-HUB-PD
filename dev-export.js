@@ -2060,22 +2060,19 @@ ${jsxBody}
         else host.insertBefore(doc.createTextNode(v), host.firstChild);
       });
     }
-    if (gl.component && Object.keys(gl.component).length) {
-      doc.querySelectorAll('[data-voc-orig-label]').forEach((el) => {
-        if (el.matches('.scm-filter-select, .mp-table thead th')) return;
-        const orig = _normLabel(el.getAttribute('data-voc-orig-label'));
-        const v = orig && gl.component[orig];
-        if (!v) return;
-        const head = el.querySelector('.scm-card-title, .scm-page-section__title, .scm-page-head__title, h1, h2, h3, h4');
-        if (!head) return;
-        let textNode = null;
-        for (const n of head.childNodes) {
-          if (n.nodeType === 3 && n.textContent.trim()) { textNode = n; break; }
-        }
-        if (textNode) textNode.textContent = v;
-        else head.insertBefore(doc.createTextNode(v), head.firstChild);
-      });
-    }
+    // 컴포넌트 cross-page 라벨 sync 는 폐기 (filter/column 만 sync).
+    // 컴포넌트의 H1 텍스트는 HTML 자체로 관리 — 라벨 sync 가 덮어쓰지 않음.
+  }
+  function _purgeStaleGlobalComponentLabels() {
+    try {
+      var raw = localStorage.getItem(_GLOBAL_LABELS_KEY);
+      if (!raw) return;
+      var v = JSON.parse(raw);
+      if (v && typeof v === 'object' && v.component) {
+        delete v.component;
+        localStorage.setItem(_GLOBAL_LABELS_KEY, JSON.stringify(v));
+      }
+    } catch (_) {}
   }
 
   // ---- 추가 테이블 (1단/2단) inject — voc 의 applyAddedTables mirror ----
@@ -2498,6 +2495,8 @@ ${jsxBody}
 
   function applyFullSnapshot(a) {
     if (!a) return;
+    // 폐기된 컴포넌트 cross-page 라벨 매핑 정리 (한 번 실행 후엔 no-op).
+    _purgeStaleGlobalComponentLabels();
     const doc = document;
     // 0) main 직속 자식에 comp-N voc-key stamp (Phase 1) + 원본 라벨 stamp.
     //    voc-key: saved [data-voc-key="comp-N"] selector 매칭.
