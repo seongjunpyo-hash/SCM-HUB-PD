@@ -725,7 +725,7 @@
       font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
     }
     /* main 컴포넌트 모달은 30개 라이브러리 카드 + iframe 프리뷰를 위해 더 넓게. */
-    .cmp-modal { width: min(960px, 94vw); max-height: 92vh; }
+    .cmp-modal { width: min(1280px, 96vw); max-height: 94vh; }
     .cmp-modal[hidden], .cmp-unit-modal[hidden] { display: none !important; }
     .cmp-modal__head {
       display: flex; align-items: center; justify-content: space-between;
@@ -879,9 +879,9 @@
       transform: translateY(-1px);
       box-shadow: 0 2px 6px rgba(79, 70, 229, 0.08);
     }
-    /* iframe 미리보기 (sandboxed — script 차단) */
+    /* iframe 미리보기 (sandboxed — 디자인 시스템 CSS + scm-icons sprite 로드) */
     .cmp-lib-card__preview {
-      width: 100%; height: 110px;
+      width: 100%; height: 180px;
       border: 0;
       background:
         linear-gradient(45deg, #F9FAFB 25%, transparent 25%) 0 0/16px 16px,
@@ -5301,20 +5301,75 @@
     // 현재 라이브러리에서 활성 atomic 레벨 (atom / molecule / organism).
     // 모달 닫힘 ↔ 다시 열림 사이에도 사용자가 마지막에 보던 레벨이 유지되도록 외부 변수로.
     let _libActiveLevel = 'atom';
-    // sandboxed iframe 미리보기 srcdoc 생성 — 컴포넌트 HTML 을 격리된 환경에서
-    // Pretendard 폰트 + 중앙정렬 레이아웃으로 렌더. allow-scripts 미부여 = JS 차단.
+    // 라이브러리 카드 미리보기에 동일하게 로드되는 디자인 시스템 CSS 목록.
+    // catalog/index.html 과 동일 — voc 라이브러리가 catalog 의 source of truth
+    // (scm-* 클래스) 를 그대로 쓰므로 렌더 시각이 일치.
+    const _LIB_DS_CSS = [
+      '/design system/layer-desktop.css',
+      // Atoms
+      '/design system/components/icon-box/icon-box.css',
+      '/design system/components/checkbox/checkbox.css',
+      '/design system/components/radio/radio.css',
+      '/design system/components/toggle/toggle.css',
+      '/design system/components/tag/tag.css',
+      '/design system/components/status-chip/status-chip.css',
+      '/design system/components/platform-tag/platform-tag.css',
+      '/design system/components/state-text/state-text.css',
+      // Buttons & Inputs
+      '/design system/components/button/button.css',
+      '/design system/components/input/input.css',
+      '/design system/components/select/select.css',
+      '/design system/components/search-btn/search-btn.css',
+      '/design system/components/filter-reset-btn/filter-reset-btn.css',
+      '/design system/components/download-btn/download-btn.css',
+      '/design system/components/mini-action/mini-action.css',
+      // Form
+      '/design system/components/form-row/form-row.css',
+      // Display
+      '/design system/components/card/card.css',
+      '/design system/components/info-table/info-table.css',
+      '/design system/components/info-banner/info-banner.css',
+      '/design system/components/kpi-card/kpi-card.css',
+      '/design system/components/quick-link-card/quick-link-card.css',
+      '/design system/components/activity-item/activity-item.css',
+      '/design system/components/bar-chart/bar-chart.css',
+      '/design system/components/empty-state/empty-state.css',
+      // Navigation
+      '/design system/components/page-head/page-head.css',
+      '/design system/components/tabs/tabs.css',
+      '/design system/components/pager/pager.css',
+      // Filter
+      '/design system/components/filter-chip/filter-chip.css',
+      '/design system/components/filter-select/filter-select.css',
+      '/design system/components/filter-bar/filter-bar.css',
+      // Stats / Toast
+      '/design system/components/stat/stat.css',
+      '/design system/components/stats-bar/stats-bar.css',
+      '/design system/components/toast/toast.css',
+      // Table
+      '/design system/components/scm-table/scm-table.css',
+    ];
+    // sandboxed iframe 미리보기 srcdoc 생성 — 디자인 시스템 CSS + scm-icons 스프
+    // 라이트를 모두 로드해서 카드 안에서 실제 페이지와 동일한 시각으로 렌더.
+    // allow-scripts 부여 = scm-icons.js 가 sprite injection 가능 (라이브러리
+    // HTML 은 component-library.js 에서 큐레이트한 정적 마크업이라 XSS 우려 X).
     function _libPreviewSrcdoc(html) {
+      const linkTags = _LIB_DS_CSS.map((p) =>
+        `<link rel="stylesheet" href="${encodeURI(p)}" />`
+      ).join('');
       return [
         '<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8" />',
         '<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />',
+        linkTags,
         '<style>',
         'html,body{margin:0;padding:0;}',
-        'body{display:flex;align-items:center;justify-content:center;min-height:100%;padding:8px 12px;',
+        'body{display:flex;align-items:center;justify-content:center;min-height:100%;padding:14px 16px;',
           'font-family:Pretendard,system-ui,sans-serif;font-size:13px;color:#111827;background:#fff;',
           'overflow:hidden;box-sizing:border-box;}',
-        'body > *{max-width:100%;max-height:104px;}',
+        'body > *{max-width:100%;max-height:170px;}',
         '*{box-sizing:border-box;}',
         '</style></head><body>',
+        '<script src="/scm-icons.js"></script>',
         html || '',
         '</body></html>',
       ].join('');
@@ -5352,7 +5407,7 @@
         const previewHtml = cur.html || u.html || '';
         return `
           <div class="cmp-lib-card" data-cmp-lib-pick="${u.id}" title="이 컴포넌트를 HTML 입력 탭에 불러옵니다">
-            <iframe class="cmp-lib-card__preview" sandbox="allow-same-origin" loading="lazy" srcdoc="${escapeHtml(_libPreviewSrcdoc(previewHtml))}" title="${escapeHtml(cur.label || u.label || '')} 미리보기"></iframe>
+            <iframe class="cmp-lib-card__preview" sandbox="allow-same-origin allow-scripts" loading="lazy" srcdoc="${escapeHtml(_libPreviewSrcdoc(previewHtml))}" title="${escapeHtml(cur.label || u.label || '')} 미리보기"></iframe>
             <div class="cmp-lib-card__info">
               <div class="cmp-lib-card__body">
                 <span class="cmp-lib-card__title">${escapeHtml(cur.label || u.label)}</span>
