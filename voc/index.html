@@ -1083,6 +1083,24 @@
       color: #9CA3AF; text-decoration: line-through;
     }
     .edit-row.is-added { background: #FAF5FF; }
+    /* 행 나누기 entry — 컴포넌트 사이 드래그 가능한 시각적 구분선. */
+    .edit-row.is-divider {
+      background: #FAF5FF;
+      border: 1px dashed #C4B5FD;
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin: 6px 0;
+      justify-content: center;
+      gap: 8px;
+    }
+    .edit-row.is-divider:hover { background: #F3E8FF; }
+    .edit-row__divider-label {
+      flex: 1;
+      text-align: center;
+      font-size: 12px; font-weight: 600;
+      color: #6D28D9;
+      letter-spacing: 0.5px;
+    }
     /* Drag-and-drop reorder for added rows */
     .edit-row[draggable="true"] { cursor: grab; }
     .edit-row[draggable="true"]:active { cursor: grabbing; }
@@ -1805,6 +1823,7 @@
               <div class="edit-add">
                 <div class="edit-add-row">
                   <button type="button" class="edit-add-btn" data-add-component="new">+ 컴포넌트 추가</button>
+                  <button type="button" class="edit-add-btn" data-add-divider>+ 행 나누기</button>
                 </div>
               </div>
             </div>
@@ -2514,6 +2533,7 @@
         applyColumnLabelsToIframe();
         applyCellTypesToIframe();
         applyNativeComponentEdits();
+        applyComponentOrderToIframe();
         applyEditCss();
         applyBasicSettings();
         renderVersionSelect();
@@ -2934,6 +2954,14 @@
       // type 은 'flat'(1-row thead) | 'grouped'(2-row thead — group + leaf).
       // entry: { id, label, type }
       e.added.tables = Array.isArray(e.added.tables) ? e.added.tables : [];
+      // 행 나누기 — 컴포넌트 사이에 시각적 구분선을 inject. componentOrder
+      // 안의 위치에 따라 어느 두 컴포넌트 사이에 들어갈지 결정.
+      // entry: { id }
+      e.added.dividers = Array.isArray(e.added.dividers) ? e.added.dividers : [];
+      // 컴포넌트 + dividers 의 통합 order 배열. 각 entry 는 native 컴포넌트
+      // 의 selector ([data-voc-key="comp-N"]), 추가 컴포넌트의 #voc-added-comp-{id},
+      // 또는 divider 의 #voc-added-divider-{id}. 빈 배열 = 자연 스캔 순서.
+      e.componentOrder = Array.isArray(e.componentOrder) ? e.componentOrder : [];
       // componentEdits: { [selector]: { html, label, type } } — overrides
       // applied to NATIVE components on top of their existing DOM (selectors
       // include data-voc-key paths and arbitrary CSS paths).
@@ -2962,6 +2990,7 @@
       applyColumnLabelsToIframe();
       applyCellTypesToIframe();
       applyNativeComponentEdits();
+      applyComponentOrderToIframe();
       applyEditCss();
       applyBasicSettings();
     }
@@ -3009,9 +3038,73 @@
       rebuildAddedComponentsOnly();
       applyGlobalLabelsToIframe();
       applyNativeComponentEdits();
+      applyComponentOrderToIframe();
       applyEditCss();
       _setPreviewedComponent();
       refreshSaveBtn();
+    }
+    // 컴포넌트 순서 + 행 나누기를 iframe <main> 에 반영. componentOrder 기준으로
+    // (a) native 컴포넌트는 main 안에서 물리적으로 재배치 (appendChild 가 같은
+    // parent 에서 호출되면 element 가 끝으로 이동하므로 순서대로 호출하면 결국
+    // 그 순서로 정렬됨), (b) divider 는 <hr id="voc-added-divider-{id}"> 가
+    // 없으면 만들고 같은 방식으로 끝에 append. 결과적으로 main 의 자식 순서가
+    // componentOrder 와 일치하게 됨. 사용자가 추가한 컴포넌트(.scm-voc-added-grid
+    // 안)는 grid 로 묶여 있어 별도 처리 안 함 — 항상 main 끝.
+    function applyComponentOrderToIframe() {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      const main = doc.querySelector('main');
+      if (!main) return;
+      const a = pageDraft();
+      const order = (a.componentOrder || []).slice();
+      if (!order.length) return;
+      // 1) 기존 divider 노드 정리 — id 가 d.added.dividers 에 없으면 제거.
+      const aliveDivIds = new Set((a.added.dividers || []).map((dv) => dv.id));
+      doc.querySelectorAll('.scm-voc-divider').forEach((el) => {
+        const id = (el.id || '').replace(/^voc-added-divider-/, '');
+        if (!aliveDivIds.has(id)) el.remove();
+      });
+      const grid = main.querySelector('.scm-voc-added-grid');
+      // 2) order 를 순회하며 element 를 적절한 컨테이너의 끝으로 append.
+      //    - native + divider: main 직속.
+      //    - added comp (#voc-added-comp-): .scm-voc-added-grid 안에서 reorder.
+      order.forEach((sel) => {
+        if (!sel) return;
+        if (sel.startsWith('#voc-added-divider-')) {
+          const id = sel.slice('#voc-added-divider-'.length);
+          let hr = doc.getElementById(`voc-added-divider-${id}`);
+          if (!hr) {
+            hr = doc.createElement('hr');
+            hr.id = `voc-added-divider-${id}`;
+            hr.className = 'scm-voc-divider';
+            hr.setAttribute('role', 'separator');
+          }
+          main.appendChild(hr);
+          return;
+        }
+        if (sel.startsWith('#voc-added-comp-')) {
+          // grid 안의 entry — grid 안에서만 reorder.
+          if (!grid) return;
+          const entry = doc.querySelector(sel);
+          if (entry && entry.parentElement === grid) grid.appendChild(entry);
+          return;
+        }
+        // native: selector 로 main 안의 element 검색 후 main.appendChild
+        let el = null;
+        try { el = main.querySelector(sel); } catch (_) {}
+        if (!el) return;
+        // 자식이 main 에 직속이 아니면 (예: nested), 그 자식의 main-level
+        // 조상까지 올라가서 그것을 옮긴다 — top-level component 만 reorder.
+        let toMove = el;
+        while (toMove && toMove.parentElement !== main) toMove = toMove.parentElement;
+        if (!toMove || toMove.parentElement !== main) return;
+        // grid 자체는 항상 마지막. native 컴포넌트가 grid 보다 뒤로 가지 않도록
+        // grid 가 있으면 그 앞에 insertBefore, 아니면 append.
+        if (grid && grid.parentElement === main) main.insertBefore(toMove, grid);
+        else main.appendChild(toMove);
+      });
+      // grid 는 항상 main 끝으로.
+      if (grid && grid.parentElement === main) main.appendChild(grid);
     }
     function rebuildAddedComponentsOnly() {
       const doc = iframe.contentDocument;
@@ -3262,6 +3355,33 @@
       applyComponentSectionToIframe();
       applyColumnSectionToIframe();
     }
+    // 행 나누기 (divider) — 컴포넌트 리스트에 새 entry 추가. componentOrder
+    // 에 자동으로 끝에 push 되며 이후 사용자가 drag 로 원하는 위치로 옮길 수 있다.
+    function addDivider() {
+      const d = pageDraft();
+      d.added.dividers = Array.isArray(d.added.dividers) ? d.added.dividers : [];
+      const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+      d.added.dividers.push({ id });
+      // 새 divider 가 자연 스캔 순서 끝에 오도록 syncOrderArr 로 먼저 자연
+      // 순서를 채운 뒤 divider selector 를 push.
+      syncOrderArr('component');
+      const sel = `#voc-added-divider-${id}`;
+      if (!d.componentOrder.includes(sel)) d.componentOrder.push(sel);
+      persistDraft();
+      renderEditPane();
+      applyComponentSectionToIframe();
+      return id;
+    }
+    function removeAddedDivider(id) {
+      const d = pageDraft();
+      d.added.dividers = (d.added.dividers || []).filter((x) => x.id !== id);
+      const sel = `#voc-added-divider-${id}`;
+      d.componentOrder = (d.componentOrder || []).filter((s) => s !== sel);
+      d.hidden = d.hidden.filter((s) => s !== sel);
+      persistDraft();
+      renderEditPane();
+      applyComponentSectionToIframe();
+    }
     function removeAddedFilter(id) {
       const d = pageDraft();
       d.added.filters = d.added.filters.filter((f) => f.id !== id);
@@ -3455,14 +3575,29 @@
         return cleaned;
       }
       // top-level: groups + ungrouped natives + added cols
-      const top = targets.topOrder.slice();
-      const added = d.added.columns.map((c) => `#voc-added-col-${c.id}`);
-      const all = new Set([...top, ...added]);
-      const cleaned = (d.columnOrder || []).filter((s) => all.has(s));
-      const inArr = new Set(cleaned);
-      [...top, ...added].forEach((s) => { if (!inArr.has(s)) cleaned.push(s); });
-      d.columnOrder = cleaned;
-      return cleaned;
+      if (kind === 'column') {
+        const top = targets.topOrder.slice();
+        const added = d.added.columns.map((c) => `#voc-added-col-${c.id}`);
+        const all = new Set([...top, ...added]);
+        const cleaned = (d.columnOrder || []).filter((s) => all.has(s));
+        const inArr = new Set(cleaned);
+        [...top, ...added].forEach((s) => { if (!inArr.has(s)) cleaned.push(s); });
+        d.columnOrder = cleaned;
+        return cleaned;
+      }
+      // ---- components: native + added components + dividers (mixed) ----
+      if (kind === 'component') {
+        const natives  = (targets.components || []).map((it) => it.selector);
+        const added    = (d.added.components || []).map((c) => `#voc-added-comp-${c.id}`);
+        const dividers = (d.added.dividers || []).map((dv) => `#voc-added-divider-${dv.id}`);
+        const all = new Set([...natives, ...added, ...dividers]);
+        const cleaned = (d.componentOrder || []).filter((s) => all.has(s));
+        const inArr = new Set(cleaned);
+        [...natives, ...added, ...dividers].forEach((s) => { if (!inArr.has(s)) cleaned.push(s); });
+        d.componentOrder = cleaned;
+        return cleaned;
+      }
+      return [];
     }
 
     // Unified reorder for filter / column rows.
@@ -3486,8 +3621,9 @@
       persistDraft();
       renderEditPane();
       // 즉시 적용 — drag-drop 으로 순서 바꾸자마자 좌측 데모도 동일 순서로 갱신.
-      if (kind === 'filter') applyFilterSectionToIframe();
-      else applyColumnSectionToIframe();
+      if (kind === 'filter')         applyFilterSectionToIframe();
+      else if (kind === 'component') applyComponentSectionToIframe();
+      else                           applyColumnSectionToIframe();
     }
 
     // ---- inject CSS / DOM into iframe (read APPLIED only) ----
@@ -3557,6 +3693,14 @@
           font-weight: 600 !important;
           color: #6D28D9 !important;
           margin-bottom: 8px !important;
+        }
+        /* 행 나누기 — 컴포넌트 사이 시각적 구분선. */
+        hr.scm-voc-divider {
+          border: 0 !important;
+          border-top: 1px dashed #C4B5FD !important;
+          margin: 24px 0 !important;
+          height: 0 !important;
+          background: transparent !important;
         }
         /* 추가 컴포넌트 grid 컨테이너 — 12-column. 각 컴포넌트는
            grid-column: span N (N=width). 빈 그리드(자식 0)는 표시 X. */
@@ -4360,6 +4504,7 @@
       doc.querySelectorAll('[class*="voc-added-col-"]').forEach((el) => el.remove());
       doc.querySelectorAll('[class*="voc-added-grp-"]').forEach((el) => el.remove());
       doc.querySelectorAll('.scm-voc-added-table').forEach((el) => el.remove());
+      doc.querySelectorAll('.scm-voc-divider').forEach((el) => el.remove());
       doc.querySelectorAll('.scm-voc-added-comp').forEach((el) => el.remove());
       doc.querySelectorAll('.scm-voc-added-grid').forEach((el) => { if (!el.children.length) el.remove(); });
       applyAddedDom();
@@ -4414,7 +4559,10 @@
       return JSON.stringify({
         hidden:        (p.hidden || []).filter((s) => !_isFilterSel(s) && !_isColumnSel(s)),
         added:         (p.added && p.added.components) || [],
+        addedTables:   (p.added && p.added.tables)     || [],
+        addedDividers: (p.added && p.added.dividers)   || [],
         componentEdits: p.componentEdits || {},
+        componentOrder: p.componentOrder || [],
         settings:      p.settings || {},
       });
     }
@@ -6076,11 +6224,11 @@
         }
       });
       const filterRows    = orderRows(filterRowsRaw, d.filterOrder);
-      // Components row list: native scanned components + user-added components.
-      // Native rows carry only `selector`; added rows carry `added` so the
-      // delete button + edit button can be wired.
+      // Components row list: native scanned components + user-added components +
+      // 행 나누기 (dividers). Native rows carry only `selector`; added rows
+      // carry `added` so the delete button + edit button can be wired.
       const globalComponent = (state.globalLabels && state.globalLabels.component) || {};
-      const componentRows = [
+      const componentRowsRaw = [
         ...targets.components.map((it) => {
           const editEntry = (d.componentEdits || {})[it.selector];
           // per-page edit > cross-page sync > 원본
@@ -6103,7 +6251,17 @@
           selector: `#voc-added-comp-${c.id}`,
           added: c, type: c.type,
         })),
+        ...(d.added.dividers || []).map((dv) => ({
+          kind: 'component',
+          isDivider: true,
+          label: '— 행 나누기 —',
+          selector: `#voc-added-divider-${dv.id}`,
+          added: dv,
+        })),
       ];
+      // Sync order arr (deletes stale + appends missing) and reorder raw rows.
+      const _compOrder = syncOrderArr('component');
+      const componentRows = orderRows(componentRowsRaw, _compOrder);
 
       const cellTypes = d.cellTypes || {};
       const renderList = (containerId, countId, items) => {
@@ -6195,12 +6353,12 @@
           const renameBtn = canRename
             ? `<button type="button" class="edit-row__rename"${renameAttrs} title="라벨 수정">✏</button>`
             : '';
-          // Reorderable iff kind is filter/column AND it.draggable !== false.
+          // Reorderable iff kind is filter/column/component AND it.draggable !== false.
           // Anchor row1 cells (rs>=2 like "No") have draggable=false — we
           // surface them in the list (so the user sees them) but disallow
           // drag because scm-table itself rejects drops on rs>=2 cells.
           const isAnchor = it.kind === 'column' && it.draggable === false;
-          const reorderable = (it.kind === 'filter' || it.kind === 'column') && !isAnchor;
+          const reorderable = (it.kind === 'filter' || it.kind === 'column' || it.kind === 'component') && !isAnchor;
           const depth = it.kind === 'column' ? (it.depth | 0) : 0;
           const dragParent = (it.kind === 'column' && depth === 1 && it.parent) ? it.parent : '';
           const dragAttrs = reorderable
@@ -6223,6 +6381,16 @@
                 ${renameBtn}
                 ${middle}
                 ${chev}
+              </div>`;
+          }
+          if (it.isDivider) {
+            // 행 나누기 — grip + label + × (delete). 체크박스 없음, edit 없음.
+            cls.push('is-divider');
+            return `
+              <div class="${cls.join(' ')}"${dragAttrs}>
+                ${grip}
+                <span class="edit-row__divider-label">${escapeHtml(it.label)}</span>
+                <button type="button" class="edit-row__del" data-del-divider="${escapeHtml(it.added.id)}" title="행 나누기 삭제">×</button>
               </div>`;
           }
           return `
@@ -6551,6 +6719,21 @@
       if (addCmp) {
         e.preventDefault();
         openComponentModal({ mode: 'add' });
+        return;
+      }
+      // 행 나누기 추가 — 별도 form 없이 바로 entry 추가, componentOrder 끝에 push.
+      const addDiv = t.closest && t.closest('[data-add-divider]');
+      if (addDiv) {
+        e.preventDefault();
+        addDivider();
+        showToast('행 나누기 추가 — 드래그로 원하는 위치에 옮기세요');
+        return;
+      }
+      const dDiv = t.closest && t.closest('[data-del-divider]');
+      if (dDiv) {
+        e.preventDefault();
+        e.stopPropagation();
+        removeAddedDivider(dDiv.dataset.delDivider);
         return;
       }
       // open / cancel / submit add forms (filter / column / group / table)
