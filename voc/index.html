@@ -595,6 +595,19 @@
       box-sizing: border-box;
     }
     .rn-modal__input:focus { outline: none; border-color: #4F46E5; box-shadow: 0 0 0 3px rgba(79,70,229,0.15); }
+    .rn-modal__toggles {
+      display: flex; gap: 8px;
+    }
+    .rn-modal__toggle {
+      cursor: pointer;
+      padding: 6px 14px; border-radius: 6px;
+      font-size: 12px; font-weight: 600; color: #6B7280;
+      background: #fff; border: 1px solid #D1D5DB;
+    }
+    .rn-modal__toggle:hover { border-color: #9CA3AF; color: #1A1A1A; }
+    .rn-modal__toggle[aria-pressed="true"] {
+      background: #EEF2FF; border-color: #C7D2FE; color: #4F46E5;
+    }
     .rn-modal__hint { margin: 4px 0 0; font-size: 11px; color: #6B7280; }
     .rn-modal__foot {
       display: flex; justify-content: flex-end; gap: 8px;
@@ -2046,6 +2059,14 @@
         <span class="rn-modal__field-label" id="rnModalKindLabel">라벨</span>
         <input type="text" class="rn-modal__input" id="rnModalInput" maxlength="40" placeholder="라벨" />
       </label>
+      <!-- 컬럼 전용 — 정렬 / 필터 아이콘 노출 토글. 필터/그룹/추가-항목엔 숨김. -->
+      <div class="rn-modal__field" id="rnModalIconsField" hidden>
+        <span class="rn-modal__field-label">컬럼 헤더 아이콘</span>
+        <div class="rn-modal__toggles">
+          <button type="button" class="rn-modal__toggle" id="rnModalSortToggle" aria-pressed="false">정렬</button>
+          <button type="button" class="rn-modal__toggle" id="rnModalFilterToggle" aria-pressed="false">필터</button>
+        </div>
+      </div>
       <p class="rn-modal__hint" id="rnModalHint"></p>
     </div>
     <footer class="rn-modal__foot">
@@ -4823,11 +4844,29 @@
       const inp = document.getElementById('rnModalInput');
       const kindLab = document.getElementById('rnModalKindLabel');
       const hint = document.getElementById('rnModalHint');
+      const iconsField = document.getElementById('rnModalIconsField');
+      const sortBtn = document.getElementById('rnModalSortToggle');
+      const filterBtn = document.getElementById('rnModalFilterToggle');
       if (!modal || !bd || !inp) return;
       const kindKo = ctx && ctx.kind === 'filter' ? '필터' : (ctx && ctx.kind === 'column' ? '컬럼' : '항목');
       if (kindLab) kindLab.textContent = kindKo + ' 라벨';
       inp.value = (ctx && ctx.orig) || '';
       if (hint) hint.textContent = '저장 시 사이드바와 좌측 데모에 즉시 반영됩니다.';
+      // 컬럼 전용 정렬/필터 토글 — 현재 상태 반영. native + added 모두 selector
+      // 기준으로 showSort / showFilter 에 들어 있어 동일하게 처리.
+      if (iconsField) {
+        if (ctx && ctx.kind === 'column' && ctx.selector) {
+          iconsField.hidden = false;
+          const d = pageDraft();
+          const ssel = ctx.selector;
+          const sortOn = (d.showSort || []).indexOf(ssel) >= 0;
+          const filterOn = (d.showFilter || []).indexOf(ssel) >= 0;
+          if (sortBtn) sortBtn.setAttribute('aria-pressed', sortOn ? 'true' : 'false');
+          if (filterBtn) filterBtn.setAttribute('aria-pressed', filterOn ? 'true' : 'false');
+        } else {
+          iconsField.hidden = true;
+        }
+      }
       bd.hidden = false;
       modal.hidden = false;
       setTimeout(() => { inp.focus(); inp.select(); }, 0);
@@ -4844,9 +4883,17 @@
       const inp = document.getElementById('rnModalInput');
       const val = ((inp && inp.value) || '').trim();
       const ctx = _rnModalCtx;
+      // 라벨 변경
       if (val && val !== ctx.orig) {
         if (ctx.addedId) setAddedLabel(ctx.kind, ctx.addedId, val);
         else if (ctx.selector) setNativeLabel(ctx.kind, ctx.selector, val);
+      }
+      // 컬럼 전용 — 정렬 / 필터 아이콘 노출 토글 적용.
+      if (ctx.kind === 'column' && ctx.selector) {
+        const sortBtn = document.getElementById('rnModalSortToggle');
+        const filterBtn = document.getElementById('rnModalFilterToggle');
+        if (sortBtn) setIconShown(ctx.selector, 'sort', sortBtn.getAttribute('aria-pressed') === 'true');
+        if (filterBtn) setIconShown(ctx.selector, 'filter', filterBtn.getAttribute('aria-pressed') === 'true');
       }
       closeRenameModal();
     }
@@ -4858,6 +4905,14 @@
         const a = act.dataset.rnAct;
         if (a === 'save') _rnModalSave();
         else closeRenameModal();
+        return;
+      }
+      // 정렬 / 필터 toggle — aria-pressed flip.
+      const tg = e.target && e.target.closest && e.target.closest('#rnModalSortToggle, #rnModalFilterToggle');
+      if (tg) {
+        e.preventDefault();
+        const cur = tg.getAttribute('aria-pressed') === 'true';
+        tg.setAttribute('aria-pressed', cur ? 'false' : 'true');
         return;
       }
       const bd = document.getElementById('rnModalBackdrop');
@@ -6618,6 +6673,8 @@
               const labelTxt = (t && t.label) || ('테이블 ' + (ti + 1));
               tableBadge = `<button type="button" class="edit-row__table-badge" data-move-added-col="${escapeHtml(it.added.id)}" data-cur-ti="${ti}" title="다른 테이블로 이동">📍 ${escapeHtml(labelTxt)}</button>`;
             }
+            // 정렬 / 필터 토글은 [수정] 모달로 이동 — row 의 자리 부족 해소.
+            // 기본정보(cell-type) select 만 인라인 유지.
             middle = `
               ${frozenBadge}
               ${tableBadge}
@@ -6627,9 +6684,7 @@
                 <option value="input"     ${ct === 'input'     ? 'selected' : ''}>입력창</option>
                 <option value="select"    ${ct === 'select'    ? 'selected' : ''}>셀렉트</option>
                 <option value="disabled"  ${ct === 'disabled'  ? 'selected' : ''}>디세이블</option>
-              </select>
-              <button type="button" class="edit-row__icon-toggle ${sortOn ? 'is-on' : ''}"   data-toggle-icon="sort"   data-selector="${sel}" title="컬럼 정렬 아이콘 표시/숨김">정렬</button>
-              <button type="button" class="edit-row__icon-toggle ${filterOn ? 'is-on' : ''}" data-toggle-icon="filter" data-selector="${sel}" title="컬럼 필터 아이콘 표시/숨김">필터</button>`;
+              </select>`;
           } else if (it.isGroup) {
             middle = `<span class="edit-row__group-count" title="선택된 컬럼 수 / 전체 컬럼 수">${it.visibleCount}/${it.childCount}</span>`;
           } else if (it.kind === 'filter') {
