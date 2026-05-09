@@ -1946,6 +1946,308 @@ ${jsxBody}
     document.body.appendChild(root);
   }
 
+  // ============================================================
+  // FULL VOC SNAPSHOT APPLY (mirrors voc/index.html 의 apply chain)
+  // ------------------------------------------------------------
+  // standalone 데모 페이지가 active 버전의 applied 를 받아 voc 편집의
+  // 모든 변경을 실제 DOM 에 반영. 이전엔 a.hidden 만 처리해서 라벨/추가/
+  // HTML override 등은 standalone 에 전혀 보이지 않았음 — "데모 저장이
+  // 반영 안됨" 의 정체.
+  //
+  // 처리 항목:
+  //  - hidden CSS + data-voc-hidden 셀 stamp (기존)
+  //  - 추가 필터/컬럼/그룹 inject
+  //  - 추가 컴포넌트 (HTML + rowbreak sentinel) inject (12-column grid)
+  //  - 필터/컬럼 라벨 오버라이드
+  //  - native 컴포넌트 HTML override (componentEdits.html)
+  //
+  // IMPORTANT: voc/index.html 의 apply 함수와 동기화 유지 — 새 step 이
+  // 추가되면 여기에도 mirror.
+  // ============================================================
+  function _isElVisibleStandalone(el) {
+    if (!el || el.nodeType !== 1) return false;
+    const win = el.ownerDocument && el.ownerDocument.defaultView;
+    for (let cur = el; cur && cur.nodeType === 1 && cur !== document.documentElement; cur = cur.parentElement) {
+      if (cur.hasAttribute && cur.hasAttribute('hidden')) return false;
+      if (win && win.getComputedStyle) {
+        const cs = win.getComputedStyle(cur);
+        if (cs && (cs.display === 'none' || cs.visibility === 'hidden')) return false;
+      }
+    }
+    return true;
+  }
+  function _hashStr(s) {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+    return String(h);
+  }
+
+  // ---- 추가 필터 / 컬럼 / 그룹 inject ----
+  function _applyAddedFiltersColumnsGroups(doc, a) {
+    // Filters
+    const filterBar = doc.querySelector('.scm-filter-bar');
+    const addedFilters = (a.added && a.added.filters) || [];
+    if (filterBar && addedFilters.length) {
+      const realChip = filterBar.querySelector('.scm-filter-select[data-mp-filter]:not(.scm-voc-added-filter)');
+      const wrapper = (realChip && realChip.parentElement) || filterBar.firstElementChild || filterBar;
+      const resetBtn = wrapper.querySelector(':scope > .scm-filter-reset-btn');
+      addedFilters.forEach((f) => {
+        const id = `voc-added-filter-${f.id}`;
+        if (doc.getElementById(id)) return;
+        const btn = doc.createElement('button');
+        btn.id = id;
+        btn.type = 'button';
+        btn.className = 'scm-filter-select scm-voc-added-filter';
+        btn.dataset.state = 'placeholder';
+        btn.dataset.mpFilter = `voc-added-${f.id}`;
+        btn.dataset.vocFilterType = f.type || 'single';
+        btn.innerHTML = `
+          <span class="scm-filter-select__label">${escapeHtml(f.label)}</span>
+          <span class="scm-filter-select__value">${escapeHtml(f.label)}</span>
+          <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+        `;
+        if (resetBtn && resetBtn.parentNode === wrapper) wrapper.insertBefore(btn, resetBtn);
+        else wrapper.appendChild(btn);
+      });
+    }
+    // Columns + groups
+    const visibleTables = [...doc.querySelectorAll('.mp-table')].filter(_isElVisibleStandalone);
+    const hostsByIdx = [];
+    const _seenHosts = new Set();
+    visibleTables.forEach((t) => {
+      const host = t.closest('.mp-table-host') || t;
+      if (_seenHosts.has(host)) return;
+      _seenHosts.add(host);
+      hostsByIdx.push({ host, tables: [...host.querySelectorAll('.mp-table')] });
+    });
+    const cellStyle = 'min-width:120px;width:120px;padding:12px 16px;';
+    ((a.added && a.added.columns) || []).forEach((c) => {
+      const id = `voc-added-col-${c.id}`;
+      if (doc.getElementById(id)) return;
+      const klass = `voc-added-col-${c.id}`;
+      const ti = (typeof c.tableIdx === 'number' && c.tableIdx >= 0) ? c.tableIdx : 0;
+      const target = hostsByIdx[ti] || hostsByIdx[0];
+      if (!target) return;
+      const allTables = target.tables;
+      allTables.forEach((tbl) => {
+        const thead = tbl.querySelector('thead');
+        if (!thead) return;
+        const trs = thead.querySelectorAll('tr');
+        const colTr = trs[trs.length - 1];
+        const groupTr = trs.length > 1 ? trs[0] : null;
+        const th = doc.createElement('th');
+        th.id = id;
+        th.className = `col-auto scm-voc-added-col ${klass}`;
+        th.innerHTML = '<div class="cell-clamp">' + escapeHtml(c.label) + '</div>';
+        th.setAttribute('style', cellStyle);
+        const colSpacer = colTr.querySelector('.col-spacer');
+        colTr.insertBefore(th, colSpacer || null);
+        if (groupTr) {
+          const gth = doc.createElement('th');
+          gth.className = `scm-voc-added-col ${klass}`;
+          gth.setAttribute('style', cellStyle);
+          const gSpacer = groupTr.querySelector('.col-spacer');
+          groupTr.insertBefore(gth, gSpacer || null);
+        }
+      });
+      allTables.forEach((tbl) => {
+        const tbody = tbl.querySelector('tbody');
+        if (!tbody) return;
+        tbody.querySelectorAll('tr').forEach((tr) => {
+          const td = doc.createElement('td');
+          td.className = `scm-voc-added-col ${klass}`;
+          td.textContent = '—';
+          td.setAttribute('style', cellStyle);
+          const tdSpacer = tr.querySelector('.col-spacer, [data-empty="true"]');
+          tr.insertBefore(td, tdSpacer || null);
+        });
+      });
+      allTables.forEach((tbl) => {
+        tbl.querySelectorAll(':scope > colgroup').forEach((cg) => {
+          if (cg.querySelector(`col.${klass}`)) return;
+          const col = doc.createElement('col');
+          col.className = `scm-voc-added-col ${klass}`;
+          col.style.width = '120px';
+          const spacerCol = cg.querySelector('col.col-spacer') || cg.lastElementChild;
+          cg.insertBefore(col, spacerCol);
+        });
+      });
+    });
+    ((a.added && a.added.groups) || []).forEach((g) => {
+      const gid = `voc-added-grp-${g.id}`;
+      if (doc.getElementById(gid)) return;
+      const lid = `voc-added-grp-${g.id}-leaf`;
+      const gKlass = `voc-added-grp-${g.id}`;
+      const lKlass = `voc-added-col-${g.id}-leaf`;
+      const ti = (typeof g.tableIdx === 'number' && g.tableIdx >= 0) ? g.tableIdx : 0;
+      const target = hostsByIdx[ti] || hostsByIdx[0];
+      if (!target) return;
+      const tablesInTarget = target.tables;
+      const headTable = tablesInTarget.find((t) => t.querySelector('thead'));
+      if (!headTable) return;
+      const headTr = headTable.querySelectorAll('thead > tr');
+      if (headTr.length < 2) return;
+      tablesInTarget.forEach((tbl) => {
+        const thead = tbl.querySelector('thead');
+        if (!thead) return;
+        const trs = thead.querySelectorAll('tr');
+        if (trs.length < 2) return;
+        const groupTr = trs[0];
+        const leafTr  = trs[trs.length - 1];
+        const gth = doc.createElement('th');
+        gth.id = gid;
+        gth.className = `scm-voc-added-col ${gKlass}`;
+        gth.setAttribute('colspan', '1');
+        gth.textContent = g.label;
+        gth.setAttribute('style', cellStyle);
+        const gSpacer = groupTr.querySelector('.col-spacer');
+        groupTr.insertBefore(gth, gSpacer || null);
+        const lth = doc.createElement('th');
+        lth.id = lid;
+        lth.className = `col-auto scm-voc-added-col ${lKlass}`;
+        lth.innerHTML = '<div class="cell-clamp">' + escapeHtml(g.leafLabel || '항목 1') + '</div>';
+        lth.setAttribute('style', cellStyle);
+        const lSpacer = leafTr.querySelector('.col-spacer');
+        leafTr.insertBefore(lth, lSpacer || null);
+      });
+      tablesInTarget.forEach((tbl) => {
+        const tbody = tbl.querySelector('tbody');
+        if (!tbody) return;
+        tbody.querySelectorAll('tr').forEach((tr) => {
+          const td = doc.createElement('td');
+          td.className = `scm-voc-added-col ${lKlass}`;
+          td.textContent = '—';
+          td.setAttribute('style', cellStyle);
+          const tdSpacer = tr.querySelector('.col-spacer, [data-empty="true"]');
+          tr.insertBefore(td, tdSpacer || null);
+        });
+      });
+      tablesInTarget.forEach((tbl) => {
+        tbl.querySelectorAll(':scope > colgroup').forEach((cg) => {
+          if (cg.querySelector(`col.${lKlass}`)) return;
+          const col = doc.createElement('col');
+          col.className = `scm-voc-added-col ${lKlass}`;
+          col.style.width = '120px';
+          const spacerCol = cg.querySelector('col.col-spacer') || cg.lastElementChild;
+          cg.insertBefore(col, spacerCol);
+        });
+      });
+    });
+  }
+
+  // ---- 추가 컴포넌트 (12-column grid) — voc 의 applyAddedComponents mirror ----
+  // entry 는 { id, label, type, html, width } 또는 rowbreak sentinel { id, kind:'rowbreak' }.
+  function _applyAddedComponentsGrid(doc, a) {
+    const list = (a.added && a.added.components) || [];
+    if (!list.length) return;
+    const main = doc.querySelector('main') || doc.body;
+    if (!main) return;
+    let grid = doc.querySelector('.scm-voc-added-grid');
+    if (!grid) {
+      grid = doc.createElement('div');
+      grid.className = 'scm-voc-added-grid';
+      main.appendChild(grid);
+    }
+    list.forEach((c) => {
+      const id = `voc-added-comp-${c.id}`;
+      if (doc.getElementById(id)) return;
+      const wrap = doc.createElement('div');
+      wrap.id = id;
+      // rowbreak sentinel — full-width line break, height 0.
+      if (c.kind === 'rowbreak') {
+        wrap.className = 'scm-voc-added-rowbreak';
+        wrap.dataset.vocAddedCompId = c.id;
+        wrap.style.gridColumn = '1 / -1';
+        grid.appendChild(wrap);
+        return;
+      }
+      wrap.className = 'scm-voc-added-comp';
+      wrap.dataset.vocAddedCompId = c.id;
+      wrap.dataset.vocAddedCompType = c.type || 'card';
+      wrap.dataset.vocAddedCompLabel = c.label || '';
+      const w = (typeof c.width === 'number' && c.width >= 1 && c.width <= 12) ? c.width : 12;
+      wrap.style.gridColumn = `span ${w}`;
+      wrap.dataset.vocCompWidth = String(w);
+      wrap.innerHTML = c.html || '';
+      grid.appendChild(wrap);
+    });
+    // grid CSS — voc 편집 화면과 동일. standalone 에선 hover 효과 없이 단순 그리드.
+    if (!doc.getElementById('scm-voc-added-grid-css')) {
+      const style = doc.createElement('style');
+      style.id = 'scm-voc-added-grid-css';
+      style.textContent = ''
+        + '.scm-voc-added-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; padding: 16px 0; }\n'
+        + '.scm-voc-added-grid:empty { display: none; }\n'
+        + '.scm-voc-added-comp { grid-column: span 12; min-width: 0; }\n'
+        + '.scm-voc-added-rowbreak { height: 0; padding: 0; margin: 0; }\n';
+      doc.head.appendChild(style);
+    }
+  }
+
+  // ---- 라벨 오버라이드 ----
+  function _applyFilterLabels(doc, a) {
+    const labels = (a.labels && a.labels.filter) || {};
+    Object.keys(labels).forEach((sel) => {
+      let el; try { el = doc.querySelector(sel); } catch { return; }
+      if (!el) return;
+      const labEl = el.querySelector('.scm-filter-select__label');
+      if (labEl) labEl.textContent = labels[sel];
+      const valEl = el.querySelector('.scm-filter-select__value');
+      if (valEl && valEl !== labEl) valEl.textContent = labels[sel];
+    });
+  }
+  function _applyColumnLabels(doc, a) {
+    const labels = (a.labels && a.labels.column) || {};
+    Object.keys(labels).forEach((sel) => {
+      let cells; try { cells = doc.querySelectorAll(sel); } catch { return; }
+      cells.forEach((cell) => {
+        const host = cell.querySelector(':scope > .cell-clamp, :scope > .cell-clamp-2') || cell;
+        let textNode = null;
+        for (const n of host.childNodes) {
+          if (n.nodeType === 3 && n.textContent.trim()) { textNode = n; break; }
+        }
+        if (textNode) textNode.textContent = labels[sel];
+        else host.insertBefore(doc.createTextNode(labels[sel]), host.firstChild);
+      });
+    });
+  }
+
+  // ---- native 컴포넌트 HTML override ----
+  function _applyNativeComponentEdits(doc, a) {
+    const edits = a.componentEdits || {};
+    Object.keys(edits).forEach((sel) => {
+      const ed = edits[sel];
+      if (!ed || !ed.html) return;
+      let el;
+      try { el = doc.querySelector(sel); } catch { return; }
+      if (!el) return;
+      if (el.dataset && el.dataset.vocCompHash === _hashStr(ed.html)) return;
+      try {
+        el.outerHTML = ed.html;
+        let newEl;
+        try { newEl = doc.querySelector(sel); } catch {}
+        if (newEl && newEl.dataset) newEl.dataset.vocCompHash = _hashStr(ed.html);
+      } catch (_) {}
+    });
+  }
+
+  // ---- top-level: 모든 apply 실행 ----
+  function applyFullSnapshot(a) {
+    if (!a) return;
+    const doc = document;
+    // 1) 추가 DOM 인젝션 — 필터/컬럼/그룹 → 컴포넌트(grid).
+    //    Native HTML override 가 element 를 outerHTML 로 바꿔 voc-key 를 잃을
+    //    수 있으니 그 전에 실행.
+    _applyAddedFiltersColumnsGroups(doc, a);
+    _applyAddedComponentsGrid(doc, a);
+    // 2) 라벨 오버라이드 (selector 매칭)
+    _applyFilterLabels(doc, a);
+    _applyColumnLabels(doc, a);
+    // 3) Native HTML override — 마지막. element 가 통째로 바뀌므로 위의 stamp/
+    //    label 작업이 손실되지 않도록 마지막에.
+    _applyNativeComponentEdits(doc, a);
+  }
+
   function applyActiveVersionMinimal() {
     try {
       const versions = _loadVersions();
@@ -1953,54 +2255,61 @@ ${jsxBody}
       if (!ver || !ver.activeId) return;
       const active = ver.list && ver.list.find((v) => v.id === ver.activeId);
       const a = active && active.applied;
-      if (!a || !Array.isArray(a.hidden) || !a.hidden.length) return;
-      // 1) CSS — covers per-selector hide + universal data-voc-hidden rules.
-      // 모든 hidden 셀렉터를 main 안으로 scope — VOC scanEditTargets 가
-      // main 만 스캔하므로 origin 도 main 내부. 글로벌로 적용하면 LNB /
-      // topbar 등 페이지 chrome 까지 우연히 가릴 위험이 있어 명시적으로
-      // main 자손으로 제한한다.
-      const css = a.hidden.map((s) => `main ${s} { display: none !important; }`).join('\n')
-        + '\nmain [data-voc-hidden="true"] { display: none !important; }'
-        + '\nmain th[data-voc-hidden="true"], main td[data-voc-hidden="true"] { padding: 0 !important; border: 0 !important; width: 0 !important; min-width: 0 !important; max-width: 0 !important; }'
-        + '\nmain col[data-voc-hidden="true"] { width: 0 !important; min-width: 0 !important; max-width: 0 !important; }'
-        + '\nmain .mp-table thead .group-row th[data-voc-hidden="true"] { position: static !important; visibility: hidden !important; font-size: 0 !important; line-height: 0 !important; background: transparent !important; box-shadow: none !important; }';
-      const style = document.createElement('style');
-      style.id = 'scm-voc-version-hide';
-      style.textContent = css;
-      document.head.appendChild(style);
-      // 2) Stamp voc-keys + DOM-mark cells once scm-table has finished
-      //    splitting the table (clone thead + body table). scm-table runs
-      //    its own DOMContentLoaded init; we may load before or after it,
-      //    so retry briefly until either the API is attached or we time
-      //    out (single-table no-sticky tables won't have _scmReorder but
-      //    still need stamping).
+      if (!a) return;
+      // 1) Hide CSS — only inject if hidden has entries.
+      if (Array.isArray(a.hidden) && a.hidden.length) {
+        // 모든 hidden 셀렉터를 main 안으로 scope — VOC scanEditTargets 가
+        // main 만 스캔하므로 origin 도 main 내부. 글로벌로 적용하면 LNB /
+        // topbar 등 페이지 chrome 까지 우연히 가릴 위험이 있어 명시적으로
+        // main 자손으로 제한한다.
+        const css = a.hidden.map((s) => `main ${s} { display: none !important; }`).join('\n')
+          + '\nmain [data-voc-hidden="true"] { display: none !important; }'
+          + '\nmain th[data-voc-hidden="true"], main td[data-voc-hidden="true"] { padding: 0 !important; border: 0 !important; width: 0 !important; min-width: 0 !important; max-width: 0 !important; }'
+          + '\nmain col[data-voc-hidden="true"] { width: 0 !important; min-width: 0 !important; max-width: 0 !important; }'
+          + '\nmain .mp-table thead .group-row th[data-voc-hidden="true"] { position: static !important; visibility: hidden !important; font-size: 0 !important; line-height: 0 !important; background: transparent !important; box-shadow: none !important; }';
+        const style = document.createElement('style');
+        style.id = 'scm-voc-version-hide';
+        style.textContent = css;
+        document.head.appendChild(style);
+      }
+      // 2) Stamp voc-keys + apply full snapshot once scm-table has finished
+      //    splitting tables. scm-table runs its own DOMContentLoaded init;
+      //    we may load before or after it, so retry briefly until either
+      //    the API is attached or we time out.
       let attempts = 0;
       const tryApply = () => {
         const tables = [...document.querySelectorAll('.mp-table')];
         const hasApi = tables.some((t) => t._scmReorder);
         const hasThead = tables.some((t) => t.querySelector('thead'));
-        if (!hasThead && attempts < 30) {
-          attempts++;
-          setTimeout(tryApply, 50);
-          return;
-        }
-        // Some tables route their thead through scm-table sticky split
-        // (thead lives on cloneTable). Skip API wait if 30 retries pass —
-        // the no-sticky case still works without it.
-        if (!hasApi && attempts < 30) {
-          attempts++;
-          setTimeout(tryApply, 50);
-          return;
+        // 페이지에 .mp-table 이 있다면 thead/api 대기. 없는 페이지(예: 일부
+        // dashboard) 는 즉시 진행.
+        if (tables.length) {
+          if (!hasThead && attempts < 30) {
+            attempts++;
+            setTimeout(tryApply, 50);
+            return;
+          }
+          if (!hasApi && attempts < 30) {
+            attempts++;
+            setTimeout(tryApply, 50);
+            return;
+          }
         }
         tables.forEach(_stampVocKeysOnTable);
-        _applyHiddenCellsForVersion(a.hidden);
+        if (Array.isArray(a.hidden) && a.hidden.length) {
+          _applyHiddenCellsForVersion(a.hidden);
+        }
+        // Full apply pipeline — added DOM, labels, native HTML overrides.
+        applyFullSnapshot(a);
       };
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', tryApply, { once: true });
       } else {
         tryApply();
       }
-    } catch {}
+    } catch (e) {
+      try { console.warn('[dev-export] applyActiveVersionMinimal failed', e); } catch (_) {}
+    }
   }
 
   function onActionClick() {
