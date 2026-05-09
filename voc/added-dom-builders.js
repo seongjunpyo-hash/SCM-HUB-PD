@@ -147,9 +147,46 @@
     return bar;
   }
 
+  // ---- (4) 추가 필터 그룹 wrapping ----
+  // entry.connectPrev=true 인 필터는 직전 필터와 같은 .scm-filter-group 으로
+  // 묶임 (display:inline-flex; gap:0 — 인접 칩 시각적 연결, 디자인 시스템
+  // catalog/filter-bar 의 매입형태/제조구분 패턴과 동일).
+  // 이 함수는 buildBtn 으로 새 칩 element 를 받아 wrapper 안 적절한 위치에
+  // append. wrapper / connectPrev / lastChip 정보를 호출자가 관리.
+  // 사용 패턴 (voc inject / dev-export inject 양쪽 동일):
+  //   addedFilters.forEach((f, i) => {
+  //     const btn = buildBtn(f);
+  //     placeAddedFilter(wrapper, btn, !!f.connectPrev, lastInsertedRef);
+  //   });
+  function placeAddedFilter(wrapper, btn, connectPrev, lastInsertedRef) {
+    if (!wrapper || !btn) return;
+    if (connectPrev && lastInsertedRef && lastInsertedRef.el) {
+      const prev = lastInsertedRef.el;
+      const prevParent = prev.parentNode;
+      if (prevParent && prevParent.classList && prevParent.classList.contains('scm-filter-group')) {
+        // 이미 prev 가 group 안에 있으면 그 group 끝에 추가.
+        prevParent.appendChild(btn);
+      } else if (prevParent) {
+        // 새 group wrapper 만들고 prev + btn 둘 다 옮김.
+        const grp = (prev.ownerDocument || document).createElement('div');
+        grp.className = 'scm-filter-group';
+        prevParent.insertBefore(grp, prev);
+        grp.appendChild(prev);
+        grp.appendChild(btn);
+      }
+    } else {
+      // 일반 단독 칩 — wrapper 의 reset 버튼 직전 또는 끝에 append.
+      const resetBtn = wrapper.querySelector(':scope > .scm-filter-reset-btn');
+      if (resetBtn && resetBtn.parentNode === wrapper) wrapper.insertBefore(btn, resetBtn);
+      else wrapper.appendChild(btn);
+    }
+    lastInsertedRef.el = btn;
+  }
+
   root.SCM_VOC_BUILDERS = {
     buildAddedTableHTML: buildAddedTableHTML,
     pickFilterChipWrapper: pickFilterChipWrapper,
     ensureFilterBarHost: ensureFilterBarHost,
+    placeAddedFilter: placeAddedFilter,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
