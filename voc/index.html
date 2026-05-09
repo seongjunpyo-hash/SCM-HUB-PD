@@ -1091,6 +1091,33 @@
     }
     .edit-row__cell-type:hover { border-color: #4F46E5; }
     .edit-row__cell-type:focus { outline: none; border-color: #4F46E5; }
+    .edit-row__table-badge {
+      flex-shrink: 0;
+      height: 22px; padding: 0 8px;
+      background: #EEF2FF; color: #4F46E5;
+      border: 1px solid #C7D2FE; border-radius: 999px;
+      font-family: inherit; font-size: 10.5px; font-weight: 700; letter-spacing: 0.2px;
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s;
+    }
+    .edit-row__table-badge:hover { background: #E0E7FF; border-color: #4F46E5; }
+    /* 컬럼 추가 form 의 "추가할 테이블" select 영역 */
+    .edit-add-form__label {
+      display: flex; flex-direction: column; gap: 4px;
+      font-size: 11px; font-weight: 600; color: #4B5563;
+    }
+    .edit-add-form__label[hidden] { display: none !important; }
+    .edit-add-form__label > span {
+      letter-spacing: 0.1px;
+    }
+    .edit-add-form__label select {
+      padding: 8px 10px;
+      background: #fff; color: #1A1A1A;
+      border: 1px solid #E5E7EB; border-radius: 6px;
+      font-family: inherit; font-size: 13px;
+      outline: none;
+    }
+    .edit-add-form__label select:focus { border-color: #4F46E5; }
     .edit-row__del {
       background: transparent; border: 0; cursor: pointer;
       font-size: 14px; color: #9CA3AF; padding: 2px 4px; border-radius: 4px;
@@ -1644,7 +1671,10 @@
                 </div>
                 <div class="edit-add-form" id="addColumnForm">
                   <input type="text" id="addColumnLabel" placeholder="컬럼 라벨 (예: 비고)" maxlength="20" />
-                  <select id="addColumnTable" hidden title="추가할 테이블 선택"></select>
+                  <label class="edit-add-form__label" id="addColumnTableLabel" hidden>
+                    <span>추가할 테이블</span>
+                    <select id="addColumnTable" title="추가할 테이블 선택"></select>
+                  </label>
                   <div class="edit-add-form__actions">
                     <button type="button" class="edit-add-form__btn edit-add-form__btn--ghost" data-cancel="column">취소</button>
                     <button type="button" class="edit-add-form__btn edit-add-form__btn--primary" data-submit="column">추가</button>
@@ -2950,6 +2980,17 @@
         label,
         tableIdx: (typeof tableIdx === 'number' && tableIdx >= 0) ? tableIdx : 0,
       });
+      persistDraft();
+      renderEditPane();
+      applyColumnSectionToIframe();
+    }
+    // 사용자 추가 컬럼의 tableIdx 만 변경 (테이블 사이 이동) — 다중 테이블
+    // 페이지에서 잘못된 테이블에 추가했을 때 삭제 후 재추가 대신 한 번에 이동.
+    function moveAddedColumnToTable(id, tableIdx) {
+      const d = pageDraft();
+      const c = (d.added.columns || []).find((x) => x.id === id);
+      if (!c) return;
+      c.tableIdx = (typeof tableIdx === 'number' && tableIdx >= 0) ? tableIdx : 0;
       persistDraft();
       renderEditPane();
       applyColumnSectionToIframe();
@@ -5350,8 +5391,19 @@
             const frozenBadge = (!it.added && it.leafIdx != null && it.leafIdx >= 0 && it.leafIdx < effectiveFrozenCount)
               ? '<span class="edit-row__frozen-badge" aria-hidden="true" title="고정 영역">🔒</span>' : '';
             const ct = cellTypes[it.selector] || 'basic';
+            // added 컬럼이고 다중 테이블 페이지일 때 — 어느 테이블에 있는지
+            // 배지로 노출 + 클릭 시 다른 테이블로 이동.
+            const numTables = (targets.tables || []).length;
+            let tableBadge = '';
+            if (it.added && numTables > 1) {
+              const ti = (typeof it.added.tableIdx === 'number' && it.added.tableIdx >= 0) ? it.added.tableIdx : 0;
+              const t = (targets.tables || []).find((x) => x.idx === ti);
+              const labelTxt = (t && t.label) || ('테이블 ' + (ti + 1));
+              tableBadge = `<button type="button" class="edit-row__table-badge" data-move-added-col="${escapeHtml(it.added.id)}" data-cur-ti="${ti}" title="다른 테이블로 이동">📍 ${escapeHtml(labelTxt)}</button>`;
+            }
             middle = `
               ${frozenBadge}
+              ${tableBadge}
               <select class="edit-row__cell-type" data-cell-type-key="${sel}" title="셀 타입 — 이 컬럼의 데이터 셀 렌더 스타일">
                 <option value="basic"     ${ct === 'basic'     ? 'selected' : ''}>기본정보</option>
                 <option value="need-only" ${ct === 'need-only' ? 'selected' : ''}>니드온리</option>
@@ -5625,6 +5677,23 @@
         toggleSectionCollapsed(key);
         return;
       }
+      // 추가 컬럼 → 다른 테이블로 이동 (배지 클릭). 다중 테이블 사이를 cycle.
+      const mv = t.closest && t.closest('[data-move-added-col]');
+      if (mv) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = mv.dataset.moveAddedCol;
+        const cur = parseInt(mv.dataset.curTi, 10) || 0;
+        const tables = (scanEditTargets().tables) || [];
+        if (tables.length <= 1) return;
+        const sortedIdx = tables.map((x) => x.idx).sort((a, b) => a - b);
+        const pos = sortedIdx.indexOf(cur);
+        const next = sortedIdx[(pos + 1) % sortedIdx.length];
+        moveAddedColumnToTable(id, next);
+        const target = tables.find((x) => x.idx === next);
+        showToast(`[${(target && target.label) || '테이블'}] 으로 이동`);
+        return;
+      }
       // 필터 / 컬럼 라벨 inline 수정 — ✏ 버튼 클릭 시 label span 을 input
       // 으로 swap. blur / Enter 로 저장, Esc 로 취소.
       const ren = t.closest && t.closest('[data-rename-kind]');
@@ -5706,15 +5775,16 @@
           // 컬럼 추가 form: 다중 테이블이면 타깃 select 노출.
           if (which === 'column') {
             const tSel = document.getElementById('addColumnTable');
+            const tLab = document.getElementById('addColumnTableLabel');
             const tables = (scanEditTargets().tables) || [];
             if (tSel) {
               if (tables.length > 1) {
                 tSel.innerHTML = tables.map((t) =>
-                  `<option value="${t.idx}">${escapeHtml(t.label)} 에 추가</option>`).join('');
-                tSel.hidden = false;
+                  `<option value="${t.idx}">${escapeHtml(t.label)}</option>`).join('');
                 tSel.value = String(tables[0].idx);
+                if (tLab) tLab.hidden = false;
               } else {
-                tSel.hidden = true;
+                if (tLab) tLab.hidden = true;
                 tSel.innerHTML = '';
               }
             }
@@ -5751,9 +5821,18 @@
         } else {
           const label = (document.getElementById('addColumnLabel').value || '').trim();
           if (!label) { document.getElementById('addColumnLabel').focus(); return; }
+          const tLab = document.getElementById('addColumnTableLabel');
           const tSel = document.getElementById('addColumnTable');
-          const ti = tSel && !tSel.hidden ? parseInt(tSel.value, 10) : 0;
-          addColumn(label, Number.isFinite(ti) ? ti : 0);
+          const multi = tLab && !tLab.hidden;
+          const ti = multi ? parseInt(tSel.value, 10) : 0;
+          const finalTi = Number.isFinite(ti) ? ti : 0;
+          addColumn(label, finalTi);
+          // 다중 테이블일 때만 어디로 갔는지 toast 로 명확히 알림
+          if (multi) {
+            const tables = (scanEditTargets().tables) || [];
+            const t = tables.find((x) => x.idx === finalTi);
+            showToast(`[${(t && t.label) || '테이블'}] 에 컬럼 [${label}] 추가`);
+          }
           document.getElementById('addColumnLabel').value = '';
           document.getElementById('addColumnForm').classList.remove('is-open');
           document.querySelector('.edit-add-btn[data-add="column"]').style.display = '';
