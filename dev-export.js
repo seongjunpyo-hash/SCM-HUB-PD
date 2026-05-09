@@ -2301,7 +2301,20 @@ ${jsxBody}
     }
     list.forEach((c) => {
       const id = `voc-added-comp-${c.id}`;
-      if (doc.getElementById(id)) return;
+      const existing = doc.getElementById(id);
+      // rowbreak 의 entry.height 는 변경 가능 — 기존 element 가 있어도
+      // inline height 를 갱신해 줘야 standalone 데모에 반영됨.
+      if (existing && c.kind === 'rowbreak') {
+        if (typeof c.height === 'number' && c.height > 0) {
+          existing.style.setProperty('height', c.height + 'px', 'important');
+          existing.dataset.vocRowbreakHeight = String(c.height);
+        } else {
+          existing.style.removeProperty('height');
+          delete existing.dataset.vocRowbreakHeight;
+        }
+        return;
+      }
+      if (existing) return;
       const wrap = doc.createElement('div');
       wrap.id = id;
       // rowbreak sentinel — full-width line break, 기본 height 0.
