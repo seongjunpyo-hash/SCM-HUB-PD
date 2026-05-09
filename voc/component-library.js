@@ -1,183 +1,224 @@
 /* VOC 편집 탭 — 컴포넌트 라이브러리 (단일 source)
  *
- * 30개 핵심 컴포넌트를 아토믹 디자인 (Atom / Molecule / Organism) 으로 묶음.
+ * 디자인 시스템 카탈로그(/design system/catalog/)에 등록된 컴포넌트 30종을
+ * 아토믹 디자인 (Atom / Molecule / Organism) 으로 묶음. 모두 디자인 시스템
+ * 클래스(scm-*) 를 사용 → 데모 페이지(SKU 관리 등) 에 그대로 삽입하면 동일한
+ * 시각으로 렌더됨. 인라인 스타일은 layout 보정용으로만 최소 사용.
+ *
+ * CSS 의존:
+ *   demo 페이지가 해당 컴포넌트의 CSS 를 로드하고 있어야 함.
+ *   sku-management / otb-budget / test.html 등 대부분 페이지가 layer-desktop +
+ *   button + filter-* + stats-bar + page-head + scm-table 를 이미 link 함.
  *
  * 각 항목 형식:
- *   {
- *     id:    'banner-info',          // 고유 ID (override 키)
- *     label: '안내 배너',             // 카드 / 토스트 노출 라벨
- *     sub:   '상단 안내',             // 카드 보조 텍스트
- *     level: 'atom'|'molecule'|'organism',
- *     type:  'banner'|'card'|...     // cmpType select 동기화용
- *     html:  '<div ...>...</div>',   // 인라인 스타일 — 어느 페이지에 넣어도 OK
- *   }
- *
- * 라이브러리 변경 시 이 파일만 수정 → VOC 편집 탭에 자동 반영.
- * (window.SCM_VOC_LIB 로 노출 — voc/index.html 의 SMALL_UNITS fallback)
+ *   { id, label, sub, level, type, html }
  */
 (function (root) {
   'use strict';
 
   // ─── ATOMS (10) ──────────────────────────────────────────────
+  // 디자인 시스템 atoms — 버튼 / 태그 / 칩 / 인풋 등 단일 요소.
   const ATOMS = [
-    { id: 'btn-primary', label: '주 버튼', sub: 'Primary', type: 'button',
-      html: `<button type="button" style="padding:10px 18px;background:#4F46E5;color:#fff;border:0;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;margin:4px;">버튼 텍스트</button>` },
-    { id: 'btn-ghost', label: 'Ghost 버튼', sub: '테두리만', type: 'button',
-      html: `<button type="button" style="padding:10px 18px;background:#fff;color:#111827;border:1px solid #D1D5DB;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;margin:4px;">버튼 텍스트</button>` },
-    { id: 'btn-danger', label: 'Danger 버튼', sub: '경고/삭제', type: 'button',
-      html: `<button type="button" style="padding:10px 18px;background:#fff;color:#DC2626;border:1px solid #FCA5A5;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;margin:4px;">삭제</button>` },
-    { id: 'tag-blue', label: '파랑 태그', sub: '강조', type: 'custom',
-      html: `<span style="display:inline-flex;align-items:center;height:24px;padding:2px 8px;background:#EEF2FF;color:#312E81;border-radius:4px;font-size:13px;line-height:18px;font-weight:500;">신규</span>` },
-    { id: 'tag-green', label: '초록 태그', sub: '완료/성공', type: 'custom',
-      html: `<span style="display:inline-flex;align-items:center;height:24px;padding:2px 8px;background:#ECFDF5;color:#065F46;border-radius:4px;font-size:13px;line-height:18px;font-weight:500;">완료</span>` },
-    { id: 'tag-gray', label: '회색 태그', sub: '중립', type: 'custom',
-      html: `<span style="display:inline-flex;align-items:center;height:24px;padding:2px 8px;background:#F3F4F6;color:#374151;border-radius:4px;font-size:13px;line-height:18px;font-weight:500;">대기</span>` },
-    { id: 'status-pill-active', label: '상태 pill', sub: '활성/비활성', type: 'custom',
-      html: `<span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;background:#ECFDF5;color:#065F46;border-radius:999px;font-size:12px;font-weight:600;"><span style="width:6px;height:6px;border-radius:50%;background:#10B981;"></span>활성</span>` },
-    { id: 'checkbox-input', label: '체크박스', sub: 'label 포함', type: 'form',
-      html: `<label style="display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#111827;cursor:pointer;margin:6px;"><input type="checkbox" checked style="width:16px;height:16px;accent-color:#4F46E5;" /><span>옵션 선택</span></label>` },
-    { id: 'divider', label: '구분선', sub: '가로 1px', type: 'custom',
-      html: `<hr style="border:0;border-top:1px solid #E5E7EB;margin:16px 0;" />` },
-    { id: 'badge-count', label: '카운트 배지', sub: '숫자 강조', type: 'custom',
-      html: `<span style="display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;background:#EF4444;color:#fff;border-radius:999px;font-size:11px;font-weight:700;">12</span>` },
+    { id: 'btn-primary', label: 'Primary 버튼', sub: 'scm-button--primary', type: 'button',
+      html: `<button type="button" class="scm-button scm-button--primary">기본 동작</button>` },
+    { id: 'btn-secondary', label: 'Secondary 버튼', sub: 'scm-button', type: 'button',
+      html: `<button type="button" class="scm-button">보조 동작</button>` },
+    { id: 'btn-sm', label: '작은 버튼', sub: 'scm-button--sm', type: 'button',
+      html: `<button type="button" class="scm-button scm-button--sm">수정</button>` },
+    { id: 'tag-default', label: 'Tag', sub: 'scm-tag', type: 'custom',
+      html: `<span class="scm-tag">옵션</span>` },
+    { id: 'status-success', label: '상태 — 성공', sub: 'scm-status-chip--success', type: 'custom',
+      html: `<span class="scm-status-chip scm-status-chip--success">매핑완료</span>` },
+    { id: 'status-warn', label: '상태 — 대기', sub: 'scm-status-chip--warn', type: 'custom',
+      html: `<span class="scm-status-chip scm-status-chip--warn">대기</span>` },
+    { id: 'checkbox', label: '체크박스', sub: 'scm-checkbox', type: 'form',
+      html: `<span class="scm-checkbox" role="checkbox" aria-checked="true"></span>` },
+    { id: 'toggle', label: '토글 스위치', sub: 'scm-toggle', type: 'form',
+      html: `<span class="scm-toggle" role="switch" aria-checked="true"><span class="scm-toggle-track"></span><span class="scm-toggle-knob"></span></span>` },
+    { id: 'platform-tag', label: '플랫폼 태그', sub: 'scm-platform-tag', type: 'custom',
+      html: `<span class="scm-platform-tag" data-color="blue">MUSINSA</span>` },
+    { id: 'state-text', label: '상태 텍스트', sub: 'scm-state-text', type: 'custom',
+      html: `<span class="scm-state-text scm-state-text--success">완료</span>` },
   ];
 
   // ─── MOLECULES (10) ───────────────────────────────────────────
+  // 작은 조합 — 카드 / 배너 / 칩 / 폼 / 페이저.
   const MOLECULES = [
-    { id: 'banner-info', label: '안내 배너', sub: '상단 안내', level: 'molecule', type: 'banner',
-      html: `<div style="display:flex;gap:12px;align-items:center;padding:14px 18px;border-radius:8px;background:#EEF2FF;color:#312E81;font-size:13px;border:1px solid #C7D2FE;margin:12px 0;">
-  <span style="font-size:18px;line-height:1;">ℹ️</span>
-  <div style="flex:1;"><b>안내</b> — 새로운 기능이 추가됐습니다. 우측 [편집] 탭에서 직접 수정해 보세요.</div>
-</div>` },
-    { id: 'banner-warn', label: '경고 배너', sub: '주의 안내', level: 'molecule', type: 'banner',
-      html: `<div style="display:flex;gap:12px;align-items:center;padding:14px 18px;border-radius:8px;background:#FFF7ED;color:#9A3412;font-size:13px;border:1px solid #FED7AA;margin:12px 0;">
-  <span style="font-size:18px;line-height:1;">⚠️</span>
-  <div style="flex:1;"><b>주의</b> — 출고 마감 시간이 30분 남았습니다.</div>
-</div>` },
-    { id: 'banner-success', label: '성공 배너', sub: '완료 안내', level: 'molecule', type: 'banner',
-      html: `<div style="display:flex;gap:12px;align-items:center;padding:14px 18px;border-radius:8px;background:#ECFDF5;color:#065F46;font-size:13px;border:1px solid #A7F3D0;margin:12px 0;">
-  <span style="font-size:18px;line-height:1;">✅</span>
-  <div style="flex:1;"><b>완료</b> — 모든 작업이 정상 처리됐습니다.</div>
-</div>` },
-    { id: 'kpi-card', label: 'KPI 카드', sub: '숫자 강조', level: 'molecule', type: 'kpi',
-      html: `<div style="display:inline-flex;flex-direction:column;gap:6px;padding:18px 20px;border-radius:10px;background:#fff;border:1px solid #E5E7EB;min-width:180px;margin:12px 8px 12px 0;">
-  <span style="font-size:11px;font-weight:600;color:#6B7280;letter-spacing:0.4px;text-transform:uppercase;">오늘의 출고</span>
-  <span style="font-size:28px;font-weight:700;color:#111827;line-height:1;">1,284<span style="font-size:13px;color:#6B7280;font-weight:500;margin-left:4px;">건</span></span>
-  <span style="font-size:11.5px;color:#10B981;font-weight:600;">▲ 어제 대비 +6.2%</span>
-</div>` },
-    { id: 'card-info', label: '정보 카드', sub: '제목+본문', level: 'molecule', type: 'card',
-      html: `<div style="padding:16px 18px;border-radius:10px;background:#fff;border:1px solid #E5E7EB;margin:12px 0;">
-  <h4 style="margin:0 0 8px;font-size:14px;font-weight:700;color:#111827;">카드 제목</h4>
-  <p style="margin:0;font-size:12.5px;color:#4B5563;line-height:1.6;">카드 본문 — 여기에 설명, 차트, 또는 액션 버튼을 넣을 수 있습니다.</p>
-</div>` },
-    { id: 'cta-box', label: 'CTA 박스', sub: '버튼+설명', level: 'molecule', type: 'card',
-      html: `<div style="display:flex;gap:14px;align-items:center;padding:16px 20px;border-radius:10px;background:#111827;color:#fff;margin:12px 0;">
-  <div style="flex:1;">
-    <b style="font-size:14px;display:block;margin-bottom:2px;">새 출고 등록</b>
-    <span style="font-size:12px;color:#D1D5DB;">한 번에 여러 SKU 를 등록할 수 있습니다.</span>
+    { id: 'info-banner', label: '안내 배너', sub: 'scm-info-banner', level: 'molecule', type: 'banner',
+      html: `<div class="scm-info-banner">
+  <div class="scm-info-banner__body">
+    <div class="scm-info-banner__title">안내 제목</div>
+    <div class="scm-info-banner__text">사용자에게 전달할 내용을 입력하세요.</div>
   </div>
-  <button type="button" style="padding:8px 16px;background:#6366F1;color:#fff;border:0;border-radius:6px;font-size:12.5px;font-weight:600;cursor:pointer;">+ 등록 시작</button>
 </div>` },
-    { id: 'form-input', label: '입력 폼', sub: '라벨+인풋', level: 'molecule', type: 'form',
-      html: `<div style="display:flex;flex-direction:column;gap:6px;max-width:320px;margin:12px 0;">
-  <label style="font-size:12px;font-weight:600;color:#374151;">출고 ID</label>
-  <input type="text" placeholder="예: SHP-2026-00001" style="padding:9px 12px;border:1px solid #D1D5DB;border-radius:6px;font-size:13px;outline:none;" />
-  <span style="font-size:11px;color:#6B7280;">대문자 알파벳 + 숫자 형식으로 입력해 주세요.</span>
+    { id: 'card-basic', label: '카드', sub: 'scm-card', level: 'molecule', type: 'card',
+      html: `<article class="scm-card">
+  <header class="scm-card-head"><h3 class="scm-card-title">카드 타이틀</h3><a class="scm-card-link" href="#">전체 보기 →</a></header>
+  <div class="scm-card-body">카드 본문 영역. 임의의 컨텐츠 삽입.</div>
+</article>` },
+    { id: 'kpi-card', label: 'KPI 카드', sub: 'scm-kpi-card', level: 'molecule', type: 'kpi',
+      html: `<div class="scm-kpi-card" style="max-width:280px;">
+  <div class="scm-kpi-card__head">
+    <span class="scm-kpi-card__label">진행중인 보충 요청</span>
+  </div>
+  <div class="scm-kpi-card__body">
+    <div class="scm-kpi-card__value">1,284</div>
+    <div class="scm-kpi-card__meta">
+      <span class="scm-kpi-card__delta scm-kpi-card__delta--up">▲ 8%</span>
+      <span class="scm-kpi-card__meta-text">vs 지난 주</span>
+    </div>
+  </div>
 </div>` },
-    { id: 'search-bar', label: '검색 바', sub: '인풋+버튼', level: 'molecule', type: 'form',
-      html: `<div style="display:flex;gap:8px;max-width:480px;margin:12px 0;">
-  <input type="search" placeholder="SKU, 바코드, 스토어명으로 검색" style="flex:1;padding:9px 12px;border:1px solid #D1D5DB;border-radius:6px;font-size:13px;outline:none;" />
-  <button type="button" style="padding:9px 16px;background:#4F46E5;color:#fff;border:0;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">검색</button>
+    { id: 'info-table', label: '정보 테이블', sub: 'scm-info-table', level: 'molecule', type: 'list',
+      html: `<div class="scm-info-table">
+  <div class="scm-info-row scm-info-row--quad">
+    <div class="scm-info-cell-label">소유사</div><div class="scm-info-cell-value">무신사</div>
+    <div class="scm-info-cell-label">스타일넘버</div><div class="scm-info-cell-value">12345263</div>
+  </div>
+  <div class="scm-info-row scm-info-row--quad">
+    <div class="scm-info-cell-label">시즌</div><div class="scm-info-cell-value">26-FW</div>
+    <div class="scm-info-cell-label">출시연도</div><div class="scm-info-cell-value">2026</div>
+  </div>
 </div>` },
-    { id: 'mini-action', label: '미니 액션', sub: '드롭다운 버튼', level: 'molecule', type: 'button',
-      html: `<button type="button" style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;background:#fff;color:#111827;border:1px solid #E5E7EB;border-radius:4px;font-size:12px;font-weight:500;cursor:pointer;">코드 복사 <span style="color:#6B7280;">▾</span></button>` },
-    { id: 'pagination', label: '페이지네이션', sub: '이전/다음', level: 'molecule', type: 'custom',
-      html: `<div style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#374151;margin:12px 0;">
-  <strong style="color:#111827;">1</strong>
-  <span style="color:#6B7280;">/ 12 페이지</span>
-  <button type="button" style="width:28px;height:28px;border:1px solid #E5E7EB;background:#fff;border-radius:4px;color:#9CA3AF;cursor:not-allowed;">‹</button>
-  <button type="button" style="width:28px;height:28px;border:1px solid #E5E7EB;background:#fff;border-radius:4px;color:#111827;cursor:pointer;">›</button>
+    { id: 'form-row', label: '폼 줄', sub: 'scm-form-row', level: 'molecule', type: 'form',
+      html: `<div class="scm-form-row">
+  <label class="scm-form-label scm-form-label--w120">SKU 명 <span class="scm-form-row-req"></span></label>
+  <div class="scm-form-control scm-form-control--w320"><input class="scm-input" placeholder="입력" /></div>
 </div>` },
+    { id: 'search-btn', label: '검색 버튼', sub: 'scm-search-btn', level: 'molecule', type: 'button',
+      html: `<button type="button" class="scm-search-btn">검색</button>` },
+    { id: 'mini-action-row', label: '미니 액션', sub: 'scm-mini-action', level: 'molecule', type: 'button',
+      html: `<div style="display:flex;gap:6px;">
+  <button type="button" class="scm-mini-action">SKU번호 복사</button>
+  <button type="button" class="scm-mini-action scm-mini-action--primary">상품 매핑</button>
+</div>` },
+    { id: 'filter-chip-only', label: '필터 칩', sub: 'scm-filter-chip', level: 'molecule', type: 'custom',
+      html: `<button class="scm-filter-chip" type="button"><svg viewBox="0 0 20 20"><use href="#ic-filter"/></svg><span>전체 필터</span><span class="scm-filter-chip__count">3</span></button>` },
+    { id: 'filter-select-only', label: '필터 셀렉트', sub: 'scm-filter-select', level: 'molecule', type: 'custom',
+      html: `<button class="scm-filter-select" type="button" data-state="filled"><span class="scm-filter-select__label">시즌</span><span class="scm-filter-select__value">26-SS</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>` },
+    { id: 'pager', label: '페이저', sub: 'scm-pager', level: 'molecule', type: 'custom',
+      html: `<span class="scm-pager">
+  <strong class="scm-pager__current">1</strong>
+  <span class="scm-pager__total">/ <span>12</span> 페이지</span>
+  <button class="scm-pager-btn" type="button" aria-label="이전 페이지" disabled><svg viewBox="0 0 20 20"><use href="#ic-chevronLeft"/></svg></button>
+  <button class="scm-pager-btn" type="button" aria-label="다음 페이지"><svg viewBox="0 0 20 20"><use href="#ic-chevronRight"/></svg></button>
+</span>` },
   ];
 
   // ─── ORGANISMS (10) ───────────────────────────────────────────
+  // 페이지 단위 섹션 — 페이지헤드 / 필터바 / 통계바 / 테이블 / 탭 / 상태 / 알림.
   const ORGANISMS = [
-    { id: 'list-items', label: '아이템 리스트', sub: '제목+상태', level: 'organism', type: 'list',
-      html: `<ul style="list-style:none;padding:0;margin:12px 0;border:1px solid #E5E7EB;border-radius:8px;background:#fff;">
-  <li style="display:flex;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #F3F4F6;font-size:13px;"><span>출고 #1284</span><span style="color:#10B981;font-weight:600;">완료</span></li>
-  <li style="display:flex;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #F3F4F6;font-size:13px;"><span>출고 #1283</span><span style="color:#F59E0B;font-weight:600;">대기</span></li>
-  <li style="display:flex;justify-content:space-between;padding:12px 16px;font-size:13px;"><span>출고 #1282</span><span style="color:#10B981;font-weight:600;">완료</span></li>
-</ul>` },
-    { id: 'table-mini', label: '미니 테이블', sub: '3행 표', level: 'organism', type: 'list',
-      html: `<table style="width:100%;max-width:640px;border-collapse:collapse;font-size:13px;background:#fff;border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;margin:12px 0;">
-  <thead><tr style="background:#F9FAFB;">
-    <th style="padding:10px 12px;text-align:left;font-weight:600;color:#374151;border-bottom:1px solid #E5E7EB;">SKU</th>
-    <th style="padding:10px 12px;text-align:left;font-weight:600;color:#374151;border-bottom:1px solid #E5E7EB;">스토어</th>
-    <th style="padding:10px 12px;text-align:right;font-weight:600;color:#374151;border-bottom:1px solid #E5E7EB;">수량</th>
-  </tr></thead>
-  <tbody>
-    <tr><td style="padding:10px 12px;border-bottom:1px solid #F3F4F6;">SSKJ12345</td><td style="padding:10px 12px;border-bottom:1px solid #F3F4F6;">강남</td><td style="padding:10px 12px;text-align:right;border-bottom:1px solid #F3F4F6;">120</td></tr>
-    <tr><td style="padding:10px 12px;border-bottom:1px solid #F3F4F6;">SSKJ12346</td><td style="padding:10px 12px;border-bottom:1px solid #F3F4F6;">홍대</td><td style="padding:10px 12px;text-align:right;border-bottom:1px solid #F3F4F6;">85</td></tr>
-    <tr><td style="padding:10px 12px;">SSKJ12347</td><td style="padding:10px 12px;">성수</td><td style="padding:10px 12px;text-align:right;">52</td></tr>
-  </tbody>
-</table>` },
-    { id: 'filter-row', label: '필터 칩 줄', sub: '복수 칩', level: 'organism', type: 'custom',
-      html: `<div style="display:flex;flex-wrap:wrap;gap:8px;padding:12px 0;margin:12px 0;">
-  <button type="button" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#fff;color:#111827;border:1px solid #E5E7EB;border-radius:999px;font-size:12.5px;font-weight:500;cursor:pointer;">전체 필터 <span style="background:#4F46E5;color:#fff;padding:0 6px;border-radius:999px;font-size:11px;">2</span></button>
-  <button type="button" style="padding:6px 12px;background:#EEF2FF;color:#312E81;border:1px solid #C7D2FE;border-radius:999px;font-size:12.5px;font-weight:500;cursor:pointer;">상태: 출고대기 ✕</button>
-  <button type="button" style="padding:6px 12px;background:#EEF2FF;color:#312E81;border:1px solid #C7D2FE;border-radius:999px;font-size:12.5px;font-weight:500;cursor:pointer;">브랜드: NIKE ✕</button>
-</div>` },
-    { id: 'stats-row', label: '통계 바', sub: '여러 KPI', level: 'organism', type: 'kpi',
-      html: `<div style="display:flex;gap:24px;align-items:center;padding:14px 18px;background:#F9FAFB;border-radius:8px;margin:12px 0;font-size:13px;">
-  <span><span style="color:#6B7280;">전체</span> <b style="font-size:15px;color:#111827;margin-left:6px;">350</b></span>
-  <span style="color:#E5E7EB;">|</span>
-  <span><span style="color:#6B7280;">처리중</span> <b style="font-size:15px;color:#F59E0B;margin-left:6px;">120</b></span>
-  <span style="color:#E5E7EB;">|</span>
-  <span><span style="color:#6B7280;">완료</span> <b style="font-size:15px;color:#10B981;margin-left:6px;">230</b></span>
-</div>` },
-    { id: 'progress-bar', label: '진행률 바', sub: '단계 표시', level: 'organism', type: 'custom',
-      html: `<div style="max-width:480px;margin:12px 0;">
-  <div style="display:flex;justify-content:space-between;font-size:12px;color:#6B7280;margin-bottom:6px;"><span>출고 진행률</span><span><b style="color:#111827;">68%</b> (240/350)</span></div>
-  <div style="height:8px;background:#F3F4F6;border-radius:999px;overflow:hidden;"><div style="width:68%;height:100%;background:linear-gradient(90deg,#4F46E5,#6366F1);border-radius:999px;"></div></div>
-</div>` },
-    { id: 'timeline', label: '타임라인', sub: '단계별 상태', level: 'organism', type: 'list',
-      html: `<ol style="list-style:none;padding:0;margin:12px 0;font-size:13px;">
-  <li style="display:flex;gap:12px;padding-bottom:14px;border-left:2px solid #E5E7EB;margin-left:8px;padding-left:16px;position:relative;"><span style="position:absolute;left:-6px;top:0;width:10px;height:10px;border-radius:50%;background:#10B981;"></span><div><b>출고 등록</b><div style="color:#6B7280;font-size:11.5px;">2026.05.07 09:12</div></div></li>
-  <li style="display:flex;gap:12px;padding-bottom:14px;border-left:2px solid #E5E7EB;margin-left:8px;padding-left:16px;position:relative;"><span style="position:absolute;left:-6px;top:0;width:10px;height:10px;border-radius:50%;background:#10B981;"></span><div><b>출고 확정</b><div style="color:#6B7280;font-size:11.5px;">2026.05.07 14:30</div></div></li>
-  <li style="display:flex;gap:12px;border-left:2px solid transparent;margin-left:8px;padding-left:16px;position:relative;"><span style="position:absolute;left:-6px;top:0;width:10px;height:10px;border-radius:50%;background:#F59E0B;"></span><div><b>입고 대기</b><div style="color:#6B7280;font-size:11.5px;">진행 중</div></div></li>
-</ol>` },
-    { id: 'empty-state', label: '빈 상태', sub: '데이터 없음', level: 'organism', type: 'card',
-      html: `<div style="text-align:center;padding:48px 24px;background:#F9FAFB;border:1px dashed #E5E7EB;border-radius:10px;margin:12px 0;">
-  <div style="font-size:32px;margin-bottom:8px;">📭</div>
-  <div style="font-size:14px;font-weight:600;color:#111827;margin-bottom:4px;">조회된 데이터가 없습니다</div>
-  <div style="font-size:12.5px;color:#6B7280;">필터 조건을 변경해 다시 시도해 주세요.</div>
-</div>` },
-    { id: 'tabs-bar', label: '탭 바', sub: '3개 탭', level: 'organism', type: 'custom',
-      html: `<div style="display:flex;gap:0;border-bottom:1px solid #E5E7EB;margin:12px 0;">
-  <button type="button" style="padding:12px 18px;background:transparent;border:0;border-bottom:2px solid #4F46E5;color:#4F46E5;font-size:13px;font-weight:600;cursor:pointer;">전체</button>
-  <button type="button" style="padding:12px 18px;background:transparent;border:0;border-bottom:2px solid transparent;color:#6B7280;font-size:13px;font-weight:500;cursor:pointer;">처리중</button>
-  <button type="button" style="padding:12px 18px;background:transparent;border:0;border-bottom:2px solid transparent;color:#6B7280;font-size:13px;font-weight:500;cursor:pointer;">완료</button>
-</div>` },
-    { id: 'avatar-stack', label: '아바타 스택', sub: '담당자 묶음', level: 'organism', type: 'custom',
-      html: `<div style="display:inline-flex;align-items:center;margin:12px 0;">
-  <span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#4F46E5;color:#fff;font-size:12px;font-weight:600;border:2px solid #fff;">홍</span>
-  <span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#10B981;color:#fff;font-size:12px;font-weight:600;border:2px solid #fff;margin-left:-10px;">박</span>
-  <span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#F59E0B;color:#fff;font-size:12px;font-weight:600;border:2px solid #fff;margin-left:-10px;">김</span>
-  <span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#F3F4F6;color:#6B7280;font-size:11px;font-weight:600;border:2px solid #fff;margin-left:-10px;">+5</span>
-  <span style="margin-left:10px;font-size:12.5px;color:#6B7280;">담당자 8명</span>
-</div>` },
-    { id: 'notification-card', label: '알림 카드', sub: '아이콘+본문+액션', level: 'organism', type: 'card',
-      html: `<div style="display:flex;gap:14px;padding:16px 18px;border-radius:10px;background:#fff;border:1px solid #E5E7EB;box-shadow:0 1px 2px rgba(0,0,0,0.04);max-width:520px;margin:12px 0;">
-  <span style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:#EEF2FF;color:#4F46E5;font-size:18px;flex-shrink:0;">🔔</span>
-  <div style="flex:1;">
-    <b style="display:block;font-size:13.5px;color:#111827;margin-bottom:2px;">새 출고 요청 도착</b>
-    <p style="margin:0 0 8px;font-size:12.5px;color:#6B7280;line-height:1.55;">강남점에서 12개 SKU 의 보충 요청이 들어왔습니다.</p>
-    <button type="button" style="padding:6px 12px;background:#4F46E5;color:#fff;border:0;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;">확인하기</button>
+    { id: 'page-head', label: '페이지 헤드', sub: 'scm-page-head', level: 'organism', type: 'title',
+      html: `<div class="scm-page-head scm-page-head--list">
+  <h1 class="scm-page-head__title">제목을 입력하세요</h1>
+  <div class="scm-page-head__actions">
+    <button class="scm-button" type="button">보조 동작</button>
+    <button class="scm-button scm-button--primary" type="button">기본 동작</button>
   </div>
+</div>` },
+    { id: 'filter-bar', label: '필터바', sub: 'scm-filter-bar', level: 'organism', type: 'filter',
+      html: `<div class="scm-filter-bar">
+  <button class="scm-filter-chip" type="button"><svg viewBox="0 0 20 20"><use href="#ic-filter"/></svg><span>전체 필터</span><span class="scm-filter-chip__count">0</span></button>
+  <div class="scm-filter-overflow"><div class="scm-filter-overflow__track">
+    <button class="scm-filter-select" type="button" data-state="placeholder"><span class="scm-filter-select__label">필터 1</span><span class="scm-filter-select__value">필터 1</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+    <button class="scm-filter-select" type="button" data-state="placeholder"><span class="scm-filter-select__label">필터 2</span><span class="scm-filter-select__value">필터 2</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+    <button class="scm-filter-select" type="button" data-state="placeholder"><span class="scm-filter-select__label">필터 3</span><span class="scm-filter-select__value">필터 3</span><svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></button>
+  </div></div>
+  <div class="scm-filter-actions">
+    <button class="scm-search-btn" type="button">검색</button>
+    <button class="scm-filter-reset-btn" type="button"><svg viewBox="0 0 20 20"><use href="#ic-refresh"/></svg><span>초기화</span></button>
+  </div>
+</div>` },
+    { id: 'stats-bar', label: '통계바', sub: 'scm-stats-bar', level: 'organism', type: 'table-action-bar',
+      html: `<div class="scm-stats-bar">
+  <div class="scm-stats-bar__left">
+    <div class="scm-stats-bar__counts-wrap">
+      <div class="scm-stats-bar__counts">
+        <span class="scm-stat scm-stat--all"><span class="scm-stat__label">전체</span> <span class="scm-stat__num">12</span></span>
+        <span class="scm-stat"><span class="scm-stat__label">전개중</span> <span class="scm-stat__num">8</span></span>
+        <span class="scm-stat"><span class="scm-stat__label">미전개</span> <span class="scm-stat__num">4</span></span>
+      </div>
+    </div>
+    <div class="scm-stats-bar__mini-actions">
+      <button class="scm-mini-action" type="button">선택 항목 동작</button>
+      <button class="scm-mini-action scm-mini-action--primary" type="button">기본 동작</button>
+    </div>
+  </div>
+  <div class="scm-stats-bar__right">
+    <button class="scm-download-btn" type="button"><svg viewBox="0 0 20 20"><use href="#ic-download"/></svg><span>전체 엑셀 다운로드</span></button>
+    <span class="scm-stats-bar__v-divider"></span>
+    <span class="scm-pager">
+      <strong class="scm-pager__current">1</strong>
+      <span class="scm-pager__total">/ <span>1</span> 페이지</span>
+      <button class="scm-pager-btn" type="button" aria-label="이전 페이지" disabled><svg viewBox="0 0 20 20"><use href="#ic-chevronLeft"/></svg></button>
+      <button class="scm-pager-btn" type="button" aria-label="다음 페이지" disabled><svg viewBox="0 0 20 20"><use href="#ic-chevronRight"/></svg></button>
+    </span>
+  </div>
+</div>` },
+    { id: 'mp-table', label: '데이터 테이블', sub: 'mp-table', level: 'organism', type: 'table',
+      html: `<div class="mp-table-host">
+  <div class="mp-table-scroll">
+    <table class="mp-table">
+      <thead>
+        <tr>
+          <th>SKU</th><th>스토어</th><th class="cell-numeric">수량</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>SSKJ12345</td><td>강남</td><td class="cell-numeric">120</td></tr>
+        <tr><td>SSKJ12346</td><td>홍대</td><td class="cell-numeric">85</td></tr>
+        <tr><td>SSKJ12347</td><td>성수</td><td class="cell-numeric">52</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>` },
+    { id: 'tabs-bar', label: '탭', sub: 'scm-tabs', level: 'organism', type: 'custom',
+      html: `<div class="scm-tabs" role="tablist">
+  <button type="button" class="scm-tab is-active" role="tab" aria-selected="true">전체</button>
+  <button type="button" class="scm-tab" role="tab" aria-selected="false">처리중</button>
+  <button type="button" class="scm-tab" role="tab" aria-selected="false">완료</button>
+</div>` },
+    { id: 'empty-state', label: '빈 상태', sub: 'scm-empty-state', level: 'organism', type: 'card',
+      html: `<div class="scm-empty-state" style="text-align:center;padding:48px 24px;">
+  <p>표시할 항목이 없습니다.</p>
+</div>` },
+    { id: 'activity-item', label: '활동 항목', sub: 'scm-activity-item', level: 'organism', type: 'list',
+      html: `<div class="scm-activity-item">
+  <span class="scm-icon-box scm-icon-box--sm scm-icon-box--blue"><svg viewBox="0 0 20 20"><use href="#ic-package"/></svg></span>
+  <div class="scm-activity-item__content">
+    <div class="scm-activity-item__title">SKU 5000001 보충 요청 승인</div>
+    <div class="scm-activity-item__desc">무신사 스탠다드 강남 외 3개 매장</div>
+  </div>
+  <span class="scm-activity-item__time">2분 전</span>
+</div>` },
+    { id: 'toast-success', label: '토스트 — 성공', sub: 'scm-toast--success', level: 'organism', type: 'banner',
+      html: `<div class="scm-toast scm-toast--success" style="position:relative;animation:none;">
+  <div class="scm-toast__main">
+    <svg class="scm-toast__icon" aria-hidden="true"><use href="#ic-checkCircle-filled"/></svg>
+    <div class="scm-toast__body">
+      <div class="scm-toast__title">SKU번호 복사 완료</div>
+      <div class="scm-toast__desc">5건이 클립보드에 복사되었습니다.</div>
+    </div>
+  </div>
+  <button class="scm-toast__close" aria-label="닫기"><svg aria-hidden="true"><use href="#ic-close"/></svg></button>
+</div>` },
+    { id: 'quick-link-card', label: '퀵 링크 카드', sub: 'scm-quick-link-card', level: 'organism', type: 'card',
+      html: `<a href="#" class="scm-quick-link-card" style="max-width:240px;">
+  <span class="scm-icon-box scm-icon-box--blue"><svg viewBox="0 0 20 20"><use href="#ic-package"/></svg></span>
+  <div class="scm-quick-link-card__title">편집샵 재고 보충 요청</div>
+  <div class="scm-quick-link-card__desc">매장별 보충 SKU 일괄 요청</div>
+</a>` },
+    { id: 'bar-chart', label: '바 차트', sub: 'scm-bar-chart', level: 'organism', type: 'kpi',
+      html: `<div class="scm-bar-chart" style="max-width:480px;">
+  <div class="scm-bar-chart__bar" style="height:60%;"><span class="scm-bar-chart__bar-label">월</span></div>
+  <div class="scm-bar-chart__bar" style="height:75%;"><span class="scm-bar-chart__bar-label">화</span></div>
+  <div class="scm-bar-chart__bar scm-bar-chart__bar--light" style="height:45%;"><span class="scm-bar-chart__bar-label">수</span></div>
+  <div class="scm-bar-chart__bar" style="height:80%;"><span class="scm-bar-chart__bar-label">목</span></div>
+  <div class="scm-bar-chart__bar" style="height:55%;"><span class="scm-bar-chart__bar-label">금</span></div>
 </div>` },
   ];
 
-  // 레벨 라벨 부여 (atom level 은 ATOMS 정의 시 누락된 경우 보강)
+  // 레벨 라벨 부여
   ATOMS.forEach(u => { u.level = u.level || 'atom'; });
   MOLECULES.forEach(u => { u.level = u.level || 'molecule'; });
   ORGANISMS.forEach(u => { u.level = u.level || 'organism'; });
@@ -188,9 +229,9 @@
     UNITS: ALL_UNITS,
     BY_LEVEL: { atom: ATOMS, molecule: MOLECULES, organism: ORGANISMS },
     LEVELS: [
-      { key: 'atom',     label: 'Atoms',     hint: '기본 UI 요소 (버튼, 태그, 인풋)' },
-      { key: 'molecule', label: 'Molecules', hint: '조합 컴포넌트 (배너, 카드, KPI)' },
-      { key: 'organism', label: 'Organisms', hint: '복합 섹션 (테이블, 필터바, 알림카드)' },
+      { key: 'atom',     label: 'Atoms',     hint: '기본 UI 요소 (버튼, 태그, 칩, 인풋, 토글)' },
+      { key: 'molecule', label: 'Molecules', hint: '조합 컴포넌트 (배너, 카드, KPI, 폼, 페이저)' },
+      { key: 'organism', label: 'Organisms', hint: '복합 섹션 (페이지헤드, 필터바, 통계바, 테이블)' },
     ],
   };
 })(typeof window !== 'undefined' ? window : globalThis);
