@@ -2080,11 +2080,19 @@ ${jsxBody}
     const klass = `voc-added-table-${t.id}`;
     const cellStyle = 'min-width:120px;width:120px;padding:12px 16px;';
     const safeLabel = escapeHtml(t.label || '새 테이블');
-    const colgroup = `<colgroup><col style="width:120px"/><col style="width:120px"/><col class="col-spacer" data-empty="true"/></colgroup>`;
+    const withCheck = !!t.withCheck;
+    const withNo = !!t.withNo;
+    const cbHeadCell = `<th class="cb-col"${t.type === 'grouped' ? ' rowspan="2"' : ''}><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="전체 선택"></span></th>`;
+    const noHeadCell = `<th class="col-auto col-no"${t.type === 'grouped' ? ' rowspan="2"' : ''}>No</th>`;
+    const cbBodyCell = '<td class="cb-col"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="선택"></span></td>';
+    const headAnchorPrefix = (withCheck ? cbHeadCell : '') + (withNo ? noHeadCell : '');
+    const cgAnchor = (withCheck ? '<col style="width:36px"/>' : '') + (withNo ? '<col style="width:48px"/>' : '');
+    const colgroup = `<colgroup>${cgAnchor}<col style="width:120px"/><col style="width:120px"/><col class="col-spacer" data-empty="true"/></colgroup>`;
     let thead;
     if (t.type === 'grouped') {
       thead = '<thead>'
         + '<tr class="group-row">'
+        +   headAnchorPrefix
         +   `<th colspan="2" style="${cellStyle}">${safeLabel} 그룹</th>`
         +   '<th class="col-spacer" data-empty="true" rowspan="2" aria-hidden="true"></th>'
         + '</tr>'
@@ -2096,18 +2104,21 @@ ${jsxBody}
     } else {
       thead = '<thead>'
         + '<tr>'
+        +   headAnchorPrefix
         +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 1</div></th>`
         +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 2</div></th>`
         +   '<th class="col-spacer" data-empty="true" aria-hidden="true"></th>'
         + '</tr>'
         + '</thead>';
     }
-    const tbodyRow = '<tr>'
+    const tbodyRow = (n) => '<tr>'
+      +   (withCheck ? cbBodyCell : '')
+      +   (withNo ? `<td class="col-auto col-no">${n}</td>` : '')
       +   `<td style="${cellStyle}">—</td>`
       +   `<td style="${cellStyle}">—</td>`
       +   '<td class="col-spacer" data-empty="true"></td>'
       + '</tr>';
-    const tbody = `<tbody>${tbodyRow}${tbodyRow}${tbodyRow}</tbody>`;
+    const tbody = `<tbody>${tbodyRow(1)}${tbodyRow(2)}${tbodyRow(3)}</tbody>`;
     return `<section class="scm-page-section scm-voc-added-table ${klass}" id="voc-added-table-${t.id}">`
       +   `<div class="scm-page-section__title">${safeLabel}</div>`
       +   '<div class="mp-table-host">'

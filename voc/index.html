@@ -1466,6 +1466,15 @@
     .edit-add-form input:focus, .edit-add-form select:focus { border-color: #4F46E5; }
     .edit-add-form__row { display: flex; gap: 6px; }
     .edit-add-form__row > * { flex: 1; }
+    .edit-add-form__check-row {
+      display: flex; gap: 14px; flex-wrap: wrap;
+      padding: 4px 2px;
+    }
+    .edit-add-form__check {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px; color: #1A1A1A; cursor: pointer;
+    }
+    .edit-add-form__check input { accent-color: #4F46E5; }
     .edit-add-form__actions { display: flex; gap: 6px; justify-content: flex-end; margin-top: 4px; }
     .edit-add-form__btn {
       padding: 7px 14px; border-radius: 4px;
@@ -1989,6 +1998,10 @@
                     <option value="flat">1단 — 단일 행 헤더</option>
                     <option value="grouped">2단 — 그룹 + leaf 2-row 헤더</option>
                   </select>
+                  <div class="edit-add-form__check-row">
+                    <label class="edit-add-form__check"><input type="checkbox" id="addTableWithCheck" /><span>체크박스 컬럼 포함</span></label>
+                    <label class="edit-add-form__check"><input type="checkbox" id="addTableWithNo" /><span>No 컬럼 포함</span></label>
+                  </div>
                   <div class="edit-add-form__actions">
                     <button type="button" class="edit-add-form__btn edit-add-form__btn--ghost" data-cancel="table">취소</button>
                     <button type="button" class="edit-add-form__btn edit-add-form__btn--primary" data-submit="table">추가</button>
@@ -3622,13 +3635,15 @@
     // 새 빈 테이블을 페이지 main 끝에 추가. type='flat' = 1단 thead,
     // 'grouped' = 2단 thead (group row + leaf row). 사용자가 이후 [+ 컬럼 추가]
     // / [+ 그룹 추가] 로 이 테이블에 컬럼을 더 붙일 수 있도록.
-    function addTable({ label, type }) {
+    function addTable({ label, type, withCheck, withNo }) {
       const d = pageDraft();
       d.added.tables = Array.isArray(d.added.tables) ? d.added.tables : [];
       d.added.tables.push({
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
         label: label || '새 테이블',
         type: (type === 'grouped') ? 'grouped' : 'flat',
+        withCheck: !!withCheck,
+        withNo: !!withNo,
       });
       persistDraft();
       renderEditPane();
@@ -4502,11 +4517,21 @@
       const klass = `voc-added-table-${t.id}`;
       const cellStyle = 'min-width:120px;width:120px;padding:12px 16px;';
       const safeLabel = escapeHtml(t.label || '새 테이블');
-      const colgroup = `<colgroup><col style="width:120px"/><col style="width:120px"/><col class="col-spacer" data-empty="true"/></colgroup>`;
+      const withCheck = !!t.withCheck;
+      const withNo = !!t.withNo;
+      // 앵커 컬럼 markup — sku-management 와 동일 패턴.
+      const cbHeadCell = `<th class="cb-col"${t.type === 'grouped' ? ' rowspan="2"' : ''}><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="전체 선택"></span></th>`;
+      const noHeadCell = `<th class="col-auto col-no"${t.type === 'grouped' ? ' rowspan="2"' : ''}>No</th>`;
+      const cbBodyCell = '<td class="cb-col"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="선택"></span></td>';
+      const headAnchorPrefix = (withCheck ? cbHeadCell : '') + (withNo ? noHeadCell : '');
+      // colgroup — 앵커 col 추가.
+      const cgAnchor = (withCheck ? '<col style="width:36px"/>' : '') + (withNo ? '<col style="width:48px"/>' : '');
+      const colgroup = `<colgroup>${cgAnchor}<col style="width:120px"/><col style="width:120px"/><col class="col-spacer" data-empty="true"/></colgroup>`;
       let thead;
       if (t.type === 'grouped') {
         thead = '<thead>'
           + '<tr class="group-row">'
+          +   headAnchorPrefix   // rs=2 anchor 셀들 — group row 에서 시작해 leaf row 까지 차지
           +   `<th colspan="2" style="${cellStyle}">${safeLabel} 그룹</th>`
           +   '<th class="col-spacer" data-empty="true" rowspan="2" aria-hidden="true"></th>'
           + '</tr>'
@@ -4518,18 +4543,22 @@
       } else {
         thead = '<thead>'
           + '<tr>'
+          +   headAnchorPrefix
           +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 1</div></th>`
           +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 2</div></th>`
           +   '<th class="col-spacer" data-empty="true" aria-hidden="true"></th>'
           + '</tr>'
           + '</thead>';
       }
-      const tbodyRow = '<tr>'
+      // tbody — 행마다 cb / No 셀 prepend (No 는 1,2,3).
+      const tbodyRow = (n) => '<tr>'
+        +   (withCheck ? cbBodyCell : '')
+        +   (withNo ? `<td class="col-auto col-no">${n}</td>` : '')
         +   `<td style="${cellStyle}">—</td>`
         +   `<td style="${cellStyle}">—</td>`
         +   '<td class="col-spacer" data-empty="true"></td>'
         + '</tr>';
-      const tbody = `<tbody>${tbodyRow}${tbodyRow}${tbodyRow}</tbody>`;
+      const tbody = `<tbody>${tbodyRow(1)}${tbodyRow(2)}${tbodyRow(3)}</tbody>`;
       return `<section class="scm-page-section scm-voc-added-table ${klass}" id="voc-added-table-${t.id}">`
         +   `<div class="scm-page-section__title">${safeLabel}</div>`
         +   '<div class="mp-table-host">'
@@ -5795,10 +5824,15 @@
       if (!a.filterOrder || !a.filterOrder.length) return;
       const filterBar = doc.querySelector('.scm-filter-bar');
       if (!filterBar) return;
+      // wrapper 는 .scm-filter-overflow__track 우선 — 거기엔 칩 사이 8px gap
+      // 룰이 적용됨. 첫 칩의 parent 가 .scm-filter-group (display:inline-flex,
+      // gap=0 — 인접 칩 시각적 연결용) 일 때 그걸 wrapper 로 잡으면 모든
+      // 칩이 group 으로 들어가 flush 로 붙어 보이는 버그.
+      const track = filterBar.querySelector('.scm-filter-overflow__track');
       const realChip = filterBar.querySelector(
         '.scm-filter-select[data-mp-filter]:not(.scm-voc-added-filter)'
       );
-      const wrapper = (realChip && realChip.parentElement) || filterBar.firstElementChild || filterBar;
+      const wrapper = track || (realChip && realChip.parentElement) || filterBar.firstElementChild || filterBar;
       const resetBtn = wrapper.querySelector(':scope > .scm-filter-reset-btn');
       a.filterOrder.forEach((sel) => {
         try {
@@ -7592,13 +7626,19 @@
         } else if (which === 'table') {
           const labEl = document.getElementById('addTableLabel');
           const typeEl = document.getElementById('addTableType');
+          const cbEl = document.getElementById('addTableWithCheck');
+          const noEl = document.getElementById('addTableWithNo');
           const label = (labEl.value || '').trim();
           const type = (typeEl && typeEl.value) || 'flat';
+          const withCheck = !!(cbEl && cbEl.checked);
+          const withNo = !!(noEl && noEl.checked);
           if (!label) { labEl.focus(); return; }
-          addTable({ label, type });
+          addTable({ label, type, withCheck, withNo });
           showToast(`${type === 'grouped' ? '2단' : '1단'} 테이블 [${label}] 추가`);
           labEl.value = '';
           if (typeEl) typeEl.value = 'flat';
+          if (cbEl) cbEl.checked = false;
+          if (noEl) noEl.checked = false;
           document.getElementById('addTableForm').classList.remove('is-open');
           const btn = document.querySelector('.edit-add-btn[data-add="table"]');
           if (btn) btn.style.display = '';
