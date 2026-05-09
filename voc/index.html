@@ -6,6 +6,8 @@
   <title>SCM HUB · 협업 VOC (작업자)</title>
   <script src="/auth-gate.js"></script>
   <script src="/profile-menu.js" defer></script>
+  <!-- 편집 탭 컴포넌트 라이브러리 (단일 source — 30개 atomic 컴포넌트). -->
+  <script src="component-library.js"></script>
   <!-- VOC 가 자체 dropdown UI 를 그릴 때 lnb.js 의 메뉴 데이터(SCM.lnb.getMenu) 를 single
        source 로 사용. lnb.js 를 동기 로드 — IIFE 안 MENU 초기화 시점에 SCM.lnb 가 필요. -->
   <script src="../design system/components/lnb/lnb.js"></script>
@@ -719,24 +721,77 @@
     .cmp-modal__hint { margin: 4px 0 0; font-size: 11.5px; color: #6B7280; line-height: 1.5; }
     .cmp-modal__ai-row { display: flex; gap: 8px; align-items: center; margin: 4px 0; }
     .cmp-modal__ai-row select { flex: 1; }
+    /* atomic level sub-tabs (Atom / Molecule / Organism) */
+    .cmp-lib-leveltabs {
+      display: flex; gap: 4px;
+      padding: 4px; margin: 8px 0 6px;
+      background: #F3F4F6; border-radius: 8px;
+    }
+    .cmp-lib-leveltab {
+      flex: 1;
+      padding: 6px 10px;
+      background: transparent; border: 0; border-radius: 6px;
+      cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 600;
+      color: #6B7280;
+      transition: background 0.12s, color 0.12s;
+    }
+    .cmp-lib-leveltab:hover { color: #1A1A1A; }
+    .cmp-lib-leveltab.is-active {
+      background: #fff; color: #4F46E5;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    .cmp-lib-leveltab__count {
+      display: inline-block;
+      margin-left: 4px;
+      padding: 0 5px;
+      font-size: 10.5px; font-weight: 600;
+      background: #E5E7EB; color: #6B7280;
+      border-radius: 999px;
+    }
+    .cmp-lib-leveltab.is-active .cmp-lib-leveltab__count {
+      background: #EEF2FF; color: #4F46E5;
+    }
+    .cmp-lib-levelhint {
+      font-size: 11px; color: #6B7280;
+      margin: 0 4px 8px; line-height: 1.4;
+    }
+
+    /* lib grid — 2-up, 카드 안에 iframe 미리보기 */
     .cmp-modal__lib {
-      display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
-      margin-top: 8px;
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+      margin-top: 4px;
     }
     .cmp-lib-card {
+      position: relative;
+      display: flex; flex-direction: column;
+      background: #fff; border: 1px solid #E5E7EB; border-radius: 10px;
+      cursor: pointer;
+      font-family: inherit;
+      overflow: hidden;
+      transition: border-color 0.12s, transform 0.12s;
+    }
+    .cmp-lib-card:hover {
+      border-color: #4F46E5;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(79, 70, 229, 0.08);
+    }
+    /* iframe 미리보기 (sandboxed — script 차단) */
+    .cmp-lib-card__preview {
+      width: 100%; height: 90px;
+      border: 0;
+      background:
+        linear-gradient(45deg, #F9FAFB 25%, transparent 25%) 0 0/16px 16px,
+        linear-gradient(-45deg, #F9FAFB 25%, transparent 25%) 0 8px/16px 16px,
+        linear-gradient(45deg, transparent 75%, #F9FAFB 75%) 8px -8px/16px 16px,
+        linear-gradient(-45deg, transparent 75%, #F9FAFB 75%) -8px 0/16px 16px,
+        #fff;
+      pointer-events: none;
+    }
+    .cmp-lib-card__info {
       display: flex; align-items: center; gap: 8px;
       padding: 10px 12px;
-      background: #fff; border: 1px solid #E5E7EB; border-radius: 8px;
-      text-align: left; cursor: pointer;
-      font-family: inherit;
-      transition: border-color 0.12s, background 0.12s;
-    }
-    .cmp-lib-card:hover { border-color: #4F46E5; background: #FAFAFF; }
-    .cmp-lib-card__icon {
-      width: 28px; height: 28px; flex-shrink: 0;
-      display: inline-flex; align-items: center; justify-content: center;
-      background: #EEF2FF; color: #4F46E5; border-radius: 6px;
-      font-size: 13px; font-weight: 700;
+      border-top: 1px solid #F3F4F6;
+      background: #fff;
     }
     .cmp-lib-card__body { flex: 1; min-width: 0; }
     .cmp-lib-card__title {
@@ -746,14 +801,21 @@
     .cmp-lib-card__sub {
       display: block; font-size: 10.5px; color: #6B7280;
       margin-top: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .cmp-lib-card__edit {
       flex-shrink: 0;
       background: transparent; border: 0; cursor: pointer;
-      width: 22px; height: 22px; border-radius: 4px;
+      width: 24px; height: 24px; border-radius: 4px;
       font-size: 12px; color: #6B7280;
     }
     .cmp-lib-card__edit:hover { background: #EEF2FF; color: #4F46E5; }
+    .cmp-lib-empty {
+      grid-column: 1 / -1;
+      padding: 24px;
+      text-align: center;
+      font-size: 12px; color: #9CA3AF;
+    }
     .cmp-modal__foot {
       display: flex; justify-content: flex-end; gap: 8px;
       padding: 12px 20px 16px;
@@ -1896,7 +1958,9 @@
         <p class="cmp-modal__hint">프롬프트와 템플릿을 골라 [AI 생성] 을 누르면 HTML 입력 탭에 결과가 채워집니다. 그 다음 자유롭게 수정 가능합니다.</p>
       </div>
       <div class="cmp-modal__pane" data-cmp-pane="lib">
-        <p class="cmp-modal__hint">작은 단위 컴포넌트를 골라 불러오면 HTML 입력 탭에 채워지며, 이후 자유롭게 편집/저장할 수 있습니다.</p>
+        <p class="cmp-modal__hint">아토믹 디자인 단위로 묶인 컴포넌트를 골라 불러오면 HTML 입력 탭에 채워지며, 이후 자유롭게 편집/저장할 수 있습니다.</p>
+        <div class="cmp-lib-leveltabs" role="tablist" id="cmpLibLevelTabs"></div>
+        <div class="cmp-lib-levelhint" id="cmpLibLevelHint"></div>
         <div class="cmp-modal__lib" id="cmpLibGrid"></div>
       </div>
     </div>
@@ -3928,57 +3992,13 @@
     // (saved per-browser in state.lib[id]) and load any preset into the
     // component editor. After loading, the user can further customize before
     // saving the resulting component to the page.
-    const SMALL_UNITS = [
-      { id: 'banner-info', label: '안내 배너', type: 'banner', sub: '상단 안내', html:
-        `<div class="scm-voc-cmp scm-voc-cmp--banner" style="display:flex;gap:12px;align-items:center;padding:14px 18px;border-radius:8px;background:#EEF2FF;color:#312E81;font-size:13px;border:1px solid #C7D2FE;margin:12px 0;">
-  <span style="font-size:18px;line-height:1;">ℹ️</span>
-  <div style="flex:1;"><b>안내</b> — 새로운 기능이 추가됐습니다. 우측 [편집] 탭에서 직접 수정해 보세요.</div>
-</div>` },
-      { id: 'banner-warn', label: '경고 배너', type: 'banner', sub: '주의 안내', html:
-        `<div class="scm-voc-cmp scm-voc-cmp--banner" style="display:flex;gap:12px;align-items:center;padding:14px 18px;border-radius:8px;background:#FFF7ED;color:#9A3412;font-size:13px;border:1px solid #FED7AA;margin:12px 0;">
-  <span style="font-size:18px;line-height:1;">⚠️</span>
-  <div style="flex:1;"><b>주의</b> — 출고 마감 시간이 30분 남았습니다.</div>
-</div>` },
-      { id: 'banner-success', label: '성공 배너', type: 'banner', sub: '완료 안내', html:
-        `<div class="scm-voc-cmp scm-voc-cmp--banner" style="display:flex;gap:12px;align-items:center;padding:14px 18px;border-radius:8px;background:#ECFDF5;color:#065F46;font-size:13px;border:1px solid #A7F3D0;margin:12px 0;">
-  <span style="font-size:18px;line-height:1;">✅</span>
-  <div style="flex:1;"><b>완료</b> — 모든 작업이 정상 처리됐습니다.</div>
-</div>` },
-      { id: 'kpi-card', label: 'KPI 카드', type: 'kpi', sub: '숫자 강조', html:
-        `<div class="scm-voc-cmp scm-voc-cmp--kpi" style="display:inline-flex;flex-direction:column;gap:6px;padding:18px 20px;border-radius:10px;background:#fff;border:1px solid #E5E7EB;min-width:180px;margin:12px 8px 12px 0;">
-  <span style="font-size:11px;font-weight:600;color:#6B7280;letter-spacing:0.4px;text-transform:uppercase;">오늘의 출고</span>
-  <span style="font-size:28px;font-weight:700;color:#111827;line-height:1;">1,284<span style="font-size:13px;color:#6B7280;font-weight:500;margin-left:4px;">건</span></span>
-  <span style="font-size:11.5px;color:#10B981;font-weight:600;">▲ 어제 대비 +6.2%</span>
-</div>` },
-      { id: 'card-info', label: '정보 카드', type: 'card', sub: '제목+본문', html:
-        `<div class="scm-voc-cmp scm-voc-cmp--card" style="padding:16px 18px;border-radius:10px;background:#fff;border:1px solid #E5E7EB;margin:12px 0;">
-  <h4 style="margin:0 0 8px;font-size:14px;font-weight:700;color:#111827;">카드 제목</h4>
-  <p style="margin:0;font-size:12.5px;color:#4B5563;line-height:1.6;">카드 본문 — 여기에 설명, 차트, 또는 액션 버튼을 넣을 수 있습니다.</p>
-</div>` },
-      { id: 'cta-box', label: 'CTA 박스', type: 'card', sub: '버튼+설명', html:
-        `<div class="scm-voc-cmp scm-voc-cmp--cta" style="display:flex;gap:14px;align-items:center;padding:16px 20px;border-radius:10px;background:#111827;color:#fff;margin:12px 0;">
-  <div style="flex:1;">
-    <b style="font-size:14px;display:block;margin-bottom:2px;">새 출고 등록</b>
-    <span style="font-size:12px;color:#D1D5DB;">한 번에 여러 SKU 를 등록할 수 있습니다.</span>
-  </div>
-  <button type="button" style="padding:8px 16px;background:#6366F1;color:#fff;border:0;border-radius:6px;font-size:12.5px;font-weight:600;cursor:pointer;">+ 등록 시작</button>
-</div>` },
-      { id: 'btn-primary', label: '기본 버튼', type: 'button', sub: 'primary', html:
-        `<button type="button" class="scm-voc-cmp scm-voc-cmp--btn" style="padding:10px 18px;background:#4F46E5;color:#fff;border:0;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;margin:4px;">버튼 텍스트</button>` },
-      { id: 'btn-ghost', label: 'Ghost 버튼', type: 'button', sub: '테두리만', html:
-        `<button type="button" class="scm-voc-cmp scm-voc-cmp--btn" style="padding:10px 18px;background:#fff;color:#111827;border:1px solid #D1D5DB;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;margin:4px;">버튼 텍스트</button>` },
-      { id: 'list-items', label: '리스트', type: 'list', sub: '아이템 목록', html:
-        `<ul class="scm-voc-cmp scm-voc-cmp--list" style="list-style:none;padding:0;margin:12px 0;border:1px solid #E5E7EB;border-radius:8px;background:#fff;">
-  <li style="display:flex;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #F3F4F6;font-size:13px;"><span>출고 #1284</span><span style="color:#10B981;font-weight:600;">완료</span></li>
-  <li style="display:flex;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #F3F4F6;font-size:13px;"><span>출고 #1283</span><span style="color:#F59E0B;font-weight:600;">대기</span></li>
-  <li style="display:flex;justify-content:space-between;padding:12px 16px;font-size:13px;"><span>출고 #1282</span><span style="color:#10B981;font-weight:600;">완료</span></li>
-</ul>` },
-      { id: 'form-input', label: '입력 폼', type: 'form', sub: '라벨+인풋', html:
-        `<div class="scm-voc-cmp scm-voc-cmp--form" style="display:flex;flex-direction:column;gap:6px;max-width:320px;margin:12px 0;">
-  <label style="font-size:12px;font-weight:600;color:#374151;">출고 ID</label>
-  <input type="text" placeholder="예: SHP-2026-00001" style="padding:9px 12px;border:1px solid #D1D5DB;border-radius:6px;font-size:13px;outline:none;" />
-  <span style="font-size:11px;color:#6B7280;">대문자 알파벳 + 숫자 형식으로 입력해 주세요.</span>
-</div>` },
+    // 30개 atomic 컴포넌트는 voc/component-library.js 에서 단일 source 로 관리.
+    // window.SCM_VOC_LIB.UNITS 가 로드되면 그걸 쓰고, 미로드 시 빈 배열 fallback.
+    const SMALL_UNITS = (window.SCM_VOC_LIB && window.SCM_VOC_LIB.UNITS) || [];
+    const LIB_LEVELS  = (window.SCM_VOC_LIB && window.SCM_VOC_LIB.LEVELS) || [
+      { key: 'atom',     label: 'Atoms',     hint: '기본 UI 요소' },
+      { key: 'molecule', label: 'Molecules', hint: '조합 컴포넌트' },
+      { key: 'organism', label: 'Organisms', hint: '복합 섹션' },
     ];
     function libUnit(id) {
       const base = SMALL_UNITS.find((u) => u.id === id);
@@ -4108,20 +4128,68 @@
         p.classList.toggle('is-active', p.dataset.cmpPane === key);
       });
     }
+    // 현재 라이브러리에서 활성 atomic 레벨 (atom / molecule / organism).
+    // 모달 닫힘 ↔ 다시 열림 사이에도 사용자가 마지막에 보던 레벨이 유지되도록 외부 변수로.
+    let _libActiveLevel = 'atom';
+    // sandboxed iframe 미리보기 srcdoc 생성 — 컴포넌트 HTML 을 격리된 환경에서
+    // Pretendard 폰트 + 중앙정렬 레이아웃으로 렌더. allow-scripts 미부여 = JS 차단.
+    function _libPreviewSrcdoc(html) {
+      return [
+        '<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8" />',
+        '<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />',
+        '<style>',
+        'html,body{margin:0;padding:0;}',
+        'body{display:flex;align-items:center;justify-content:center;min-height:100%;padding:8px 12px;',
+          'font-family:Pretendard,system-ui,sans-serif;font-size:13px;color:#111827;background:#fff;',
+          'overflow:hidden;box-sizing:border-box;}',
+        'body > *{max-width:100%;max-height:84px;}',
+        '*{box-sizing:border-box;}',
+        '</style></head><body>',
+        html || '',
+        '</body></html>',
+      ].join('');
+    }
+    function _libRenderLevelTabs() {
+      const host = document.getElementById('cmpLibLevelTabs');
+      const hint = document.getElementById('cmpLibLevelHint');
+      if (!host) return;
+      const counts = {};
+      SMALL_UNITS.forEach((u) => { const k = u.level || 'atom'; counts[k] = (counts[k] || 0) + 1; });
+      host.innerHTML = LIB_LEVELS.map((lv) => {
+        const isActive = lv.key === _libActiveLevel;
+        const cnt = counts[lv.key] || 0;
+        return `<button type="button" class="cmp-lib-leveltab${isActive ? ' is-active' : ''}" data-cmp-lib-level="${lv.key}">
+          ${escapeHtml(lv.label)}
+          <span class="cmp-lib-leveltab__count">${cnt}</span>
+        </button>`;
+      }).join('');
+      if (hint) {
+        const cur = LIB_LEVELS.find((lv) => lv.key === _libActiveLevel);
+        hint.textContent = cur ? cur.hint : '';
+      }
+    }
     function _cmpRenderLib() {
+      _libRenderLevelTabs();
       const host = document.getElementById('cmpLibGrid');
       if (!host) return;
-      host.innerHTML = SMALL_UNITS.map((u) => {
+      const filtered = SMALL_UNITS.filter((u) => (u.level || 'atom') === _libActiveLevel);
+      if (!filtered.length) {
+        host.innerHTML = '<div class="cmp-lib-empty">이 레벨에 등록된 컴포넌트가 없습니다.</div>';
+        return;
+      }
+      host.innerHTML = filtered.map((u) => {
         const cur = libUnit(u.id);
-        const initial = (cur.label || u.label).slice(0, 2);
+        const previewHtml = cur.html || u.html || '';
         return `
           <div class="cmp-lib-card" data-cmp-lib-pick="${u.id}" title="이 컴포넌트를 HTML 입력 탭에 불러옵니다">
-            <span class="cmp-lib-card__icon">${escapeHtml(initial)}</span>
-            <span class="cmp-lib-card__body">
-              <span class="cmp-lib-card__title">${escapeHtml(cur.label || u.label)}</span>
-              <span class="cmp-lib-card__sub">${escapeHtml(cur.sub || u.sub || '')}</span>
-            </span>
-            <button type="button" class="cmp-lib-card__edit" data-cmp-lib-edit="${u.id}" title="이 작은 컴포넌트의 HTML 수정">✏</button>
+            <iframe class="cmp-lib-card__preview" sandbox="allow-same-origin" loading="lazy" srcdoc="${escapeHtml(_libPreviewSrcdoc(previewHtml))}" title="${escapeHtml(cur.label || u.label || '')} 미리보기"></iframe>
+            <div class="cmp-lib-card__info">
+              <div class="cmp-lib-card__body">
+                <span class="cmp-lib-card__title">${escapeHtml(cur.label || u.label)}</span>
+                <span class="cmp-lib-card__sub">${escapeHtml(cur.sub || u.sub || '')}</span>
+              </div>
+              <button type="button" class="cmp-lib-card__edit" data-cmp-lib-edit="${u.id}" title="이 작은 컴포넌트의 HTML 수정">✏</button>
+            </div>
           </div>`;
       }).join('');
     }
@@ -4166,6 +4234,17 @@
       // tabs
       const tab = t.closest && t.closest('#cmpModal [data-cmp-tab]');
       if (tab) { e.preventDefault(); _cmpSwitchTab(tab.dataset.cmpTab); return; }
+      // atomic level sub-tabs (Atom / Molecule / Organism)
+      const lvtab = t.closest && t.closest('[data-cmp-lib-level]');
+      if (lvtab) {
+        e.preventDefault();
+        const next = lvtab.dataset.cmpLibLevel;
+        if (next && next !== _libActiveLevel) {
+          _libActiveLevel = next;
+          _cmpRenderLib();
+        }
+        return;
+      }
       // lib pick — load preset HTML into the HTML tab + set name/type
       const pick = t.closest && t.closest('[data-cmp-lib-pick]');
       if (pick && !t.closest('[data-cmp-lib-edit]')) {
