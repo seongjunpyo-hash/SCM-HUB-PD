@@ -4776,10 +4776,32 @@
       try { el = doc.querySelector(selector); } catch { return ''; }
       if (!el) return '';
       const clone = el.cloneNode(true);
-      // strip voc-* runtime attrs so the editor presents clean markup
-      clone.removeAttribute('data-voc-key');
-      clone.removeAttribute('data-voc-comp-hash');
+      // voc 가 붙인 runtime 마커 — 사용자에게 노출 X (편집 시 깨끗한 markup 보이도록).
+      _stripVocMarkers(clone);
       return clone.outerHTML;
+    }
+    // voc 내부 추적용 attr / class 를 root 와 모든 자손에서 제거.
+    function _stripVocMarkers(root) {
+      if (!root) return;
+      const VOC_ATTRS = ['data-voc-key', 'data-voc-comp-hash', 'data-voc-orig-label', 'data-voc-cell-type', 'data-voc-hidden', 'data-voc-orig-width', 'data-voc-orig-col-width', 'data-voc-filter-type', 'data-voc-comp-width', 'data-voc-added-comp-id', 'data-voc-added-comp-type', 'data-voc-added-comp-label', 'data-voc-flash', 'data-voc-np-id'];
+      const VOC_CLASS_PREFIX = 'scm-voc-';
+      const visit = (el) => {
+        if (!el || el.nodeType !== 1) return;
+        VOC_ATTRS.forEach((a) => { try { el.removeAttribute(a); } catch (_) {} });
+        if (el.classList && el.classList.length) {
+          [...el.classList].forEach((c) => {
+            if (c.indexOf(VOC_CLASS_PREFIX) === 0) el.classList.remove(c);
+          });
+          // class 가 비면 attribute 자체 제거 (style="" 처럼 빈 속성 노출 방지)
+          if (!el.classList.length) el.removeAttribute('class');
+        }
+        // 빈 inline style 제거
+        if (el.hasAttribute && el.hasAttribute('style') && !el.getAttribute('style').trim()) {
+          el.removeAttribute('style');
+        }
+      };
+      visit(root);
+      if (root.querySelectorAll) root.querySelectorAll('*').forEach(visit);
     }
     function _cmpDefaultLabelFor(selector) {
       const doc = iframe.contentDocument;
