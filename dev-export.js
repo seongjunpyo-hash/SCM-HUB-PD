@@ -1981,6 +1981,160 @@ ${jsxBody}
     for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
     return String(h);
   }
+  function _normLabel(s) {
+    return String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
+  }
+  // Cross-page label sync — voc 가 'scm:voc:global-labels:v1' 에 저장.
+  const _GLOBAL_LABELS_KEY = 'scm:voc:global-labels:v1';
+  function _loadGlobalLabels() {
+    try {
+      const raw = localStorage.getItem(_GLOBAL_LABELS_KEY);
+      const v = raw ? JSON.parse(raw) : {};
+      return (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
+    } catch { return {}; }
+  }
+
+  // 원본 라벨 stamp — voc 의 stampOrigLabel 미러. standalone 에서도 매칭 키
+  // 동작하도록 첫 stamp.
+  function _stampOrigLabelDom(el, label) {
+    if (!el) return;
+    if (el.getAttribute && el.getAttribute('data-voc-orig-label')) return;
+    const norm = _normLabel(label);
+    if (!norm) return;
+    try { el.setAttribute('data-voc-orig-label', norm); } catch (_) {}
+  }
+  function _stampOrigLabelsForComponents(doc) {
+    const main = doc.querySelector('main') || doc.body;
+    if (!main) return;
+    // 필터
+    main.querySelectorAll('.scm-filter-bar .scm-filter-select[data-mp-filter]:not(.scm-voc-added-filter)').forEach((el) => {
+      const labEl = el.querySelector('.scm-filter-select__label');
+      const valEl = el.querySelector('.scm-filter-select__value');
+      const label = (labEl && labEl.textContent.trim()) || (valEl && valEl.textContent.trim()) || el.dataset.mpFilter || '필터';
+      _stampOrigLabelDom(el, label.replace(/\s+/g, ' ').slice(0, 28));
+    });
+    // 컬럼 (thead th)
+    [...main.querySelectorAll('.mp-table thead th')].forEach((th) => {
+      if (th.classList.contains('cb-col') || th.classList.contains('col-spacer')) return;
+      const label = (th.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 28) || '(빈 컬럼)';
+      _stampOrigLabelDom(th, label);
+    });
+    // 컴포넌트 (main 직속 자식)
+    [...main.children].forEach((el) => {
+      if (!el || el.nodeType !== 1) return;
+      const tag = (el.tagName || '').toLowerCase();
+      if (tag === 'script' || tag === 'style' || tag === 'template' || tag === 'noscript') return;
+      if (el.classList && el.classList.contains('scm-voc-added-grid')) return;
+      if (!_isElVisibleStandalone(el)) return;
+      // pickLabel 미러 — 첫 title element 의 텍스트 우선.
+      const head = el.querySelector('.scm-card-title, .scm-page-section__title, .scm-page-head__title, h1, h2, h3, h4');
+      let label = (head && head.textContent.trim()) || (el.getAttribute('aria-label') || el.title || '').trim();
+      if (!label) label = (el.textContent || '').trim().replace(/\s+/g, ' ');
+      if (label) _stampOrigLabelDom(el, label.slice(0, 40));
+    });
+  }
+  function _applyGlobalLabels(doc, gl) {
+    if (!gl) return;
+    if (gl.filter && Object.keys(gl.filter).length) {
+      doc.querySelectorAll('.scm-filter-bar .scm-filter-select[data-voc-orig-label]').forEach((el) => {
+        const orig = _normLabel(el.getAttribute('data-voc-orig-label'));
+        const v = orig && gl.filter[orig];
+        if (!v) return;
+        const labEl = el.querySelector('.scm-filter-select__label');
+        if (labEl) labEl.textContent = v;
+        const valEl = el.querySelector('.scm-filter-select__value');
+        if (valEl && valEl !== labEl) valEl.textContent = v;
+      });
+    }
+    if (gl.column && Object.keys(gl.column).length) {
+      doc.querySelectorAll('.mp-table thead th[data-voc-orig-label]').forEach((cell) => {
+        const orig = _normLabel(cell.getAttribute('data-voc-orig-label'));
+        const v = orig && gl.column[orig];
+        if (!v) return;
+        const host = cell.querySelector(':scope > .cell-clamp, :scope > .cell-clamp-2') || cell;
+        let textNode = null;
+        for (const n of host.childNodes) {
+          if (n.nodeType === 3 && n.textContent.trim()) { textNode = n; break; }
+        }
+        if (textNode) textNode.textContent = v;
+        else host.insertBefore(doc.createTextNode(v), host.firstChild);
+      });
+    }
+    if (gl.component && Object.keys(gl.component).length) {
+      doc.querySelectorAll('[data-voc-orig-label]').forEach((el) => {
+        if (el.matches('.scm-filter-select, .mp-table thead th')) return;
+        const orig = _normLabel(el.getAttribute('data-voc-orig-label'));
+        const v = orig && gl.component[orig];
+        if (!v) return;
+        const head = el.querySelector('.scm-card-title, .scm-page-section__title, .scm-page-head__title, h1, h2, h3, h4');
+        if (!head) return;
+        let textNode = null;
+        for (const n of head.childNodes) {
+          if (n.nodeType === 3 && n.textContent.trim()) { textNode = n; break; }
+        }
+        if (textNode) textNode.textContent = v;
+        else head.insertBefore(doc.createTextNode(v), head.firstChild);
+      });
+    }
+  }
+
+  // ---- 추가 테이블 (1단/2단) inject — voc 의 applyAddedTables mirror ----
+  function _buildAddedTableHTML_devexport(t) {
+    const klass = `voc-added-table-${t.id}`;
+    const cellStyle = 'min-width:120px;width:120px;padding:12px 16px;';
+    const safeLabel = escapeHtml(t.label || '새 테이블');
+    const colgroup = `<colgroup><col style="width:120px"/><col style="width:120px"/><col class="col-spacer" data-empty="true"/></colgroup>`;
+    let thead;
+    if (t.type === 'grouped') {
+      thead = '<thead>'
+        + '<tr class="group-row">'
+        +   `<th colspan="2" style="${cellStyle}">${safeLabel} 그룹</th>`
+        +   '<th class="col-spacer" data-empty="true" rowspan="2" aria-hidden="true"></th>'
+        + '</tr>'
+        + '<tr>'
+        +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 1</div></th>`
+        +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 2</div></th>`
+        + '</tr>'
+        + '</thead>';
+    } else {
+      thead = '<thead>'
+        + '<tr>'
+        +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 1</div></th>`
+        +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 2</div></th>`
+        +   '<th class="col-spacer" data-empty="true" aria-hidden="true"></th>'
+        + '</tr>'
+        + '</thead>';
+    }
+    const tbodyRow = '<tr>'
+      +   `<td style="${cellStyle}">—</td>`
+      +   `<td style="${cellStyle}">—</td>`
+      +   '<td class="col-spacer" data-empty="true"></td>'
+      + '</tr>';
+    const tbody = `<tbody>${tbodyRow}${tbodyRow}${tbodyRow}</tbody>`;
+    return `<section class="scm-page-section scm-voc-added-table ${klass}" id="voc-added-table-${t.id}">`
+      +   `<div class="scm-page-section__title">${safeLabel}</div>`
+      +   '<div class="mp-table-host">'
+      +     '<div class="mp-table-scroll">'
+      +       `<table class="mp-table">${colgroup}${thead}${tbody}</table>`
+      +     '</div>'
+      +   '</div>'
+      + '</section>';
+  }
+  function _applyAddedTables(doc, a) {
+    const list = (a.added && Array.isArray(a.added.tables)) ? a.added.tables : [];
+    if (!list.length) return;
+    const main = doc.querySelector('main') || doc.body;
+    if (!main) return;
+    list.forEach((t) => {
+      const id = `voc-added-table-${t.id}`;
+      if (doc.getElementById(id)) return;
+      const tpl = doc.createElement('template');
+      tpl.innerHTML = _buildAddedTableHTML_devexport(t);
+      const node = tpl.content.firstElementChild;
+      if (!node) return;
+      main.appendChild(node);
+    });
+  }
 
   // ---- 추가 필터 / 컬럼 / 그룹 inject ----
   function _applyAddedFiltersColumnsGroups(doc, a) {
@@ -2232,20 +2386,100 @@ ${jsxBody}
   }
 
   // ---- top-level: 모든 apply 실행 ----
+  // Phase 1 — main 의 모든 직속 자식에 voc-key 를 stamp.
+  // voc 의 scanEditTargets 와 동일한 키 체계를 standalone 에서 재현해서
+  // saved selector ([data-voc-key="comp-N"]) 가 매칭되게.
+  function _stampVocKeysOnComponents(doc) {
+    const main = doc.querySelector('main') || doc.body;
+    if (!main) return;
+    let compCounter = 0;
+    [...main.children].forEach((el) => {
+      if (!el || el.nodeType !== 1) return;
+      const tag = (el.tagName || '').toLowerCase();
+      if (tag === 'script' || tag === 'style' || tag === 'template' || tag === 'noscript' || tag === 'link' || tag === 'meta') return;
+      if (el.classList && el.classList.contains('scm-voc-added-grid')) return;
+      if (!_isElVisibleStandalone(el)) return;
+      if (!el.dataset.vocKey) el.dataset.vocKey = 'comp-' + compCounter;
+      compCounter++;
+    });
+  }
+
+  // Phase 2 — main 의 자식 순서 CSS `order` 로 제어. DOM 무손실.
+  // standalone 도 voc 와 동일하게 자연 순서면 flex CSS 안 박고, 사용자가
+  // reorder 했을 때만 main 을 flex column 으로 + style.order 부여.
+  function _applyComponentOrder(doc, a) {
+    const main = doc.querySelector('main');
+    if (!main) return;
+    const order = (a.componentOrder || []).slice();
+    if (!order.length) return;
+    // natural order = main 의 visual section 자식의 현재 voc-key 순서.
+    const naturalOrder = [];
+    [...main.children].forEach((el) => {
+      if (!el || el.nodeType !== 1) return;
+      const tag = (el.tagName || '').toLowerCase();
+      if (tag === 'script' || tag === 'style' || tag === 'template' || tag === 'noscript') return;
+      if (el.classList && el.classList.contains('scm-voc-added-grid')) return;
+      if (!_isElVisibleStandalone(el)) return;
+      if (!el.dataset.vocKey) return;
+      naturalOrder.push(`[data-voc-key="${el.dataset.vocKey}"]`);
+    });
+    // customized 판정
+    let customized = order.length !== naturalOrder.length;
+    if (!customized) {
+      for (let i = 0; i < order.length; i++) {
+        if (order[i] !== naturalOrder[i]) { customized = true; break; }
+      }
+    }
+    if (!customized) return;
+    // flex CSS inject (idempotent)
+    if (!doc.getElementById('scm-voc-layout-css')) {
+      const style = doc.createElement('style');
+      style.id = 'scm-voc-layout-css';
+      style.textContent = ''
+        + 'main { display: flex !important; flex-direction: column !important; }\n'
+        + 'main > * { flex: 0 0 auto !important; }\n';
+      doc.head.appendChild(style);
+    }
+    [...main.children].forEach((el) => { el.style.order = ''; });
+    let n = 1;
+    order.forEach((sel) => {
+      if (!sel) return;
+      let el = null;
+      try { el = main.querySelector(sel); } catch (_) {}
+      while (el && el.parentElement !== main) el = el.parentElement;
+      if (el && el.parentElement === main) el.style.order = String(n++);
+    });
+    [...main.children].forEach((el) => {
+      if (!el.style.order) el.style.order = String(n++);
+    });
+  }
+
   function applyFullSnapshot(a) {
     if (!a) return;
     const doc = document;
-    // 1) 추가 DOM 인젝션 — 필터/컬럼/그룹 → 컴포넌트(grid).
+    // 0) main 직속 자식에 comp-N voc-key stamp (Phase 1) + 원본 라벨 stamp.
+    //    voc-key: saved [data-voc-key="comp-N"] selector 매칭.
+    //    orig-label: cross-page 라벨 매칭 키.
+    _stampVocKeysOnComponents(doc);
+    _stampOrigLabelsForComponents(doc);
+    // 1) 추가 DOM 인젝션 — 추가 테이블 먼저 (column/group 인젝션이 그 host 를
+    //    타깃하기 위함) → 필터/컬럼/그룹 → 컴포넌트(grid).
     //    Native HTML override 가 element 를 outerHTML 로 바꿔 voc-key 를 잃을
     //    수 있으니 그 전에 실행.
+    _applyAddedTables(doc, a);
     _applyAddedFiltersColumnsGroups(doc, a);
     _applyAddedComponentsGrid(doc, a);
-    // 2) 라벨 오버라이드 (selector 매칭)
+    // 2) 라벨 오버라이드 — global 먼저 (원본라벨 매칭), per-page 가 위에 덮음.
+    _applyGlobalLabels(doc, _loadGlobalLabels());
     _applyFilterLabels(doc, a);
     _applyColumnLabels(doc, a);
-    // 3) Native HTML override — 마지막. element 가 통째로 바뀌므로 위의 stamp/
-    //    label 작업이 손실되지 않도록 마지막에.
+    // 3) Native HTML override — element 가 통째로 바뀌므로 (outerHTML 교체)
+    //    아래 컴포넌트 reorder 보다 먼저 — reorder 는 새 DOM 위에 style.order 박음.
     _applyNativeComponentEdits(doc, a);
+    // 4) Phase 2 — 컴포넌트 순서 (CSS order). reorder 안 했으면 no-op.
+    //    Native HTML override 후에 실행해서 새 element 에 style.order 가 박힘.
+    _stampVocKeysOnComponents(doc);   // override 가 voc-key 를 날렸을 수 있으니 재stamp
+    _applyComponentOrder(doc, a);
   }
 
   function applyActiveVersionMinimal() {
