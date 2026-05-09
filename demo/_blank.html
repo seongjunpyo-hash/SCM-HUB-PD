@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1440" />
+  <title>SCM-Hub · 신규 페이지</title>
+  <script src="/auth-gate.js"></script>
+  <script src="/scm-shell.js" defer></script>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <link rel="stylesheet" href="../design%20system/layer-desktop.css" />
+  <!-- 공용 셸 -->
+  <link rel="stylesheet" href="../design%20system/components/topbar/topbar.css" />
+  <link rel="stylesheet" href="../design%20system/components/lnb/lnb.css" />
+  <!-- voc TYPE_TEMPLATES + component-library 가 사용하는 모든 디자인 시스템 CSS -->
+  <link rel="stylesheet" href="../design%20system/components/button/button.css" />
+  <link rel="stylesheet" href="../design%20system/components/page-head/page-head.css" />
+  <link rel="stylesheet" href="../design%20system/components/info-banner/info-banner.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-bar/filter-bar.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-chip/filter-chip.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-select/filter-select.css" />
+  <link rel="stylesheet" href="../design%20system/components/search-btn/search-btn.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-reset-btn/filter-reset-btn.css" />
+  <link rel="stylesheet" href="../design%20system/components/stat/stat.css" />
+  <link rel="stylesheet" href="../design%20system/components/stats-bar/stats-bar.css" />
+  <link rel="stylesheet" href="../design%20system/components/mini-action/mini-action.css" />
+  <link rel="stylesheet" href="../design%20system/components/download-btn/download-btn.css" />
+  <link rel="stylesheet" href="../design%20system/components/pager/pager.css" />
+  <link rel="stylesheet" href="../design%20system/components/scm-table/scm-table.css" />
+  <link rel="stylesheet" href="../design%20system/components/tag/tag.css" />
+  <link rel="stylesheet" href="../design%20system/components/status-chip/status-chip.css" />
+  <link rel="stylesheet" href="../design%20system/components/platform-tag/platform-tag.css" />
+  <link rel="stylesheet" href="../design%20system/components/state-text/state-text.css" />
+  <link rel="stylesheet" href="../design%20system/components/checkbox/checkbox.css" />
+  <link rel="stylesheet" href="../design%20system/components/toggle/toggle.css" />
+  <link rel="stylesheet" href="../design%20system/components/icon-box/icon-box.css" />
+  <link rel="stylesheet" href="../design%20system/components/card/card.css" />
+  <link rel="stylesheet" href="../design%20system/components/info-table/info-table.css" />
+  <link rel="stylesheet" href="../design%20system/components/kpi-card/kpi-card.css" />
+  <link rel="stylesheet" href="../design%20system/components/quick-link-card/quick-link-card.css" />
+  <link rel="stylesheet" href="../design%20system/components/activity-item/activity-item.css" />
+  <link rel="stylesheet" href="../design%20system/components/bar-chart/bar-chart.css" />
+  <link rel="stylesheet" href="../design%20system/components/empty-state/empty-state.css" />
+  <link rel="stylesheet" href="../design%20system/components/tabs/tabs.css" />
+  <link rel="stylesheet" href="../design%20system/components/form-row/form-row.css" />
+  <link rel="stylesheet" href="../design%20system/components/input/input.css" />
+  <link rel="stylesheet" href="../design%20system/components/select/select.css" />
+  <link rel="stylesheet" href="../design%20system/components/toast/toast.css" />
+
+  <style>
+    body { background: #fff; }
+    main { background: #fff; min-height: 100vh; }
+  </style>
+</head>
+<body>
+  <script src="/scm-icons.js"></script>
+  <header class="scm-topbar" role="banner"></header>
+  <div class="app">
+    <!-- data-active 는 아래 inline script 에서 URL slug 로 동적 설정 -->
+    <nav class="scm-lnb" aria-label="주메뉴"></nav>
+    <main></main>
+  </div>
+
+  <!-- LNB active 키 = URL 의 slug. _redirects 로 /demo/<slug>.html 미존재 시
+       이 페이지로 200 rewrite 되므로 location.pathname 은 그대로 원래 URL. -->
+  <script>
+    (function () {
+      'use strict';
+      var lnb = document.querySelector('.scm-lnb');
+      if (!lnb) return;
+      var p = (location.pathname || '').replace(/\.html$/, '').replace(/^\/demo\//, '');
+      // /demo/x → 'x', /demo/ → '' (이 경우 active 미설정)
+      if (p) lnb.setAttribute('data-active', p);
+    })();
+  </script>
+  <script src="../design%20system/components/lnb/lnb.js"></script>
+  <script src="../design%20system/components/topbar/topbar.js"></script>
+</body>
+</html>

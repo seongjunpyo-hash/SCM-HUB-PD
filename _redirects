@@ -1,0 +1,10 @@
+# Cloudflare Pages redirects.
+#
+# 동작: static 파일이 존재하면 그대로 서빙됨. 미존재인 경우만 아래 규칙 적용.
+# 그래서 기존 /demo/sku-management.html / dashboard.html 등은 영향 없고,
+# voc 에서 새로 만든 슬러그(/demo/x.html) 처럼 파일이 없는 경우에만 빈 화면
+# 템플릿(/demo/_blank.html) 로 200 rewrite (URL 은 원래대로 유지).
+#
+# 결과: 파일 없는 demo 슬러그가 root index.html (워크스페이스 랜딩) 으로
+# fallback 되던 문제 해결.
+/demo/*  /demo/_blank.html  200

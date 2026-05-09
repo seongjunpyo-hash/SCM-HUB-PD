@@ -1,0 +1,25 @@
+name: voc syntax check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'voc/index.html'
+      - 'scripts/check-voc-syntax.js'
+      - '.github/workflows/voc-syntax-check.yml'
+  pull_request:
+    paths:
+      - 'voc/index.html'
+      - 'scripts/check-voc-syntax.js'
+      - '.github/workflows/voc-syntax-check.yml'
+
+jobs:
+  syntax-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Check voc/index.html for </script> literals + main IIFE syntax
+        run: node scripts/check-voc-syntax.js
