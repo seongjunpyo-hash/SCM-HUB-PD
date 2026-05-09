@@ -3059,22 +3059,41 @@
         return;
       }
       _ensureComponentGridLayoutCSS(doc);
-      // Phase 2 — style.order 로 시각 순서 (DOM 순서 안 건드림)
-      [...main.children].forEach((el) => {
+      // Phase 2 — style.order 로 시각 순서 (DOM 순서 안 건드림).
+      // 대상: main 직속 자식 + .scm-voc-added-grid 안의 자식 (display: contents
+      // 로 main grid 의 직접 layout-자식이 됨).
+      const grid = main.querySelector(':scope > .scm-voc-added-grid');
+      const _allItems = [...main.children];
+      if (grid) [...grid.children].forEach((c) => _allItems.push(c));
+      _allItems.forEach((el) => {
         el.style.order = '';
-        if (!el.classList.contains('scm-voc-added-grid')) el.style.gridColumn = '';
+        // Native 의 inline gridColumn 만 reset. added comp / rowbreak 는 자체
+        // gridColumn 보존 (각자 width / 1/-1 sentinel).
+        if (!el.classList.contains('scm-voc-added-grid')
+            && !el.classList.contains('scm-voc-added-comp')
+            && !el.classList.contains('scm-voc-added-rowbreak')) {
+          el.style.gridColumn = '';
+        }
       });
       let n = 1;
       order.forEach((sel) => {
         if (!sel) return;
         let el = null;
-        try { el = main.querySelector(sel); } catch (_) {}
-        while (el && el.parentElement !== main) el = el.parentElement;
-        if (el && el.parentElement === main) el.style.order = String(n++);
+        try { el = doc.querySelector(sel); } catch (_) {}
+        if (!el) return;
+        // walk up: stop at main 직속 OR .scm-voc-added-grid 직속.
+        while (el && el.parentElement !== main &&
+               !(el.parentElement && el.parentElement.classList.contains('scm-voc-added-grid'))) {
+          el = el.parentElement;
+        }
+        if (!el) return;
+        el.style.order = String(n++);
       });
-      // componentOrder 에 없는 main 자식은 끝
-      [...main.children].forEach((el) => {
-        if (!el.style.order) el.style.order = String(n++);
+      // componentOrder 에 없는 layout-item 은 끝
+      _allItems.forEach((el) => {
+        if (!el.style.order && !el.classList.contains('scm-voc-added-grid')) {
+          el.style.order = String(n++);
+        }
       });
       // Native 컴포넌트 width 적용 — componentEdits[sel].width.
       Object.keys(edits).forEach((sel) => {
@@ -3504,6 +3523,8 @@
       d.added.components = (d.added.components || []).filter((x) => x.id !== id);
       const sel = `#voc-added-comp-${id}`;
       d.hidden = d.hidden.filter((s) => s !== sel);
+      // 통합 componentOrder 에서도 제거.
+      d.componentOrder = (d.componentOrder || []).filter((s) => s !== sel);
       persistDraft();
       renderEditPane();
       applyComponentSectionToIframe();
@@ -3621,15 +3642,17 @@
         d.columnOrder = cleaned;
         return cleaned;
       }
-      // ---- components: native (main 직속 자식) ----
-      // 추가 컴포넌트는 .scm-voc-added-grid 안에서 자체 reorder (#100 의
-      // moveAddedComponent) 하므로 여기 native 순서엔 grid 자체가 한 entry.
+      // ---- components: native (main 직속 자식) + 추가 컴포넌트(rowbreak 포함) ----
+      // 모두 한 componentOrder 배열에 들어가 사용자가 자유롭게 재배치 가능 —
+      // 예: 행 나누기를 native 컴포넌트들 사이에 끼워 넣기.
       if (kind === 'component') {
         const natives = (targets.components || []).map((it) => it.selector);
-        const all = new Set(natives);
+        const added   = ((d.added && d.added.components) || []).map((c) => `#voc-added-comp-${c.id}`);
+        const all = new Set([...natives, ...added]);
         const cleaned = (d.componentOrder || []).filter((s) => all.has(s));
         const inArr = new Set(cleaned);
-        natives.forEach((s) => { if (!inArr.has(s)) cleaned.push(s); });
+        // 디폴트 순서: natives 먼저, 그 다음 added.
+        [...natives, ...added].forEach((s) => { if (!inArr.has(s)) cleaned.push(s); });
         d.componentOrder = cleaned;
         return cleaned;
       }
@@ -6199,17 +6222,16 @@
         }
       });
       const filterRows    = orderRows(filterRowsRaw, d.filterOrder);
-      // Components row list: native scanned components + user-added components.
-      // Native rows carry only `selector`; added rows carry `added` so the
-      // delete button + edit button can be wired.
-      const componentRows = [
+      // Components row list: native scanned components + user-added components
+      // + 행 나누기. 모두 componentOrder 로 정렬해서 사용자가 자유롭게 끼어들기
+      // 가능 — 예: 행 나누기를 native 컴포넌트들 사이에 박기.
+      const componentRowsRaw = [
         ...targets.components.map((it) => {
           const editEntry = (d.componentEdits || {})[it.selector];
           const label = (editEntry && editEntry.label) || it.label;
           return { ...it, label, kind: 'component', edited: !!editEntry, type: editEntry && editEntry.type };
         }),
         ...(d.added.components || []).map((c) => {
-          // rowbreak entry — 행 나누기 sentinel. 별도 kind 로 markup 만 다르게.
           if (c.kind === 'rowbreak') {
             return {
               kind: 'rowbreak',
@@ -6226,6 +6248,9 @@
           };
         }),
       ];
+      // syncOrderArr 가 d.componentOrder 를 자연 순서 + 누락 항목으로 채워줌.
+      const _compOrder = syncOrderArr('component');
+      const componentRows = orderRows(componentRowsRaw, _compOrder);
 
       const cellTypes = d.cellTypes || {};
       const renderList = (containerId, countId, items) => {
@@ -6240,9 +6265,12 @@
             return `<div class="edit-table-header"><span class="edit-table-header__dot"></span>${escapeHtml(it.label)}</div>`;
           }
           // rowbreak — drag-reorder + 삭제 가능한 얇은 separator row.
+          // 통합 componentOrder 에 참여하므로 native 컴포넌트들 사이에도 박을
+          // 수 있음 (kind='component' 와 같은 dropOk).
           if (it.kind === 'rowbreak') {
             const rid = it.added && it.added.id;
-            return `<div class="edit-row edit-row--rowbreak" draggable="true" data-drag-id="${escapeHtml(rid || '')}" data-drag-kind="component" data-drag-depth="0" data-drag-parent="">`
+            const sel = escapeHtml(it.selector);
+            return `<div class="edit-row edit-row--rowbreak" draggable="true" data-drag-id="${sel}" data-drag-kind="component" data-drag-depth="0" data-drag-parent="">`
               + `<span class="edit-row__grip" aria-hidden="true" title="드래그하여 순서 변경"><svg viewBox="0 0 6 12" fill="currentColor"><circle cx="1.25" cy="2" r="1"/><circle cx="4.75" cy="2" r="1"/><circle cx="1.25" cy="6" r="1"/><circle cx="4.75" cy="6" r="1"/><circle cx="1.25" cy="10" r="1"/><circle cx="4.75" cy="10" r="1"/></svg></span>`
               + `<span class="edit-row__rowbreak-line" aria-hidden="true"></span>`
               + `<span class="edit-row__rowbreak-label">${escapeHtml(it.label)}</span>`
@@ -6355,13 +6383,14 @@
           // native vs added 가 같은 kind='component' 라 drop 핸들러는
           // data-drag-component-source 로 분기.
           const isAddedComponent = it.kind === 'component' && it.added;
+          // 통합 — native + added + rowbreak 가 모두 같은 componentOrder 로
+          // 재배치. componentSource 분기는 더 이상 필요 없음 (drop 핸들러 단일화).
           const componentSource = it.kind === 'component' ? (isAddedComponent ? 'added' : 'native') : '';
-          const reorderable = ((it.kind === 'filter' || it.kind === 'column') && !isAnchor) || it.kind === 'component';
+          const reorderable = ((it.kind === 'filter' || it.kind === 'column') && !isAnchor) || it.kind === 'component' || it.kind === 'rowbreak';
           const depth = it.kind === 'column' ? (it.depth | 0) : 0;
           const dragParent = (it.kind === 'column' && depth === 1 && it.parent) ? it.parent : '';
-          // added component 는 entry id 를 drag-id 로 사용 (selector 가 아닌
-          // 직접 identifier — moveAddedComponent 가 id 로 처리).
-          const dragId = isAddedComponent ? it.added.id : sel;
+          // 모든 컴포넌트/rowbreak 는 selector 를 drag-id 로 사용 (통합).
+          const dragId = sel;
           const dragAttrs = reorderable
             ? ` draggable="true" data-drag-id="${dragId}" data-drag-kind="${it.kind}" data-drag-depth="${depth}" data-drag-parent="${escapeHtml(dragParent)}"${componentSource ? ` data-drag-component-source="${componentSource}"` : ''}`
             : '';
@@ -6450,13 +6479,8 @@
       if ((row.dataset.dragDepth  || '0') !== _dragState.depth)  return false;
       if ((row.dataset.dragParent || '') !== _dragState.parent) return false;
       if (row.dataset.dragId     === _dragState.id)     return false;
-      // component: native 와 added 는 다른 layout 컨테이너 (main vs grid) 라
-      // 서로 drop 안 됨. componentSource 가 다르면 reject.
-      if (_dragState.kind === 'component') {
-        const srcA = (row.dataset.dragComponentSource || '');
-        const srcB = (_dragState.componentSource || '');
-        if (srcA !== srcB) return false;
-      }
+      // 통합 — native + added + rowbreak 가 모두 한 layout (main grid via
+      // display: contents) 안에서 재배치. componentSource 검사 제거.
       return true;
     }
     document.addEventListener('dragstart', (e) => {
@@ -6497,14 +6521,10 @@
       if (!row || !_dropOk(row)) return;
       e.preventDefault();
       const above = row.classList.contains('is-drop-above');
-      // 추가 컴포넌트 (그리드 안 reorder) — d.added.components 배열 재배열.
-      if (_dragState.kind === 'component' && _dragState.componentSource === 'added') {
-        moveAddedComponent(_dragState.id, row.dataset.dragId, above);
-        _dragState = null;
-        return;
-      }
-      // Phase 2: NATIVE 컴포넌트 reorder — d.componentOrder 갱신, CSS order 적용.
-      if (_dragState.kind === 'component' && _dragState.componentSource === 'native') {
+      // 통합 — kind='component' (native + added + rowbreak) 모두 단일
+      // componentOrder 로 재배치. moveItem 이 d.componentOrder 갱신 + iframe
+      // grid 의 style.order 적용.
+      if (_dragState.kind === 'component') {
         moveItem('component', _dragState.id, row.dataset.dragId, above, null);
         _dragState = null;
         return;
