@@ -1946,6 +1946,518 @@ ${jsxBody}
     document.body.appendChild(root);
   }
 
+  // ============================================================
+  // FULL VOC SNAPSHOT APPLY (mirrors voc/index.html 의 apply chain)
+  // ------------------------------------------------------------
+  // Standalone 데모 페이지가 active 버전의 applied 를 받아 실제 데모 DOM 에
+  // 모든 편집(추가/숨김/라벨/순서/컴포넌트 HTML override 등)을 반영. voc
+  // 편집 화면에서 보이던 것과 동일하게 standalone 에서도 보이도록.
+  //
+  // IMPORTANT: voc/index.html 의 apply pipeline 과 동기화 유지 필요.
+  // 새 apply step 이 voc 에 추가되면 여기에도 mirror 해야 함.
+  // ============================================================
+  const _GLOBAL_LABELS_KEY = 'scm:voc:global-labels:v1';
+  function _loadGlobalLabels() {
+    try {
+      const raw = localStorage.getItem(_GLOBAL_LABELS_KEY);
+      const v = raw ? JSON.parse(raw) : {};
+      return (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
+    } catch { return {}; }
+  }
+  function _normLabel(s) {
+    return String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
+  }
+  function _isElVisibleStandalone(el) {
+    if (!el || el.nodeType !== 1) return false;
+    const win = el.ownerDocument && el.ownerDocument.defaultView;
+    for (let cur = el; cur && cur.nodeType === 1 && cur !== document.documentElement; cur = cur.parentElement) {
+      if (cur.hasAttribute && cur.hasAttribute('hidden')) return false;
+      if (win && win.getComputedStyle) {
+        const cs = win.getComputedStyle(cur);
+        if (cs && (cs.display === 'none' || cs.visibility === 'hidden')) return false;
+      }
+    }
+    return true;
+  }
+  function _ensureVocKeyDom(el, prefix, idx) {
+    if (!el || !el.dataset) return null;
+    if (!el.dataset.vocKey) el.dataset.vocKey = `${prefix}-${idx}`;
+    return el.dataset.vocKey;
+  }
+  function _stampOrigLabelDom(el, label) {
+    if (!el) return _normLabel(label);
+    const existing = el.getAttribute && el.getAttribute('data-voc-orig-label');
+    if (existing) return _normLabel(existing);
+    const norm = _normLabel(label);
+    if (!norm) return '';
+    try { el.setAttribute('data-voc-orig-label', norm); } catch (_) {}
+    return norm;
+  }
+  function _pickLabel(el) {
+    const head = el.querySelector('.scm-card-title, .scm-page-section__title, .scm-page-head__title, h1, h2, h3, h4, .scm-filter-select__label');
+    if (head && head.textContent.trim()) return head.textContent.trim().replace(/\s+/g, ' ').slice(0, 40);
+    const t = (el.getAttribute('aria-label') || el.title || '').trim();
+    if (t) return t.slice(0, 40);
+    const txt = (el.textContent || '').trim().replace(/\s+/g, ' ');
+    if (txt) return txt.slice(0, 40);
+    const cls = [...el.classList].find((c) => c.startsWith('scm-') || c.startsWith('db-')) || el.tagName.toLowerCase();
+    return cls;
+  }
+  function _hashStr(s) {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+    return String(h);
+  }
+
+  // Scan: 필터 / 컬럼 / 컴포넌트에 voc-key + orig-label stamp.
+  // voc/index.html scanEditTargets 와 동일한 키 체계를 standalone 에서 재현
+  // 해서 saved selectors ([data-voc-key="comp-N"] 등) 가 매칭되게.
+  function _scanAndStampForApply(doc) {
+    const main = doc.querySelector('main') || doc.body;
+    if (!main) return;
+    // Filters
+    let fltCounter = 0;
+    main.querySelectorAll('.scm-filter-bar .scm-filter-select[data-mp-filter]:not(.scm-voc-added-filter)').forEach((el) => {
+      _ensureVocKeyDom(el, 'flt', fltCounter++);
+      const labEl = el.querySelector('.scm-filter-select__label');
+      const valEl = el.querySelector('.scm-filter-select__value');
+      let label = (labEl && labEl.textContent.trim())
+               || (valEl && valEl.textContent.trim())
+               || el.dataset.mpFilter || '필터';
+      label = label.replace(/\s+/g, ' ').slice(0, 28);
+      _stampOrigLabelDom(el, label);
+    });
+    // Columns: existing _stampVocKeysOnTable handles voc-key. Add orig-label stamp on top.
+    [...main.querySelectorAll('.mp-table')].filter(_isElVisibleStandalone).forEach((tbl) => {
+      _stampVocKeysOnTable(tbl);
+      tbl.querySelectorAll('thead th[data-voc-key]').forEach((th) => {
+        if (th.classList.contains('cb-col') || th.classList.contains('col-spacer')) return;
+        const label = (th.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 28) || '(빈 컬럼)';
+        _stampOrigLabelDom(th, label);
+      });
+    });
+    // Components — main 의 모든 직속 자식 (Phase 1 voc 와 동일 규칙).
+    let compCounter = 0;
+    [...main.children].forEach((el) => {
+      if (!el || el.nodeType !== 1) return;
+      const tag = (el.tagName || '').toLowerCase();
+      if (tag === 'script' || tag === 'style' || tag === 'template' || tag === 'noscript' || tag === 'link' || tag === 'meta') return;
+      if (el.classList && (
+        el.classList.contains('scm-voc-divider') ||
+        el.classList.contains('scm-voc-added-grid') ||
+        el.classList.contains('scm-voc-added-comp')
+      )) return;
+      if (!_isElVisibleStandalone(el)) return;
+      _ensureVocKeyDom(el, 'comp', compCounter++);
+      const rawLabel = _pickLabel(el);
+      _stampOrigLabelDom(el, rawLabel);
+    });
+  }
+
+  // ---- 추가 테이블 (1단/2단 빈 mp-table-host) ----
+  function _buildAddedTableHTML(t) {
+    const klass = `voc-added-table-${t.id}`;
+    const cellStyle = 'min-width:120px;width:120px;padding:12px 16px;';
+    const safeLabel = escapeHtml(t.label || '새 테이블');
+    const colgroup = `<colgroup><col style="width:120px"/><col style="width:120px"/><col class="col-spacer" data-empty="true"/></colgroup>`;
+    let thead;
+    if (t.type === 'grouped') {
+      thead = '<thead>'
+        + '<tr class="group-row">'
+        +   `<th colspan="2" style="${cellStyle}">${safeLabel} 그룹</th>`
+        +   '<th class="col-spacer" data-empty="true" rowspan="2" aria-hidden="true"></th>'
+        + '</tr>'
+        + '<tr>'
+        +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 1</div></th>`
+        +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 2</div></th>`
+        + '</tr>'
+        + '</thead>';
+    } else {
+      thead = '<thead>'
+        + '<tr>'
+        +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 1</div></th>`
+        +   `<th class="col-auto" style="${cellStyle}"><div class="cell-clamp">컬럼 2</div></th>`
+        +   '<th class="col-spacer" data-empty="true" aria-hidden="true"></th>'
+        + '</tr>'
+        + '</thead>';
+    }
+    const tbodyRow = ''
+      + '<tr>'
+      +   `<td style="${cellStyle}">—</td>`
+      +   `<td style="${cellStyle}">—</td>`
+      +   '<td class="col-spacer" data-empty="true"></td>'
+      + '</tr>';
+    const tbody = `<tbody>${tbodyRow}${tbodyRow}${tbodyRow}</tbody>`;
+    return `<section class="scm-page-section scm-voc-added-table ${klass}" id="voc-added-table-${t.id}">`
+      +   `<div class="scm-page-section__title">${safeLabel}</div>`
+      +   '<div class="mp-table-host">'
+      +     '<div class="mp-table-scroll">'
+      +       `<table class="mp-table">${colgroup}${thead}${tbody}</table>`
+      +     '</div>'
+      +   '</div>'
+      + '</section>';
+  }
+  function _applyAddedTables(doc, a) {
+    const list = (a.added && Array.isArray(a.added.tables)) ? a.added.tables : [];
+    if (!list.length) return;
+    const main = doc.querySelector('main');
+    if (!main) return;
+    list.forEach((t) => {
+      const id = `voc-added-table-${t.id}`;
+      if (doc.getElementById(id)) return;
+      const tpl = doc.createElement('template');
+      tpl.innerHTML = _buildAddedTableHTML(t);
+      const node = tpl.content.firstElementChild;
+      if (!node) return;
+      main.appendChild(node);
+    });
+  }
+
+  // ---- 추가 필터 / 컬럼 / 그룹 ----
+  function _applyAddedFiltersColumnsGroups(doc, a) {
+    // Filters
+    const filterBar = doc.querySelector('.scm-filter-bar');
+    if (filterBar && (a.added && a.added.filters || []).length) {
+      const realChip = filterBar.querySelector('.scm-filter-select[data-mp-filter]:not(.scm-voc-added-filter)');
+      const wrapper = (realChip && realChip.parentElement) || filterBar.firstElementChild || filterBar;
+      const resetBtn = wrapper.querySelector(':scope > .scm-filter-reset-btn');
+      a.added.filters.forEach((f) => {
+        const id = `voc-added-filter-${f.id}`;
+        if (doc.getElementById(id)) return;
+        const btn = doc.createElement('button');
+        btn.id = id;
+        btn.type = 'button';
+        btn.className = 'scm-filter-select scm-voc-added-filter';
+        btn.dataset.state = 'placeholder';
+        btn.dataset.mpFilter = `voc-added-${f.id}`;
+        btn.dataset.vocFilterType = f.type || 'single';
+        btn.innerHTML = `
+          <span class="scm-filter-select__label">${escapeHtml(f.label)}</span>
+          <span class="scm-filter-select__value">${escapeHtml(f.label)}</span>
+          <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+        `;
+        if (resetBtn && resetBtn.parentNode === wrapper) wrapper.insertBefore(btn, resetBtn);
+        else wrapper.appendChild(btn);
+      });
+    }
+    // Columns + groups — same logic as voc/index.html applyAddedDom.
+    const visibleTables = [...doc.querySelectorAll('.mp-table')].filter(_isElVisibleStandalone);
+    const hostsByIdx = [];
+    const _seenHosts = new Set();
+    visibleTables.forEach((t) => {
+      const host = t.closest('.mp-table-host') || t;
+      if (_seenHosts.has(host)) return;
+      _seenHosts.add(host);
+      hostsByIdx.push({ host, tables: [...host.querySelectorAll('.mp-table')] });
+    });
+    const cellStyle = 'min-width:120px;width:120px;padding:12px 16px;';
+    ((a.added && a.added.columns) || []).forEach((c) => {
+      const id = `voc-added-col-${c.id}`;
+      if (doc.getElementById(id)) return;
+      const klass = `voc-added-col-${c.id}`;
+      const ti = (typeof c.tableIdx === 'number' && c.tableIdx >= 0) ? c.tableIdx : 0;
+      const target = hostsByIdx[ti] || hostsByIdx[0];
+      if (!target) return;
+      const allTables = target.tables;
+      allTables.forEach((tbl) => {
+        const thead = tbl.querySelector('thead');
+        if (!thead) return;
+        const trs = thead.querySelectorAll('tr');
+        const colTr = trs[trs.length - 1];
+        const groupTr = trs.length > 1 ? trs[0] : null;
+        const th = doc.createElement('th');
+        th.id = id;
+        th.className = `col-auto scm-voc-added-col ${klass}`;
+        th.innerHTML = '<div class="cell-clamp">' + escapeHtml(c.label) + '</div>';
+        th.setAttribute('style', cellStyle);
+        const colSpacer = colTr.querySelector('.col-spacer');
+        colTr.insertBefore(th, colSpacer || null);
+        if (groupTr) {
+          const gth = doc.createElement('th');
+          gth.className = `scm-voc-added-col ${klass}`;
+          gth.setAttribute('style', cellStyle);
+          const gSpacer = groupTr.querySelector('.col-spacer');
+          groupTr.insertBefore(gth, gSpacer || null);
+        }
+      });
+      allTables.forEach((tbl) => {
+        const tbody = tbl.querySelector('tbody');
+        if (!tbody) return;
+        tbody.querySelectorAll('tr').forEach((tr) => {
+          const td = doc.createElement('td');
+          td.className = `scm-voc-added-col ${klass}`;
+          td.textContent = '—';
+          td.setAttribute('style', cellStyle);
+          const tdSpacer = tr.querySelector('.col-spacer, [data-empty="true"]');
+          tr.insertBefore(td, tdSpacer || null);
+        });
+      });
+      allTables.forEach((tbl) => {
+        tbl.querySelectorAll(':scope > colgroup').forEach((cg) => {
+          if (cg.querySelector(`col.${klass}`)) return;
+          const col = doc.createElement('col');
+          col.className = `scm-voc-added-col ${klass}`;
+          col.style.width = '120px';
+          const spacerCol = cg.querySelector('col.col-spacer') || cg.lastElementChild;
+          cg.insertBefore(col, spacerCol);
+        });
+      });
+    });
+    // Added groups (2-row tables)
+    ((a.added && a.added.groups) || []).forEach((g) => {
+      const gid = `voc-added-grp-${g.id}`;
+      if (doc.getElementById(gid)) return;
+      const lid = `voc-added-grp-${g.id}-leaf`;
+      const gKlass = `voc-added-grp-${g.id}`;
+      const lKlass = `voc-added-col-${g.id}-leaf`;
+      const ti = (typeof g.tableIdx === 'number' && g.tableIdx >= 0) ? g.tableIdx : 0;
+      const target = hostsByIdx[ti] || hostsByIdx[0];
+      if (!target) return;
+      const tablesInTarget = target.tables;
+      const headTable = tablesInTarget.find((t) => t.querySelector('thead'));
+      if (!headTable) return;
+      const headTr = headTable.querySelectorAll('thead > tr');
+      if (headTr.length < 2) return;
+      tablesInTarget.forEach((tbl) => {
+        const thead = tbl.querySelector('thead');
+        if (!thead) return;
+        const trs = thead.querySelectorAll('tr');
+        if (trs.length < 2) return;
+        const groupTr = trs[0];
+        const leafTr  = trs[trs.length - 1];
+        const gth = doc.createElement('th');
+        gth.id = gid;
+        gth.className = `scm-voc-added-col ${gKlass}`;
+        gth.setAttribute('colspan', '1');
+        gth.textContent = g.label;
+        gth.setAttribute('style', cellStyle);
+        const gSpacer = groupTr.querySelector('.col-spacer');
+        groupTr.insertBefore(gth, gSpacer || null);
+        const lth = doc.createElement('th');
+        lth.id = lid;
+        lth.className = `col-auto scm-voc-added-col ${lKlass}`;
+        lth.innerHTML = '<div class="cell-clamp">' + escapeHtml(g.leafLabel || '항목 1') + '</div>';
+        lth.setAttribute('style', cellStyle);
+        const lSpacer = leafTr.querySelector('.col-spacer');
+        leafTr.insertBefore(lth, lSpacer || null);
+      });
+      tablesInTarget.forEach((tbl) => {
+        const tbody = tbl.querySelector('tbody');
+        if (!tbody) return;
+        tbody.querySelectorAll('tr').forEach((tr) => {
+          const td = doc.createElement('td');
+          td.className = `scm-voc-added-col ${lKlass}`;
+          td.textContent = '—';
+          td.setAttribute('style', cellStyle);
+          const tdSpacer = tr.querySelector('.col-spacer, [data-empty="true"]');
+          tr.insertBefore(td, tdSpacer || null);
+        });
+      });
+      tablesInTarget.forEach((tbl) => {
+        tbl.querySelectorAll(':scope > colgroup').forEach((cg) => {
+          if (cg.querySelector(`col.${lKlass}`)) return;
+          const col = doc.createElement('col');
+          col.className = `scm-voc-added-col ${lKlass}`;
+          col.style.width = '120px';
+          const spacerCol = cg.querySelector('col.col-spacer') || cg.lastElementChild;
+          cg.insertBefore(col, spacerCol);
+        });
+      });
+    });
+  }
+
+  // ---- 추가 컴포넌트 (Phase 3: main 직속 section) ----
+  function _applyAddedComponents(doc, a) {
+    const list = (a.added && a.added.components) || [];
+    if (!list.length) return;
+    const main = doc.querySelector('main') || doc.body;
+    if (!main) return;
+    list.forEach((c) => {
+      const id = `voc-added-comp-${c.id}`;
+      if (doc.getElementById(id)) return;
+      const wrap = doc.createElement('section');
+      wrap.id = id;
+      wrap.className = 'scm-voc-added-comp';
+      wrap.dataset.vocAddedCompId = c.id;
+      wrap.dataset.vocAddedCompType = c.type || 'card';
+      wrap.dataset.vocAddedCompLabel = c.label || '';
+      wrap.innerHTML = c.html || '';
+      main.appendChild(wrap);
+    });
+  }
+
+  // ---- 라벨 오버라이드 (per-page + global) ----
+  function _applyFilterLabels(doc, a) {
+    const labels = (a.labels && a.labels.filter) || {};
+    Object.keys(labels).forEach((sel) => {
+      let el; try { el = doc.querySelector(sel); } catch { return; }
+      if (!el) return;
+      const labEl = el.querySelector('.scm-filter-select__label');
+      if (labEl) labEl.textContent = labels[sel];
+      const valEl = el.querySelector('.scm-filter-select__value');
+      if (valEl && valEl !== labEl) valEl.textContent = labels[sel];
+    });
+  }
+  function _applyColumnLabels(doc, a) {
+    const labels = (a.labels && a.labels.column) || {};
+    Object.keys(labels).forEach((sel) => {
+      let cells; try { cells = doc.querySelectorAll(sel); } catch { return; }
+      cells.forEach((cell) => {
+        const host = cell.querySelector(':scope > .cell-clamp, :scope > .cell-clamp-2') || cell;
+        let textNode = null;
+        for (const n of host.childNodes) {
+          if (n.nodeType === 3 && n.textContent.trim()) { textNode = n; break; }
+        }
+        if (textNode) textNode.textContent = labels[sel];
+        else host.insertBefore(doc.createTextNode(labels[sel]), host.firstChild);
+      });
+    });
+  }
+  function _applyGlobalLabels(doc, gl) {
+    if (!gl) return;
+    if (gl.filter && Object.keys(gl.filter).length) {
+      doc.querySelectorAll('.scm-filter-bar .scm-filter-select[data-voc-orig-label]').forEach((el) => {
+        const orig = _normLabel(el.getAttribute('data-voc-orig-label'));
+        const v = orig && gl.filter[orig];
+        if (!v) return;
+        const labEl = el.querySelector('.scm-filter-select__label');
+        if (labEl) labEl.textContent = v;
+        const valEl = el.querySelector('.scm-filter-select__value');
+        if (valEl && valEl !== labEl) valEl.textContent = v;
+      });
+    }
+    if (gl.column && Object.keys(gl.column).length) {
+      doc.querySelectorAll('.mp-table thead th[data-voc-orig-label]').forEach((cell) => {
+        const orig = _normLabel(cell.getAttribute('data-voc-orig-label'));
+        const v = orig && gl.column[orig];
+        if (!v) return;
+        const host = cell.querySelector(':scope > .cell-clamp, :scope > .cell-clamp-2') || cell;
+        let textNode = null;
+        for (const n of host.childNodes) {
+          if (n.nodeType === 3 && n.textContent.trim()) { textNode = n; break; }
+        }
+        if (textNode) textNode.textContent = v;
+        else host.insertBefore(doc.createTextNode(v), host.firstChild);
+      });
+    }
+    if (gl.component && Object.keys(gl.component).length) {
+      doc.querySelectorAll('[data-voc-orig-label]').forEach((el) => {
+        if (el.matches('.scm-filter-select, .mp-table thead th')) return;
+        const orig = _normLabel(el.getAttribute('data-voc-orig-label'));
+        const v = orig && gl.component[orig];
+        if (!v) return;
+        const head = el.querySelector('.scm-card-title, .scm-page-section__title, .scm-page-head__title, h1, h2, h3, h4');
+        if (!head) return;
+        let textNode = null;
+        for (const n of head.childNodes) {
+          if (n.nodeType === 3 && n.textContent.trim()) { textNode = n; break; }
+        }
+        if (textNode) textNode.textContent = v;
+        else head.insertBefore(doc.createTextNode(v), head.firstChild);
+      });
+    }
+  }
+
+  // ---- native 컴포넌트 HTML override ----
+  function _applyNativeComponentEdits(doc, a) {
+    const edits = a.componentEdits || {};
+    Object.keys(edits).forEach((sel) => {
+      const ed = edits[sel];
+      if (!ed || !ed.html) return;
+      let el;
+      try { el = doc.querySelector(sel); } catch { return; }
+      if (!el) return;
+      if (el.dataset && el.dataset.vocCompHash === _hashStr(ed.html)) return;
+      try {
+        el.outerHTML = ed.html;
+        let newEl;
+        try { newEl = doc.querySelector(sel); } catch {}
+        if (newEl && newEl.dataset) newEl.dataset.vocCompHash = _hashStr(ed.html);
+      } catch (_) {}
+    });
+  }
+
+  // ---- 컴포넌트 순서 (Phase 2: CSS order) ----
+  function _ensureFlexLayoutCSS(doc) {
+    if (!doc || !doc.head) return;
+    if (doc.getElementById('scm-voc-layout-css')) return;
+    const style = doc.createElement('style');
+    style.id = 'scm-voc-layout-css';
+    style.textContent = ''
+      + 'main { display: flex !important; flex-direction: column !important; }\n'
+      + 'main > * { flex: 0 0 auto !important; }\n';
+    doc.head.appendChild(style);
+  }
+  function _applyComponentOrder(doc, a) {
+    const main = doc.querySelector('main');
+    if (!main) return;
+    const order = (a.componentOrder || []).slice();
+    if (!order.length) return;
+    // 죽은 divider 정리
+    const aliveDivIds = new Set(((a.added && a.added.dividers) || []).map((dv) => dv.id));
+    doc.querySelectorAll('.scm-voc-divider').forEach((el) => {
+      const id = (el.id || '').replace(/^voc-added-divider-/, '');
+      if (!aliveDivIds.has(id)) el.remove();
+    });
+    // 살아있는 divider hr 보장
+    ((a.added && a.added.dividers) || []).forEach((dv) => {
+      let hr = doc.getElementById(`voc-added-divider-${dv.id}`);
+      if (!hr) {
+        hr = doc.createElement('hr');
+        hr.id = `voc-added-divider-${dv.id}`;
+        hr.className = 'scm-voc-divider';
+        hr.setAttribute('role', 'separator');
+        main.appendChild(hr);
+      }
+    });
+    _ensureFlexLayoutCSS(doc);
+    [...main.children].forEach((el) => { el.style.order = ''; });
+    let n = 1;
+    order.forEach((sel) => {
+      if (!sel) return;
+      let el = null;
+      if (sel.startsWith('#voc-added-divider-')) {
+        const id = sel.slice('#voc-added-divider-'.length);
+        el = doc.getElementById(`voc-added-divider-${id}`);
+      } else {
+        try { el = main.querySelector(sel); } catch (_) {}
+        while (el && el.parentElement !== main) el = el.parentElement;
+        if (el && el.parentElement !== main) el = null;
+      }
+      if (el) el.style.order = String(n++);
+    });
+    [...main.children].forEach((el) => {
+      if (!el.style.order) el.style.order = String(n++);
+    });
+    // Divider 시각 스타일 (voc 와 동일)
+    if (!doc.getElementById('scm-voc-divider-css')) {
+      const style = doc.createElement('style');
+      style.id = 'scm-voc-divider-css';
+      style.textContent = 'hr.scm-voc-divider { border: 0 !important; border-top: 1px dashed #C4B5FD !important; margin: 24px 0 !important; height: 0 !important; background: transparent !important; }';
+      doc.head.appendChild(style);
+    }
+  }
+
+  // ---- top-level: 모든 apply 실행 ----
+  function applyFullSnapshot(a) {
+    const doc = document;
+    if (!a) return;
+    // 1) 추가 DOM 인젝션 (테이블 → 필터/컬럼/그룹 → 컴포넌트 순)
+    _applyAddedTables(doc, a);
+    _applyAddedFiltersColumnsGroups(doc, a);
+    _applyAddedComponents(doc, a);
+    // 2) 인젝션 후 voc-key + orig-label 다시 stamp (새 element 도 포함)
+    _scanAndStampForApply(doc);
+    // 3) 라벨 오버라이드 (global 먼저, per-page 가 위에 덮음)
+    _applyGlobalLabels(doc, _loadGlobalLabels());
+    _applyFilterLabels(doc, a);
+    _applyColumnLabels(doc, a);
+    // 4) Native HTML override
+    _applyNativeComponentEdits(doc, a);
+    // 5) 컴포넌트 순서 (CSS order)
+    _applyComponentOrder(doc, a);
+  }
+
   function applyActiveVersionMinimal() {
     try {
       const versions = _loadVersions();
@@ -1953,54 +2465,63 @@ ${jsxBody}
       if (!ver || !ver.activeId) return;
       const active = ver.list && ver.list.find((v) => v.id === ver.activeId);
       const a = active && active.applied;
-      if (!a || !Array.isArray(a.hidden) || !a.hidden.length) return;
-      // 1) CSS — covers per-selector hide + universal data-voc-hidden rules.
-      // 모든 hidden 셀렉터를 main 안으로 scope — VOC scanEditTargets 가
-      // main 만 스캔하므로 origin 도 main 내부. 글로벌로 적용하면 LNB /
-      // topbar 등 페이지 chrome 까지 우연히 가릴 위험이 있어 명시적으로
-      // main 자손으로 제한한다.
-      const css = a.hidden.map((s) => `main ${s} { display: none !important; }`).join('\n')
-        + '\nmain [data-voc-hidden="true"] { display: none !important; }'
-        + '\nmain th[data-voc-hidden="true"], main td[data-voc-hidden="true"] { padding: 0 !important; border: 0 !important; width: 0 !important; min-width: 0 !important; max-width: 0 !important; }'
-        + '\nmain col[data-voc-hidden="true"] { width: 0 !important; min-width: 0 !important; max-width: 0 !important; }'
-        + '\nmain .mp-table thead .group-row th[data-voc-hidden="true"] { position: static !important; visibility: hidden !important; font-size: 0 !important; line-height: 0 !important; background: transparent !important; box-shadow: none !important; }';
-      const style = document.createElement('style');
-      style.id = 'scm-voc-version-hide';
-      style.textContent = css;
-      document.head.appendChild(style);
-      // 2) Stamp voc-keys + DOM-mark cells once scm-table has finished
-      //    splitting the table (clone thead + body table). scm-table runs
-      //    its own DOMContentLoaded init; we may load before or after it,
-      //    so retry briefly until either the API is attached or we time
-      //    out (single-table no-sticky tables won't have _scmReorder but
-      //    still need stamping).
+      if (!a) return;
+      // 1) Hide CSS — only inject if hidden has entries.
+      if (Array.isArray(a.hidden) && a.hidden.length) {
+        // 모든 hidden 셀렉터를 main 안으로 scope — VOC scanEditTargets 가
+        // main 만 스캔하므로 origin 도 main 내부. 글로벌로 적용하면 LNB /
+        // topbar 등 페이지 chrome 까지 우연히 가릴 위험이 있어 명시적으로
+        // main 자손으로 제한한다.
+        const css = a.hidden.map((s) => `main ${s} { display: none !important; }`).join('\n')
+          + '\nmain [data-voc-hidden="true"] { display: none !important; }'
+          + '\nmain th[data-voc-hidden="true"], main td[data-voc-hidden="true"] { padding: 0 !important; border: 0 !important; width: 0 !important; min-width: 0 !important; max-width: 0 !important; }'
+          + '\nmain col[data-voc-hidden="true"] { width: 0 !important; min-width: 0 !important; max-width: 0 !important; }'
+          + '\nmain .mp-table thead .group-row th[data-voc-hidden="true"] { position: static !important; visibility: hidden !important; font-size: 0 !important; line-height: 0 !important; background: transparent !important; box-shadow: none !important; }';
+        const style = document.createElement('style');
+        style.id = 'scm-voc-version-hide';
+        style.textContent = css;
+        document.head.appendChild(style);
+      }
+      // 2) Stamp voc-keys + DOM-mark cells + apply full snapshot once scm-table
+      //    has finished splitting the table (clone thead + body table). scm-table
+      //    runs its own DOMContentLoaded init; we may load before or after it,
+      //    so retry briefly until either the API is attached or we time out.
       let attempts = 0;
       const tryApply = () => {
         const tables = [...document.querySelectorAll('.mp-table')];
         const hasApi = tables.some((t) => t._scmReorder);
         const hasThead = tables.some((t) => t.querySelector('thead'));
-        if (!hasThead && attempts < 30) {
-          attempts++;
-          setTimeout(tryApply, 50);
-          return;
-        }
-        // Some tables route their thead through scm-table sticky split
-        // (thead lives on cloneTable). Skip API wait if 30 retries pass —
-        // the no-sticky case still works without it.
-        if (!hasApi && attempts < 30) {
-          attempts++;
-          setTimeout(tryApply, 50);
-          return;
+        // 페이지에 .mp-table 이 있다면 thead/api 대기. 없는 페이지(예: 일부
+        // dashboard) 는 즉시 진행.
+        if (tables.length) {
+          if (!hasThead && attempts < 30) {
+            attempts++;
+            setTimeout(tryApply, 50);
+            return;
+          }
+          if (!hasApi && attempts < 30) {
+            attempts++;
+            setTimeout(tryApply, 50);
+            return;
+          }
         }
         tables.forEach(_stampVocKeysOnTable);
-        _applyHiddenCellsForVersion(a.hidden);
+        // Hidden cell stamping (column/group hide).
+        if (Array.isArray(a.hidden) && a.hidden.length) {
+          _applyHiddenCellsForVersion(a.hidden);
+        }
+        // FULL apply pipeline — added DOM, labels, native HTML overrides,
+        // 컴포넌트 순서 (Phase 2 CSS order) 등.
+        applyFullSnapshot(a);
       };
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', tryApply, { once: true });
       } else {
         tryApply();
       }
-    } catch {}
+    } catch (e) {
+      try { console.warn('[dev-export] applyActiveVersionMinimal failed', e); } catch (_) {}
+    }
   }
 
   function onActionClick() {
