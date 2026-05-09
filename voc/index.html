@@ -1221,6 +1221,16 @@
       color: #6D28D9; text-transform: uppercase;
       flex-shrink: 0;
     }
+    .edit-row__rowbreak-height {
+      flex-shrink: 0;
+      height: 22px; padding: 0 6px;
+      background: #fff; color: #6D28D9;
+      border: 1px solid #C4B5FD; border-radius: 4px;
+      font-family: inherit; font-size: 10.5px; font-weight: 700;
+      cursor: pointer;
+    }
+    .edit-row__rowbreak-height:hover { border-color: #7C3AED; }
+    .edit-row__rowbreak-height:focus { outline: none; border-color: #7C3AED; }
     .edit-row__rename {
       background: transparent; border: 0; cursor: pointer;
       font-size: 11px; color: #6B7280; padding: 2px 6px; border-radius: 4px;
@@ -3325,11 +3335,17 @@
         if (doc.getElementById(id)) return;
         const wrap = doc.createElement('div');
         wrap.id = id;
-        // rowbreak — span 12 + height 0 (다음 entry 가 새 줄에서 시작).
+        // rowbreak — span 12 + 기본 height 0 (다음 entry 가 새 줄에서 시작).
+        // c.height 가 8px 단위 양수면 그만큼 vertical 공간 확보 (inline !important
+        // 로 외부 .scm-voc-added-rowbreak height: 0 !important 룰을 이김).
         if (c.kind === 'rowbreak') {
           wrap.className = 'scm-voc-added-rowbreak';
           wrap.dataset.vocAddedCompId = c.id;
           wrap.style.gridColumn = '1 / -1';
+          if (typeof c.height === 'number' && c.height > 0) {
+            wrap.style.setProperty('height', c.height + 'px', 'important');
+            wrap.dataset.vocRowbreakHeight = String(c.height);
+          }
           grid.appendChild(wrap);
           return;
         }
@@ -3700,6 +3716,19 @@
       persistDraft();
       renderEditPane();
       applyComponentSectionToIframe();
+    }
+    // 행 나누기 높이 변경 — 8px 단위 양수 값. 0 이면 height 필드 제거 (기본값).
+    function updateRowbreakHeight(id, h) {
+      const d = pageDraft();
+      const list = d.added.components || [];
+      const ent = list.find((c) => c.id === id && c.kind === 'rowbreak');
+      if (!ent) return;
+      const v = (typeof h === 'number' && h > 0) ? Math.max(0, Math.round(h / 8) * 8) : 0;
+      if (v > 0) ent.height = v;
+      else delete ent.height;
+      persistDraft();
+      applyComponentSectionToIframe();
+      refreshSaveBtn();
     }
     // 추가 컴포넌트 순서 변경 — 사용자가 편집 패널에서 drag-drop 으로 순서를
     // 바꾸면 d.added.components 배열을 재정렬. 그리드 컨테이너는 array
@@ -6632,11 +6661,15 @@
           if (it.kind === 'rowbreak') {
             const rid = it.added && it.added.id;
             const sel = escapeHtml(it.selector);
+            const curH = (it.added && typeof it.added.height === 'number' && it.added.height >= 0) ? it.added.height : 0;
+            const hOpts = [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 128]
+              .map((v) => `<option value="${v}" ${v === curH ? 'selected' : ''}>${v}px</option>`).join('');
             return `<div class="edit-row edit-row--rowbreak" draggable="true" data-drag-id="${sel}" data-drag-kind="component" data-drag-depth="0" data-drag-parent="">`
               + `<span class="edit-row__grip" aria-hidden="true" title="드래그하여 순서 변경"><svg viewBox="0 0 6 12" fill="currentColor"><circle cx="1.25" cy="2" r="1"/><circle cx="4.75" cy="2" r="1"/><circle cx="1.25" cy="6" r="1"/><circle cx="4.75" cy="6" r="1"/><circle cx="1.25" cy="10" r="1"/><circle cx="4.75" cy="10" r="1"/></svg></span>`
               + `<span class="edit-row__rowbreak-line" aria-hidden="true"></span>`
               + `<span class="edit-row__rowbreak-label">${escapeHtml(it.label)}</span>`
               + `<span class="edit-row__rowbreak-line" aria-hidden="true"></span>`
+              + `<select class="edit-row__rowbreak-height" data-rowbreak-height-id="${escapeHtml(rid || '')}" title="행 나누기 높이 (8px 단위)">${hOpts}</select>`
               + `<button type="button" class="edit-row__del" data-del-rowbreak="${escapeHtml(rid || '')}" title="행 나누기 제거">×</button>`
               + `</div>`;
           }
@@ -6958,6 +6991,13 @@
       const ctSel = t.closest && t.closest('[data-cell-type-key]');
       if (ctSel) {
         setCellType(ctSel.dataset.cellTypeKey, ctSel.value);
+        return;
+      }
+      // 행 나누기 높이 변경 (8px 단위)
+      const rbH = t.closest && t.closest('[data-rowbreak-height-id]');
+      if (rbH) {
+        const v = parseInt(rbH.value, 10);
+        updateRowbreakHeight(rbH.dataset.rowbreakHeightId, Number.isFinite(v) ? v : 0);
         return;
       }
     });

@@ -2304,11 +2304,17 @@ ${jsxBody}
       if (doc.getElementById(id)) return;
       const wrap = doc.createElement('div');
       wrap.id = id;
-      // rowbreak sentinel — full-width line break, height 0.
+      // rowbreak sentinel — full-width line break, 기본 height 0.
+      // c.height 가 8px 단위 양수면 그만큼 vertical 공간 확보 (inline
+      // !important 로 외부 height: 0 !important 룰을 이김).
       if (c.kind === 'rowbreak') {
         wrap.className = 'scm-voc-added-rowbreak';
         wrap.dataset.vocAddedCompId = c.id;
         wrap.style.gridColumn = '1 / -1';
+        if (typeof c.height === 'number' && c.height > 0) {
+          wrap.style.setProperty('height', c.height + 'px', 'important');
+          wrap.dataset.vocRowbreakHeight = String(c.height);
+        }
         grid.appendChild(wrap);
         return;
       }
