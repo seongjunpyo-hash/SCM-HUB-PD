@@ -1125,6 +1125,12 @@
       flex-shrink: 0; line-height: 1;
     }
     .edit-row__edit:hover { background: #EEF2FF; }
+    .edit-row__width-chip {
+      flex-shrink: 0;
+      padding: 2px 8px; border-radius: 999px;
+      background: #F3F4F6; color: #4B5563;
+      font-size: 10.5px; font-weight: 700; letter-spacing: 0.2px;
+    }
     .edit-row__rename {
       background: transparent; border: 0; cursor: pointer;
       font-size: 11px; color: #6B7280; padding: 2px 6px; border-radius: 4px;
@@ -3291,6 +3297,23 @@
       d.added.components = (d.added.components || []).filter((x) => x.id !== id);
       const sel = `#voc-added-comp-${id}`;
       d.hidden = d.hidden.filter((s) => s !== sel);
+      persistDraft();
+      renderEditPane();
+      applyComponentSectionToIframe();
+    }
+    // 추가 컴포넌트 순서 변경 — 사용자가 편집 패널에서 drag-drop 으로 순서를
+    // 바꾸면 d.added.components 배열을 재정렬. 그리드 컨테이너는 array
+    // 순서대로 inject 되므로 재배치 즉시 반영.
+    function moveAddedComponent(fromId, toId, above) {
+      const d = pageDraft();
+      const list = d.added.components || [];
+      const fromIdx = list.findIndex((c) => c.id === fromId);
+      if (fromIdx < 0) return;
+      const [moved] = list.splice(fromIdx, 1);
+      let toIdx = list.findIndex((c) => c.id === toId);
+      if (toIdx < 0) toIdx = list.length;
+      else if (!above) toIdx += 1;
+      list.splice(toIdx, 0, moved);
       persistDraft();
       renderEditPane();
       applyComponentSectionToIframe();
@@ -5859,6 +5882,15 @@
           const editBtn = it.kind === 'component'
             ? `<button type="button" class="edit-row__edit" data-edit-component="${sel}"${it.added ? ` data-edit-added-id="${escapeHtml(it.added.id)}"` : ''} title="컴포넌트 편집">✏</button>`
             : '';
+          // 추가 컴포넌트 행에 그리드 너비 chip — 한눈에 어떤 폭으로 잡혔는지
+          // 보이게. 클릭 시 modal 열어 변경 가능 (= 편집 버튼과 동일).
+          const _widthLabel = (w) => {
+            const m = { 12: '전체', 9: '3/4', 8: '2/3', 6: '1/2', 4: '1/3', 3: '1/4' };
+            return m[w] || (w + '/12');
+          };
+          const widthChip = (it.kind === 'component' && it.added)
+            ? `<span class="edit-row__width-chip" title="그리드 너비 — 편집(✏) 으로 변경">📐 ${_widthLabel((it.added && it.added.width) || 12)}</span>`
+            : '';
           // 필터 / 컬럼 (group 포함) 행은 inline rename 버튼 노출.
           // anchor 행(rs>=2 cb/No 등) + 컴포넌트 행은 제외.
           const renameAttrs = it.added
@@ -5873,11 +5905,17 @@
           // surface them in the list (so the user sees them) but disallow
           // drag because scm-table itself rejects drops on rs>=2 cells.
           const isAnchor = it.kind === 'column' && it.draggable === false;
-          const reorderable = (it.kind === 'filter' || it.kind === 'column') && !isAnchor;
+          // 추가 컴포넌트 (added=true) 도 드래그-리오더 대상 — 그리드 안에서
+          // 순서를 바꾸기 위해. NATIVE 컴포넌트는 페이지 DOM 위치라 드래그 X.
+          const isAddedComponent = it.kind === 'component' && it.added;
+          const reorderable = ((it.kind === 'filter' || it.kind === 'column') && !isAnchor) || isAddedComponent;
           const depth = it.kind === 'column' ? (it.depth | 0) : 0;
           const dragParent = (it.kind === 'column' && depth === 1 && it.parent) ? it.parent : '';
+          // added component 는 entry id 를 drag-id 로 사용 (selector 가 아닌
+          // 직접 identifier — moveAddedComponent 가 id 로 처리).
+          const dragId = isAddedComponent ? it.added.id : sel;
           const dragAttrs = reorderable
-            ? ` draggable="true" data-drag-id="${sel}" data-drag-kind="${it.kind}" data-drag-depth="${depth}" data-drag-parent="${escapeHtml(dragParent)}"`
+            ? ` draggable="true" data-drag-id="${dragId}" data-drag-kind="${it.kind}" data-drag-depth="${depth}" data-drag-parent="${escapeHtml(dragParent)}"`
             : '';
           const grip = reorderable
             ? '<span class="edit-row__grip" aria-hidden="true" title="드래그하여 순서 변경"><svg viewBox="0 0 6 12" fill="currentColor"><circle cx="1.25" cy="2" r="1"/><circle cx="4.75" cy="2" r="1"/><circle cx="1.25" cy="6" r="1"/><circle cx="4.75" cy="6" r="1"/><circle cx="1.25" cy="10" r="1"/><circle cx="4.75" cy="10" r="1"/></svg></span>'
@@ -5905,6 +5943,7 @@
               <span class="edit-row__label">${escapeHtml(it.label)}</span>
               ${renameBtn}
               ${middle}
+              ${widthChip}
               <button type="button" class="edit-row__locate" data-locate="${sel}" title="화면에서 위치 확인">↗</button>
               ${editBtn}
               ${del}
@@ -6002,6 +6041,12 @@
       if (!row || !_dropOk(row)) return;
       e.preventDefault();
       const above = row.classList.contains('is-drop-above');
+      // 추가 컴포넌트는 별도 mutator — d.added.components 배열을 직접 재배열.
+      if (_dragState.kind === 'component') {
+        moveAddedComponent(_dragState.id, row.dataset.dragId, above);
+        _dragState = null;
+        return;
+      }
       // depth=1 with non-empty parent → mutate columnLeafOrder[parent].
       // depth=0 → mutate top-level columnOrder.
       const parent = (_dragState.kind === 'column' && _dragState.depth === '1' && _dragState.parent)
