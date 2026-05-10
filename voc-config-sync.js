@@ -187,9 +187,42 @@
     return bootstrap();
   }
 
+  // pushAll — 현재 localStorage 의 모든 sync 대상 key 를 D1 으로 즉시 PUT.
+  // 평소 push() 는 600ms 디바운스 + 사용자 액션 트리거 — 페이지를 빨리 닫거나
+  // 네트워크가 잠시 끊겨 retry 다 실패하면 D1 이 로컬보다 뒤처질 수 있음.
+  // pushAll() 은 디바운스 무시하고 모든 key 를 한 번에 강제 PUT — 결과를
+  // Promise<{ ok: string[], skipped: string[], failed: { key, error }[] }> 로
+  // 반환. super 가 아닌 사용자가 호출하면 모두 forbidden → skipped 로 분류.
+  // 사용처: super 가 일반모드 콘솔에서 한 번 실행해 D1 을 로컬과 강제 일치.
+  function pushAll() {
+    var lsKeys = Object.keys(KEY_MAP);
+    var results = { ok: [], skipped: [], failed: [] };
+    var promises = lsKeys.map(function (lsKey) {
+      var apiKey = KEY_MAP[lsKey];
+      var raw = _fromLs(lsKey);
+      if (raw == null) {
+        results.skipped.push(apiKey);
+        return Promise.resolve();
+      }
+      var v = raw;
+      try { v = JSON.parse(raw); } catch (_) { /* string 그대로 */ }
+      // 진행 중인 디바운스 PUT 이 있으면 취소 — pushAll 결과가 덮어써질 수 있음.
+      var pending = _pendingPuts[apiKey];
+      if (pending && pending.timer) { clearTimeout(pending.timer); pending.timer = null; }
+      return _apiPut(apiKey, v).then(function () {
+        results.ok.push(apiKey);
+      }).catch(function (e) {
+        if (e && e.code === 'forbidden') results.skipped.push(apiKey);
+        else results.failed.push({ key: apiKey, error: String(e && e.message || e) });
+      });
+    });
+    return Promise.all(promises).then(function () { return results; });
+  }
+
   root.SCM_CONFIG_SYNC = {
     bootstrap: bootstrap,
     push: push,
+    pushAll: pushAll,
     isBooted: function () { return _booted; },
     KEYS: Object.assign({}, KEY_MAP),  // for inspection
     _refetch: _refetch,
