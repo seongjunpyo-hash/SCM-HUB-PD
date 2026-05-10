@@ -62,7 +62,9 @@
 
     .app { display: grid; grid-template-columns: var(--scm-lnb-width) minmax(0, 1fr); transition: grid-template-columns 0.2s ease; }
 
-    main { min-width: 0; padding: 0 28px 40px; }
+    /* padding-bottom — sticky bottom 결재선 bar (.otb-approval-bar) 가
+       마지막 행을 가리지 않도록 여유 확보. */
+    main { min-width: 0; padding: 0 28px 100px; }
 
     /* sticky stack */
     .scm-filter-bar { top: var(--scm-sticky-gnb); }
@@ -700,6 +702,17 @@
     </section>
   </main>
 </div>
+
+<!-- ============== 결재선 bar (sticky bottom) ============== -->
+<!-- renderApproval() 이 #otb-approval-line 에 결재 단계 chip 들을 inject.
+     marker-element 누락이 renderAll() 전체를 throw 시키던 회귀 fix. -->
+<aside class="otb-approval-bar" role="region" aria-label="결재선">
+  <div class="otb-approval-line" id="otb-approval-line"></div>
+  <div class="otb-approval-actions">
+    <button class="scm-button scm-button--sm" type="button" id="otb-reject-btn">반려</button>
+    <button class="scm-button scm-button--primary scm-button--sm" type="button" id="otb-approve-btn">검토 완료 → 다음 단계</button>
+  </div>
+</aside>
 
 <!-- ============== Filter popover root + drawer (sku-management 와 동일) ============== -->
 <div class="scm-filter-popover-root" id="filter-popover-root" role="dialog" aria-hidden="true"></div>
