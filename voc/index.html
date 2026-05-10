@@ -3196,14 +3196,30 @@
     // Returns the page slot for either 'applied' or 'draft'. For the draft
     // slot, falls back to a deep-clone of the applied slot so a freshly
     // visited page has draft == applied (no spurious dirty state).
+    //
+    // 키 정규화 — commitDraft 가 _normalizePageKey() 결과 (.html 떼고
+    // 끝 '/' 는 'index' 로) 로 state.applied / state.versions 에 저장하므로,
+    // pageOf 도 같은 정규화 키로 읽고 써야 read miss 가 안 남. 옛날엔 raw
+    // state.currentPage 를 그대로 키로 썼는데 (예: '/demo/Faulty/X.html')
+    // 저장 키 (예: '/demo/Faulty/X') 와 어긋나 빈 entry 가 반환 →
+    // settings.exposed default=true → 토글이 저장한 OFF 를 안 반영하는 등
+    // 모든 page-level 저장 데이터 (settings / hidden / labels / componentEdits
+    // / order / 라벨 등) 가 사라진 듯 보이는 광범위 회귀 발생.
     function pageOf(scope) {
       const obj = scope === 'applied' ? state.applied : state.draft;
-      let e = obj[state.currentPage];
+      const key = _normalizePageKey(state.currentPage) || state.currentPage;
+      let e = obj[key];
+      // Migration — 이전에 raw 키로 저장된 entry 가 있으면 정규화 키로 옮겨와
+      // 데이터 유실 방지. (사용자가 옛 버전에서 저장한 데이터 보존.)
+      if (!e && obj[state.currentPage] && state.currentPage !== key) {
+        e = obj[key] = obj[state.currentPage];
+        delete obj[state.currentPage];
+      }
       if (!e) {
-        if (scope === 'draft' && state.applied[state.currentPage]) {
-          e = obj[state.currentPage] = deepClone(state.applied[state.currentPage]);
+        if (scope === 'draft' && state.applied[key]) {
+          e = obj[key] = deepClone(state.applied[key]);
         } else {
-          e = obj[state.currentPage] = {};
+          e = obj[key] = {};
         }
       }
       // legacy cleanup — old schema used noSort/noFilter (default ON), new
