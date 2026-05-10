@@ -2166,18 +2166,18 @@
                     <input type="text" class="np-input np-input--mono" id="npL1Key" placeholder="예: analytics" maxlength="20" />
                   </label>
                 </div>
-                <label class="np-field">
-                  <span class="np-field__label" id="npNameLabel">메뉴명 (첫 페이지)</span>
+                <label class="np-field" data-np-show="l2">
+                  <span class="np-field__label" id="npNameLabel">메뉴명 (페이지명)</span>
                   <input type="text" class="np-input" id="npName" placeholder="예: 신상품 등록" maxlength="30" />
                 </label>
-                <label class="np-field">
+                <label class="np-field" data-np-show="l2">
                   <span class="np-field__label">슬러그 (URL 마지막 조각)</span>
                   <input type="text" class="np-input np-input--mono" id="npSlug" placeholder="예: new-product → /demo/new-product.html" maxlength="40" />
                   <span class="np-hint">소문자 영문/숫자/하이픈만. 비어있으면 메뉴명 기준으로 자동 생성.</span>
                 </label>
                 <div class="np-actions">
                   <button type="button" class="np-btn np-btn--ghost" id="npResetBtn">초기화</button>
-                  <button type="button" class="np-btn np-btn--primary" id="npAddBtn">+ 페이지 추가</button>
+                  <button type="button" class="np-btn np-btn--primary" id="npAddBtn">+ 추가</button>
                 </div>
               </div>
             </div>
@@ -6783,8 +6783,9 @@
       const form = document.querySelector('.np-form');
       const l1Sel = document.getElementById('npL1');
       if (!form || !l1Sel) return;
-      // L1 옵션 — MENU 의 1뎁스 그룹들에서 채움.
-      l1Sel.innerHTML = MENU.map((m) => `<option value="${escapeHtml(m.l1)}">${escapeHtml(m.label)}</option>`).join('');
+      // L1 옵션 — MENU (캐노니컬) + state.newPages 의 mode='l1' 그룹 모두 포함.
+      // 캐노니컬 영구 삭제된 L1 은 제외. 신규 L1 그룹도 영구 삭제된 건 제외.
+      _refreshL1Select();
       // 기본값: 현재 페이지의 부모 L1.
       const currentMenu = findMenuByPath(state.currentPage);
       if (currentMenu) l1Sel.value = currentMenu.l1.l1;
@@ -6834,6 +6835,28 @@
       if (form) form.dataset.mode = 'l2';
       const r = document.querySelector('input[name="npMode"][value="l2"]');
       if (r) r.checked = true;
+      _refreshL1Select();
+    }
+    // npL1 select 옵션 재구성 — 캐노니컬 + 신규 L1 그룹 모두 포함, 영구 삭제된
+    // L1 은 제외. 신규 L1 옵션엔 [신규] 라벨 prefix 로 시각 구분.
+    function _refreshL1Select() {
+      const l1Sel = document.getElementById('npL1');
+      if (!l1Sel) return;
+      const prevValue = l1Sel.value;
+      const opts = [];
+      MENU.forEach((m) => {
+        if (isMenuDeleted('l1', m.l1)) return;
+        opts.push(`<option value="${escapeHtml(m.l1)}">${escapeHtml(m.label)}</option>`);
+      });
+      ((state.newPages) || []).forEach((p) => {
+        if (p.mode !== 'l1') return;
+        if (isMenuDeleted('l1', p.l1)) return;
+        opts.push(`<option value="${escapeHtml(p.l1)}">[신규] ${escapeHtml(p.l1Label || p.l1)}</option>`);
+      });
+      l1Sel.innerHTML = opts.join('');
+      if (prevValue && [...l1Sel.options].some((o) => o.value === prevValue)) {
+        l1Sel.value = prevValue;
+      }
     }
     function _collectChecks(hostId) {
       const out = [];
@@ -6866,6 +6889,8 @@
 
       let l1 = '', l1Label = '';
       if (mode === 'l1') {
+        // 1뎁스 신규 — L1 그룹만 만들고 L2 페이지는 안 만듦. 사용자는 이후
+        // 같은 L1 아래에 mode='l2' 로 페이지 추가 가능.
         l1Label = (document.getElementById('npL1Label').value || '').trim();
         l1 = (document.getElementById('npL1Key').value || '').trim() || _slugify(l1Label);
         if (!l1Label) {
@@ -6886,10 +6911,34 @@
           document.getElementById('npL1Key').focus();
           return;
         }
+        // 순수 L1 entry — name/slug/path 없음. _buildMenuTree 가 children 없이
+        // 빈 그룹으로 처리 → 사용자가 "1뎁스만 만들었는데 2뎁스도 같이 생긴다"
+        // 던 UX 문제 fix.
+        const entry = {
+          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+          mode: 'l1', l1, l1Label,
+          createdAt: Date.now(),
+        };
+        state.newPages = state.newPages || [];
+        state.newPages.push(entry);
+        persistNewPages();
+        _removeSlugFromMenuOrder(null, l1);
+        renderNewPageList();
+        _refreshTopMenuAfterNewPagesChange();
+        resetNewPageForm();
+        showToast(`[1뎁스: ${l1Label}] 그룹이 추가됐습니다. L2 페이지는 [2뎁스 신규] 모드로 추가하세요.`);
+        return;
+      }
+
+      // mode === 'l2' — 기존 L1 (캐노니컬 또는 신규 L1) 아래에 L2 페이지 추가
+      l1 = document.getElementById('npL1').value;
+      const canonM = MENU.find((x) => x.l1 === l1);
+      if (canonM) {
+        l1Label = canonM.label;
       } else {
-        l1 = document.getElementById('npL1').value;
-        const m = MENU.find((x) => x.l1 === l1);
-        if (m) l1Label = m.label;
+        // 사용자가 만든 신규 L1 그룹 일 수 있음
+        const newL1 = (state.newPages || []).find((p) => p.mode === 'l1' && p.l1 === l1);
+        if (newL1) l1Label = newL1.l1Label || newL1.l1;
       }
 
       if (!name) {
@@ -6923,12 +6972,35 @@
       // END 로 추가되어야 사용자 직관과 맞음. 사용자가 "지우고 다시 만들었는데
       // 위치가 그대로 위에 생긴다" 고 보고하던 케이스 fix (slug 가 같으면 옛
       // 드래그 위치를 그대로 따라가는 stale order 문제).
-      _removeSlugFromMenuOrder(slug, mode === 'l1' ? l1 : null);
+      _removeSlugFromMenuOrder(slug, null);
       renderNewPageList();
       _refreshTopMenuAfterNewPagesChange();
       resetNewPageForm();
-      const tagPrefix = mode === 'l1' ? `[1뎁스: ${l1Label}] ` : '';
-      showToast(`${tagPrefix}[${name}] 페이지 정의가 추가됐습니다`);
+      showToast(`[${name}] 페이지 정의가 추가됐습니다`);
+    }
+    // 신규 L1 그룹 통째 삭제 — 그룹 entry + 하위 L2 page entry 모두 cascade.
+    // (UX 직관: "그룹 자체를 지웠는데 그 아래 페이지들이 orphan 으로 남으면
+    //  안 됨" 사용자 기대 충족.)
+    function deleteNewL1Group(l1key) {
+      if (!_ensureSuperOrDeny()) return;
+      if (!l1key) return;
+      const list = state.newPages || [];
+      // L1 entry 들 + 그 L1 아래 L2 page entry 들 모두 제거
+      const removedSlugs = list.filter((p) => p.l1 === l1key && p.slug).map((p) => p.slug);
+      state.newPages = list.filter((p) => p.l1 !== l1key);
+      persistNewPages();
+      // menuOrder 정리 — L1 자체 + 하위 L2 슬러그들
+      removedSlugs.forEach((s) => _removeSlugFromMenuOrder(s, null));
+      _removeSlugFromMenuOrder(null, l1key);
+      // hidden / deleted list 에서도 같이 정리 (있으면) — 깔끔한 fresh state
+      if (state.menuHidden && state.menuHidden.l1) {
+        const idx = state.menuHidden.l1.indexOf(l1key);
+        if (idx >= 0) { state.menuHidden.l1.splice(idx, 1); persistMenuHidden(); }
+      }
+      _refreshL1Select();
+      renderNewPageList();
+      _refreshTopMenuAfterNewPagesChange();
+      _refreshIframeLnb();
     }
     function deleteNewPage(id) {
       if (!_ensureSuperOrDeny()) return;
@@ -6975,6 +7047,10 @@
       const activeChip = menuL1.querySelector('.menu-l1__chip.is-active');
       const activeL1 = activeChip ? activeChip.dataset.l1 : null;
       if (activeL1) selectL1(activeL1, state.currentPage);
+      // [신규] 탭 폼의 L1 dropdown 도 신규 L1 그룹 변경 즉시 반영.
+      _refreshL1Select();
+      // iframe LNB 도 갱신 — 신규 L1 그룹이 추가되면 iframe LNB 도 그룹 노출.
+      _refreshIframeLnb();
     }
     const _NP_TYPE_LABEL = {
       list: '리스트', detail: '상세', dashboard: '대시보드', form: '폼', blank: '빈 캔버스',
@@ -7106,16 +7182,27 @@
           })),
         };
       });
-      // 2. newPages mapping into existing or new L1
+      // 2. newPages mapping into existing or new L1.
+      // mode='l1' entry 는 두 종류:
+      //   (a) 순수 L1 그룹 (path/name 없음) — 그룹만 만들고 children 안 추가
+      //   (b) 옛 entry 로 path/name 도 있는 케이스 — 그룹 + children 모두 추가
+      //       (하위 호환).
       const newL1Order = [];
+      const _newL1Deleted = (l1key) => isMenuDeleted('l1', l1key);
       ((state.newPages) || []).forEach((p) => {
         if (p.mode === 'l1') {
+          if (_newL1Deleted(p.l1)) return;
           if (!groups[p.l1]) {
             groups[p.l1] = {
-              l1: p.l1, label: p.l1Label || p.l1, isNewL1: true, children: [],
+              l1: p.l1, label: p.l1Label || p.l1, isNewL1: true,
+              isNewL1Entry: p, // 그룹 자체의 npEntry 참조 (삭제 시 사용)
+              children: [],
             };
             newL1Order.push(p.l1);
           }
+          // path 가 없으면 (순수 L1 그룹) children 추가 안 함 — 사용자가 별도로
+          // mode='l2' 로 페이지 추가해야 노출.
+          if (!p.path || !p.name) return;
           groups[p.l1].children.push({
             key: _newpageL2Key(p),
             label: p.name,
@@ -7189,14 +7276,17 @@
             </div>`;
         }).join('');
         const newL1Badge = g.isNewL1 ? '<span class="mt-row__badge mt-row__badge--new">신규 그룹</span>' : '';
-        // L1 — 캐노니컬: 미노출/노출 토글 + 삭제 (영구). 신규 그룹: hide 개념 없음
-        // (그룹 자체 신규 페이지로 만든 거라 그 신규 페이지 삭제하면 그룹도 같이
-        // 정리).
+        // L1 액션 — 캐노니컬 / 신규 그룹 모두 [미노출 토글] + [삭제] 노출.
+        // - 캐노니컬: setMenuHidden / setMenuDeleted
+        // - 신규 그룹: setMenuHidden 으로 동일 hide 처리. 삭제는 그룹의
+        //   newPages entry + 하위 L2 newPages 들 모두 cascade 삭제.
         let l1ActionsHtml = '';
-        if (!g.isNewL1) {
-          const l1ToggleLabel = l1Hidden ? '노출' : '미노출';
-          const l1ToggleCls = l1Hidden ? 'np-row__btn np-row__btn--show' : 'np-row__btn np-row__btn--hide';
-          l1ActionsHtml = `<button type="button" class="${l1ToggleCls}" data-menu-toggle-l1="${escapeHtml(g.l1)}" data-currently-hidden="${l1Hidden ? '1' : '0'}">${l1ToggleLabel}</button>`;
+        const l1ToggleLabel = l1Hidden ? '노출' : '미노출';
+        const l1ToggleCls = l1Hidden ? 'np-row__btn np-row__btn--show' : 'np-row__btn np-row__btn--hide';
+        l1ActionsHtml = `<button type="button" class="${l1ToggleCls}" data-menu-toggle-l1="${escapeHtml(g.l1)}" data-currently-hidden="${l1Hidden ? '1' : '0'}">${l1ToggleLabel}</button>`;
+        if (g.isNewL1) {
+          l1ActionsHtml += `<button type="button" class="np-row__btn np-row__btn--del" data-newl1-del="${escapeHtml(g.l1)}" data-menu-del-name="${escapeHtml(g.label)}">삭제</button>`;
+        } else {
           l1ActionsHtml += `<button type="button" class="np-row__btn np-row__btn--del" data-menu-del-l1="${escapeHtml(g.l1)}" data-menu-del-name="${escapeHtml(g.label)}">삭제</button>`;
         }
         const l1ActionBtn = l1ActionsHtml ? `<span class="np-row__actions">${l1ActionsHtml}</span>` : '';
@@ -7231,6 +7321,14 @@
         btn.addEventListener('click', (e) => {
           e.preventDefault();
           openDeleteConfirm(btn.dataset.menuDelName || '그룹', () => setMenuDeleted('l1', btn.dataset.menuDelL1));
+        });
+      });
+      // 신규 L1 그룹 영구 삭제 — 그룹의 newPages entry + 하위 L2 newPages 모두
+      // cascade. 경고 모달 한 번만.
+      host.querySelectorAll('[data-newl1-del]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          openDeleteConfirm(btn.dataset.menuDelName || '그룹', () => deleteNewL1Group(btn.dataset.newl1Del));
         });
       });
       // L2 미노출/노출 토글
