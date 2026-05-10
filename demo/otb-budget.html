@@ -260,21 +260,22 @@
     .otb-yoy-neutral { color: var(--ld-fg-lower); }
     .otb-yoy-new     { color: var(--ld-green-500); font-weight: var(--ld-font-weight-bold, 700); }
 
-    /* 그룹 태그 (작은 inline pill) — fill 스타일 (사용자 요청). 보더 제거,
-       각 그룹별 fill 색상 + white 텍스트. */
+    /* 그룹 태그 — modern soft-tint 칩 (light bg + 진한 accent 텍스트).
+       옛 saturated fill 이 촌스럽다는 사용자 피드백 → 부드러운 SaaS 톤으로. */
     .otb-group-pill {
       display: inline-flex; align-items: center;
-      padding: 2px 7px;
+      padding: 2px 8px;
       border: 0;
-      border-radius: 3px;
-      font-size: 10px;
+      border-radius: 4px;
+      font-size: 10.5px;
       font-weight: var(--ld-font-weight-semibold, 600);
-      color: #fff;
-      background: var(--ld-fg-lower);
+      letter-spacing: 0.2px;
+      color: #4B5563;
+      background: #F3F4F6;
     }
-    .otb-group-pill[data-g="G1"] { background: #2A6ABF; }
-    .otb-group-pill[data-g="G2"] { background: #B07825; }
-    .otb-group-pill[data-g="G3"] { background: var(--ld-gray-700); }
+    .otb-group-pill[data-g="G1"] { color: #1D4ED8; background: #DBEAFE; }
+    .otb-group-pill[data-g="G2"] { color: #B45309; background: #FEF3C7; }
+    .otb-group-pill[data-g="G3"] { color: #374151; background: #E5E7EB; }
 
     /* legend chip (info-banner 안의 키 설명) */
     .otb-legend-chip {
@@ -472,6 +473,13 @@
     }
     .otb-summary-table th, .otb-summary-table td { white-space: nowrap; }
     .otb-summary-table .otb-total-hero__count-btn { font-weight: 500; }
+    /* 사용자 요청: "테이블 헤더는 전부 좌측 정렬". OTB 페이지의 두 테이블
+       모두 헤더 좌측. cell-numeric 의 기본 right-align 을 inline style 로
+       override 한 케이스도 함께 풀어주기 위해 !important. (tbody td 는 그대로) */
+    #otb-summary-table.mp-table thead th,
+    #otb-detail-table.mp-table thead th {
+      text-align: left !important;
+    }
 
     /* === 섹션 간격 === */
     .otb-section { margin-top: 48px; }
