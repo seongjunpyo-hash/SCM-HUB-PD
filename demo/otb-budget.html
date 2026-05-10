@@ -221,11 +221,11 @@
     .mp-table tr.is-grand td .otb-yoy-neg { color: var(--otb-grand-neg); }
     .mp-table tr.is-grand td .otb-yoy-neutral { color: var(--otb-grand-neu); }
     .mp-table tr.is-group td {
-      background: var(--ld-bg-low);
+      background: #fff;
       font-weight: var(--ld-font-weight-semibold, 600);
     }
     .mp-table tr.is-grand:hover td { background: var(--otb-grand-bg) !important; color: var(--otb-grand-fg) !important; }
-    .mp-table tr.is-group:hover td { background: var(--ld-gray-100); color: var(--ld-fg); }
+    .mp-table tr.is-group:hover td { background: #FAFBFC; color: var(--ld-fg); }
 
     /* 입력 셀: cell-input 컴포넌트 사용 (cell-input.css). 도메인은 calc 셀 색상만 정의 */
     .mp-table td.cell-calc { color: var(--ld-fg-low); }
@@ -260,20 +260,21 @@
     .otb-yoy-neutral { color: var(--ld-fg-lower); }
     .otb-yoy-new     { color: var(--ld-green-500); font-weight: var(--ld-font-weight-bold, 700); }
 
-    /* 그룹 태그 (작은 inline pill) */
+    /* 그룹 태그 (작은 inline pill) — fill 스타일 (사용자 요청). 보더 제거,
+       각 그룹별 fill 색상 + white 텍스트. */
     .otb-group-pill {
       display: inline-flex; align-items: center;
-      padding: 1px 6px;
-      border: 1px solid var(--ld-fg-lower);
+      padding: 2px 7px;
+      border: 0;
       border-radius: 3px;
       font-size: 10px;
       font-weight: var(--ld-font-weight-semibold, 600);
-      color: var(--ld-fg-low);
-      background: var(--ld-bg);
+      color: #fff;
+      background: var(--ld-fg-lower);
     }
-    .otb-group-pill[data-g="G1"] { border-color: #2A6ABF; color: #2A6ABF; }
-    .otb-group-pill[data-g="G2"] { border-color: #B07825; color: #B07825; }
-    .otb-group-pill[data-g="G3"] { border-color: var(--ld-gray-700); color: var(--ld-gray-700); }
+    .otb-group-pill[data-g="G1"] { background: #2A6ABF; }
+    .otb-group-pill[data-g="G2"] { background: #B07825; }
+    .otb-group-pill[data-g="G3"] { background: var(--ld-gray-700); }
 
     /* legend chip (info-banner 안의 키 설명) */
     .otb-legend-chip {
