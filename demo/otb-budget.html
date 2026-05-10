@@ -843,10 +843,10 @@
           <table class="mp-table otb-summary-table" id="otb-summary-table">
             <thead>
               <tr>
-                <th style="text-align:center; width:48px;">No</th>
-                <th style="text-align:center; width:64px;">그룹</th>
-                <th style="text-align:left; width:320px;">그룹명</th>
-                <th style="text-align:center; width:120px;">브랜드</th>
+                <th style="text-align:center; width:48px !important; min-width:48px !important; max-width:48px !important;">No</th>
+                <th style="text-align:center; width:64px !important; min-width:64px !important; max-width:64px !important;">그룹</th>
+                <th style="text-align:left; width:320px !important; min-width:320px !important; max-width:320px !important;">그룹명</th>
+                <th style="text-align:center; width:120px !important; min-width:120px !important; max-width:120px !important;">브랜드</th>
                 <th class="cell-numeric">기초재고</th>
                 <th class="cell-numeric">입고재고(OTB)</th>
                 <th class="cell-numeric">전년대비(YoY)</th>
@@ -1998,6 +1998,34 @@
   // ============================================================
   renderAll();
   bindAll();
+
+  // 그룹별 요약 테이블 컬럼 폭 강제 — CSS / inline 모두 dev-export 의
+  // _applyColumnWidthsForVersion 등으로 덮이는 케이스를 막기 위해 JS 로
+  // setProperty('width', ..., 'important') 박음. RAF 한 번 더 보강.
+  function _enforceSummaryWidths() {
+    var t = document.getElementById('otb-summary-table');
+    if (!t) return;
+    var ths = t.querySelectorAll('thead > tr > th');
+    if (!ths.length) return;
+    var fixedW = [48, 64, 320, 120];
+    ths.forEach(function (th, i) {
+      if (i < 4) {
+        var w = fixedW[i] + 'px';
+        th.style.setProperty('width',     w, 'important');
+        th.style.setProperty('min-width', w, 'important');
+        th.style.setProperty('max-width', w, 'important');
+      } else {
+        th.style.setProperty('width', 'calc((100% - 552px) / 13)', 'important');
+        th.style.setProperty('min-width', '0',    'important');
+        th.style.setProperty('max-width', 'none', 'important');
+      }
+    });
+    t.style.setProperty('table-layout', 'fixed', 'important');
+    t.style.setProperty('width', '100%', 'important');
+  }
+  _enforceSummaryWidths();
+  try { requestAnimationFrame(function () { _enforceSummaryWidths(); }); } catch (_) {}
+  setTimeout(_enforceSummaryWidths, 200);
 
   // ----- SCM 테이블 모듈 mount (sticky thead, frozen, drag/resize, cell selection) -----
   // sku-management.html 와 동일한 mount 호출
