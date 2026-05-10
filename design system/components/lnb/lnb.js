@@ -562,9 +562,14 @@
         if (!group) return;
         var l2List = group.querySelector('.scm-lnb-l2-list');
         if (!l2List) return;
+        // Cross-L1 이동 지원 — anchor 는 el 전역에서 검색 (다른 L1 의 l2List 에
+        // 있더라도 옮김). prepend 방식으로 ordered 항목이 TOP 에, placeholder /
+        // unordered 항목은 BOTTOM 으로.
         arr.slice().reverse().forEach(function (l2key) {
-          var anchor = l2List.querySelector('.scm-lnb-l2[data-key="' + l2key + '"]');
-          if (anchor) l2List.insertBefore(anchor, l2List.firstChild);
+          var anchor = el.querySelector('.scm-lnb-l2[data-key="' + l2key + '"]');
+          if (!anchor) return;
+          if (anchor.parentNode !== l2List) anchor.parentNode.removeChild(anchor);
+          l2List.insertBefore(anchor, l2List.firstChild);
         });
       });
     }

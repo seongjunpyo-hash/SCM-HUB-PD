@@ -7400,21 +7400,61 @@
       _renderTopL1Chips();
       _refreshIframeLnb();
     }
-    function moveMenuL2(fromKey, toKey, above, l1Parent) {
+    // L2 reorder — 같은 L1 안 또는 다른 L1 그룹으로 cross-L1 이동 모두 지원.
+    // sourceL1 / targetL1 가 다르면:
+    //   - sourceL1 의 l2Order 에서 fromKey 제거
+    //   - targetL1 의 l2Order 에 fromKey 삽입 (toKey 위치 기준)
+    //   - 신규 페이지 entry 면 entry.l1 = targetL1 로 갱신 (영구 이동)
+    //   - 캐노니컬 L2 는 lnb.js 가 anchor 를 다른 L1 의 l2List 로 이동
+    function moveMenuL2(fromKey, toKey, above, sourceL1, targetL1) {
+      // backward compat — 단일 인자 (sourceL1) 만 들어오면 same-L1 reorder
+      if (targetL1 == null) targetL1 = sourceL1;
       const tree = _buildMenuTree();
-      const g = tree.find((x) => x.l1 === l1Parent);
-      if (!g) return;
-      const keys = g.children.map((c) => c.key);
-      const fromIdx = keys.indexOf(fromKey);
-      if (fromIdx < 0) return;
-      keys.splice(fromIdx, 1);
-      let toIdx = keys.indexOf(toKey);
-      if (toIdx < 0) toIdx = keys.length;
-      else if (!above) toIdx += 1;
-      keys.splice(toIdx, 0, fromKey);
+      const sourceG = tree.find((x) => x.l1 === sourceL1);
+      const targetG = tree.find((x) => x.l1 === targetL1);
+      if (!sourceG || !targetG) return;
+
       state.menuOrder = state.menuOrder || {};
       state.menuOrder.l2Order = state.menuOrder.l2Order || {};
-      state.menuOrder.l2Order[l1Parent] = keys;
+
+      if (sourceL1 === targetL1) {
+        // Same-L1 reorder — 기존 동작
+        const keys = sourceG.children.map((c) => c.key);
+        const fromIdx = keys.indexOf(fromKey);
+        if (fromIdx < 0) return;
+        keys.splice(fromIdx, 1);
+        let toIdx = keys.indexOf(toKey);
+        if (toIdx < 0) toIdx = keys.length;
+        else if (!above) toIdx += 1;
+        keys.splice(toIdx, 0, fromKey);
+        state.menuOrder.l2Order[sourceL1] = keys;
+      } else {
+        // Cross-L1 — sourceL1 children 에서 제거 + targetL1 에 삽입.
+        // 1) sourceL1 의 새 키 list (fromKey 제거)
+        const srcKeys = sourceG.children.map((c) => c.key).filter((k) => k !== fromKey);
+        state.menuOrder.l2Order[sourceL1] = srcKeys;
+        // 2) targetL1 의 새 키 list (fromKey 삽입)
+        const tgtKeys = targetG.children.map((c) => c.key);
+        let toIdx = tgtKeys.indexOf(toKey);
+        if (toIdx < 0) toIdx = tgtKeys.length;
+        else if (!above) toIdx += 1;
+        tgtKeys.splice(toIdx, 0, fromKey);
+        state.menuOrder.l2Order[targetL1] = tgtKeys;
+        // 3) 신규 페이지 entry 의 부모 L1 갱신 (영구 이동)
+        const moved = (state.newPages || []).find((p) => p.slug === fromKey || _newpageL2Key(p) === fromKey);
+        if (moved) {
+          moved.l1 = targetL1;
+          // 새 부모 L1 의 라벨도 갱신 (캐노니컬 또는 신규 L1)
+          const canonM = MENU.find((x) => x.l1 === targetL1);
+          if (canonM) {
+            moved.l1Label = canonM.label;
+          } else {
+            const newL1 = (state.newPages || []).find((p) => p.mode === 'l1' && p.l1 === targetL1);
+            if (newL1) moved.l1Label = newL1.l1Label || newL1.l1;
+          }
+          persistNewPages();
+        }
+      }
       persistMenuOrder();
       renderNewPageList();
       _renderTopL1Chips();
@@ -7873,7 +7913,11 @@
       if (!_dragState) return false;
       if (row.dataset.dragKind   !== _dragState.kind)   return false;
       if ((row.dataset.dragDepth  || '0') !== _dragState.depth)  return false;
-      if ((row.dataset.dragParent || '') !== _dragState.parent) return false;
+      // menu-l2 는 cross-L1 이동 허용 — parent 검사 제외. 다른 kind 들은
+      // 같은 parent 안에서만 reorder.
+      if (_dragState.kind !== 'menu-l2') {
+        if ((row.dataset.dragParent || '') !== _dragState.parent) return false;
+      }
       if (row.dataset.dragId     === _dragState.id)     return false;
       // 통합 — native + added + rowbreak 가 모두 한 layout (main grid via
       // display: contents) 안에서 재배치. componentSource 검사 제거.
@@ -7926,7 +7970,10 @@
         return;
       }
       if (_dragState.kind === 'menu-l2') {
-        moveMenuL2(_dragState.id, row.dataset.dragId, above, _dragState.parent);
+        // 타겟 L1 = drop row 의 dragParent (다른 L1 그룹 row 위로 떨어졌으면
+        // sourceL1 과 다를 수 있음 → cross-L1 이동).
+        const targetL1 = row.dataset.dragParent || _dragState.parent;
+        moveMenuL2(_dragState.id, row.dataset.dragId, above, _dragState.parent, targetL1);
         _dragState = null;
         return;
       }
