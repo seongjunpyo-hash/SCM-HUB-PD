@@ -2327,6 +2327,16 @@
           <button type="button" class="rn-modal__toggle" id="rnModalFilterToggle" aria-pressed="false">필터</button>
         </div>
       </div>
+      <!-- 컬럼 전용 — 너비 프리셋 (Auto / Small / Medium / Large). column kind 만 노출. -->
+      <div class="rn-modal__field" id="rnModalWidthField" hidden>
+        <span class="rn-modal__field-label">컬럼 너비</span>
+        <div class="rn-modal__toggles" role="radiogroup" aria-label="컬럼 너비">
+          <button type="button" class="rn-modal__toggle" data-rn-width="auto"   aria-pressed="false" title="Flexible min88 - no max">Auto</button>
+          <button type="button" class="rn-modal__toggle" data-rn-width="small"  aria-pressed="false" title="Flexible min88 - max160">Small</button>
+          <button type="button" class="rn-modal__toggle" data-rn-width="medium" aria-pressed="false" title="Flexible min88 - max260">Medium</button>
+          <button type="button" class="rn-modal__toggle" data-rn-width="large"  aria-pressed="false" title="Fixed 360">Large</button>
+        </div>
+      </div>
       <p class="rn-modal__hint" id="rnModalHint"></p>
     </div>
     <footer class="rn-modal__foot">
@@ -3603,6 +3613,10 @@
       // applied to NATIVE components on top of their existing DOM (selectors
       // include data-voc-key paths and arbitrary CSS paths).
       e.componentEdits = (e.componentEdits && typeof e.componentEdits === 'object' && !Array.isArray(e.componentEdits)) ? e.componentEdits : {};
+      // 컬럼 너비 프리셋 — { selector: 'auto'|'small'|'medium'|'large' }.
+      // 라벨 수정 모달의 [컬럼 너비] 영역에서 설정. applyEditCss 가 inject.
+      // auto = no max (min88), small = max160, medium = max260, large = fixed 360.
+      e.columnWidths = (e.columnWidths && typeof e.columnWidths === 'object' && !Array.isArray(e.columnWidths)) ? e.columnWidths : {};
       // 컴포넌트 통합 order — native + 추가 컴포넌트(grid 단위) 의 main 안 시각
       // 순서를 결정. 빈 배열 = 자연 순서 (CSS order 미적용 → 원본 block 레이아웃).
       e.componentOrder = Array.isArray(e.componentOrder) ? e.componentOrder : [];
@@ -3996,6 +4010,25 @@
       else if (_isColumnSel(selector)) applyColumnSectionToIframe();
       else applyComponentSectionToIframe();
     }
+    // 컬럼 너비 setter — 라벨 수정 모달의 너비 chip 클릭 시 호출.
+    // size: 'auto' | 'small' | 'medium' | 'large' | null (= 디폴트로 복귀).
+    function setColumnWidth(selector, size) {
+      if (!selector) return;
+      const d = pageDraft();
+      d.columnWidths = (d.columnWidths && typeof d.columnWidths === 'object') ? d.columnWidths : {};
+      if (!size) delete d.columnWidths[selector];
+      else d.columnWidths[selector] = size;
+      persistDraft();
+      applyColumnSectionToIframe();
+    }
+    // 4 가지 프리셋 → CSS 룰 매핑. applyEditCss 에서 사용.
+    var COLUMN_WIDTH_PRESETS = {
+      auto:   { min: 88,  max: null, fixed: null },   // Flexible min88 - no max
+      small:  { min: 88,  max: 160,  fixed: null },   // Flexible min88 - max160
+      medium: { min: 88,  max: 260,  fixed: null },   // Flexible min88 - max260
+      large:  { min: 360, max: 360,  fixed: 360 },    // Fixed 360
+    };
+
     function setIconShown(selector, kind, show) {
       const d = pageDraft();
       const arrName = kind === 'sort' ? 'showSort' : 'showFilter';
@@ -4538,6 +4571,18 @@
       // !important alone doesn't decide ties.
       a.showSort.forEach((s)   => lines.push(`.mp-table thead ${s} .sort-ic, .mp-table thead ${s} .scm-th-sort { display: inline-block !important; }`));
       a.showFilter.forEach((s) => lines.push(`.mp-table thead ${s} .filter-ic { display: inline-block !important; }`));
+      // 컬럼 너비 프리셋 — 라벨 수정 모달의 [컬럼 너비] 에서 설정. table-layout
+      // fixed 가정: th 의 width 를 따라 col 전체가 결정. min/max 도 적용.
+      Object.keys(a.columnWidths || {}).forEach((sel) => {
+        const preset = COLUMN_WIDTH_PRESETS[a.columnWidths[sel]];
+        if (!preset) return;
+        let css = `${sel} { min-width: ${preset.min}px !important;`;
+        if (preset.fixed) css += ` width: ${preset.fixed}px !important; max-width: ${preset.fixed}px !important;`;
+        else if (preset.max) css += ` max-width: ${preset.max}px !important;`;
+        else css += ` max-width: none !important;`;
+        css += ` }`;
+        lines.push(css);
+      });
       // marker styles for added items
       lines.push(`
         .scm-voc-added-filter,
@@ -5632,6 +5677,20 @@
           iconsField.hidden = true;
         }
       }
+      // 컬럼 너비 chip — column kind 만 노출. 현재 프리셋 (auto/small/medium/large) 강조.
+      const widthField = document.getElementById('rnModalWidthField');
+      if (widthField) {
+        if (ctx && ctx.kind === 'column' && ctx.selector) {
+          widthField.hidden = false;
+          const d = pageDraft();
+          const cur = (d.columnWidths || {})[ctx.selector] || 'auto';
+          widthField.querySelectorAll('[data-rn-width]').forEach((b) => {
+            b.setAttribute('aria-pressed', b.dataset.rnWidth === cur ? 'true' : 'false');
+          });
+        } else {
+          widthField.hidden = true;
+        }
+      }
       bd.hidden = false;
       modal.hidden = false;
       setTimeout(() => { inp.focus(); inp.select(); }, 0);
@@ -5659,6 +5718,13 @@
         const filterBtn = document.getElementById('rnModalFilterToggle');
         if (sortBtn) setIconShown(ctx.selector, 'sort', sortBtn.getAttribute('aria-pressed') === 'true');
         if (filterBtn) setIconShown(ctx.selector, 'filter', filterBtn.getAttribute('aria-pressed') === 'true');
+        // 컬럼 너비 — 선택된 chip 적용. 'auto' 면 디폴트로 복귀 (entry 제거).
+        const widthField = document.getElementById('rnModalWidthField');
+        if (widthField && !widthField.hidden) {
+          const sel = widthField.querySelector('[data-rn-width][aria-pressed="true"]');
+          const next = sel ? sel.dataset.rnWidth : 'auto';
+          setColumnWidth(ctx.selector, next === 'auto' ? null : next);
+        }
       }
       closeRenameModal();
     }
@@ -5678,6 +5744,17 @@
         e.preventDefault();
         const cur = tg.getAttribute('aria-pressed') === 'true';
         tg.setAttribute('aria-pressed', cur ? 'false' : 'true');
+        return;
+      }
+      // 컬럼 너비 chip — radio 동작 (한 개만 selected, 같은 chip 다시 클릭하면 유지).
+      const widthChip = e.target && e.target.closest && e.target.closest('[data-rn-width]');
+      if (widthChip && widthChip.closest('#rnModalWidthField')) {
+        e.preventDefault();
+        const group = widthChip.closest('.rn-modal__toggles');
+        if (group) {
+          group.querySelectorAll('[data-rn-width]').forEach((b) => b.setAttribute('aria-pressed', 'false'));
+          widthChip.setAttribute('aria-pressed', 'true');
+        }
         return;
       }
       const bd = document.getElementById('rnModalBackdrop');
