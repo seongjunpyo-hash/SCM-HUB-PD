@@ -2596,6 +2596,7 @@ ${jsxBody}
     if (!cw || typeof cw !== 'object') return;
     const keys = Object.keys(cw);
     if (!keys.length) return;
+    const hostsToRecompute = new Set();
     keys.forEach((sel) => {
       const preset = _COL_WIDTH_PRESETS[cw[sel]];
       if (!preset) return;
@@ -2613,6 +2614,7 @@ ${jsxBody}
       const colIdx = Array.prototype.indexOf.call(tr.children, th);
       if (colIdx < 0) return;
       const host = th.closest('.mp-table-host') || doc;
+      if (host && host.classList && host.classList.contains('mp-table-host')) hostsToRecompute.add(host);
       const colgroups = host.querySelectorAll('colgroup');
       colgroups.forEach((cg) => {
         const col = cg.children[colIdx];
@@ -2637,6 +2639,25 @@ ${jsxBody}
         th.style.minWidth = preset.min + 'px';
         th.style.maxWidth = preset.max ? preset.max + 'px' : '';
       }
+    });
+    // col widths 변경 후 host 안 모든 테이블의 inline width 를 colgroup 합으로
+    // 갱신. scm-table 이 init 때 박은 옛 measured totalWidth 에 갇혀 cols 합이
+    // 그보다 커지면 비율 축소 → 모든 cell 동일 폭으로 보이는 회귀 방지.
+    hostsToRecompute.forEach((host) => {
+      host.querySelectorAll('table.mp-table').forEach((tbl) => {
+        const cg = tbl.querySelector(':scope > colgroup');
+        if (!cg) return;
+        let total = 0;
+        [...cg.children].forEach((col) => {
+          if (col.dataset && col.dataset.vocHidden === 'true') return;
+          const w = parseInt(col.style.width, 10) || 0;
+          total += w;
+        });
+        if (total > 0) {
+          tbl.style.width    = total + 'px';
+          tbl.style.minWidth = total + 'px';
+        }
+      });
     });
   }
 
