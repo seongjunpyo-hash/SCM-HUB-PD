@@ -468,8 +468,13 @@
     #otb-summary-table.mp-table,
     #otb-detail-table.mp-table {
       width: 100% !important;
-      table-layout: auto;
     }
+    /* 디테일 테이블 — scm-table 이 sticky thead 로 colgroup 관리하므로 auto 유지 */
+    #otb-detail-table.mp-table { table-layout: auto; }
+    /* 요약 테이블 — fixed 레이아웃으로 (No/그룹/브랜드/그룹명) 명시 width
+       가져가고 나머지 13 numeric 컬럼이 잔여 폭을 균등 분할.
+       (table-layout:auto 로 두면 numeric 들이 컨텐츠 길이에 따라 들쭉날쭉함) */
+    #otb-summary-table.mp-table { table-layout: fixed; }
     .otb-summary-table th, .otb-summary-table td { white-space: nowrap; }
     /* 그룹별 요약 테이블의 [N개 브랜드] 버튼 — scm-button 의 검정 보더가 너무
        강해 사용자 요청으로 그레이 보더로. hover 시 살짝 진해짐. */
@@ -814,7 +819,7 @@
               <tr>
                 <th style="text-align:center; width:48px;">No</th>
                 <th style="text-align:center; width:64px;">그룹</th>
-                <th style="text-align:left;">그룹명</th>
+                <th style="text-align:left; width:320px;">그룹명</th>
                 <th style="text-align:center; width:120px;">브랜드</th>
                 <th class="cell-numeric">기초재고</th>
                 <th class="cell-numeric">입고재고(OTB)</th>
