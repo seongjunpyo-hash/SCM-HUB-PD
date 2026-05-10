@@ -824,7 +824,22 @@
               <col style="width:64px;">
               <col style="width:320px;">
               <col style="width:120px;">
-              <col><col><col><col><col><col><col><col><col><col><col><col><col>
+              <!-- 13 numeric cols 명시 calc — width 미지정 시 브라우저가
+                   잔여 폭 균등 분배 안 하고 마지막 col 이 흡수하는 quirk 회피.
+                   552 = 48+64+320+120 (앞 4 cols 합계). -->
+              <col style="width:calc((100% - 552px) / 13);">
+              <col style="width:calc((100% - 552px) / 13);">
+              <col style="width:calc((100% - 552px) / 13);">
+              <col style="width:calc((100% - 552px) / 13);">
+              <col style="width:calc((100% - 552px) / 13);">
+              <col style="width:calc((100% - 552px) / 13);">
+              <col style="width:calc((100% - 552px) / 13);">
+              <col style="width:calc((100% - 552px) / 13);">
+              <col style="width:calc((100% - 552px) / 13);">
+              <col style="width:calc((100% - 552px) / 13);">
+              <col style="width:calc((100% - 552px) / 13);">
+              <col style="width:calc((100% - 552px) / 13);">
+              <col style="width:calc((100% - 552px) / 13);">
             </colgroup>
             <thead>
               <tr>
