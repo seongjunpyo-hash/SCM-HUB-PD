@@ -1726,18 +1726,64 @@
       background: #FEF3C7;
       color: #B45309;
     }
-    .np-row__del {
-      background: transparent; border: 0; cursor: pointer;
-      font-size: 14px; color: #9CA3AF; padding: 2px 6px; border-radius: 4px;
-      flex-shrink: 0; line-height: 1;
+    /* np-row 의 액션 버튼들 — 미노출 토글 + 삭제 (신규 페이지만) */
+    .np-row__actions { display: inline-flex; gap: 4px; flex-shrink: 0; }
+    .np-row__btn {
+      background: transparent; border: 1px solid transparent; cursor: pointer;
+      font-size: 11px; padding: 3px 8px; border-radius: 4px;
+      flex-shrink: 0; line-height: 1.2; font-family: inherit;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
     }
-    .np-row__del:hover { color: #DC2626; background: #FEE2E2; }
-    .np-row__restore {
-      background: transparent; border: 0; cursor: pointer;
-      font-size: 14px; color: #4F46E5; padding: 2px 6px; border-radius: 4px;
-      flex-shrink: 0; line-height: 1; font-weight: 700;
+    .np-row__btn--hide { color: #6B7280; }
+    .np-row__btn--hide:hover { color: #1A1A1A; background: #F3F4F6; }
+    .np-row__btn--show { color: #4F46E5; font-weight: 600; }
+    .np-row__btn--show:hover { color: #fff; background: #4F46E5; }
+    .np-row__btn--del { color: #DC2626; }
+    .np-row__btn--del:hover { background: #FEE2E2; border-color: #FECACA; }
+
+    /* 삭제 확인 모달 — 영구 삭제는 native confirm 보다 시각적으로 명시적인
+       warning UI 필요. 모달 + 빨간 강조 + "원복 불가" 명시. */
+    .np-confirm-backdrop {
+      position: fixed; inset: 0; z-index: 1100;
+      background: rgba(15, 23, 42, 0.55);
     }
-    .np-row__restore:hover { color: #fff; background: #4F46E5; }
+    .np-confirm-backdrop[hidden] { display: none !important; }
+    .np-confirm-modal {
+      position: fixed; left: 50%; top: 50%; z-index: 1101;
+      transform: translate(-50%, -50%);
+      width: min(420px, 92vw);
+      background: #fff; color: #1A1A1A; border-radius: 12px;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.3);
+      padding: 24px 24px 20px;
+      font-family: inherit; letter-spacing: -0.01em;
+    }
+    .np-confirm-modal[hidden] { display: none !important; }
+    .np-confirm-modal__title {
+      margin: 0 0 12px; font-size: 16px; font-weight: 700; color: #DC2626;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .np-confirm-modal__msg {
+      margin: 0 0 8px; font-size: 13.5px; color: #1A1A1A; line-height: 1.5;
+    }
+    .np-confirm-modal__msg strong { color: #1A1A1A; font-weight: 700; }
+    .np-confirm-modal__warning {
+      margin: 12px 0 20px; padding: 10px 12px;
+      background: #FEF2F2; border: 1px solid #FECACA; border-radius: 6px;
+      color: #991B1B; font-size: 12px; line-height: 1.5;
+    }
+    .np-confirm-modal__btns { display: flex; justify-content: flex-end; gap: 8px; }
+    .np-confirm-modal__btn {
+      height: 34px; padding: 0 14px; border-radius: 4px;
+      font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    }
+    .np-confirm-modal__btn--cancel {
+      background: #fff; color: #1A1A1A; border: 1px solid #D1D5DB;
+    }
+    .np-confirm-modal__btn--cancel:hover { border-color: #1A1A1A; }
+    .np-confirm-modal__btn--del {
+      background: #DC2626; color: #fff; border: 0;
+    }
+    .np-confirm-modal__btn--del:hover { background: #B91C1C; }
     /* hide 처리된 캐노니컬 메뉴 — line-through + opacity */
     .mt-row.is-hidden .mt-row__label,
     .mt-group.is-hidden .mt-row__l1-label {
@@ -2200,6 +2246,19 @@
        or "+ 컴포넌트 추가". Lets the user pick a name, type, and either
        hand-edit HTML, generate from an AI prompt, or load a small-unit
        preset. Apply persists to the page draft + injects into the iframe. -->
+  <!-- 메뉴 / 신규 페이지 영구 삭제 확인 모달 — native confirm 보다 시각적으로
+       명시적인 warning UI. 빨간 강조 + "원복 불가" 표시. -->
+  <div class="np-confirm-backdrop" id="npConfirmBackdrop" hidden></div>
+  <div class="np-confirm-modal" id="npConfirmModal" hidden role="dialog" aria-labelledby="npConfirmTitle">
+    <h3 class="np-confirm-modal__title" id="npConfirmTitle">⚠️ 영구 삭제 확인</h3>
+    <p class="np-confirm-modal__msg" id="npConfirmMsg"></p>
+    <p class="np-confirm-modal__warning">한 번 삭제하면 <strong>원복할 수 없습니다.</strong> 정말 삭제하시겠습니까?</p>
+    <div class="np-confirm-modal__btns">
+      <button type="button" class="np-confirm-modal__btn np-confirm-modal__btn--cancel" id="npConfirmCancel">취소</button>
+      <button type="button" class="np-confirm-modal__btn np-confirm-modal__btn--del" id="npConfirmDel">영구 삭제</button>
+    </div>
+  </div>
+
   <div class="cmp-modal-backdrop" id="cmpModalBackdrop" hidden></div>
   <div class="cmp-modal" id="cmpModal" hidden role="dialog" aria-labelledby="cmpModalTitle">
     <header class="cmp-modal__head">
@@ -6841,7 +6900,7 @@
     }
     function deleteNewPage(id) {
       if (!_ensureSuperOrDeny()) return;
-      if (!confirm('이 신규 페이지 정의를 삭제할까요?')) return;
+      // 의도 확인은 호출자 (openDeleteConfirm 모달) 가 책임. 여기선 그냥 삭제.
       const removed = (state.newPages || []).find((p) => p.id === id);
       state.newPages = (state.newPages || []).filter((p) => p.id !== id);
       // 삭제된 페이지의 slug 를 menuOrder 에서도 정리 — 같은 slug 로 다시
@@ -7048,14 +7107,14 @@
         const childRows = g.children.map((c) => {
           const newBadge = c.isNewPage ? '<span class="mt-row__badge mt-row__badge--new">신규</span>' : '';
           const l2Hidden = !c.isNewPage && isMenuHidden('l2', c.key);
-          // 신규 페이지 = 영구 삭제 (×), 캐노니컬 = hide 토글 (× / ↺).
-          let actionBtn = '';
+          // 모든 항목: [미노출/노출] 토글 버튼.
+          // 신규 페이지: 추가로 [삭제] 버튼 (영구 삭제, 경고 모달).
+          // 캐노니컬은 markup 에서 오므로 진짜 삭제 불가 — hide 만 가능.
+          const hideToggleLabel = l2Hidden ? '노출' : '미노출';
+          const hideToggleCls = l2Hidden ? 'np-row__btn np-row__btn--show' : 'np-row__btn np-row__btn--hide';
+          let actionsHtml = `<button type="button" class="${hideToggleCls}" data-menu-toggle-l2="${escapeHtml(c.key)}" data-currently-hidden="${l2Hidden ? '1' : '0'}">${hideToggleLabel}</button>`;
           if (c.isNewPage) {
-            actionBtn = `<button type="button" class="np-row__del" data-np-del="${escapeHtml(c.npEntry.id)}" title="신규 페이지 삭제">×</button>`;
-          } else if (l2Hidden) {
-            actionBtn = `<button type="button" class="np-row__restore" data-menu-restore-l2="${escapeHtml(c.key)}" title="메뉴 다시 표시">↺</button>`;
-          } else {
-            actionBtn = `<button type="button" class="np-row__del" data-menu-hide-l2="${escapeHtml(c.key)}" title="메뉴에서 숨김">×</button>`;
+            actionsHtml += `<button type="button" class="np-row__btn np-row__btn--del" data-np-del="${escapeHtml(c.npEntry.id)}" data-np-name="${escapeHtml(c.label)}">삭제</button>`;
           }
           const rowCls = ['mt-row', 'mt-row--l2'];
           if (l2Hidden) rowCls.push('is-hidden');
@@ -7063,19 +7122,19 @@
             <div class="${rowCls.join(' ')}" draggable="true" data-drag-id="${escapeHtml(c.key)}" data-drag-kind="menu-l2" data-drag-depth="1" data-drag-parent="${escapeHtml(g.l1)}">
               <span class="np-row__grip" aria-hidden="true" title="드래그하여 순서 변경"><svg viewBox="0 0 6 12" fill="currentColor"><circle cx="1.25" cy="2" r="1"/><circle cx="4.75" cy="2" r="1"/><circle cx="1.25" cy="6" r="1"/><circle cx="4.75" cy="6" r="1"/><circle cx="1.25" cy="10" r="1"/><circle cx="4.75" cy="10" r="1"/></svg></span>
               <span class="mt-row__label">${escapeHtml(c.label)}${newBadge}</span>
-              ${actionBtn}
+              <span class="np-row__actions">${actionsHtml}</span>
             </div>`;
         }).join('');
         const newL1Badge = g.isNewL1 ? '<span class="mt-row__badge mt-row__badge--new">신규 그룹</span>' : '';
-        // L1 hide/restore — canonical 만 (신규 그룹은 deleteNewPage 로 자체 entry 삭제 시 group 도 정리).
-        let l1ActionBtn = '';
+        // L1 — 캐노니컬: 미노출/노출 토글. 신규 그룹: hide 개념 없음 (그룹 자체
+        // 신규 페이지로 만든 거라 그 신규 페이지 삭제하면 그룹도 같이 정리).
+        let l1ActionsHtml = '';
         if (!g.isNewL1) {
-          if (l1Hidden) {
-            l1ActionBtn = `<button type="button" class="np-row__restore" data-menu-restore-l1="${escapeHtml(g.l1)}" title="그룹 다시 표시">↺</button>`;
-          } else {
-            l1ActionBtn = `<button type="button" class="np-row__del" data-menu-hide-l1="${escapeHtml(g.l1)}" title="그룹 메뉴에서 숨김">×</button>`;
-          }
+          const l1ToggleLabel = l1Hidden ? '노출' : '미노출';
+          const l1ToggleCls = l1Hidden ? 'np-row__btn np-row__btn--show' : 'np-row__btn np-row__btn--hide';
+          l1ActionsHtml = `<button type="button" class="${l1ToggleCls}" data-menu-toggle-l1="${escapeHtml(g.l1)}" data-currently-hidden="${l1Hidden ? '1' : '0'}">${l1ToggleLabel}</button>`;
         }
+        const l1ActionBtn = l1ActionsHtml ? `<span class="np-row__actions">${l1ActionsHtml}</span>` : '';
         const groupCls = ['mt-group'];
         if (l1Hidden) groupCls.push('is-hidden');
         return `
@@ -7088,25 +7147,58 @@
             <div class="mt-children">${childRows}</div>
           </div>`;
       }).join('');
+      // 신규 페이지 영구 삭제 — 경고 모달로 한 번 더 확인. 원복 불가.
       host.querySelectorAll('[data-np-del]').forEach((btn) => {
         btn.addEventListener('click', (e) => {
           e.preventDefault();
-          deleteNewPage(btn.dataset.npDel);
+          openDeleteConfirm(btn.dataset.npName || '메뉴', () => deleteNewPage(btn.dataset.npDel));
         });
       });
-      // canonical 메뉴 hide / restore 핸들러
-      host.querySelectorAll('[data-menu-hide-l2]').forEach((b) => {
-        b.addEventListener('click', (e) => { e.preventDefault(); setMenuHidden('l2', b.dataset.menuHideL2, true); });
+      // L2 미노출/노출 토글
+      host.querySelectorAll('[data-menu-toggle-l2]').forEach((b) => {
+        b.addEventListener('click', (e) => {
+          e.preventDefault();
+          const nextHidden = b.dataset.currentlyHidden !== '1';
+          setMenuHidden('l2', b.dataset.menuToggleL2, nextHidden);
+        });
       });
-      host.querySelectorAll('[data-menu-restore-l2]').forEach((b) => {
-        b.addEventListener('click', (e) => { e.preventDefault(); setMenuHidden('l2', b.dataset.menuRestoreL2, false); });
+      // L1 미노출/노출 토글
+      host.querySelectorAll('[data-menu-toggle-l1]').forEach((b) => {
+        b.addEventListener('click', (e) => {
+          e.preventDefault();
+          const nextHidden = b.dataset.currentlyHidden !== '1';
+          setMenuHidden('l1', b.dataset.menuToggleL1, nextHidden);
+        });
       });
-      host.querySelectorAll('[data-menu-hide-l1]').forEach((b) => {
-        b.addEventListener('click', (e) => { e.preventDefault(); setMenuHidden('l1', b.dataset.menuHideL1, true); });
-      });
-      host.querySelectorAll('[data-menu-restore-l1]').forEach((b) => {
-        b.addEventListener('click', (e) => { e.preventDefault(); setMenuHidden('l1', b.dataset.menuRestoreL1, false); });
-      });
+    }
+    // 영구 삭제 경고 모달 — 신규 페이지 삭제 시 한 번 더 의도 확인.
+    function openDeleteConfirm(name, onConfirm) {
+      const backdrop = document.getElementById('npConfirmBackdrop');
+      const modal = document.getElementById('npConfirmModal');
+      const msg = document.getElementById('npConfirmMsg');
+      const cancelBtn = document.getElementById('npConfirmCancel');
+      const delBtn = document.getElementById('npConfirmDel');
+      if (!backdrop || !modal || !msg || !cancelBtn || !delBtn) return;
+      msg.innerHTML = `<strong>[${escapeHtml(name)}]</strong> 메뉴를 영구 삭제합니다.`;
+      backdrop.hidden = false;
+      modal.hidden = false;
+      function close() {
+        backdrop.hidden = true;
+        modal.hidden = true;
+        cancelBtn.removeEventListener('click', onCancel);
+        delBtn.removeEventListener('click', onDel);
+        backdrop.removeEventListener('click', onCancel);
+        document.removeEventListener('keydown', onKey);
+      }
+      function onCancel() { close(); }
+      function onDel() { close(); try { onConfirm(); } catch (_) {} }
+      function onKey(e) { if (e.key === 'Escape') close(); }
+      cancelBtn.addEventListener('click', onCancel);
+      delBtn.addEventListener('click', onDel);
+      backdrop.addEventListener('click', onCancel);
+      document.addEventListener('keydown', onKey);
+      // 기본 포커스는 [취소] — 위험 액션이 default 가 아니도록.
+      setTimeout(() => cancelBtn.focus(), 0);
     }
     // L1 / L2 reorder — drop 핸들러에서 dispatch.
     function moveMenuL1(fromKey, toKey, above) {
