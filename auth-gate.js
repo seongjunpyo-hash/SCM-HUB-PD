@@ -31,7 +31,7 @@ try {
   if (SKIP.indexOf(location.pathname) !== -1) return;
 
   // 역할 기반 접근 제어 — 매칭되는 규칙의 allow 외 역할은 DEFAULT_LANDING 으로 리다이렉트.
-  var DEFAULT_LANDING = '/demo/sku-management';
+  var DEFAULT_LANDING = '/demo/dashboard';
   var ROLE_RULES = [
     // VOC 는 편집 모드 — super/admin 만 접근 가능
     { test: function (p) { return p === '/voc/' || p.indexOf('/voc/') === 0; }, allow: ['super', 'admin'] },

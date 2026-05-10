@@ -2599,8 +2599,8 @@
       applied: {},
       draft: {},
       filter: 'page',
-      // default page → SKU 관리 (PAGES 에 있으면 그 path, 없으면 첫번째 fallback)
-      currentPage: (PAGES.find(function (p) { return p.path === '/demo/sku-management.html'; }) || PAGES[0]).path,
+      // default page → 대시보드 (PAGES 에 있으면 그 path, 없으면 첫번째 fallback)
+      currentPage: (PAGES.find(function (p) { return p.path === '/demo/dashboard.html'; }) || PAGES[0]).path,
       iframeReady: false,
       view: 'list',            // 'list' | 'detail'
       selectedId: null,
@@ -3032,8 +3032,11 @@
         }
         renderList();
       });
-      document.addEventListener('scm:auth-ready', (e) => {
-        const u = e.detail && e.detail.user;
+      // auth user 적용 — scm:auth-ready 이벤트로 받거나, init() 의 await
+      // (D1 sync bootstrap) 동안 이미 떨어진 경우 window.SCM_USER 직접 채택.
+      // 이전엔 await 동안 이벤트가 먼저 떨어지면 listener 미등록이라 missed →
+      // [신규] 탭이 super 한테도 안 노출되던 사고. 이제 양쪽 다 처리.
+      function _applyAuthedUserToVocUi(u) {
         if (!u) return;
         state.user.email = u.email;
         state.user.name  = u.name || u.email;
@@ -3064,7 +3067,13 @@
             }
           });
         }
+      }
+      document.addEventListener('scm:auth-ready', (e) => {
+        _applyAuthedUserToVocUi(e.detail && e.detail.user);
       });
+      // init 의 await bootstrap 동안 auth-ready 가 이미 떨어졌을 가능성 →
+      // window.SCM_USER 가 set 됐으면 즉시 적용 (event miss 방어).
+      if (window.SCM_USER) _applyAuthedUserToVocUi(window.SCM_USER);
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && state.view === 'detail') { goList(); }
       });
