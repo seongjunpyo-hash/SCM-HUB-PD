@@ -7,12 +7,20 @@
 // end-to-end 로 확인.
 //
 // 사용법:
-//   - 로컬 wrangler dev: SMOKE_BASE_URL=http://localhost:8788 node scripts/smoke-test-demo-fn.js
-//   - 배포 preview URL: SMOKE_BASE_URL=https://<hash>.scm-hub-pd.pages.dev node scripts/smoke-test-demo-fn.js
-//   - 미설정 시 기본값: http://localhost:8788
+// 사용법 (로컬 수동 검증):
+//   터미널 1) npx wrangler pages dev . \
+//              --port 8788 \
+//              --compatibility-date 2024-12-01 \
+//              --show-interactive-dev-session=false
+//   터미널 2) SMOKE_BASE_URL=http://localhost:8788 node scripts/smoke-test-demo-fn.js
 //
-// CI 에선 wrangler pages dev 를 백그라운드로 띄운 후 SMOKE_BASE_URL 미설정
-// (기본값 사용) 으로 실행 — check-demo-fn-smoke.yml 참고.
+// 배포 preview URL 에 대해서도 가능:
+//   SMOKE_BASE_URL=https://<hash>.scm-hub-pd.pages.dev node scripts/smoke-test-demo-fn.js
+//
+// CI 에선 안 돌림 — wrangler pages dev 의 GitHub Actions 환경 startup 이
+// 일관성 있게 안 떨어져 (timeout / 미상의 startup 실패) flakey. 단위 테스트
+// (scripts/check-demo-fn.js) 가 함수 분기 회귀 차단을 충분히 커버하므로
+// e2e 는 로컬 수동 검증으로만 운용.
 
 'use strict';
 
