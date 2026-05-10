@@ -64,6 +64,7 @@
       <a class="scm-lnb-l2" href="index.html" data-key="index"><span class="scm-lnb-l2-text">무탠 전개상품 관리</span></a>
       <a class="scm-lnb-l2" href="editshop-restock-status.html" data-key="editshop-status"><span class="scm-lnb-l2-text">편집샵 재고 보충 현황</span></a>
       <a class="scm-lnb-l2" href="editshop-restock-request.html" data-key="editshop-request"><span class="scm-lnb-l2-text">편집샵 재고 보충 요청</span></a>
+      <a class="scm-lnb-l2" href="editshop-products.html" data-key="editshop-products"><span class="scm-lnb-l2-text">편집샵 전개상품 관리</span></a>
     </div>
   </div>
 
