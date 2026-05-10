@@ -229,6 +229,35 @@
     if (item1) item1.classList.add('is-active');
   }
 
+  // iframe 컨텍스트일 때 LNB anchor 클릭 시 /demo/* 경로에 ?_voc=1 cache buster
+  // 부착. VOC 의 navigateTo 가 iframe.src 에 buster 를 붙여도, iframe 내부에서
+  // LNB anchor 를 직접 클릭하면 anchor href 그대로 navigation 되므로 buster 가
+  // 빠져 CDN edge 의 옛 broken 응답을 hit 할 수 있음. 같은 buster 를 붙여서
+  // 일관성 유지. top-level navigation (워크스페이스 → 데모 카드) 은 영향 X.
+  function wireIframeCacheBuster(el) {
+    if (typeof window === 'undefined') return;
+    // top-level (= 부모 없음) 이면 적용 안 함. cross-origin 부모면 접근 시 throw 라 try.
+    try { if (window.parent === window) return; } catch (_) { return; }
+    el.addEventListener('click', function (e) {
+      var a = e.target.closest('a[href]');
+      if (!a) return;
+      var href = a.getAttribute('href') || '';
+      if (!href || href === '#' || href.charAt(0) === '#') return;
+      // anchor 의 resolved URL 이 같은 origin 의 /demo/* 일 때만 처리.
+      var u;
+      try { u = new URL(a.href, document.baseURI); } catch (_) { return; }
+      if (u.origin !== window.location.origin) return;
+      if (!u.pathname.startsWith('/demo/')) return;
+      if (u.searchParams.has('_voc')) return; // 이미 buster 있음 — noop
+      // 새 탭 / modifier 키 / target 지정된 클릭은 기본 동작 유지.
+      if (a.target && a.target !== '_self') return;
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      u.searchParams.set('_voc', '1');
+      e.preventDefault();
+      window.location.href = u.toString();
+    });
+  }
+
   function wireNavToggle(el) {
     // L1 row 의 data-nav-toggle 클릭 → 부모 lnb-item.is-open 토글
     var btns = el.querySelectorAll('[data-nav-toggle]');
@@ -538,6 +567,7 @@
     if (active) setActive(el, active);
 
     wireNavToggle(el);
+    wireIframeCacheBuster(el);
     applyStatusTags(el);
     // re-apply when versions / confirmed / 메뉴 hidden / order state 가 다른 탭에서 바뀌면.
     if (!root.__scmLnbStorageWired) {
