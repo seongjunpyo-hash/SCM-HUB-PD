@@ -6790,7 +6790,7 @@
       state.newPages.push(entry);
       persistNewPages();
       renderNewPageList();
-      _renderTopL1Chips();
+      _refreshTopMenuAfterNewPagesChange();
       resetNewPageForm();
       const tagPrefix = mode === 'l1' ? `[1뎁스: ${l1Label}] ` : '';
       showToast(`${tagPrefix}[${name}] 페이지 정의가 추가됐습니다`);
@@ -6800,7 +6800,18 @@
       state.newPages = (state.newPages || []).filter((p) => p.id !== id);
       persistNewPages();
       renderNewPageList();
+      _refreshTopMenuAfterNewPagesChange();
+    }
+    // 신규 페이지 추가/삭제 후 상단 L1 chips + L2 dropdown 둘 다 갱신.
+    // _renderTopL1Chips 만 부르면 L1 chip 은 갱신되지만 L2 dropdown 은
+    // selectL1 안에서만 그려지므로 옛날 상태 그대로 남음 → 사용자가 방금 추가한
+    // 신규 메뉴가 L2 select 에 안 보이는 버그 발생. 현재 active L1 의 selectL1
+    // 을 다시 호출해서 L2 도 새 children 으로 재렌더.
+    function _refreshTopMenuAfterNewPagesChange() {
       _renderTopL1Chips();
+      const activeChip = menuL1.querySelector('.menu-l1__chip.is-active');
+      const activeL1 = activeChip ? activeChip.dataset.l1 : null;
+      if (activeL1) selectL1(activeL1, state.currentPage);
     }
     const _NP_TYPE_LABEL = {
       list: '리스트', detail: '상세', dashboard: '대시보드', form: '폼', blank: '빈 캔버스',
