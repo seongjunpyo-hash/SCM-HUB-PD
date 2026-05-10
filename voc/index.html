@@ -2151,13 +2151,13 @@
             </header>
             <div class="edit-sec__body">
               <div class="np-form">
-                <fieldset class="np-field np-mode">
-                  <legend class="np-field__label">신규 단계</legend>
-                  <div class="np-mode__radios">
+                <div class="np-field np-mode">
+                  <span class="np-field__label" id="npModeLabel">신규 단계</span>
+                  <div class="np-mode__radios" role="radiogroup" aria-labelledby="npModeLabel">
                     <label class="np-radio"><input type="radio" name="npMode" value="l2" checked /><span>2뎁스 신규 (기존 메뉴 아래)</span></label>
                     <label class="np-radio"><input type="radio" name="npMode" value="l1" /><span>1뎁스 신규 (새 메뉴 그룹)</span></label>
                   </div>
-                </fieldset>
+                </div>
                 <label class="np-field" data-np-show="l2">
                   <span class="np-field__label">메뉴 위치 (1뎁스)</span>
                   <select class="np-input" id="npL1"></select>
