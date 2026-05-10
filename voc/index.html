@@ -6805,6 +6805,11 @@
       state.newPages = state.newPages || [];
       state.newPages.push(entry);
       persistNewPages();
+      // 옛 menuOrder 에 같은 slug 가 남아있으면 제거 — 새로 만든 페이지는 항상
+      // END 로 추가되어야 사용자 직관과 맞음. 사용자가 "지우고 다시 만들었는데
+      // 위치가 그대로 위에 생긴다" 고 보고하던 케이스 fix (slug 가 같으면 옛
+      // 드래그 위치를 그대로 따라가는 stale order 문제).
+      _removeSlugFromMenuOrder(slug, mode === 'l1' ? l1 : null);
       renderNewPageList();
       _refreshTopMenuAfterNewPagesChange();
       resetNewPageForm();
@@ -6813,10 +6818,37 @@
     }
     function deleteNewPage(id) {
       if (!confirm('이 신규 페이지 정의를 삭제할까요?')) return;
+      const removed = (state.newPages || []).find((p) => p.id === id);
       state.newPages = (state.newPages || []).filter((p) => p.id !== id);
+      // 삭제된 페이지의 slug 를 menuOrder 에서도 정리 — 같은 slug 로 다시
+      // 만들었을 때 옛 드래그 위치를 유산처럼 따라가지 않도록 (사용자 보고
+      // "지우고 다시 만들어도 위치가 그대로 위에 생긴다" fix).
+      if (removed && removed.slug) {
+        _removeSlugFromMenuOrder(removed.slug, removed.mode === 'l1' ? removed.l1 : null);
+      }
       persistNewPages();
       renderNewPageList();
       _refreshTopMenuAfterNewPagesChange();
+    }
+    // 신규 페이지 slug 를 state.menuOrder.l2Order (필요 시 l1Order) 에서 제거.
+    // 같은 slug 로 다시 만들거나 삭제 후 stale 이 남는 케이스 정리.
+    function _removeSlugFromMenuOrder(slug, l1KeyIfL1) {
+      if (!state.menuOrder) return;
+      let dirty = false;
+      if (state.menuOrder.l2Order && typeof state.menuOrder.l2Order === 'object') {
+        Object.keys(state.menuOrder.l2Order).forEach((l1key) => {
+          const arr = state.menuOrder.l2Order[l1key];
+          if (!Array.isArray(arr)) return;
+          const idx = arr.indexOf(slug);
+          if (idx >= 0) { arr.splice(idx, 1); dirty = true; }
+        });
+      }
+      // mode='l1' 신규 페이지면 L1 키도 정리
+      if (l1KeyIfL1 && Array.isArray(state.menuOrder.l1Order)) {
+        const idx = state.menuOrder.l1Order.indexOf(l1KeyIfL1);
+        if (idx >= 0) { state.menuOrder.l1Order.splice(idx, 1); dirty = true; }
+      }
+      if (dirty) persistMenuOrder();
     }
     // 신규 페이지 추가/삭제 후 상단 L1 chips + L2 dropdown 둘 다 갱신.
     // _renderTopL1Chips 만 부르면 L1 chip 은 갱신되지만 L2 dropdown 은
