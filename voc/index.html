@@ -7296,14 +7296,23 @@
           arr.forEach((l2key) => { reassign[l2key] = targetL1; });
         });
         // 모든 children 을 한번에 모으고 reassign 에 따라 재분배.
-        // (NEW page entry 는 p.l1 이 이미 targetL1 로 갱신되어 있어 같은 L1
-        //  으로 reassign 되므로 변동 없음 — 안전.)
+        // **신규 페이지 (isNewPage=true) 는 p.l1 이 source of truth — l2Order
+        // reassignment 무시.** 사용자가 신규 페이지를 cross-L1 드래그했다가
+        // 다시 원래 L1 으로 옮길 때 옛 target L1 의 l2Order entry 가 stale 로
+        // 남아있으면 (제거 로직 미흡), reassign 을 따라가면 다시 잘못된 L1
+        // 으로 옮겨가는 회귀. 신규 페이지는 항상 p.l1 이 가리키는 그룹에 머문다.
+        // 캐노니컬 L2 는 p.l1 같은 거 없어서 l2Order 만이 cross-L1 의 단서이므로
+        // reassign 그대로 적용.
         const allChildren = [];
         Object.keys(groups).forEach((l1) => {
           groups[l1].children.forEach((c) => allChildren.push({ child: c, originL1: l1 }));
           groups[l1].children = [];
         });
         allChildren.forEach((entry) => {
+          if (entry.child.isNewPage) {
+            groups[entry.originL1].children.push(entry.child);
+            return;
+          }
           const target = reassign[entry.child.key];
           const dest = (target && groups[target]) ? target : entry.originL1;
           groups[dest].children.push(entry.child);
