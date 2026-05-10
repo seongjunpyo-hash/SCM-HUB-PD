@@ -461,6 +461,12 @@
     .mp-table tbody tr:last-child { border-bottom: 0; }
     .mp-table tbody tr td { border-bottom: 0; }
 
+    /* 그룹별 요약 테이블 — full-width (사용자 요청). 그룹 / 그룹명 / 브랜드
+       3 컬럼 분리, col-* 클래스 안 쓰고 자연 분포. */
+    .otb-summary-table { width: 100% !important; table-layout: auto; }
+    .otb-summary-table th, .otb-summary-table td { white-space: nowrap; }
+    .otb-summary-table .otb-total-hero__count-btn { font-weight: 500; }
+
     /* === 섹션 간격 === */
     .otb-section { margin-top: 48px; }
     .otb-section:first-of-type { margin-top: 24px; }
@@ -760,23 +766,25 @@
       <div class="mp-table-host">
         <div class="mp-thead-sticky"><div class="mp-thead-scroll"></div></div>
         <div class="mp-table-scroll">
-          <table class="mp-table" id="otb-summary-table">
+          <table class="mp-table otb-summary-table" id="otb-summary-table">
             <thead>
               <tr>
-                <th class="col-large" style="text-align:left;">그룹</th>
-                <th class="col-medium cell-numeric">기초재고</th>
-                <th class="col-medium cell-numeric">입고재고(OTB)</th>
-                <th class="col-auto cell-numeric">YoY</th>
-                <th class="col-medium cell-numeric">GMV</th>
-                <th class="col-auto cell-numeric">YoY</th>
-                <th class="col-medium cell-numeric">출고원가</th>
-                <th class="col-auto cell-numeric">YoY</th>
-                <th class="col-medium cell-numeric">반품예정</th>
-                <th class="col-auto cell-numeric">COGS%</th>
-                <th class="col-auto cell-numeric">공급률</th>
-                <th class="col-medium cell-numeric">기말재고</th>
-                <th class="col-auto cell-numeric">소진율</th>
-                <th class="col-auto cell-numeric">재고일수</th>
+                <th style="text-align:center; width:64px;">그룹</th>
+                <th style="text-align:left;">그룹명</th>
+                <th style="text-align:center; width:120px;">브랜드</th>
+                <th class="cell-numeric">기초재고</th>
+                <th class="cell-numeric">입고재고(OTB)</th>
+                <th class="cell-numeric">YoY</th>
+                <th class="cell-numeric">GMV</th>
+                <th class="cell-numeric">YoY</th>
+                <th class="cell-numeric">출고원가</th>
+                <th class="cell-numeric">YoY</th>
+                <th class="cell-numeric">반품예정</th>
+                <th class="cell-numeric">COGS%</th>
+                <th class="cell-numeric">공급률</th>
+                <th class="cell-numeric">기말재고</th>
+                <th class="cell-numeric">소진율</th>
+                <th class="cell-numeric">재고일수</th>
               </tr>
             </thead>
             <tbody id="otb-summary-body"></tbody>
@@ -1253,13 +1261,14 @@
     var heroEl = $('#otb-total-hero');
     if (heroEl) heroEl.innerHTML = heroHtml;
 
-    // 그룹별 요약 테이블 — G1/G2/G3 만 (전체 합계 row 는 hero 로 분리)
+    // 그룹별 요약 테이블 — G1/G2/G3 만 (전체 합계 row 는 hero 로 분리).
+    // 그룹 / 그룹명 / 브랜드(버튼) 3 컬럼 분리.
     var html = '';
     groups.forEach(function (it) {
       html += '<tr class="is-group">'
-        + '<td style="text-align:left;"><span class="otb-group-pill" data-g="' + it.g + '">' + it.g + '</span> '
-        + groupLabels[it.g].name
-        + ' <button type="button" class="otb-total-hero__count-btn" data-otb-brand-list="' + it.g + '" style="margin-left:8px; font-weight:500;">'
+        + '<td style="text-align:center;"><span class="otb-group-pill" data-g="' + it.g + '">' + it.g + '</span></td>'
+        + '<td style="text-align:left;">' + groupLabels[it.g].name + '</td>'
+        + '<td style="text-align:center;"><button type="button" class="otb-total-hero__count-btn" data-otb-brand-list="' + it.g + '">'
         + it.sub.length + '개 브랜드</button></td>'
         + summaryRowCells(it.agg)
         + '</tr>';
