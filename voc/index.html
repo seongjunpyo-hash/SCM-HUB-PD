@@ -3187,17 +3187,28 @@
       if (!m) return;
       // For L3 child pages (e.g. sku-detail), L2 select must show the parent.
       const l2Path = _l3Parent(path) || path;
+      // **CRITICAL — L2 dropdown 은 _buildMenuTree() 결과 (= canonical + 신규
+      // + cross-L1 reassignment 적용된 통합 트리) 를 source of truth 로 써야
+      // 함. 옛 코드가 findMenuByPath 의 m.l1.children (= MENU = canonical only)
+      // 으로 l2Select 를 덮어써서 신규 페이지가 dropdown 에서 사라지던 버그
+      // (사용자: "위탁 상품 미매핑 관리가 상품관리 dropdown 에 안 나와").**
+      const tree = _buildMenuTree();
+      const treeL1 = tree.find((g) => g.l1 === m.l1.l1) || m.l1;
+      const visibleChildren = treeL1.children.filter((c) => c.isNewPage || !isMenuHidden('l2', c.key));
       menuL1.querySelectorAll('.menu-l1__chip').forEach((b) => {
         b.classList.toggle('is-active', b.dataset.l1 === m.l1.l1);
       });
-      // rebuild L2 options if the L1 group changed
+      // rebuild L2 options if the L1 group changed (paths/order)
       const currentValues = Array.from(l2Select.options).map((o) => o.value);
-      const expected = m.l1.children.map((c) => c.path);
+      const expected = visibleChildren.map((c) => c.path);
       const same = currentValues.length === expected.length && currentValues.every((v, i) => v === expected[i]);
       if (!same) {
-        l2Select.innerHTML = m.l1.children
-          .map((c) => `<option value="${c.path}">${escapeHtml(c.label)}</option>`).join('');
-        l2Select.disabled = m.l1.children.length <= 1;
+        l2Select.innerHTML = visibleChildren.map((c) => {
+          const suffix = _menuStatusSuffix(c.path);
+          const newBadge = c.isNewPage ? ' [신규]' : '';
+          return `<option value="${c.path}">${escapeHtml(c.label + newBadge + suffix)}</option>`;
+        }).join('');
+        l2Select.disabled = visibleChildren.length <= 1;
       }
       l2Select.value = l2Path;
       renderL3Select(l2Path, path);
