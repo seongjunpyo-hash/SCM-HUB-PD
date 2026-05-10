@@ -25,6 +25,11 @@
   window.__scmShellBooted = true;
 
   var SCRIPTS = [
+    // D1 영구 저장 sync — voc / 데모 모두 동일 모듈. localStorage 가 아닌 D1 이
+    // 진실원천. 반드시 lnb.js / dev-export.js 의 localStorage 읽기 BEFORE 에
+    // bootstrap 이 끝나야 정확한 데이터가 mount 에 들어감 → bootSync() 안에서
+    // bootstrap 끝난 후 dispatch.
+    '/voc-config-sync.js',
     // 추가 DOM 빌더 단일 source — dev-export.js 가 추가 테이블 / 필터 wrapper
     // 결정 시 사용. 반드시 dev-export.js 앞에 두어야 함.
     '/voc/added-dom-builders.js',
@@ -87,9 +92,63 @@
     }
   }
 
+  // D1 영구 저장 sync — D1 의 진실원천을 받아 localStorage 에 mirror 한 후
+  // LNB 를 다시 mount → 다른 탭/세션 / Clear site data 후에도 메뉴 / 페이지
+  // 편집 데이터가 유지됨. defer-loaded voc-config-sync.js 가 준비될 때까지 폴.
+  function bootConfigSync() {
+    function tryBootstrap() {
+      if (window.SCM_CONFIG_SYNC && typeof window.SCM_CONFIG_SYNC.bootstrap === 'function') {
+        window.SCM_CONFIG_SYNC.bootstrap().then(function () {
+          // localStorage 갱신 완료 → LNB / dev-export 재적용. lnb.js 는 이미
+          // mount 됐을 가능성 → re-mount 로 새 데이터 반영.
+          var lnbs = document.querySelectorAll('.scm-lnb');
+          if (window.SCM && SCM.lnb && SCM.lnb.mount) {
+            lnbs.forEach(function (el) {
+              try { el.innerHTML = ''; SCM.lnb.mount(el); } catch (_) {}
+            });
+          }
+          try { document.dispatchEvent(new CustomEvent('scm:config-applied')); } catch (_) {}
+        });
+        return true;
+      }
+      return false;
+    }
+    if (!tryBootstrap()) {
+      // sync 모듈 아직 안 로드됨 — 짧은 폴.
+      var n = 0;
+      var iv = setInterval(function () {
+        if (tryBootstrap() || ++n > 40) clearInterval(iv);
+      }, 50);
+    }
+  }
+  // 같은-origin 다른 탭의 변경 즉시 반영 — BroadcastChannel.
+  function bootBroadcast() {
+    if (typeof BroadcastChannel === 'undefined' || window.__scmShellBcWired) return;
+    try {
+      var bc = new BroadcastChannel('scm-voc-config');
+      bc.addEventListener('message', function (e) {
+        if (!e || !e.data || e.data.type !== 'config-changed') return;
+        // 다른 탭이 D1 / localStorage 갱신 → 우리 LNB 도 새로 mount.
+        // (단순 storage event 만으론 같은-탭 변경이 누락 가능 → BroadcastChannel
+        //  이 더 신뢰 가능.)
+        if (window.SCM_CONFIG_SYNC && window.SCM_CONFIG_SYNC.bootstrap) {
+          // bootstrap 다시 해서 D1 의 최신본 받음 (다른 탭이 푸시한 직후니까).
+          window.SCM_CONFIG_SYNC._refetch && window.SCM_CONFIG_SYNC._refetch();
+        }
+        var lnbs = document.querySelectorAll('.scm-lnb');
+        if (window.SCM && SCM.lnb && SCM.lnb.mount) {
+          lnbs.forEach(function (el) { try { el.innerHTML = ''; SCM.lnb.mount(el); } catch (_) {} });
+        }
+      });
+      window.__scmShellBcWired = true;
+    } catch (_) {}
+  }
+
   function boot() {
     bootStickyVars();
     bootFilterMounts();
+    bootConfigSync();
+    bootBroadcast();
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot, { once: true });

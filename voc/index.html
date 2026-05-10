@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SCM HUB · 협업 VOC (작업자)</title>
   <script src="/auth-gate.js"></script>
+  <!-- D1 영구 저장 sync — VOC init 이 await bootstrap() 으로 진실원천 받음. -->
+  <script src="/voc-config-sync.js"></script>
   <script src="/profile-menu.js" defer></script>
   <!-- 편집 탭 컴포넌트 라이브러리 (단일 source — 30개 atomic 컴포넌트). -->
   <script src="component-library.js"></script>
@@ -2729,7 +2731,26 @@
     // ====================================================
     // Init
     // ====================================================
-    function init() {
+    async function init() {
+      // D1 영구 저장 sync — 페이지 로드 직후 서버에서 진실원천을 받아 localStorage
+      // 에 mirror. 이게 끝나야 아래 loadJsonKey 들이 최신 데이터를 읽음.
+      // 실패해도 reject 안 함 (네트워크 오류 시 localStorage 가 fallback).
+      try { if (window.SCM_CONFIG_SYNC) await window.SCM_CONFIG_SYNC.bootstrap(); } catch (_) {}
+      // 같은-origin 다른 탭 (데모 / 다른 VOC) 의 변경 즉시 반영 — BroadcastChannel.
+      try {
+        if (typeof BroadcastChannel !== 'undefined' && !window.__scmVocBcWired) {
+          var bc = new BroadcastChannel('scm-voc-config');
+          bc.addEventListener('message', function (e) {
+            if (!e || !e.data || e.data.type !== 'config-changed') return;
+            // 다른 탭에서 변경 → localStorage 가 (storage event 통해 또는 D1 push 후)
+            // 이미 갱신됐을 것. iframe LNB / 메뉴 트리만 재렌더.
+            try { _refreshIframeLnb(); } catch (_) {}
+            try { _renderTopL1Chips(); } catch (_) {}
+          });
+          window.__scmVocBcWired = true;
+        }
+      } catch (_) {}
+
       // load edit state — only the saved baseline (applied) survives reload.
       // draft is session-only: a fresh reload always starts from the saved
       // baseline so unsaved edits don't silently persist into the next visit.
@@ -3236,10 +3257,25 @@
       try { const v = JSON.parse(localStorage.getItem(key)); return v && typeof v === 'object' ? v : {}; }
       catch { return {}; }
     }
-    function persistApplied()  { try { localStorage.setItem(EDIT_KEY,     JSON.stringify(state.applied));  } catch {} }
-    function persistDraft()    { try { localStorage.setItem(DRAFT_KEY,    JSON.stringify(state.draft));    } catch {} }
+    // D1 영구 저장 + BroadcastChannel 동기 — persist 직후 push.
+    // - SCM_CONFIG_SYNC.push(lsKey) : D1 의 해당 key 갱신 (debounced + retry).
+    //   bootstrap 안 됐거나 모듈 미로드면 noop.
+    // - _broadcastConfigChange(lsKey) : 같은-origin 다른 탭 (데모 / 다른 VOC)
+    //   에게 즉시 알림 → lnb.js / dev-export.js 가 LNB 재mount 등 반응.
+    function _syncPush(lsKey) {
+      try { if (window.SCM_CONFIG_SYNC) window.SCM_CONFIG_SYNC.push(lsKey); } catch (_) {}
+      _broadcastConfigChange(lsKey);
+    }
+    var _bcChan = null;
+    try { if (typeof BroadcastChannel !== 'undefined') _bcChan = new BroadcastChannel('scm-voc-config'); } catch (_) {}
+    function _broadcastConfigChange(lsKey) {
+      if (!_bcChan) return;
+      try { _bcChan.postMessage({ type: 'config-changed', key: lsKey, ts: Date.now() }); } catch (_) {}
+    }
+    function persistApplied()  { try { localStorage.setItem(EDIT_KEY,     JSON.stringify(state.applied));  } catch {} _syncPush(EDIT_KEY); }
+    function persistDraft()    { try { localStorage.setItem(DRAFT_KEY,    JSON.stringify(state.draft));    } catch {} /* draft 는 세션-only — D1 sync 안 함 */ }
     function persistUi()       { try { localStorage.setItem(UI_KEY,       JSON.stringify(state.ui));       } catch {} }
-    function persistVersions() { try { localStorage.setItem(VERSIONS_KEY, JSON.stringify(state.versions)); } catch {} }
+    function persistVersions() { try { localStorage.setItem(VERSIONS_KEY, JSON.stringify(state.versions)); } catch {} _syncPush(VERSIONS_KEY); }
     function persistGlobalLabels() {
       try { localStorage.setItem(GLOBAL_LABELS_KEY, JSON.stringify(state.globalLabels)); } catch {}
     }
@@ -6773,6 +6809,7 @@
     // ====================================================
     function persistNewPages() {
       try { localStorage.setItem(NEWPAGES_KEY, JSON.stringify(state.newPages || [])); } catch {}
+      _syncPush(NEWPAGES_KEY);
     }
     function _slugify(s) {
       const t = (s || '').toString().trim().toLowerCase();
@@ -7100,6 +7137,7 @@
     }
     function persistMenuHidden() {
       try { localStorage.setItem(MENU_HIDDEN_KEY, JSON.stringify(state.menuHidden || { l1: [], l2: [] })); } catch {}
+      _syncPush(MENU_HIDDEN_KEY);
     }
     // 캐노니컬 메뉴 영구 삭제 — 원복 불가. menuDeleted list 에 add 후
     // hidden 동작과 동일하게 LNB / VOC tree 에서 제외. 토글 없음.
@@ -7127,9 +7165,11 @@
     }
     function persistMenuDeleted() {
       try { localStorage.setItem(MENU_DELETED_KEY, JSON.stringify(state.menuDeleted || { l1: [], l2: [] })); } catch {}
+      _syncPush(MENU_DELETED_KEY);
     }
     function persistMenuOrder() {
       try { localStorage.setItem(MENU_ORDER_KEY, JSON.stringify(state.menuOrder || {})); } catch {}
+      _syncPush(MENU_ORDER_KEY);
     }
     // iframe 안 LNB 가 hidden / order 변경을 즉시 반영하도록 lnb.js 의 mount 재호출.
     // mount() 는 idempotent — DOM 이 이미 칠해져 있어도 다시 정렬/숨김만 적용.
