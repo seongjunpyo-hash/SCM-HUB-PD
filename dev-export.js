@@ -1643,12 +1643,17 @@ ${jsxBody}
   // pass the saved CSS rules don't match anything. Walk the table the
   // same way scanEditTargets() does in voc/index.html so the same cell
   // gets the same key on both sides.
-  function _stampVocKeysOnTable(table) {
+  // voc/index.html 의 scanEditTargets 와 동일하게 counter 를 모든 테이블
+  // 전체에 걸쳐 GLOBAL 로 매겨야 voc 가 저장한 [data-voc-key="col-N"]
+  // 셀렉터와 demo 의 stamping 이 매칭됨. 이전엔 테이블마다 counter 를 0 으
+  // 로 reset 해서 (예) 디테일 테이블의 N번째 컬럼이 voc 에선 col-(요약+N),
+  // demo 에선 col-N — 셀렉터 매칭 실패로 컬럼 너비/숨김 적용이 누락됐다.
+  function _stampVocKeysOnTable(table, counters) {
     const thead = table && table.querySelector('thead');
     if (!thead) return;
     const trAll = [...thead.querySelectorAll('tr')];
     if (!trAll.length) return;
-    let colCounter = 0, grpCounter = 0;
+    counters = counters || { col: 0, grp: 0 };
     const groupTr = trAll.length > 1 ? trAll[0] : null;
     const leafTr  = trAll[trAll.length - 1];
     if (groupTr) {
@@ -1659,11 +1664,11 @@ ${jsxBody}
         const rs = parseInt(cell.getAttribute('rowspan') || '1', 10);
         if (rs > 1) {
           if (cell.classList.contains('cb-col')) return;
-          if (!cell.dataset.vocKey) cell.dataset.vocKey = 'col-' + (colCounter++);
+          if (!cell.dataset.vocKey) cell.dataset.vocKey = 'col-' + (counters.col++);
         } else if (cs > 1) {
-          if (!cell.dataset.vocKey) cell.dataset.vocKey = 'grp-' + (grpCounter++);
+          if (!cell.dataset.vocKey) cell.dataset.vocKey = 'grp-' + (counters.grp++);
         } else {
-          if (!cell.dataset.vocKey) cell.dataset.vocKey = 'col-' + (colCounter++);
+          if (!cell.dataset.vocKey) cell.dataset.vocKey = 'col-' + (counters.col++);
         }
       });
     }
@@ -1673,9 +1678,32 @@ ${jsxBody}
         if (th.classList.contains('scm-voc-added-col')) return;
         const cs = parseInt(th.getAttribute('colspan') || '1', 10);
         if (cs > 1) return;             // group cell — handled in groupTr pass
-        if (!th.dataset.vocKey) th.dataset.vocKey = 'col-' + (colCounter++);
+        if (!th.dataset.vocKey) th.dataset.vocKey = 'col-' + (counters.col++);
       });
     }
+  }
+  // 페이지 안 모든 테이블의 thead 에 voc-key 를 GLOBAL counter 로 stamp.
+  // voc/index.html scanEditTargets 가 hostMap 단위로 테이블을 묶고 (sticky-
+  // clone 과 body-table 페어 dedup), 그 host 들을 단일 colCounter/grpCounter
+  // 로 순회하는 것과 같은 결과를 만들기 위해 — host 별로 thead 가진 테이블
+  // 하나만 stamp 한다.
+  function _stampVocKeysOnAllTables(scope) {
+    const root = scope || document;
+    const main = root.querySelector('main') || root.body || root;
+    const allTables = [...main.querySelectorAll('.mp-table')];
+    if (!allTables.length) return;
+    const hostMap = new Map();
+    allTables.forEach((t) => {
+      const host = t.closest('.mp-table-host') || t;
+      if (!hostMap.has(host)) hostMap.set(host, []);
+      hostMap.get(host).push(t);
+    });
+    const counters = { col: 0, grp: 0 };
+    hostMap.forEach((tablesInHost) => {
+      const headTable = tablesInHost.find((t) => t.querySelector('thead')) || tablesInHost[0];
+      if (!headTable) return;
+      _stampVocKeysOnTable(headTable, counters);
+    });
   }
   // Mirror voc/index.html's applyHiddenCellsToIframe: for each hidden
   // selector targeting a column / group, mark th + tbody td + colgroup
@@ -2690,7 +2718,12 @@ ${jsxBody}
             return;
           }
         }
-        tables.forEach(_stampVocKeysOnTable);
+        // GLOBAL counter — voc/index.html scanEditTargets 가 모든 테이블에
+        // 걸쳐 단일 colCounter/grpCounter 를 쓴다. tables.forEach 로 per-
+        // table reset 하면 voc 가 저장한 selector 와 매칭이 안 돼 컬럼 너비/
+        // 숨김 적용이 누락됐던 것. _stampVocKeysOnAllTables 가 host 별로
+        // dedup + 단일 counter 로 stamp 해 voc 와 동일한 키링을 보장.
+        _stampVocKeysOnAllTables(document);
         if (Array.isArray(a.hidden) && a.hidden.length) {
           _applyHiddenCellsForVersion(a.hidden);
         }
