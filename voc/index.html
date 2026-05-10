@@ -2516,12 +2516,8 @@
       applied: {},
       draft: {},
       filter: 'page',
-      // default page → SKU 관리. PAGES 가 비어있더라도 (lnb.js 로드 타이밍 이슈
-      // 등 극단적 케이스) state.currentPage 는 항상 유효한 path 로 떨어져야 함 —
-      // 이게 없으면 navigateTo 에 undefined 가 들어가 iframe 이 영영 안 뜸.
-      currentPage: ((PAGES.find(function (p) { return p.path === '/demo/sku-management.html'; })
-                  || PAGES[0])
-                  || { path: '/demo/sku-management.html' }).path,
+      // default page → SKU 관리 (PAGES 에 있으면 그 path, 없으면 첫번째 fallback)
+      currentPage: (PAGES.find(function (p) { return p.path === '/demo/sku-management.html'; }) || PAGES[0]).path,
       iframeReady: false,
       view: 'list',            // 'list' | 'detail'
       selectedId: null,
@@ -2951,9 +2947,6 @@
     }
 
     function navigateTo(path) {
-      // path 가 undefined / 빈 문자열이면 default 로 폴백 — iframe.src = undefined
-      // 가 들어가면 브라우저가 load 이벤트를 안 쏴 로딩 오버레이가 영구 표시됨.
-      if (!path) path = '/demo/sku-management.html';
       state.currentPage = path;
       urlText.textContent = path;
       urlOpen.href = path;
@@ -2963,12 +2956,6 @@
       state.iframeReady = false;
       showLoading(true);
       iframe.src = path;
-      // Safety net — iframe load 이벤트가 어떤 이유로 안 떨어져도 (혹은 매우
-      // 늦게 떨어져도) 로딩 오버레이가 영구 표시되어 "데모 미리보기 안나옴" 증상이
-      // 나는 일이 없도록 6s 후 무조건 오버레이 해제. load 이벤트가 정상으로
-      // 떨어졌으면 이 시점엔 이미 꺼져 있어 noop.
-      if (state.__loadingTimer) clearTimeout(state.__loadingTimer);
-      state.__loadingTimer = setTimeout(() => showLoading(false), 6000);
     }
     function showLoading(on) { browserLoading.classList.toggle('is-on', !!on); }
 
