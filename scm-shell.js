@@ -128,13 +128,12 @@
       var bc = new BroadcastChannel('scm-voc-config');
       bc.addEventListener('message', function (e) {
         if (!e || !e.data || e.data.type !== 'config-changed') return;
-        // 다른 탭이 D1 / localStorage 갱신 → 우리 LNB 도 새로 mount.
-        // (단순 storage event 만으론 같은-탭 변경이 누락 가능 → BroadcastChannel
-        //  이 더 신뢰 가능.)
-        if (window.SCM_CONFIG_SYNC && window.SCM_CONFIG_SYNC.bootstrap) {
-          // bootstrap 다시 해서 D1 의 최신본 받음 (다른 탭이 푸시한 직후니까).
-          window.SCM_CONFIG_SYNC._refetch && window.SCM_CONFIG_SYNC._refetch();
-        }
+        // 다른 탭이 localStorage 를 갱신했음. broadcaster 는 push() 호출 직후
+        // 즉시 broadcast 하므로 그 시점 D1 PUT 은 아직 디바운스 (600ms) 중 —
+        // 이 시점에 _refetch (D1 GET) 하면 옛 D1 응답으로 방금 갱신된
+        // localStorage 를 덮어써 reorder 한 게 사라지는 race 발생.
+        // → broadcaster 가 이미 localStorage 에 NEW 값을 써놨으므로 LNB 만
+        //    localStorage 다시 읽어 re-mount 하면 충분. _refetch 하면 안 됨.
         var lnbs = document.querySelectorAll('.scm-lnb');
         if (window.SCM && SCM.lnb && SCM.lnb.mount) {
           lnbs.forEach(function (el) { try { el.innerHTML = ''; SCM.lnb.mount(el); } catch (_) {} });
