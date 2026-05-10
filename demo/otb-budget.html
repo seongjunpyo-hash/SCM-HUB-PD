@@ -461,9 +461,14 @@
     .mp-table tbody tr:last-child { border-bottom: 0; }
     .mp-table tbody tr td { border-bottom: 0; }
 
-    /* 그룹별 요약 테이블 — full-width (사용자 요청). 그룹 / 그룹명 / 브랜드
-       3 컬럼 분리, col-* 클래스 안 쓰고 자연 분포. */
-    .otb-summary-table { width: 100% !important; table-layout: auto; }
+    /* 두 테이블 (그룹별 요약 + 브랜드별 상세) 모두 full-width — col-* 클래스가
+       width 1% 로 잡혀 좁게 보이는 걸 100% 강제로 풀어 좌우 호스트 끝까지 채움.
+       사용자 요청: "그룹별 요약 / 브랜드 테이블 둘 다 전체 width". */
+    #otb-summary-table.mp-table,
+    #otb-detail-table.mp-table {
+      width: 100% !important;
+      table-layout: auto;
+    }
     .otb-summary-table th, .otb-summary-table td { white-space: nowrap; }
     .otb-summary-table .otb-total-hero__count-btn { font-weight: 500; }
 
