@@ -481,12 +481,25 @@
        1: No 48px, 2: 그룹 64px, 3: 그룹명 320px, 4: 브랜드 120px,
        5-17: 13 numeric 균등 (calc 로 잔여 폭 13등분 명시 — 마지막 col
        잉여 흡수 quirk 회피). */
-    #otb-summary-table.mp-table thead th:nth-child(1) { width: 48px !important; }
-    #otb-summary-table.mp-table thead th:nth-child(2) { width: 64px !important; }
-    #otb-summary-table.mp-table thead th:nth-child(3) { width: 320px !important; }
-    #otb-summary-table.mp-table thead th:nth-child(4) { width: 120px !important; }
+    /* width 만 박으면 dev-export 의 _applyColumnWidthsForVersion 이 사용자
+       저장 columnWidths 를 min-width / max-width 로 덮어쓸 때 clamp 발생.
+       width / min / max 모두 명시해 clamp 무력화. */
+    #otb-summary-table.mp-table thead th:nth-child(1) {
+      width: 48px !important; min-width: 48px !important; max-width: 48px !important;
+    }
+    #otb-summary-table.mp-table thead th:nth-child(2) {
+      width: 64px !important; min-width: 64px !important; max-width: 64px !important;
+    }
+    #otb-summary-table.mp-table thead th:nth-child(3) {
+      width: 320px !important; min-width: 320px !important; max-width: 320px !important;
+    }
+    #otb-summary-table.mp-table thead th:nth-child(4) {
+      width: 120px !important; min-width: 120px !important; max-width: 120px !important;
+    }
     #otb-summary-table.mp-table thead th:nth-child(n+5) {
       width: calc((100% - 552px) / 13) !important;
+      min-width: 0 !important;
+      max-width: none !important;
     }
     .otb-summary-table th, .otb-summary-table td { white-space: nowrap; }
     /* 그룹별 요약 테이블의 [N개 브랜드] 버튼 — scm-button 의 검정 보더가 너무
