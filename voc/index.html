@@ -3109,6 +3109,14 @@
         applyNativeComponentEdits();
         applyComponentOrderToIframe();
         applyEditCss();
+        // scm-table 가 iframe load 시 colgroup 의 col 들에 measured width 박음.
+        // applyEditCss 만으론 그 inline width 못 이김 (col.style.width 가 우선).
+        // 한 번 더 강제해줘야 columnWidths 프리셋이 살아남음 — 원래 적용/안적용
+        // 사이를 오가던 사용자 보고의 root cause. setupStickyThead 가 hidden 상태
+        // 에서 0-width return 후 RAF 로 늦게 재초기화되는 케이스도 있어 RAF 한
+        // 번 더 보강.
+        _applyColumnWidthsInline();
+        try { iframe.contentWindow.requestAnimationFrame(() => _applyColumnWidthsInline()); } catch {}
         applyBasicSettings();
         renderVersionSelect();
       });
