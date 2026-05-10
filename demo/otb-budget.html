@@ -784,11 +784,11 @@
                 <th style="text-align:center; width:120px;">브랜드</th>
                 <th class="cell-numeric">기초재고</th>
                 <th class="cell-numeric">입고재고(OTB)</th>
-                <th class="cell-numeric">YoY</th>
+                <th class="cell-numeric">전년대비(YoY)</th>
                 <th class="cell-numeric">GMV</th>
-                <th class="cell-numeric">YoY</th>
+                <th class="cell-numeric">전년대비(YoY)</th>
                 <th class="cell-numeric">출고원가</th>
-                <th class="cell-numeric">YoY</th>
+                <th class="cell-numeric">전년대비(YoY)</th>
                 <th class="cell-numeric">반품예정</th>
                 <th class="cell-numeric">COGS%</th>
                 <th class="cell-numeric">공급률</th>
@@ -866,11 +866,11 @@
                 <th class="col-medium col-frozen-3" style="text-align:left;">본부 / 실</th>
                 <th class="col-medium cell-numeric">기초재고 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg></th>
                 <th class="col-medium cell-numeric" data-sort-key="otb">입고재고(OTB) <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg></th>
-                <th class="col-auto cell-numeric">YoY</th>
+                <th class="col-auto cell-numeric">전년대비(YoY)</th>
                 <th class="col-medium cell-numeric" data-sort-key="gmv">GMV <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg></th>
-                <th class="col-auto cell-numeric">YoY</th>
+                <th class="col-auto cell-numeric">전년대비(YoY)</th>
                 <th class="col-medium cell-numeric" data-sort-key="cogs">출고원가 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg></th>
-                <th class="col-auto cell-numeric">YoY</th>
+                <th class="col-auto cell-numeric">전년대비(YoY)</th>
                 <th class="col-medium cell-numeric">반품예정</th>
                 <th class="col-auto cell-numeric">COGS%</th>
                 <th class="col-auto cell-numeric">공급률</th>
@@ -1286,7 +1286,7 @@
       html += '<tr class="is-group">'
         + '<td style="text-align:center;"><span class="otb-group-pill" data-g="' + it.g + '">' + it.g + '</span></td>'
         + '<td style="text-align:left;">' + groupLabels[it.g].name + '</td>'
-        + '<td style="text-align:center;"><button type="button" class="otb-total-hero__count-btn" data-otb-brand-list="' + it.g + '">'
+        + '<td style="text-align:center;"><button type="button" class="scm-button scm-button--sm" data-otb-brand-list="' + it.g + '">'
         + it.sub.length + '개 브랜드</button></td>'
         + summaryRowCells(it.agg)
         + '</tr>';
