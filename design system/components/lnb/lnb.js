@@ -570,10 +570,19 @@
         // Cross-L1 이동 지원 — anchor 는 el 전역에서 검색 (다른 L1 의 l2List 에
         // 있더라도 옮김). prepend 방식으로 ordered 항목이 TOP 에, placeholder /
         // unordered 항목은 BOTTOM 으로.
+        // **신규 페이지 anchor (data-voc-np-id 가짐) 는 cross-L1 이동 차단 —
+        // newpage entry 의 p.l1 이 source of truth 이고 _applyNewPagesToLnb
+        // 가 이미 그 위치에 박아둠. l2Order 의 stale 한 cross-L1 entry 따라
+        // 옮기면 voc/_buildMenuTree 가 보여주는 위치와 어긋남.** 캐노니컬 L2
+        // 는 p.l1 개념 없으므로 cross-L1 그대로 동작.
         arr.slice().reverse().forEach(function (l2key) {
           var anchor = el.querySelector('.scm-lnb-l2[data-key="' + l2key + '"]');
           if (!anchor) return;
-          if (anchor.parentNode !== l2List) anchor.parentNode.removeChild(anchor);
+          if (anchor.parentNode !== l2List) {
+            // 신규 페이지면 cross-L1 이동 안 함 (p.l1 우선).
+            if (anchor.dataset.vocNpId) return;
+            anchor.parentNode.removeChild(anchor);
+          }
           l2List.insertBefore(anchor, l2List.firstChild);
         });
       });
