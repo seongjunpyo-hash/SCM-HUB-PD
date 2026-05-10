@@ -43,6 +43,7 @@
     'scm:voc:menu-order:v1':   'menu-order',
     'scm:voc:menu-hidden:v1':  'menu-hidden',
     'scm:voc:menu-deleted:v1': 'menu-deleted',
+    'scm:voc:menu-icons:v1':   'menu-icons',
     'scm:voc:versions:v1':     'versions',
     'scm:voc:edits:v1':        'edits',
   };
