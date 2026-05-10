@@ -332,6 +332,24 @@
       margin-top: 6px;
       font-size: 12px; color: var(--ld-fg-lower);
     }
+    /* 전체 브랜드 카드의 플랫폼 chip 들 — 공통 / 무신사 / 29CM */
+    .otb-kpi__chips {
+      margin-top: 8px;
+      display: flex; gap: 6px; flex-wrap: wrap;
+    }
+    .otb-platform-chip {
+      appearance: none; cursor: pointer;
+      padding: 4px 10px;
+      border: 1px solid var(--ld-border);
+      border-radius: 999px;
+      background: #fff;
+      font-family: inherit; font-size: 12px; font-weight: 600;
+      color: var(--ld-fg);
+      letter-spacing: 0.1px;
+      transition: background 0.12s, border-color 0.12s;
+    }
+    .otb-platform-chip:hover { background: #F3F4F6; border-color: #1A1A1A; }
+    .otb-platform-chip span { color: var(--ld-fg-lower); font-weight: 500; margin-left: 2px; }
     /* 진행률 바 — 평균 집행률 KPI 안 */
     .otb-kpi__bar {
       margin-top: 10px; height: 5px;
@@ -1215,7 +1233,11 @@
       +   '<div class="otb-kpi otb-kpi--brands">'
       +     '<div class="otb-kpi__label">전체 브랜드</div>'
       +     '<div class="otb-kpi__value">' + list.length + '<span class="unit">개</span></div>'
-      +     '<div class="otb-kpi__sub"><button type="button" class="otb-total-hero__count-btn" data-otb-brand-list="all">전체 보기</button></div>'
+      +     '<div class="otb-kpi__chips">'
+      +       '<button type="button" class="otb-platform-chip" data-otb-brand-list="all">공통 <span>(' + list.length + ')</span></button>'
+      +       '<button type="button" class="otb-platform-chip" data-otb-brand-list="무신사">무신사 <span>(' + list.filter(function (b) { return b.platform === '무신사'; }).length + ')</span></button>'
+      +       '<button type="button" class="otb-platform-chip" data-otb-brand-list="29CM">29CM <span>(' + list.filter(function (b) { return b.platform === '29CM'; }).length + ')</span></button>'
+      +     '</div>'
       +   '</div>'
       +   '<div class="otb-kpi otb-kpi--budget">'
       +     '<div class="otb-kpi__label">총 예산 금액</div>'
@@ -1272,13 +1294,17 @@
     $('#otb-summary-body').innerHTML = html;
   }
 
-  // 그룹별 브랜드 리스트 모달 — hero 카드 / 테이블의 카운트 버튼 클릭 시 호출
+  // 그룹별 / 플랫폼별 브랜드 리스트 모달 — hero 카드 / 테이블의 카운트 버튼 클릭 시 호출.
+  // scopeKey: 'all' | 'G1'|'G2'|'G3' (그룹) | '무신사' | '29CM' (플랫폼)
   function openBrandListModal(scopeKey) {
     var list = filteredBrands();
     var brands, title;
     if (scopeKey === 'all') {
       brands = list;
       title = '전체 브랜드 (' + list.length + ')';
+    } else if (scopeKey === '무신사' || scopeKey === '29CM') {
+      brands = list.filter(function (b) { return b.platform === scopeKey; });
+      title = scopeKey + ' 브랜드 (' + brands.length + ')';
     } else {
       brands = list.filter(function (b) { return b.group === scopeKey; });
       title = '<span class="otb-group-pill" data-g="' + scopeKey + '">' + scopeKey + '</span> '
