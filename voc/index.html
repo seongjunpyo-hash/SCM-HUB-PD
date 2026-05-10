@@ -3798,8 +3798,63 @@
       applyColumnLabelsToIframe();
       applyCellTypesToIframe();
       applyEditCss();
+      _applyColumnWidthsInline();
       _setPreviewedColumn();
       refreshSaveBtn();
+    }
+    // 컬럼 너비 프리셋을 inline 으로 강제 — scm-table 이 <colgroup><col style="width:..">
+    // 박아 table-layout:fixed 에서 col 이 컬럼 폭 결정. CSS 만으론 col 의 inline
+    // width 못 이김. JS 로 th 의 column index 를 찾고 같은 인덱스의 col 들에 직접
+    // inline width 박기. (보조 / 본 테이블 / sticky thead 클론 모두 대상)
+    function _applyColumnWidthsInline() {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      const a = pageDraft();
+      const cw = a.columnWidths || {};
+      const keys = Object.keys(cw);
+      if (!keys.length) return;
+      keys.forEach((sel) => {
+        const preset = COLUMN_WIDTH_PRESETS[cw[sel]];
+        if (!preset) return;
+        let th;
+        try { th = doc.querySelector(sel); } catch { return; }
+        if (!th) return;
+        // th 의 column index — 같은 row 안 형제 중 위치.
+        const tr = th.closest('tr');
+        if (!tr) return;
+        const colIdx = Array.prototype.indexOf.call(tr.children, th);
+        if (colIdx < 0) return;
+        // 같은 mp-table-host 안의 모든 colgroup (본 테이블 + sticky thead 클론) 의
+        // 동일 인덱스 col 에 폭 적용.
+        const host = th.closest('.mp-table-host') || doc;
+        const colgroups = host.querySelectorAll('colgroup');
+        colgroups.forEach((cg) => {
+          const col = cg.children[colIdx];
+          if (!col) return;
+          if (preset.fixed) {
+            col.style.width = preset.fixed + 'px';
+            col.style.minWidth = preset.fixed + 'px';
+          } else if (preset.max) {
+            // max 만 강제 — 작은 콘텐츠도 max 까지 차도록 width=max + minWidth=min.
+            col.style.width = preset.max + 'px';
+            col.style.minWidth = preset.min + 'px';
+          } else {
+            // auto — minWidth 만 보장.
+            col.style.width = '';
+            col.style.minWidth = preset.min + 'px';
+          }
+        });
+        // th 자체에도 inline 으로 — scm-table 가 col 만 보지 않는 케이스 대비.
+        if (preset.fixed) {
+          th.style.width = preset.fixed + 'px';
+          th.style.minWidth = preset.fixed + 'px';
+          th.style.maxWidth = preset.fixed + 'px';
+        } else {
+          th.style.width = '';
+          th.style.minWidth = preset.min + 'px';
+          th.style.maxWidth = preset.max ? preset.max + 'px' : '';
+        }
+      });
     }
     // Components: show/hide, plus user-added components (appended to <main>)
     // and HTML overrides on native components. The hide rules + native
