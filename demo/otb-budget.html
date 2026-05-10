@@ -289,25 +289,19 @@
     .otb-legend-chip[data-kind="changed"] { background: var(--otb-changed-bg); color: var(--otb-changed-dot); }
     .otb-legend-chip[data-kind="new"]     { background: var(--ld-green-bg-light); color: var(--ld-green-500); }
 
-    /* === 전체 합계 hero 카드 (그룹별 요약 위) ===
-       각 그룹별로 col 분리 + 브랜드 카운트 클릭 → 모달 */
+    /* === 전체 합계 hero 카드 (그룹별 요약 위) === 사용자 요청: 전체만 노출. */
     .otb-total-hero {
-      display: grid;
-      grid-template-columns: minmax(260px, 1fr) repeat(3, minmax(180px, 1fr));
-      gap: 0;
       margin: 16px 0 8px;
-      border: 1px solid var(--ld-border);
       border-radius: 8px;
-      background: var(--ld-bg);
       overflow: hidden;
     }
     .otb-total-hero__cell {
-      padding: 16px 20px;
-      border-right: 1px solid var(--ld-border);
-      display: flex; flex-direction: column; gap: 6px;
-      background: var(--ld-bg);
+      padding: 20px 24px;
+      display: grid;
+      grid-template-columns: minmax(280px, 1.2fr) 1.5fr;
+      gap: 16px 32px;
+      align-items: start;
     }
-    .otb-total-hero__cell:last-child { border-right: 0; }
     .otb-total-hero__cell--all {
       background: linear-gradient(135deg, #1A1A1A, #2D2D2D);
       color: #fff;
@@ -1174,10 +1168,8 @@
         +   '</dl>'
         + '</div>';
     }
-    var heroHtml = heroCell({ isAll: true, count: list.length, agg: total })
-      + groups.map(function (it) {
-          return heroCell({ g: it.g, label: groupLabels[it.g].name, count: it.sub.length, agg: it.agg });
-        }).join('');
+    // 사용자 요청: 그룹별은 아래 테이블에 이미 있으므로 hero 카드는 [전체] 만.
+    var heroHtml = heroCell({ isAll: true, count: list.length, agg: total });
     var heroEl = $('#otb-total-hero');
     if (heroEl) heroEl.innerHTML = heroHtml;
 
