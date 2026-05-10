@@ -289,76 +289,120 @@
     .otb-legend-chip[data-kind="changed"] { background: var(--otb-changed-bg); color: var(--otb-changed-dot); }
     .otb-legend-chip[data-kind="new"]     { background: var(--ld-green-bg-light); color: var(--ld-green-500); }
 
-    /* === 전체 합계 hero 카드 (그룹별 요약 위) === 사용자 요청: 전체만 노출. */
-    .otb-total-hero {
+    /* === 전체 합계 hero 카드 (그룹별 요약 위) === 사용자 요청: 깔끔한 white
+       디자인으로. 상단 KPI 4개 (총예산/누적소진/잔여예산/집행률) + 하단 detail
+       metric 10개 (기초재고~재고일수). */
+    .otb-hero {
       margin: 16px 0 8px;
+      padding: 20px 24px 4px;
+      border: 1px solid var(--ld-border);
       border-radius: 8px;
+      background: #fff;
+    }
+    .otb-hero__head {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 14px;
+    }
+    .otb-hero__head h3 {
+      margin: 0; font-size: 14px; font-weight: 600;
+      color: var(--ld-fg);
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .otb-hero__head .otb-total-hero__count-btn { font-weight: 500; }
+    .otb-hero__kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .otb-kpi {
+      padding: 14px 16px;
+      border: 1px solid var(--ld-border);
+      border-radius: 6px;
+      background: var(--ld-bg-low);
+      position: relative;
       overflow: hidden;
     }
-    .otb-total-hero__cell {
-      padding: 20px 24px;
-      display: grid;
-      grid-template-columns: minmax(280px, 1.2fr) 1.5fr;
-      gap: 16px 32px;
-      align-items: start;
+    .otb-kpi::before {
+      content: '';
+      position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+      background: var(--ld-accent, #245EFF);
     }
-    .otb-total-hero__cell--all {
-      background: linear-gradient(135deg, #1A1A1A, #2D2D2D);
-      color: #fff;
-    }
-    .otb-total-hero__cell--all .otb-total-hero__label,
-    .otb-total-hero__cell--all .otb-total-hero__sub { color: rgba(255,255,255,0.7); }
-    .otb-total-hero__label {
-      font-size: 11px; font-weight: 600; letter-spacing: 0.4px;
-      text-transform: uppercase;
+    .otb-kpi--budget::before    { background: #245EFF; }
+    .otb-kpi--consumed::before  { background: #B07825; }
+    .otb-kpi--remaining::before { background: #1A6B1A; }
+    .otb-kpi--rate::before      { background: #6B5BD6; }
+    .otb-kpi__label {
+      font-size: 11px; font-weight: 600;
       color: var(--ld-fg-lower);
-      display: flex; align-items: center; gap: 8px;
+      letter-spacing: 0.2px;
+      margin-bottom: 6px;
     }
-    .otb-total-hero__label .otb-group-pill { font-size: 10px; padding: 1px 7px; }
-    .otb-total-hero__count-btn {
-      appearance: none; border: 1px solid var(--ld-border);
-      background: var(--ld-bg);
-      padding: 2px 9px; border-radius: 999px;
-      font-family: inherit; font-size: 11px; font-weight: 600;
-      color: var(--ld-fg);
-      cursor: pointer;
-      transition: background 0.12s, border-color 0.12s;
-    }
-    .otb-total-hero__count-btn:hover { background: #F3F4F6; border-color: #1A1A1A; }
-    .otb-total-hero__cell--all .otb-total-hero__count-btn {
-      border-color: rgba(255,255,255,0.35);
-      background: rgba(255,255,255,0.08);
-      color: #fff;
-    }
-    .otb-total-hero__cell--all .otb-total-hero__count-btn:hover {
-      background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.6);
-    }
-    .otb-total-hero__primary {
-      font-size: 22px; font-weight: 700; line-height: 1.2;
+    .otb-kpi__value {
+      font-size: 22px; font-weight: 700;
       letter-spacing: -0.4px;
       font-variant-numeric: tabular-nums;
+      color: var(--ld-fg);
+      line-height: 1.15;
     }
-    .otb-total-hero__primary .unit { font-size: 13px; font-weight: 500; margin-left: 2px; opacity: 0.7; }
-    .otb-total-hero__metrics {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px;
+    .otb-kpi__value .unit {
+      font-size: 12px; font-weight: 500;
+      color: var(--ld-fg-lower);
+      margin-left: 3px;
+    }
+    .otb-kpi__sub {
       margin-top: 4px;
-      font-size: 11.5px;
+      font-size: 11px; color: var(--ld-fg-lower);
     }
-    .otb-total-hero__metrics dt {
-      color: inherit; opacity: 0.65; font-weight: 500;
+    /* 진행률 바 — 평균 집행률 KPI 안 */
+    .otb-kpi__bar {
+      margin-top: 8px; height: 4px;
+      background: var(--ld-gray-200, #E5E7EB);
+      border-radius: 999px; overflow: hidden;
     }
-    .otb-total-hero__metrics dd {
-      margin: 0;
-      font-weight: 600;
+    .otb-kpi__bar > span {
+      display: block; height: 100%;
+      background: linear-gradient(90deg, #6B5BD6, #245EFF);
+      border-radius: 999px;
+    }
+
+    /* 그룹 전체 합계 — 가로 metric 행 */
+    .otb-hero__metrics-title {
+      font-size: 11px; font-weight: 600;
+      color: var(--ld-fg-lower);
+      letter-spacing: 0.4px; text-transform: uppercase;
+      margin: 0 0 10px;
+      padding-top: 14px;
+      border-top: 1px solid var(--ld-border);
+    }
+    .otb-hero__metrics {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      padding-bottom: 16px;
+    }
+    .otb-metric {
+      padding: 8px 12px;
+      border-left: 1px solid var(--ld-border);
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .otb-metric:first-child { border-left: 0; padding-left: 0; }
+    .otb-metric__label {
+      font-size: 11px; color: var(--ld-fg-lower);
+      font-weight: 500;
+    }
+    .otb-metric__value {
+      font-size: 14px; font-weight: 700;
       font-variant-numeric: tabular-nums;
-      text-align: right;
+      color: var(--ld-fg);
+      display: flex; align-items: baseline; gap: 6px;
     }
-    .otb-total-hero__metrics dd .otb-yoy-pos { color: #1A6B1A; }
-    .otb-total-hero__cell--all .otb-total-hero__metrics dd .otb-yoy-pos { color: #6FE8A4; }
-    .otb-total-hero__metrics dd .otb-yoy-neg { color: #B00; }
-    .otb-total-hero__cell--all .otb-total-hero__metrics dd .otb-yoy-neg { color: #FF8A8A; }
-    .otb-total-hero__metrics dd .otb-yoy-neutral { color: #888; }
-    .otb-total-hero__sub { font-size: 11px; color: var(--ld-fg-lower); }
+    .otb-metric__value .yoy {
+      font-size: 11px; font-weight: 600;
+    }
+    .otb-metric__value .yoy.otb-yoy-pos { color: #1A6B1A; }
+    .otb-metric__value .yoy.otb-yoy-neg { color: #B00; }
+    .otb-metric__value .yoy.otb-yoy-neutral { color: #888; }
 
     /* 브랜드 리스트 모달 (그룹별 브랜드 확인) */
     .otb-brand-list-backdrop {
@@ -703,7 +747,7 @@
     <!-- ============== 전체 합계 hero 카드 (사용자 요청 — 상단 강조) ==============
          전체 + G1/G2/G3 4분할. 각 셀 브랜드 카운트 클릭 → 모달 (해당 그룹 브랜드 리스트). -->
     <section class="otb-section" id="otb-total-hero-section">
-      <div class="otb-total-hero" id="otb-total-hero"></div>
+      <div class="otb-hero" id="otb-total-hero"></div>
     </section>
 
     <!-- ============== 그룹별 요약 ============== -->
@@ -1141,35 +1185,70 @@
       return { g: g, sub: sub, agg: aggregate(sub) };
     });
 
-    // 전체 합계 hero 카드 — 전체 + G1/G2/G3 col 분리, 각 카운트 버튼 → 모달
-    function heroCell(opts) {
-      var labelHtml = opts.isAll
-        ? '<span>전체</span>'
-        : '<span class="otb-group-pill" data-g="' + opts.g + '">' + opts.g + '</span><span>' + escapeHtml(opts.label) + '</span>';
-      var otbYoY  = calcYoY(opts.agg.otb,  opts.agg.prevOtb);
-      var gmvYoY  = calcYoY(opts.agg.gmv,  opts.agg.prevGmv);
-      var cogsYoY = calcYoY(opts.agg.cogs, opts.agg.prevCogs);
-      var modifier = opts.isAll ? ' otb-total-hero__cell--all' : '';
-      var dataAttr = opts.isAll ? 'all' : opts.g;
-      return ''
-        + '<div class="otb-total-hero__cell' + modifier + '" data-hero-cell="' + dataAttr + '">'
-        +   '<div class="otb-total-hero__label">' + labelHtml
-        +     '<button type="button" class="otb-total-hero__count-btn" data-otb-brand-list="' + dataAttr + '" title="브랜드 리스트 보기">'
-        +       opts.count + '개 브랜드'
-        +     '</button>'
-        +   '</div>'
-        +   '<div class="otb-total-hero__primary">' + fmt(opts.agg.otb) + '<span class="unit">백만원</span></div>'
-        +   '<div class="otb-total-hero__sub">OTB 기준</div>'
-        +   '<dl class="otb-total-hero__metrics">'
-        +     '<dt>GMV</dt><dd>' + fmt(opts.agg.gmv) + ' <span style="font-weight:500; opacity:0.6;">(' + (gmvYoY === null ? '-' : (gmvYoY > 0 ? '+' : '') + gmvYoY + '%') + ')</span></dd>'
-        +     '<dt>출고원가</dt><dd>' + fmt(opts.agg.cogs) + ' <span style="font-weight:500; opacity:0.6;">(' + (cogsYoY === null ? '-' : (cogsYoY > 0 ? '+' : '') + cogsYoY + '%') + ')</span></dd>'
-        +     '<dt>COGS%</dt><dd>' + fmtPct(opts.agg.cogsPct) + '</dd>'
-        +     '<dt>기말재고</dt><dd>' + fmt(opts.agg.final) + '</dd>'
-        +   '</dl>'
+    // KPI 4종 — 총예산 / 누적소진 / 잔여예산 / 평균집행률
+    var totalBudget = total.otb;                // 입고재고 (OTB) = 총 예산
+    var consumed    = total.cogs;               // 출고원가 = 누적 소진
+    var remaining   = totalBudget - consumed;   // 잔여
+    var execRate    = totalBudget > 0 ? (consumed / totalBudget) * 100 : 0;
+    var execRateClamped = Math.max(0, Math.min(100, execRate));
+
+    function metric(label, value, yoyVal) {
+      var yoyHtml = '';
+      if (yoyVal !== undefined && yoyVal !== null) {
+        var cls = yoyVal > 0 ? 'otb-yoy-pos' : (yoyVal < 0 ? 'otb-yoy-neg' : 'otb-yoy-neutral');
+        var sign = yoyVal > 0 ? '+' : '';
+        yoyHtml = '<span class="yoy ' + cls + '">' + sign + yoyVal + '%</span>';
+      }
+      return '<div class="otb-metric">'
+        +   '<span class="otb-metric__label">' + label + '</span>'
+        +   '<span class="otb-metric__value">' + value + yoyHtml + '</span>'
         + '</div>';
     }
-    // 사용자 요청: 그룹별은 아래 테이블에 이미 있으므로 hero 카드는 [전체] 만.
-    var heroHtml = heroCell({ isAll: true, count: list.length, agg: total });
+    var otbYoY  = calcYoY(total.otb,  total.prevOtb);
+    var gmvYoY  = calcYoY(total.gmv,  total.prevGmv);
+    var cogsYoY = calcYoY(total.cogs, total.prevCogs);
+
+    var heroHtml = ''
+      + '<header class="otb-hero__head">'
+      +   '<h3>전체 <button type="button" class="otb-total-hero__count-btn" data-otb-brand-list="all">' + list.length + '개 브랜드</button></h3>'
+      + '</header>'
+      // KPI 4 카드
+      + '<div class="otb-hero__kpis">'
+      +   '<div class="otb-kpi otb-kpi--budget">'
+      +     '<div class="otb-kpi__label">총 예산 금액</div>'
+      +     '<div class="otb-kpi__value">' + fmt(totalBudget) + '<span class="unit">백만원</span></div>'
+      +     '<div class="otb-kpi__sub">입고재고 (OTB) 기준</div>'
+      +   '</div>'
+      +   '<div class="otb-kpi otb-kpi--consumed">'
+      +     '<div class="otb-kpi__label">누적 입고 소진액</div>'
+      +     '<div class="otb-kpi__value">' + fmt(consumed) + '<span class="unit">백만원</span></div>'
+      +     '<div class="otb-kpi__sub">출고원가 누적</div>'
+      +   '</div>'
+      +   '<div class="otb-kpi otb-kpi--remaining">'
+      +     '<div class="otb-kpi__label">총 잔여 예산</div>'
+      +     '<div class="otb-kpi__value">' + fmt(remaining) + '<span class="unit">백만원</span></div>'
+      +     '<div class="otb-kpi__sub">예산 - 누적 소진</div>'
+      +   '</div>'
+      +   '<div class="otb-kpi otb-kpi--rate">'
+      +     '<div class="otb-kpi__label">평균 입고 집행률</div>'
+      +     '<div class="otb-kpi__value">' + fmtPct(execRate) + '</div>'
+      +     '<div class="otb-kpi__bar"><span style="width: ' + execRateClamped + '%;"></span></div>'
+      +   '</div>'
+      + '</div>'
+      // 그룹 전체 합계 — 가로 metric 10종
+      + '<div class="otb-hero__metrics-title">그룹 전체 합계</div>'
+      + '<div class="otb-hero__metrics">'
+      +   metric('기초재고',     fmt(total.base))
+      +   metric('입고재고(OTB)', fmt(total.otb), otbYoY)
+      +   metric('GMV',          fmt(total.gmv), gmvYoY)
+      +   metric('출고원가',     fmt(total.cogs), cogsYoY)
+      +   metric('반품예정',     fmt(total.ret))
+      +   metric('COGS%',        fmtPct(total.cogsPct))
+      +   metric('공급률',       fmtPct(total.supplyPct))
+      +   metric('기말재고',     fmt(total.final))
+      +   metric('소진율',       fmtPct(total.turnover))
+      +   metric('재고일수',     total.stockDays + '일')
+      + '</div>';
     var heroEl = $('#otb-total-hero');
     if (heroEl) heroEl.innerHTML = heroHtml;
 
