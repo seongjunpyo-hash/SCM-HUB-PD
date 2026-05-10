@@ -364,35 +364,36 @@
       padding: 16px 20px;
     }
     .otb-hero__metrics-title {
-      font-size: 13px; font-weight: 600;
+      font-size: 15px; font-weight: 600;
       color: var(--ld-fg);
-      margin: 0 0 12px;
+      margin: 0 0 14px;
     }
     .otb-hero__metrics {
       display: grid;
       grid-template-columns: repeat(10, minmax(0, 1fr));
-      gap: 8px;
+      gap: 10px;
     }
     .otb-metric {
-      padding: 6px 12px;
+      padding: 8px 14px;
       border-left: 1px solid var(--ld-border);
-      display: flex; flex-direction: column; gap: 4px;
+      display: flex; flex-direction: column; gap: 6px;
       min-width: 0;
     }
     .otb-metric:first-child { border-left: 0; padding-left: 0; }
     .otb-metric__label {
-      font-size: 12px; color: var(--ld-fg-lower);
+      font-size: 13px; color: var(--ld-fg-lower);
       font-weight: 500;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .otb-metric__value {
-      font-size: 15px; font-weight: 700;
+      font-size: 19px; font-weight: 700;
+      letter-spacing: -0.2px;
       font-variant-numeric: tabular-nums;
       color: var(--ld-fg);
-      display: flex; align-items: baseline; gap: 5px; flex-wrap: wrap;
+      display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap;
     }
     .otb-metric__value .yoy {
-      font-size: 12px; font-weight: 600;
+      font-size: 13px; font-weight: 600;
     }
     .otb-metric__value .yoy.otb-yoy-pos { color: #1A6B1A; }
     .otb-metric__value .yoy.otb-yoy-neg { color: #B00; }
