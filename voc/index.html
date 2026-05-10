@@ -7274,8 +7274,35 @@
           });
         }
       });
-      // 3. 사용자 저장 순서 적용
+      // 3. Cross-L1 reassignment from l2Order — l2Order[Lx] 가 다른 L1 의 native
+      //    L2 key 를 포함하면 그 L2 는 Lx 로 이동. lnb.js 의 _applyMenuOrderToLnb
+      //    가 anchor 를 다른 L1 의 l2List 로 물리적으로 옮기는 동작 (PR #164)
+      //    과 일치. 이전엔 LNB 만 cross-L1 적용되어 VOC 메뉴관리 화면이 LNB 와
+      //    다르게 보이던 회귀 fix — 사용자가 SKU 를 스토어로 드래그하면 LNB 는
+      //    옮겨지는데 VOC 메뉴관리는 상품관리에 그대로 남던 문제.
       const ord = state.menuOrder || {};
+      if (ord.l2Order && typeof ord.l2Order === 'object') {
+        const reassign = {};   // l2key → targetL1
+        Object.keys(ord.l2Order).forEach((targetL1) => {
+          const arr = ord.l2Order[targetL1];
+          if (!Array.isArray(arr) || !groups[targetL1]) return;
+          arr.forEach((l2key) => { reassign[l2key] = targetL1; });
+        });
+        // 모든 children 을 한번에 모으고 reassign 에 따라 재분배.
+        // (NEW page entry 는 p.l1 이 이미 targetL1 로 갱신되어 있어 같은 L1
+        //  으로 reassign 되므로 변동 없음 — 안전.)
+        const allChildren = [];
+        Object.keys(groups).forEach((l1) => {
+          groups[l1].children.forEach((c) => allChildren.push({ child: c, originL1: l1 }));
+          groups[l1].children = [];
+        });
+        allChildren.forEach((entry) => {
+          const target = reassign[entry.child.key];
+          const dest = (target && groups[target]) ? target : entry.originL1;
+          groups[dest].children.push(entry.child);
+        });
+      }
+      // 4. 사용자 저장 순서 적용
       const allL1 = [...canonicalL1Order, ...newL1Order];
       const orderL1 = Array.isArray(ord.l1Order) ? ord.l1Order.filter((k) => groups[k]) : [];
       const seenL1 = new Set(orderL1);
