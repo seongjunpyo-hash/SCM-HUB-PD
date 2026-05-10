@@ -615,9 +615,17 @@
       if (!item) return;
       var iconSpan = item.querySelector('.scm-lnb-row > .scm-lnb-icon');
       if (!iconSpan) return;
-      // sprite 의 use href 로 교체. viewBox 24x24 (LNB icon 기본 사이즈) 로
-      // 통일 — sprite 안 심볼들은 자체 viewBox 가 있어 use 가 자동 스케일링.
-      iconSpan.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#' + iconId + '"/></svg>';
+      // 심볼의 네이티브 viewBox 를 그대로 사용 — 다른 viewBox (예: 20x20) 를
+      // canonical 24x24 컨테이너로 강제 scale 하면 stroke-width 도 같이
+      // scale 되어 굵게 보이는 문제 (사용자 보고). width/height 는 viewBox
+      // 의 너비/높이 그대로 inline style 로 강제 (lnb.css 의 svg{width:24px}
+      // 보다 우선). .scm-lnb-icon (24x24) 안에서 더 작은 아이콘은 자동 center.
+      var sym = document.getElementById(iconId);
+      var vb = (sym && sym.getAttribute('viewBox')) || '0 0 24 24';
+      var parts = vb.split(/\s+/);
+      var w = parseFloat(parts[2]) || 24;
+      var h = parseFloat(parts[3]) || 24;
+      iconSpan.innerHTML = '<svg viewBox="' + vb + '" style="width:' + w + 'px;height:' + h + 'px;" aria-hidden="true"><use href="#' + iconId + '"/></svg>';
     });
   }
 
