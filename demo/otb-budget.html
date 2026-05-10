@@ -833,23 +833,22 @@
               <col style="width:64px;">
               <col style="width:320px;">
               <col style="width:120px;">
-              <!-- 13 numeric cols — 명시 calc 로 잔여 폭 13 등분.
-                   (col 들에 width 미지정 시 last col 이 잉여를 흡수하는
-                   브라우저 quirk 가 사용자 보고됨 → 명시 박음.)
-                   552 = 48+64+320+120 (앞 4 cols 합계). -->
-              <col style="width:calc((100% - 552px) / 13);">
-              <col style="width:calc((100% - 552px) / 13);">
-              <col style="width:calc((100% - 552px) / 13);">
-              <col style="width:calc((100% - 552px) / 13);">
-              <col style="width:calc((100% - 552px) / 13);">
-              <col style="width:calc((100% - 552px) / 13);">
-              <col style="width:calc((100% - 552px) / 13);">
-              <col style="width:calc((100% - 552px) / 13);">
-              <col style="width:calc((100% - 552px) / 13);">
-              <col style="width:calc((100% - 552px) / 13);">
-              <col style="width:calc((100% - 552px) / 13);">
-              <col style="width:calc((100% - 552px) / 13);">
-              <col style="width:calc((100% - 552px) / 13);">
+              <!-- 13 numeric cols — 같은 px 폭으로 명시 박아 마지막 col 잉여
+                   흡수 quirk 회피. 디테일 테이블처럼 끝에 col-spacer (auto) 를
+                   둬 calc rounding 의 잉여 1-2px 도 그쪽으로 보냄. -->
+              <col style="width:calc((100% - 552px - 1px) / 13);">
+              <col style="width:calc((100% - 552px - 1px) / 13);">
+              <col style="width:calc((100% - 552px - 1px) / 13);">
+              <col style="width:calc((100% - 552px - 1px) / 13);">
+              <col style="width:calc((100% - 552px - 1px) / 13);">
+              <col style="width:calc((100% - 552px - 1px) / 13);">
+              <col style="width:calc((100% - 552px - 1px) / 13);">
+              <col style="width:calc((100% - 552px - 1px) / 13);">
+              <col style="width:calc((100% - 552px - 1px) / 13);">
+              <col style="width:calc((100% - 552px - 1px) / 13);">
+              <col style="width:calc((100% - 552px - 1px) / 13);">
+              <col style="width:calc((100% - 552px - 1px) / 13);">
+              <col style="width:calc((100% - 552px - 1px) / 13);">
             </colgroup>
             <thead>
               <tr>
