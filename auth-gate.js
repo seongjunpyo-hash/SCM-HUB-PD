@@ -37,6 +37,31 @@ try {
     { test: function (p) { return p === '/voc/' || p.indexOf('/voc/') === 0; }, allow: ['super', 'admin'] },
   ];
 
+  // iframe 안에서 부모가 같은-origin 으로 이미 인증돼 있으면 그 인증을 그대로 채택.
+  // VOC 의 데모 미리보기 iframe 처럼 부모-자식이 같은 origin 인 경우 cookie /
+  // 캐시 race 로 인해 자식의 /api/auth/me 가 일시적으로 {user:null} 을 받아
+  // /login.html 로 redirect → login.html 은 부모 세션을 보고 다시 자식 path 로
+  // location.replace → ERR_TOO_MANY_REDIRECTS 루프가 발생할 수 있음. 부모가
+  // 이미 인증돼 있다면 자식이 굳이 /api/auth/me 를 다시 칠 필요 없이 부모의
+  // SCM_USER 를 채택하면 루프가 원천 차단됨. cross-origin 부모면 접근 시 throw
+  // 라 catch 로 무시 → 정상 fetch 흐름으로 폴백.
+  try {
+    if (window.parent && window.parent !== window && window.parent.SCM_USER) {
+      var parentUser = window.parent.SCM_USER;
+      // role 규칙은 자식 path 기준으로 적용 — 부모가 super 라도 자식이 권한 밖
+      // 경로면 DEFAULT_LANDING 으로 보냄 (정책 일관).
+      for (var ri = 0; ri < ROLE_RULES.length; ri++) {
+        if (ROLE_RULES[ri].test(location.pathname) && ROLE_RULES[ri].allow.indexOf(parentUser.role) === -1) {
+          location.replace(DEFAULT_LANDING);
+          return;
+        }
+      }
+      window.SCM_USER = parentUser;
+      document.dispatchEvent(new CustomEvent('scm:auth-ready', { detail: { user: parentUser } }));
+      return;
+    }
+  } catch (_) { /* cross-origin parent — 정상 fetch 흐름으로 */ }
+
   fetch('/api/auth/me', { credentials: 'same-origin', cache: 'no-store' })
     .then(function (r) { return r.json().catch(function () { return {}; }); })
     .then(function (data) {
