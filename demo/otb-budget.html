@@ -62,9 +62,8 @@
 
     .app { display: grid; grid-template-columns: var(--scm-lnb-width) minmax(0, 1fr); transition: grid-template-columns 0.2s ease; }
 
-    /* padding-bottom — sticky bottom 결재선 bar (.otb-approval-bar) 가
-       마지막 행을 가리지 않도록 여유 확보. */
-    main { min-width: 0; padding: 0 28px 100px; }
+    /* 결재선 bar 가 hidden 이라 padding-bottom 여유 작게. */
+    main { min-width: 0; padding: 0 28px 40px; }
 
     /* sticky stack */
     .scm-filter-bar { top: var(--scm-sticky-gnb); }
@@ -290,6 +289,139 @@
     .otb-legend-chip[data-kind="changed"] { background: var(--otb-changed-bg); color: var(--otb-changed-dot); }
     .otb-legend-chip[data-kind="new"]     { background: var(--ld-green-bg-light); color: var(--ld-green-500); }
 
+    /* === 전체 합계 hero 카드 (그룹별 요약 위) ===
+       각 그룹별로 col 분리 + 브랜드 카운트 클릭 → 모달 */
+    .otb-total-hero {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) repeat(3, minmax(180px, 1fr));
+      gap: 0;
+      margin: 16px 0 8px;
+      border: 1px solid var(--ld-border);
+      border-radius: 8px;
+      background: var(--ld-bg);
+      overflow: hidden;
+    }
+    .otb-total-hero__cell {
+      padding: 16px 20px;
+      border-right: 1px solid var(--ld-border);
+      display: flex; flex-direction: column; gap: 6px;
+      background: var(--ld-bg);
+    }
+    .otb-total-hero__cell:last-child { border-right: 0; }
+    .otb-total-hero__cell--all {
+      background: linear-gradient(135deg, #1A1A1A, #2D2D2D);
+      color: #fff;
+    }
+    .otb-total-hero__cell--all .otb-total-hero__label,
+    .otb-total-hero__cell--all .otb-total-hero__sub { color: rgba(255,255,255,0.7); }
+    .otb-total-hero__label {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.4px;
+      text-transform: uppercase;
+      color: var(--ld-fg-lower);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .otb-total-hero__label .otb-group-pill { font-size: 10px; padding: 1px 7px; }
+    .otb-total-hero__count-btn {
+      appearance: none; border: 1px solid var(--ld-border);
+      background: var(--ld-bg);
+      padding: 2px 9px; border-radius: 999px;
+      font-family: inherit; font-size: 11px; font-weight: 600;
+      color: var(--ld-fg);
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s;
+    }
+    .otb-total-hero__count-btn:hover { background: #F3F4F6; border-color: #1A1A1A; }
+    .otb-total-hero__cell--all .otb-total-hero__count-btn {
+      border-color: rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+    }
+    .otb-total-hero__cell--all .otb-total-hero__count-btn:hover {
+      background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.6);
+    }
+    .otb-total-hero__primary {
+      font-size: 22px; font-weight: 700; line-height: 1.2;
+      letter-spacing: -0.4px;
+      font-variant-numeric: tabular-nums;
+    }
+    .otb-total-hero__primary .unit { font-size: 13px; font-weight: 500; margin-left: 2px; opacity: 0.7; }
+    .otb-total-hero__metrics {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px;
+      margin-top: 4px;
+      font-size: 11.5px;
+    }
+    .otb-total-hero__metrics dt {
+      color: inherit; opacity: 0.65; font-weight: 500;
+    }
+    .otb-total-hero__metrics dd {
+      margin: 0;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+    .otb-total-hero__metrics dd .otb-yoy-pos { color: #1A6B1A; }
+    .otb-total-hero__cell--all .otb-total-hero__metrics dd .otb-yoy-pos { color: #6FE8A4; }
+    .otb-total-hero__metrics dd .otb-yoy-neg { color: #B00; }
+    .otb-total-hero__cell--all .otb-total-hero__metrics dd .otb-yoy-neg { color: #FF8A8A; }
+    .otb-total-hero__metrics dd .otb-yoy-neutral { color: #888; }
+    .otb-total-hero__sub { font-size: 11px; color: var(--ld-fg-lower); }
+
+    /* 브랜드 리스트 모달 (그룹별 브랜드 확인) */
+    .otb-brand-list-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 9000; backdrop-filter: blur(2px);
+    }
+    .otb-brand-list-backdrop[hidden] { display: none !important; }
+    .otb-brand-list-modal {
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: min(560px, 92vw);
+      max-height: 80vh;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 24px 56px rgba(0,0,0,0.32);
+      display: flex; flex-direction: column;
+      z-index: 9001;
+    }
+    .otb-brand-list-modal[hidden] { display: none !important; }
+    .otb-brand-list-modal__head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--ld-border);
+    }
+    .otb-brand-list-modal__head h3 {
+      margin: 0; font-size: 15px; font-weight: 600;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .otb-brand-list-modal__close {
+      width: 28px; height: 28px;
+      border: none; background: none;
+      font-size: 22px; line-height: 1; color: var(--ld-fg-lower);
+      cursor: pointer; border-radius: 4px;
+    }
+    .otb-brand-list-modal__close:hover { background: #F3F4F6; color: var(--ld-fg); }
+    .otb-brand-list-modal__body {
+      padding: 8px 0; overflow-y: auto; flex: 1; min-height: 0;
+    }
+    .otb-brand-list-modal__row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 16px; align-items: center;
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--ld-border);
+      font-size: 13px;
+    }
+    .otb-brand-list-modal__row:last-child { border-bottom: 0; }
+    .otb-brand-list-modal__row .name { font-weight: 500; }
+    .otb-brand-list-modal__row .meta { color: var(--ld-fg-lower); font-size: 11.5px; }
+    .otb-brand-list-modal__row .otb-num { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+    /* === Row 라인 — 두 테이블 모두 tbody tr 사이 보더 일관 적용 === */
+    .mp-table tbody tr { border-bottom: 1px solid var(--ld-border); }
+    .mp-table tbody tr:last-child { border-bottom: 0; }
+    .mp-table tbody tr td { border-bottom: 0; }
+
     /* === 섹션 간격 === */
     .otb-section { margin-top: 48px; }
     .otb-section:first-of-type { margin-top: 24px; }
@@ -312,6 +444,9 @@
     .otb-section__tools .scm-stats-bar__v-divider {
       width: 1px; height: 16px; background: var(--ld-border); margin: 0 4px;
     }
+    /* 사용자 요청: 결재선 bar 미노출. renderApproval() 의 inject target
+       (#otb-approval-line) 은 markup 에 그대로 둠 — 미존재 시 throw. */
+    .otb-approval-bar { display: none !important; }
     .otb-approval-bar {
       position: fixed;
       bottom: 0; left: var(--scm-lnb-width); right: 0;
@@ -571,35 +706,17 @@
       </button>
     </div>
 
-    <!-- ============== Stats bar ============== -->
-    <div class="scm-stats-bar scm-stats-bar--sticky">
-      <div class="scm-stats-bar__left">
-        <div class="scm-stats-bar__counts-wrap">
-          <div class="scm-stats-bar__counts">
-            <span class="scm-stat scm-stat--all">
-              <span class="scm-stat__label">브랜드</span>
-              <span class="scm-stat__num" id="otb-stat-total">13</span>
-            </span>
-            <span class="scm-stat">
-              <span class="scm-stat__label">신규</span>
-              <span class="scm-stat__num" id="otb-stat-new">2</span>
-            </span>
-            <span class="scm-stat">
-              <span class="scm-stat__label">변경</span>
-              <span class="scm-stat__num" id="otb-stat-changed">0</span>
-            </span>
-          </div>
-        </div>
-      </div>
-      <div class="scm-stats-bar__right">
-        <span style="font-size:13px; color:#666;">단위: 백만원 (VAT 제외)</span>
-      </div>
-    </div>
+    <!-- ============== 전체 합계 hero 카드 (사용자 요청 — 상단 강조) ==============
+         전체 + G1/G2/G3 4분할. 각 셀 브랜드 카운트 클릭 → 모달 (해당 그룹 브랜드 리스트). -->
+    <section class="otb-section" id="otb-total-hero-section">
+      <div class="otb-total-hero" id="otb-total-hero"></div>
+    </section>
 
     <!-- ============== 그룹별 요약 ============== -->
     <section class="otb-section">
       <div class="otb-section__head">
         <h2 class="otb-section__title">그룹별 요약</h2>
+        <span style="font-size:12px; color:var(--ld-fg-lower);">단위: 백만원 (VAT 제외)</span>
       </div>
       <div class="mp-table-host">
         <div class="mp-thead-sticky"><div class="mp-thead-scroll"></div></div>
@@ -632,7 +749,21 @@
     <!-- ============== 브랜드별 상세 ============== -->
     <section class="otb-section">
       <div class="otb-section__head">
-        <h2 class="otb-section__title">브랜드별 상세 (1P)</h2>
+        <!-- 사용자 요청: 타이틀 영역에 stats (브랜드 / 신규 / 변경) 컴포넌트 노출 -->
+        <div class="scm-stats-bar__counts" style="margin: 0;">
+          <span class="scm-stat scm-stat--all">
+            <span class="scm-stat__label">브랜드</span>
+            <span class="scm-stat__num" id="otb-stat-total">13</span>
+          </span>
+          <span class="scm-stat">
+            <span class="scm-stat__label">신규</span>
+            <span class="scm-stat__num" id="otb-stat-new">2</span>
+          </span>
+          <span class="scm-stat">
+            <span class="scm-stat__label">변경</span>
+            <span class="scm-stat__num" id="otb-stat-changed">0</span>
+          </span>
+        </div>
         <div class="otb-section__tools">
           <!-- 엑셀 업로드 / 다운로드 (둘 다 download-btn 스타일) -->
           <button class="scm-download-btn" type="button" id="otb-excel-up-btn">
@@ -733,6 +864,16 @@
     </button>
     <button class="scm-filter-drawer__apply" type="button">검색 적용</button>
   </footer>
+</aside>
+
+<!-- 그룹별 브랜드 리스트 모달 — hero 카드의 카운트 버튼 클릭 시 노출 -->
+<div class="otb-brand-list-backdrop" id="otb-brand-list-backdrop" hidden></div>
+<aside class="otb-brand-list-modal" id="otb-brand-list-modal" hidden role="dialog" aria-label="브랜드 리스트">
+  <header class="otb-brand-list-modal__head">
+    <h3 id="otb-brand-list-title">브랜드 리스트</h3>
+    <button type="button" class="otb-brand-list-modal__close" id="otb-brand-list-close" aria-label="닫기">×</button>
+  </header>
+  <div class="otb-brand-list-modal__body" id="otb-brand-list-body"></div>
 </aside>
 
 <!-- 모달 — SCM.confirmModal 사용 (자체 모달 제거됨) -->
@@ -1001,22 +1142,95 @@
   function renderSummary() {
     var list = filteredBrands();
     var total = aggregate(list);
-    var html = ''
-      + '<tr class="is-grand">'
-      + '<td style="text-align:left;">전체 합계 (1P · 무신사+29CM)</td>'
-      + summaryRowCells(total)
-      + '</tr>';
-    ['G1', 'G2', 'G3'].forEach(function (g) {
+    var groups = ['G1', 'G2', 'G3'].map(function (g) {
       var sub = list.filter(function (b) { return b.group === g; });
-      var agg = aggregate(sub);
+      return { g: g, sub: sub, agg: aggregate(sub) };
+    });
+
+    // 전체 합계 hero 카드 — 전체 + G1/G2/G3 col 분리, 각 카운트 버튼 → 모달
+    function heroCell(opts) {
+      var labelHtml = opts.isAll
+        ? '<span>전체</span>'
+        : '<span class="otb-group-pill" data-g="' + opts.g + '">' + opts.g + '</span><span>' + escapeHtml(opts.label) + '</span>';
+      var otbYoY  = calcYoY(opts.agg.otb,  opts.agg.prevOtb);
+      var gmvYoY  = calcYoY(opts.agg.gmv,  opts.agg.prevGmv);
+      var cogsYoY = calcYoY(opts.agg.cogs, opts.agg.prevCogs);
+      var modifier = opts.isAll ? ' otb-total-hero__cell--all' : '';
+      var dataAttr = opts.isAll ? 'all' : opts.g;
+      return ''
+        + '<div class="otb-total-hero__cell' + modifier + '" data-hero-cell="' + dataAttr + '">'
+        +   '<div class="otb-total-hero__label">' + labelHtml
+        +     '<button type="button" class="otb-total-hero__count-btn" data-otb-brand-list="' + dataAttr + '" title="브랜드 리스트 보기">'
+        +       opts.count + '개 브랜드'
+        +     '</button>'
+        +   '</div>'
+        +   '<div class="otb-total-hero__primary">' + fmt(opts.agg.otb) + '<span class="unit">백만원</span></div>'
+        +   '<div class="otb-total-hero__sub">OTB 기준</div>'
+        +   '<dl class="otb-total-hero__metrics">'
+        +     '<dt>GMV</dt><dd>' + fmt(opts.agg.gmv) + ' <span style="font-weight:500; opacity:0.6;">(' + (gmvYoY === null ? '-' : (gmvYoY > 0 ? '+' : '') + gmvYoY + '%') + ')</span></dd>'
+        +     '<dt>출고원가</dt><dd>' + fmt(opts.agg.cogs) + ' <span style="font-weight:500; opacity:0.6;">(' + (cogsYoY === null ? '-' : (cogsYoY > 0 ? '+' : '') + cogsYoY + '%') + ')</span></dd>'
+        +     '<dt>COGS%</dt><dd>' + fmtPct(opts.agg.cogsPct) + '</dd>'
+        +     '<dt>기말재고</dt><dd>' + fmt(opts.agg.final) + '</dd>'
+        +   '</dl>'
+        + '</div>';
+    }
+    var heroHtml = heroCell({ isAll: true, count: list.length, agg: total })
+      + groups.map(function (it) {
+          return heroCell({ g: it.g, label: groupLabels[it.g].name, count: it.sub.length, agg: it.agg });
+        }).join('');
+    var heroEl = $('#otb-total-hero');
+    if (heroEl) heroEl.innerHTML = heroHtml;
+
+    // 그룹별 요약 테이블 — G1/G2/G3 만 (전체 합계 row 는 hero 로 분리)
+    var html = '';
+    groups.forEach(function (it) {
       html += '<tr class="is-group">'
-        + '<td style="text-align:left;"><span class="otb-group-pill" data-g="' + g + '">' + g + '</span> '
-        + groupLabels[g].name
-        + ' <span style="color:#8A8A8A; font-weight:400; margin-left:4px;">· ' + sub.length + '개 브랜드</span></td>'
-        + summaryRowCells(agg)
+        + '<td style="text-align:left;"><span class="otb-group-pill" data-g="' + it.g + '">' + it.g + '</span> '
+        + groupLabels[it.g].name
+        + ' <button type="button" class="otb-total-hero__count-btn" data-otb-brand-list="' + it.g + '" style="margin-left:8px; font-weight:500;">'
+        + it.sub.length + '개 브랜드</button></td>'
+        + summaryRowCells(it.agg)
         + '</tr>';
     });
     $('#otb-summary-body').innerHTML = html;
+  }
+
+  // 그룹별 브랜드 리스트 모달 — hero 카드 / 테이블의 카운트 버튼 클릭 시 호출
+  function openBrandListModal(scopeKey) {
+    var list = filteredBrands();
+    var brands, title;
+    if (scopeKey === 'all') {
+      brands = list;
+      title = '전체 브랜드 (' + list.length + ')';
+    } else {
+      brands = list.filter(function (b) { return b.group === scopeKey; });
+      title = '<span class="otb-group-pill" data-g="' + scopeKey + '">' + scopeKey + '</span> '
+            + groupLabels[scopeKey].name + ' (' + brands.length + ')';
+    }
+    var titleEl = $('#otb-brand-list-title');
+    if (titleEl) titleEl.innerHTML = title;
+    var bodyEl = $('#otb-brand-list-body');
+    if (bodyEl) {
+      if (!brands.length) {
+        bodyEl.innerHTML = '<div style="padding:24px; text-align:center; color:#888;">해당 그룹에 브랜드가 없습니다.</div>';
+      } else {
+        bodyEl.innerHTML = brands.map(function (b) {
+          var newBadge = b.isNew ? '<span style="display:inline-block; padding:1px 6px; background:#E6F4EA; color:#1A6B1A; border-radius:3px; font-size:10px; font-weight:600; margin-left:6px;">신규</span>' : '';
+          return '<div class="otb-brand-list-modal__row">'
+            +   '<span class="name">' + escapeHtml(b.brand) + newBadge + '<div class="meta">' + escapeHtml(b.hq.replace('본부', '')) + ' / ' + escapeHtml(b.team) + '</div></span>'
+            +   '<span class="otb-num">OTB ' + fmt(b.otb) + '</span>'
+            +   '<span class="otb-num">GMV ' + fmt(b.gmv) + '</span>'
+            + '</div>';
+        }).join('');
+      }
+    }
+    $('#otb-brand-list-backdrop').hidden = false;
+    $('#otb-brand-list-modal').hidden = false;
+  }
+  function closeBrandListModal() {
+    var b = $('#otb-brand-list-backdrop'), m = $('#otb-brand-list-modal');
+    if (b) b.hidden = true;
+    if (m) m.hidden = true;
   }
 
   // 페이지네이션: 현재 페이지에 해당하는 항목만 반환
@@ -1577,6 +1791,23 @@
     $('#otb-history-btn').addEventListener('click', openHistoryModal);
     $('#otb-save-btn').addEventListener('click', function () {
       toast('임시저장되었습니다', 'success');
+    });
+
+    // 브랜드 카운트 버튼 (hero 카드 + 그룹 요약 row 의 카운트 버튼) — delegated.
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest && e.target.closest('[data-otb-brand-list]');
+      if (btn) {
+        e.preventDefault();
+        openBrandListModal(btn.getAttribute('data-otb-brand-list'));
+        return;
+      }
+      // 모달 닫기 — backdrop / X 버튼.
+      if (e.target && (e.target.id === 'otb-brand-list-backdrop' || e.target.id === 'otb-brand-list-close' || (e.target.closest && e.target.closest('#otb-brand-list-close')))) {
+        closeBrandListModal();
+      }
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !$('#otb-brand-list-modal').hidden) closeBrandListModal();
     });
   }
 
