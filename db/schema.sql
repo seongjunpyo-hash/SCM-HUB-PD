@@ -67,3 +67,14 @@ CREATE INDEX IF NOT EXISTS idx_audit_actor      ON audit_log(actor_user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_target     ON audit_log(target_user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_action     ON audit_log(action);
 CREATE INDEX IF NOT EXISTS idx_audit_created_at ON audit_log(created_at);
+
+
+-- 4. menu_config — VOC 메뉴/페이지 설정 영구 저장 (003 마이그레이션 참고)
+CREATE TABLE IF NOT EXISTS menu_config (
+  config_key      TEXT    PRIMARY KEY,
+  config_value    TEXT    NOT NULL,
+  updated_at      INTEGER NOT NULL DEFAULT (unixepoch()),
+  updated_by      TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_menu_config_updated_at ON menu_config(updated_at);

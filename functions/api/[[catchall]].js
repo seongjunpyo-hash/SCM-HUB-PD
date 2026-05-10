@@ -298,6 +298,56 @@ export async function onRequest(context) {
       return json({ user: { id: user.id, email: user.email, name: user.name, role: user.role } });
     }
 
+    // ========== /api/voc/menu-config ==========
+    // VOC 메뉴/페이지 설정 영구 저장. localStorage 가 아닌 D1 으로 진실원천.
+    // GET — 모든 key 일괄 조회. 인증 사용자 누구나 read (LNB 가 모든 사용자에게
+    //       동일한 메뉴 보여줘야 함).
+    // PUT — 단일 key upsert. super 만 write.
+    //   body: { key: 'newpages', value: <string|object> }
+    //   value 가 object/array 면 자동 stringify, string 이면 그대로 저장.
+    if (path === '/api/voc/menu-config' && method === 'GET') {
+      const me = await getCurrentUser(request, env);
+      if (!me) return json({ error: 'unauthorized' }, 401);
+      const rows = await env.DB.prepare(
+        `SELECT config_key, config_value, updated_at FROM menu_config`
+      ).all();
+      const map = {};
+      for (const r of rows.results || []) {
+        try { map[r.config_key] = JSON.parse(r.config_value); }
+        catch { map[r.config_key] = r.config_value; }
+      }
+      return json({ config: map });
+    }
+    if (path === '/api/voc/menu-config' && method === 'PUT') {
+      const me = await getCurrentUser(request, env);
+      if (!me) return json({ error: 'unauthorized' }, 401);
+      if (me.role !== 'super') return json({ error: 'forbidden' }, 403);
+      const body = await readBody();
+      const key = (body && body.key) ? String(body.key).trim() : '';
+      if (!key || key.length > 64) return json({ error: 'invalid_key' }, 400);
+      let val = body ? body.value : null;
+      // null / undefined → DELETE row (특정 key 비우기)
+      if (val == null) {
+        await env.DB.prepare(`DELETE FROM menu_config WHERE config_key = ?`).bind(key).run();
+        await audit(env, request, me.id, null, 'menu_config_delete', { key });
+        return json({ ok: true, deleted: true });
+      }
+      const valueStr = (typeof val === 'string') ? val : JSON.stringify(val);
+      // 너무 큰 값은 거부 (D1 row 한계 / 사고 방지). 200KB.
+      if (valueStr.length > 200 * 1024) return json({ error: 'value_too_large' }, 413);
+      const now = nowUnix();
+      await env.DB.prepare(
+        `INSERT INTO menu_config (config_key, config_value, updated_at, updated_by)
+         VALUES (?, ?, ?, ?)
+         ON CONFLICT(config_key) DO UPDATE SET
+           config_value = excluded.config_value,
+           updated_at   = excluded.updated_at,
+           updated_by   = excluded.updated_by`
+      ).bind(key, valueStr, now, me.email).run();
+      await audit(env, request, me.id, null, 'menu_config_put', { key, size: valueStr.length });
+      return json({ ok: true, updated_at: now });
+    }
+
     // ========== /api/auth/change-password ==========
     if (path === '/api/auth/change-password' && method === 'POST') {
       const me = await getCurrentUser(request, env);
