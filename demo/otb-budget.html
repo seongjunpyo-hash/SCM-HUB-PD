@@ -471,36 +471,10 @@
     }
     /* 디테일 테이블 — scm-table 이 sticky thead 로 colgroup 관리하므로 auto 유지 */
     #otb-detail-table.mp-table { table-layout: auto; }
-    /* 요약 테이블 — fixed 레이아웃으로 (No/그룹/그룹명/브랜드) 명시 width
-       가져가고 나머지 13 numeric 컬럼이 잔여 폭을 균등 분할.
-       (table-layout:auto 로 두면 numeric 들이 컨텐츠 길이에 따라 들쭉날쭉함) */
-    #otb-summary-table.mp-table { table-layout: fixed !important; }
-    /* table-layout:fixed 에서 컬럼 폭은 첫 row th 의 width 가 결정. inline
-       style 만으로는 .mp-table thead th 의 cascade 와 user-agent default
-       에 묻히는 케이스가 있어 nth-child 셀렉터 + !important 로 명시 박음.
+    /* 요약 테이블 — colgroup 으로 컬럼 폭 명시 + table-layout:fixed.
        1: No 48px, 2: 그룹 64px, 3: 그룹명 320px, 4: 브랜드 120px,
-       5-17: 13 numeric 균등 (calc 로 잔여 폭 13등분 명시 — 마지막 col
-       잉여 흡수 quirk 회피). */
-    /* width 만 박으면 dev-export 의 _applyColumnWidthsForVersion 이 사용자
-       저장 columnWidths 를 min-width / max-width 로 덮어쓸 때 clamp 발생.
-       width / min / max 모두 명시해 clamp 무력화. */
-    #otb-summary-table.mp-table thead th:nth-child(1) {
-      width: 48px !important; min-width: 48px !important; max-width: 48px !important;
-    }
-    #otb-summary-table.mp-table thead th:nth-child(2) {
-      width: 64px !important; min-width: 64px !important; max-width: 64px !important;
-    }
-    #otb-summary-table.mp-table thead th:nth-child(3) {
-      width: 320px !important; min-width: 320px !important; max-width: 320px !important;
-    }
-    #otb-summary-table.mp-table thead th:nth-child(4) {
-      width: 120px !important; min-width: 120px !important; max-width: 120px !important;
-    }
-    #otb-summary-table.mp-table thead th:nth-child(n+5) {
-      width: calc((100% - 552px) / 13) !important;
-      min-width: 0 !important;
-      max-width: none !important;
-    }
+       5-17: 13 numeric 잔여 폭 균등 (col 에 width 미지정 → fixed 분배). */
+    #otb-summary-table.mp-table { table-layout: fixed; }
     .otb-summary-table th, .otb-summary-table td { white-space: nowrap; }
     /* 그룹별 요약 테이블의 [N개 브랜드] 버튼 — scm-button 의 검정 보더가 너무
        강해 사용자 요청으로 그레이 보더로. hover 시 살짝 진해짐. */
@@ -840,12 +814,19 @@
       <div class="mp-table-host">
         <div class="mp-table-scroll">
           <table class="mp-table otb-summary-table" id="otb-summary-table">
+            <colgroup>
+              <col style="width:48px;">
+              <col style="width:64px;">
+              <col style="width:320px;">
+              <col style="width:120px;">
+              <col><col><col><col><col><col><col><col><col><col><col><col><col>
+            </colgroup>
             <thead>
               <tr>
-                <th style="text-align:center; width:48px !important; min-width:48px !important; max-width:48px !important;">No</th>
-                <th style="text-align:center; width:64px !important; min-width:64px !important; max-width:64px !important;">그룹</th>
-                <th style="text-align:left; width:320px !important; min-width:320px !important; max-width:320px !important;">그룹명</th>
-                <th style="text-align:center; width:120px !important; min-width:120px !important; max-width:120px !important;">브랜드</th>
+                <th style="text-align:center;">No</th>
+                <th style="text-align:center;">그룹</th>
+                <th style="text-align:left;">그룹명</th>
+                <th style="text-align:center;">브랜드</th>
                 <th class="cell-numeric">기초재고</th>
                 <th class="cell-numeric">입고재고(OTB)</th>
                 <th class="cell-numeric">전년대비(YoY)</th>
@@ -1998,6 +1979,7 @@
   renderAll();
   bindAll();
 
+<<<<<<< Updated upstream
   // 그룹별 요약 테이블 컬럼 폭 강제 — CSS / inline 모두 dev-export 의
   // _applyColumnWidthsForVersion 등으로 덮이는 케이스를 막기 위해 JS 로
   // setProperty('width', ..., 'important') 박음. RAF 한 번 더 보강.
@@ -2026,6 +2008,8 @@
   try { requestAnimationFrame(function () { _enforceSummaryWidths(); }); } catch (_) {}
   setTimeout(_enforceSummaryWidths, 200);
 
+=======
+>>>>>>> Stashed changes
   // ----- SCM 테이블 모듈 mount (sticky thead, frozen, drag/resize, cell selection) -----
   // sku-management.html 와 동일한 mount 호출
   if (window.SCMTable && typeof SCMTable.init === 'function') {

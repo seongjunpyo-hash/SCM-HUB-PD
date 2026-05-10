@@ -2602,6 +2602,12 @@ ${jsxBody}
       let th;
       try { th = doc.querySelector(sel); } catch (_) { return; }
       if (!th) return;
+      // 가드: 페이지가 자체 colgroup 으로 컬럼 폭을 결정하는 테이블은
+      // dev-export 가 건드리지 않음. OTB 그룹별 요약은 colgroup +
+      // table-layout:fixed 로 폭이 명시되어 있어 dev-export 의 saved
+      // columnWidths 적용이 잘못된 col 에 min/max 박혀 모든 셀이 clamp 으로
+      // 균등해지는 회귀를 막기 위함.
+      if (th.closest('#otb-summary-table')) return;
       const tr = th.closest('tr');
       if (!tr) return;
       const colIdx = Array.prototype.indexOf.call(tr.children, th);
