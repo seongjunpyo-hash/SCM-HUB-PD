@@ -526,14 +526,22 @@
   function _applyMenuOrderToLnb(el) {
     if (!el) return;
     var order = _loadMenuOrder();
-    // L1 그룹 reorder
+    // L1 그룹 reorder — 캐노니컬 + voc 신규 L1 모두 data-key 가 있어 모든
+    // 항목이 l1Order 에 들어옴. appendChild 만으로 충분히 정렬됨 (l1Order 순서대로
+    // 처리하면 마지막에 모든 항목이 의도한 순서로 정렬).
     if (Array.isArray(order.l1Order) && order.l1Order.length) {
       order.l1Order.forEach(function (l1key) {
         var item = el.querySelector('.scm-lnb-item[data-key="' + l1key + '"]');
-        if (item) el.appendChild(item);   // appendChild 가 같은 parent 면 끝으로 이동
+        if (item) el.appendChild(item);
       });
     }
-    // L2 reorder per L1
+    // L2 reorder per L1 — placeholder (href="#") 들은 data-key 가 없어 arr 에
+    // 안 들어옴. 옛날엔 appendChild 로 ordered 항목을 끝으로 보냈는데, 그러면
+    // placeholder 가 TOP 에 고정된 상태로 ordered 항목이 BOTTOM 부근으로 밀려남
+    // → 사용자가 "TOP 으로 올렸는데 밑에서 2번째에 있다" 라고 보고하던 버그.
+    // 해결: arr 를 reverse 해서 insertBefore(firstChild) 로 LIST TOP 에 prepend.
+    // ordered 항목이 의도한 순서로 TOP 에, placeholder / unordered 항목은
+    // 자연스럽게 BOTTOM 으로.
     if (order.l2Order && typeof order.l2Order === 'object') {
       Object.keys(order.l2Order).forEach(function (l1key) {
         var arr = order.l2Order[l1key];
@@ -542,9 +550,9 @@
         if (!group) return;
         var l2List = group.querySelector('.scm-lnb-l2-list');
         if (!l2List) return;
-        arr.forEach(function (l2key) {
+        arr.slice().reverse().forEach(function (l2key) {
           var anchor = l2List.querySelector('.scm-lnb-l2[data-key="' + l2key + '"]');
-          if (anchor) l2List.appendChild(anchor);
+          if (anchor) l2List.insertBefore(anchor, l2List.firstChild);
         });
       });
     }
