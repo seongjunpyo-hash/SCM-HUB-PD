@@ -496,6 +496,9 @@
       gap: 16px;
       margin: 0;
     }
+    /* 그룹별 요약 섹션의 헤더는 타이틀이라 하단 12px 마진 유지 (사용자 요청).
+       브랜드별 상세는 stats 인라인 + 액션바 패턴이라 0. */
+    .otb-section__head:has(.otb-section__title) { margin: 0 0 12px; }
     .otb-section__title {
       margin: 0;
       font-size: var(--ld-font-size-150, 15px);
