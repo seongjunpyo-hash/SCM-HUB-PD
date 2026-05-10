@@ -471,10 +471,19 @@
     }
     /* 디테일 테이블 — scm-table 이 sticky thead 로 colgroup 관리하므로 auto 유지 */
     #otb-detail-table.mp-table { table-layout: auto; }
-    /* 요약 테이블 — fixed 레이아웃으로 (No/그룹/브랜드/그룹명) 명시 width
+    /* 요약 테이블 — fixed 레이아웃으로 (No/그룹/그룹명/브랜드) 명시 width
        가져가고 나머지 13 numeric 컬럼이 잔여 폭을 균등 분할.
        (table-layout:auto 로 두면 numeric 들이 컨텐츠 길이에 따라 들쭉날쭉함) */
-    #otb-summary-table.mp-table { table-layout: fixed; }
+    #otb-summary-table.mp-table { table-layout: fixed !important; }
+    /* table-layout:fixed 에서 컬럼 폭은 첫 row th 의 width 가 결정. inline
+       style 만으로는 .mp-table thead th 의 cascade 와 user-agent default
+       에 묻히는 케이스가 있어 nth-child 셀렉터 + !important 로 명시 박음.
+       1: No 48px, 2: 그룹 64px, 3: 그룹명 320px, 4: 브랜드 120px,
+       5-17: 13 numeric 균등 (width 미지정 → fixed layout 이 균등 분배). */
+    #otb-summary-table.mp-table thead th:nth-child(1) { width: 48px !important; }
+    #otb-summary-table.mp-table thead th:nth-child(2) { width: 64px !important; }
+    #otb-summary-table.mp-table thead th:nth-child(3) { width: 320px !important; }
+    #otb-summary-table.mp-table thead th:nth-child(4) { width: 120px !important; }
     .otb-summary-table th, .otb-summary-table td { white-space: nowrap; }
     /* 그룹별 요약 테이블의 [N개 브랜드] 버튼 — scm-button 의 검정 보더가 너무
        강해 사용자 요청으로 그레이 보더로. hover 시 살짝 진해짐. */
