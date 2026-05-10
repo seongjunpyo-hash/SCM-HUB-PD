@@ -1,30 +1,51 @@
 // Cloudflare Pages Function — /demo/* catch-all.
 //
 // 동작:
-//   1) 먼저 next() 호출 → 정적 asset 검색 (sku-management.html, dashboard.html 등).
-//   2) 200 응답이면 그대로 반환.
-//   3) 404 응답이면 (= voc 에서 만든 슬러그라 실제 파일 없음)
-//      env.ASSETS.fetch 로 /demo/_blank.html 을 가져와 200 으로 반환.
-//      URL 은 클라이언트에 그대로 유지 (브라우저는 redirect 가 아닌
-//      "200 OK content from server" 로 인식 → 무한 루프 X).
+//   1) /demo/* 경로의 파일명이 KNOWN_DEMO_ASSETS 화이트리스트에 있거나
+//      (clean-URL 형태라 .html 추가 시 화이트리스트에 있으면) → next() 로
+//      정적 asset 그대로 서빙.
+//   2) 그 외 (= voc 신규 슬러그) → /demo/_blank.html 본문을 200 으로 응답.
+//      URL 은 그대로 유지 (브라우저는 redirect 가 아닌 200 OK 본문으로 인식).
 //
-// 이전엔 _redirects 의 200 rewrite 로 처리하려 했으나, _blank.html 자체도
-// 패턴에 매칭돼 자기 자신으로 rewrite → ERR_TOO_MANY_REDIRECTS 무한 루프 발생.
-// 함수 안에서 명시적으로 next() 결과를 검사하는 방식이 안전.
+// 왜 next() status 검사를 안 쓰나:
+//   Cloudflare Pages 의 not_found_handling 이 SPA 모드(또는 404-page) 면
+//   미존재 자산에 대해 404 가 아닌 200 + 워크스페이스 루트 index.html 이
+//   돌아옴 → 이전 구현 `if (response.status !== 404) return response;` 가
+//   루트 index.html 을 그대로 클라이언트에 흘려보내 "신규 슬러그가 워크스페이스
+//   랜딩으로 fallback" 회귀 발생. 화이트리스트 분기는 next() 결과에 의존
+//   하지 않아 SPA 모드와 무관하게 안정적으로 동작.
+const KNOWN_DEMO_ASSETS = new Set([
+  '_blank.html',
+  'dashboard.html',
+  'editshop-restock-request.html',
+  'editshop-restock-status.html',
+  'index.html',
+  'otb-budget.html',
+  'sku-detail.html',
+  'sku-management.html',
+  'sku-register.html',
+  'wireframe.html',
+]);
+
+function isKnownAsset(pathname) {
+  // /demo/ 또는 /demo 자체 (clean URL → index.html) 는 알려진 자산으로 간주
+  if (pathname === '/demo' || pathname === '/demo/') return true;
+  const slug = pathname.replace(/^\/demo\//, '');
+  if (!slug) return true;
+  if (KNOWN_DEMO_ASSETS.has(slug)) return true;
+  // clean URL (확장자 없음) — Cloudflare Pages 가 .html 자동 매칭
+  if (!slug.includes('.') && KNOWN_DEMO_ASSETS.has(slug + '.html')) return true;
+  return false;
+}
+
 export async function onRequest(context) {
   const { request, next, env } = context;
   const url = new URL(request.url);
 
-  // _blank.html 자체 요청은 재귀 차단을 위해 그대로 next() — 매칭되는 정적
-  // 파일이 있으니 그대로 서빙됨.
-  if (url.pathname === '/demo/_blank.html') {
-    return next();
-  }
+  // 알려진 캐노니컬 데모 자산 → 그대로 서빙. _blank.html 자체 요청도 여기로 들어옴.
+  if (isKnownAsset(url.pathname)) return next();
 
-  const response = await next();
-  if (response.status !== 404) return response;
-
-  // 404 → /demo/_blank.html 로 fallback (URL 은 그대로, 200 으로 응답).
+  // 미지의 슬러그 (= voc 에서 등록한 신규 페이지 path) → _blank.html 본문으로 200 응답.
   try {
     const blankUrl = new URL('/demo/_blank.html', url.origin).toString();
     // 클라이언트가 보낸 If-None-Match / If-Modified-Since 는 _blank.html 의 ETag 와
@@ -34,15 +55,15 @@ export async function onRequest(context) {
     cleanHeaders.delete('if-modified-since');
     const blankReq = new Request(blankUrl, { headers: cleanHeaders });
     const blankRes = await env.ASSETS.fetch(blankReq);
-    // status 200 강제. ETag / Last-Modified 는 _blank.html 의 메타라 임의 slug 응답에
-    // 같은 값을 주면 캐시 오염 → 제거. Cache-Control 도 'no-store' 로 명시.
+    // ETag / Last-Modified 는 _blank.html 의 메타라 임의 slug 응답에 같은 값을
+    // 주면 캐시 오염 → 제거. Cache-Control 도 'no-store' 로 명시.
     const newHeaders = new Headers(blankRes.headers);
     newHeaders.delete('etag');
     newHeaders.delete('last-modified');
     newHeaders.set('cache-control', 'no-store');
     return new Response(blankRes.body, { status: 200, headers: newHeaders });
   } catch (e) {
-    // env.ASSETS 없거나 fetch 실패 시 원래 404 그대로.
-    return response;
+    // env.ASSETS 없거나 fetch 실패 시에만 next() 로 폴백 (최후의 수단).
+    return next();
   }
 }
