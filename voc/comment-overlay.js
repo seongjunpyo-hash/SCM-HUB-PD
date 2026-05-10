@@ -527,10 +527,16 @@
       elEditFab.classList.add('is-visible');
     }
     elEditFab.addEventListener('click', () => {
-      // 협업 VOC 화면으로 이동. VOC 가 currentPage 를 자동으로 인식하도록
-      // hash 에 demo path 를 실어보냄 (선택 사항). 기본 동작은 단순 이동.
+      // 협업 VOC 화면으로 이동 — 현재 데모 페이지의 path 를 ?page= 쿼리로
+      // 실어보내 VOC 가 그 페이지로 바로 이동 (iframe 에 그 페이지 로드 +
+      // L1/L2 navigation 자동 매칭). 데모 페이지가 아닌 곳에서 호출되면 (예
+      // 외) param 없이 이동 — VOC 가 디폴트 페이지(대시보드) 로 fallback.
       try {
-        const target = '/voc/index.html';
+        let target = '/voc/index.html';
+        const path = location.pathname;
+        if (path && path.indexOf('/demo/') === 0) {
+          target += '?page=' + encodeURIComponent(path);
+        }
         window.location.href = target;
       } catch (e) { console.warn('[voc] 편집 이동 실패', e); }
     });

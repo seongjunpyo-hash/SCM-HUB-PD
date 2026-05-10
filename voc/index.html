@@ -2872,6 +2872,26 @@
       const versionSelectEl = document.getElementById('versionSelect');
       if (versionSelectEl) versionSelectEl.addEventListener('change', () => onVersionSelectChange(versionSelectEl.value));
 
+      // ?page=/demo/... URL 파라미터 — 데모 페이지의 [편집] FAB 이 어떤
+      // 페이지에서 왔는지 전달. comment-overlay.js 가 location.pathname 을
+      // encodeURIComponent 해서 붙여줌. 일치하는 페이지 (canonical PAGES
+      // 또는 신규 페이지) 가 있으면 currentPage 로 override → iframe 이
+      // 그 페이지를 바로 로드 + L1/L2 navigation 자동 매칭.
+      try {
+        const params = new URLSearchParams(location.search);
+        const requested = params.get('page');
+        if (requested && requested.indexOf('/demo/') === 0) {
+          // canonical PAGES + 신규 페이지 path 합집합에서 매칭
+          const knownPaths = PAGES.map(function (p) { return p.path; });
+          (state.newPages || []).forEach(function (p) {
+            if (p.path && knownPaths.indexOf(p.path) === -1) knownPaths.push(p.path);
+          });
+          if (knownPaths.indexOf(requested) >= 0) {
+            state.currentPage = requested;
+          }
+        }
+      } catch (_) {}
+
       urlText.textContent = state.currentPage;
       urlOpen.href = state.currentPage;
       // initial render — set up the menu UI then explicitly navigate so
