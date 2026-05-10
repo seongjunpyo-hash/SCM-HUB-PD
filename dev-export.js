@@ -1417,6 +1417,16 @@ ${jsxBody}
   }
   function _saveVersions(map) {
     try { localStorage.setItem(VOC_VERSIONS_KEY, JSON.stringify(map)); } catch {}
+    // CRITICAL — D1 영구 저장 push. 이 거 안 하면 사용자가 [최종확정] 누른 후
+    // 다른 메뉴 클릭 시 그 페이지의 scm-shell bootConfigSync 가 D1 의 옛
+    // versions 로 localStorage 를 덮어써 finalId 가 사라짐 → '작업중' 으로
+    // 되돌아간 것처럼 보이는 회귀 (사용자 보고). VOC 의 persistVersions 는
+    // 이미 _syncPush 호출하지만 dev-export 의 _saveVersions 는 누락돼있던 것.
+    try {
+      if (window.SCM_CONFIG_SYNC && typeof window.SCM_CONFIG_SYNC.push === 'function') {
+        window.SCM_CONFIG_SYNC.push(VOC_VERSIONS_KEY);
+      }
+    } catch (_) {}
   }
   function _loadAppliedMap() {
     try {
@@ -1426,6 +1436,12 @@ ${jsxBody}
   }
   function _saveAppliedMap(map) {
     try { localStorage.setItem(VOC_EDITS_KEY, JSON.stringify(map)); } catch {}
+    // 위와 동일 — D1 영구 저장 push.
+    try {
+      if (window.SCM_CONFIG_SYNC && typeof window.SCM_CONFIG_SYNC.push === 'function') {
+        window.SCM_CONFIG_SYNC.push(VOC_EDITS_KEY);
+      }
+    } catch (_) {}
   }
   function _formatDate(ts) {
     try {
