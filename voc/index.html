@@ -3889,19 +3889,30 @@
         let el;
         try { el = doc.querySelector(sel); } catch { return; }
         if (!el) return;
-        // Saved HTML 에 voc 내부 마커가 baked-in 돼 있으면 inject 전에 제거.
-        // (특히 scm-voc-flash 가 남아있으면 매번 re-inject 시 1.8s 애니메이션이
-        // 재실행돼 H1 이 계속 깜빡거리는 부작용 발생.)
+        // 옛 voc-key 를 보존 — _stripVocMarkers 가 cleanHtml 에서 voc-key 를
+        // 제거하지만, 그러면 새 element 가 selector 와 매칭 안 돼 (1) 사용자가
+        // hide/show 토글해도 CSS 가 적용 안 되고 (2) 매 render 마다 outerHTML
+        // replace 가 반복되는 race 가 발생. 사용자 보고: "컴포넌트 수정 후
+        // 사라지고 체크박스 풀었다 다시 해도 안 보임". 새 root 에 voc-key 를
+        // 직접 stamp 해서 selector 안정성 + hash 비교 idempotency 모두 확보.
+        const oldVocKey = el.dataset && el.dataset.vocKey;
         const cleanHtml = _cleanHtmlBeforeApply(doc, ed.html);
         // Skip if we already applied this exact override (idempotent on re-runs).
         if (el.dataset && el.dataset.vocCompHash === _hashStr(cleanHtml)) return;
         try {
-          el.outerHTML = cleanHtml;
-          // Re-find the new root: it should be the direct match for `sel`
-          // if the override preserved the wrapper, OR the last-injected node.
-          let newEl;
-          try { newEl = doc.querySelector(sel); } catch {}
-          if (newEl && newEl.dataset) newEl.dataset.vocCompHash = _hashStr(cleanHtml);
+          // Off-DOM 으로 새 element 를 만들어 voc-key + hash 를 박은 후 swap.
+          const tpl = doc.createElement('template');
+          tpl.innerHTML = cleanHtml;
+          const newRoot = tpl.content.firstElementChild;
+          if (!newRoot) {
+            // empty / text-only content — 원래 동작 (사용자가 HTML 을 통째로
+            // 비웠으면 그대로 비움)
+            el.outerHTML = cleanHtml;
+            return;
+          }
+          if (oldVocKey && newRoot.dataset) newRoot.dataset.vocKey = oldVocKey;
+          if (newRoot.dataset) newRoot.dataset.vocCompHash = _hashStr(cleanHtml);
+          el.replaceWith(newRoot);
         } catch (_) {}
       });
     }
