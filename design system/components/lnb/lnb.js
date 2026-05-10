@@ -608,6 +608,10 @@
     var icons = _loadMenuIcons();
     var keys = Object.keys(icons);
     if (!keys.length) return;
+    // 시각 stroke 두께 (px) — canonical 캐노니컬 1.4 보다 살짝 얇게 (1.2) 해
+    // 사용자 요청 ("사이즈 키우고 굵기 줄여") 충족.
+    var TARGET_STROKE_PX = 1.2;
+    var TARGET_PX = 24;
     keys.forEach(function (l1key) {
       var iconId = icons[l1key];
       if (!iconId || typeof iconId !== 'string' || iconId.indexOf('ic-') !== 0) return;
@@ -615,17 +619,19 @@
       if (!item) return;
       var iconSpan = item.querySelector('.scm-lnb-row > .scm-lnb-icon');
       if (!iconSpan) return;
-      // 심볼의 네이티브 viewBox 를 그대로 사용 — 다른 viewBox (예: 20x20) 를
-      // canonical 24x24 컨테이너로 강제 scale 하면 stroke-width 도 같이
-      // scale 되어 굵게 보이는 문제 (사용자 보고). width/height 는 viewBox
-      // 의 너비/높이 그대로 inline style 로 강제 (lnb.css 의 svg{width:24px}
-      // 보다 우선). .scm-lnb-icon (24x24) 안에서 더 작은 아이콘은 자동 center.
       var sym = document.getElementById(iconId);
-      var vb = (sym && sym.getAttribute('viewBox')) || '0 0 24 24';
+      if (!sym) return;
+      var vb = sym.getAttribute('viewBox') || '0 0 24 24';
       var parts = vb.split(/\s+/);
       var w = parseFloat(parts[2]) || 24;
-      var h = parseFloat(parts[3]) || 24;
-      iconSpan.innerHTML = '<svg viewBox="' + vb + '" style="width:' + w + 'px;height:' + h + 'px;" aria-hidden="true"><use href="#' + iconId + '"/></svg>';
+      // 24x24 컨테이너로 scale 시 stroke 도 같이 scale 됨 → svg coord 의
+      // stroke-width 를 보정해 시각 stroke = TARGET_STROKE_PX 가 되게.
+      var scale = TARGET_PX / w;
+      var newSw = (TARGET_STROKE_PX / scale).toFixed(2);
+      // 심볼 inner content 를 inline (use 안 씀) + stroke-width 재설정.
+      // use 는 shadow tree 라 stroke-width 직접 override 안 됨.
+      var content = sym.innerHTML.replace(/stroke-width="[\d.]+"/g, 'stroke-width="' + newSw + '"');
+      iconSpan.innerHTML = '<svg viewBox="' + vb + '" style="width:' + TARGET_PX + 'px;height:' + TARGET_PX + 'px;" aria-hidden="true">' + content + '</svg>';
     });
   }
 
