@@ -2927,18 +2927,32 @@
       // encodeURIComponent 해서 붙여줌. 일치하는 페이지 (canonical PAGES
       // 또는 신규 페이지) 가 있으면 currentPage 로 override → iframe 이
       // 그 페이지를 바로 로드 + L1/L2 navigation 자동 매칭.
+      // **CRITICAL — Cloudflare Pages 가 clean URL 모드라 사용자가 보는
+      // location.pathname 이 .html 없는 형태 (/demo/sku-management) 일 수
+      // 있음. PAGES / state.newPages 의 path 는 .html 풀 경로 (/demo/sku-
+      // management.html) 라 단순 indexOf 면 매치 실패 → 디폴트 대시보드로
+      // fallback. 둘 다 매치 시도.**
       try {
         const params = new URLSearchParams(location.search);
         const requested = params.get('page');
         if (requested && requested.indexOf('/demo/') === 0) {
-          // canonical PAGES + 신규 페이지 path 합집합에서 매칭
           const knownPaths = PAGES.map(function (p) { return p.path; });
           (state.newPages || []).forEach(function (p) {
             if (p.path && knownPaths.indexOf(p.path) === -1) knownPaths.push(p.path);
           });
-          if (knownPaths.indexOf(requested) >= 0) {
-            state.currentPage = requested;
+          // 1) raw 형태 그대로 매치
+          // 2) .html 없으면 .html 추가해서 매치 (clean URL 케이스)
+          // 3) .html 있으면 .html 떼서도 매치 (raw 형태가 길게 온 케이스)
+          let resolved = null;
+          if (knownPaths.indexOf(requested) >= 0) resolved = requested;
+          else if (!requested.endsWith('.html')) {
+            const withHtml = requested + '.html';
+            if (knownPaths.indexOf(withHtml) >= 0) resolved = withHtml;
+          } else {
+            const noHtml = requested.replace(/\.html$/, '');
+            if (knownPaths.indexOf(noHtml) >= 0) resolved = noHtml;
           }
+          if (resolved) state.currentPage = resolved;
         }
       } catch (_) {}
 
