@@ -291,37 +291,24 @@
     .otb-legend-chip[data-kind="changed"] { background: var(--otb-changed-bg); color: var(--otb-changed-dot); }
     .otb-legend-chip[data-kind="new"]     { background: var(--ld-green-bg-light); color: var(--ld-green-500); }
 
-    /* === 전체 합계 hero 카드 (그룹별 요약 위) === 사용자 요청: 깔끔한 white
-       디자인으로. 상단 KPI 4개 (총예산/누적소진/잔여예산/집행률) + 하단 detail
-       metric 10개 (기초재고~재고일수). */
+    /* === Hero 영역 (그룹별 요약 위) ===
+       옛 단일 라운드 박스 → 분리: (1) 상단 5 카드 row (전체 13개 브랜드 + KPI 4)
+       (2) 하단 그룹 전체 합계 라인 박스. 폰트 전체 키움. */
     .otb-hero {
       margin: 16px 0 8px;
-      padding: 20px 24px 4px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    /* 상단: 5 카드 row (전체 카운트 + 4 KPI), 외곽 컨테이너 없음. */
+    .otb-hero__kpis {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .otb-kpi {
+      padding: 18px 20px;
       border: 1px solid var(--ld-border);
       border-radius: 8px;
       background: #fff;
-    }
-    .otb-hero__head {
-      display: flex; align-items: center; gap: 10px;
-      margin-bottom: 14px;
-    }
-    .otb-hero__head h3 {
-      margin: 0; font-size: 14px; font-weight: 600;
-      color: var(--ld-fg);
-      display: inline-flex; align-items: center; gap: 8px;
-    }
-    .otb-hero__head .otb-total-hero__count-btn { font-weight: 500; }
-    .otb-hero__kpis {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-    .otb-kpi {
-      padding: 14px 16px;
-      border: 1px solid var(--ld-border);
-      border-radius: 6px;
-      background: var(--ld-bg-low);
       position: relative;
       overflow: hidden;
     }
@@ -330,35 +317,36 @@
       position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
       background: var(--ld-accent, #245EFF);
     }
+    .otb-kpi--brands::before    { background: #1A1A1A; }
     .otb-kpi--budget::before    { background: #245EFF; }
     .otb-kpi--consumed::before  { background: #B07825; }
     .otb-kpi--remaining::before { background: #1A6B1A; }
     .otb-kpi--rate::before      { background: #6B5BD6; }
     .otb-kpi__label {
-      font-size: 11px; font-weight: 600;
+      font-size: 13px; font-weight: 600;
       color: var(--ld-fg-lower);
       letter-spacing: 0.2px;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
     .otb-kpi__value {
-      font-size: 22px; font-weight: 700;
-      letter-spacing: -0.4px;
+      font-size: 28px; font-weight: 700;
+      letter-spacing: -0.5px;
       font-variant-numeric: tabular-nums;
       color: var(--ld-fg);
       line-height: 1.15;
     }
     .otb-kpi__value .unit {
-      font-size: 12px; font-weight: 500;
+      font-size: 14px; font-weight: 500;
       color: var(--ld-fg-lower);
       margin-left: 3px;
     }
     .otb-kpi__sub {
-      margin-top: 4px;
-      font-size: 11px; color: var(--ld-fg-lower);
+      margin-top: 6px;
+      font-size: 12px; color: var(--ld-fg-lower);
     }
     /* 진행률 바 — 평균 집행률 KPI 안 */
     .otb-kpi__bar {
-      margin-top: 8px; height: 4px;
+      margin-top: 10px; height: 5px;
       background: var(--ld-gray-200, #E5E7EB);
       border-radius: 999px; overflow: hidden;
     }
@@ -368,40 +356,43 @@
       border-radius: 999px;
     }
 
-    /* 그룹 전체 합계 — 가로 metric 행. 사용자 요청: 가운데 라인 (KPI ↔ 메트릭 사이 보더) 미노출. */
+    /* 하단: 그룹 전체 합계 — 라인 박스 (사용자 요청: KPI 와 분리) */
+    .otb-hero__metrics-card {
+      border: 1px solid var(--ld-border);
+      border-radius: 8px;
+      background: #fff;
+      padding: 16px 20px;
+    }
     .otb-hero__metrics-title {
-      font-size: 11px; font-weight: 600;
-      color: var(--ld-fg-lower);
-      letter-spacing: 0.4px; text-transform: uppercase;
-      margin: 0 0 10px;
-      padding-top: 4px;
+      font-size: 13px; font-weight: 600;
+      color: var(--ld-fg);
+      margin: 0 0 12px;
     }
     .otb-hero__metrics {
       display: grid;
       grid-template-columns: repeat(10, minmax(0, 1fr));
       gap: 8px;
-      padding-bottom: 16px;
     }
     .otb-metric {
-      padding: 8px 10px;
+      padding: 6px 12px;
       border-left: 1px solid var(--ld-border);
-      display: flex; flex-direction: column; gap: 2px;
+      display: flex; flex-direction: column; gap: 4px;
       min-width: 0;
     }
     .otb-metric:first-child { border-left: 0; padding-left: 0; }
     .otb-metric__label {
-      font-size: 11px; color: var(--ld-fg-lower);
+      font-size: 12px; color: var(--ld-fg-lower);
       font-weight: 500;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .otb-metric__value {
-      font-size: 13px; font-weight: 700;
+      font-size: 15px; font-weight: 700;
       font-variant-numeric: tabular-nums;
       color: var(--ld-fg);
-      display: flex; align-items: baseline; gap: 4px; flex-wrap: wrap;
+      display: flex; align-items: baseline; gap: 5px; flex-wrap: wrap;
     }
     .otb-metric__value .yoy {
-      font-size: 11px; font-weight: 600;
+      font-size: 12px; font-weight: 600;
     }
     .otb-metric__value .yoy.otb-yoy-pos { color: #1A6B1A; }
     .otb-metric__value .yoy.otb-yoy-neg { color: #B00; }
@@ -1232,11 +1223,13 @@
     var cogsYoY = calcYoY(total.cogs, total.prevCogs);
 
     var heroHtml = ''
-      + '<header class="otb-hero__head">'
-      +   '<h3>전체 <button type="button" class="otb-total-hero__count-btn" data-otb-brand-list="all">' + list.length + '개 브랜드</button></h3>'
-      + '</header>'
-      // KPI 4 카드
+      // 상단: 5 카드 row (전체 brand 카운트 + KPI 4). 외곽 컨테이너 없음.
       + '<div class="otb-hero__kpis">'
+      +   '<div class="otb-kpi otb-kpi--brands">'
+      +     '<div class="otb-kpi__label">전체 브랜드</div>'
+      +     '<div class="otb-kpi__value">' + list.length + '<span class="unit">개</span></div>'
+      +     '<div class="otb-kpi__sub"><button type="button" class="otb-total-hero__count-btn" data-otb-brand-list="all">전체 보기</button></div>'
+      +   '</div>'
       +   '<div class="otb-kpi otb-kpi--budget">'
       +     '<div class="otb-kpi__label">총 예산 금액</div>'
       +     '<div class="otb-kpi__value">' + fmt(totalBudget) + '<span class="unit">백만원</span></div>'
@@ -1258,19 +1251,21 @@
       +     '<div class="otb-kpi__bar"><span style="width: ' + execRateClamped + '%;"></span></div>'
       +   '</div>'
       + '</div>'
-      // 그룹 전체 합계 — 가로 metric 10종
-      + '<div class="otb-hero__metrics-title">그룹 전체 합계</div>'
-      + '<div class="otb-hero__metrics">'
-      +   metric('기초재고',     fmt(total.base))
-      +   metric('입고재고(OTB)', fmt(total.otb), otbYoY)
-      +   metric('GMV',          fmt(total.gmv), gmvYoY)
-      +   metric('출고원가',     fmt(total.cogs), cogsYoY)
-      +   metric('반품예정',     fmt(total.ret))
-      +   metric('COGS%',        fmtPct(total.cogsPct))
-      +   metric('공급률',       fmtPct(total.supplyPct))
-      +   metric('기말재고',     fmt(total.final))
-      +   metric('소진율',       fmtPct(total.turnover))
-      +   metric('재고일수',     total.stockDays + '일')
+      // 하단: 그룹 전체 합계 — 라인 박스로 분리
+      + '<div class="otb-hero__metrics-card">'
+      +   '<div class="otb-hero__metrics-title">그룹 전체 합계</div>'
+      +   '<div class="otb-hero__metrics">'
+      +     metric('기초재고',     fmt(total.base))
+      +     metric('입고재고(OTB)', fmt(total.otb), otbYoY)
+      +     metric('GMV',          fmt(total.gmv), gmvYoY)
+      +     metric('출고원가',     fmt(total.cogs), cogsYoY)
+      +     metric('반품예정',     fmt(total.ret))
+      +     metric('COGS%',        fmtPct(total.cogsPct))
+      +     metric('공급률',       fmtPct(total.supplyPct))
+      +     metric('기말재고',     fmt(total.final))
+      +     metric('소진율',       fmtPct(total.turnover))
+      +     metric('재고일수',     total.stockDays + '일')
+      +   '</div>'
       + '</div>';
     var heroEl = $('#otb-total-hero');
     if (heroEl) heroEl.innerHTML = heroHtml;
