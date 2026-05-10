@@ -826,6 +826,10 @@
                 <th class="cell-numeric">기말재고</th>
                 <th class="cell-numeric">소진율</th>
                 <th class="cell-numeric">재고일수</th>
+                <!-- col-spacer: scm-table 의 setupStickyThead 가 잉여 폭을 마지막
+                     데이터 컬럼 (재고일수) 에 다 보내버려 우측이 너무 넓어지던
+                     문제 fix. 디테일 테이블 패턴과 동일. -->
+                <th class="col-spacer" data-empty="true" aria-hidden="true"></th>
               </tr>
             </thead>
             <tbody id="otb-summary-body"></tbody>

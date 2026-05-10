@@ -2550,6 +2550,62 @@ ${jsxBody}
     });
   }
 
+  // 컬럼 너비 프리셋 — voc/index.html 의 COLUMN_WIDTH_PRESETS 와 동일.
+  // 표준 데모(스탠드얼론) 도 사용자가 적용한 너비를 그대로 반영해야 하므로
+  // 동일 매핑을 여기서도 유지.
+  const _COL_WIDTH_PRESETS = {
+    auto:   { min: 88,  max: null, fixed: null },
+    small:  { min: 88,  max: 160,  fixed: null },
+    medium: { min: 88,  max: 260,  fixed: null },
+    large:  { min: 360, max: 360,  fixed: 360 },
+  };
+  // voc/index.html 의 _applyColumnWidthsInline 미러. scm-table 이 colgroup
+  // col 에 measured width 를 inline 으로 박아 CSS 만으론 못 이기므로 col 의
+  // style.width 를 직접 덮어쓴다. host(.mp-table-host) 안의 본 테이블 +
+  // sticky thead 클론 colgroup 둘 다 대상.
+  function _applyColumnWidthsForVersion(doc, a) {
+    const cw = a && a.columnWidths;
+    if (!cw || typeof cw !== 'object') return;
+    const keys = Object.keys(cw);
+    if (!keys.length) return;
+    keys.forEach((sel) => {
+      const preset = _COL_WIDTH_PRESETS[cw[sel]];
+      if (!preset) return;
+      let th;
+      try { th = doc.querySelector(sel); } catch (_) { return; }
+      if (!th) return;
+      const tr = th.closest('tr');
+      if (!tr) return;
+      const colIdx = Array.prototype.indexOf.call(tr.children, th);
+      if (colIdx < 0) return;
+      const host = th.closest('.mp-table-host') || doc;
+      const colgroups = host.querySelectorAll('colgroup');
+      colgroups.forEach((cg) => {
+        const col = cg.children[colIdx];
+        if (!col) return;
+        if (preset.fixed) {
+          col.style.width = preset.fixed + 'px';
+          col.style.minWidth = preset.fixed + 'px';
+        } else if (preset.max) {
+          col.style.width = preset.max + 'px';
+          col.style.minWidth = preset.min + 'px';
+        } else {
+          col.style.width = '';
+          col.style.minWidth = preset.min + 'px';
+        }
+      });
+      if (preset.fixed) {
+        th.style.width = preset.fixed + 'px';
+        th.style.minWidth = preset.fixed + 'px';
+        th.style.maxWidth = preset.fixed + 'px';
+      } else {
+        th.style.width = '';
+        th.style.minWidth = preset.min + 'px';
+        th.style.maxWidth = preset.max ? preset.max + 'px' : '';
+      }
+    });
+  }
+
   function applyFullSnapshot(a) {
     if (!a) return;
     // 폐기된 컴포넌트 cross-page 라벨 매핑 정리 (한 번 실행 후엔 no-op).
@@ -2578,6 +2634,13 @@ ${jsxBody}
     //    Native HTML override 후에 실행해서 새 element 에 style.order 가 박힘.
     _stampVocKeysOnComponents(doc);   // override 가 voc-key 를 날렸을 수 있으니 재stamp
     _applyComponentOrder(doc, a);
+    // 5) 컬럼 너비 프리셋 — scm-table 이 colgroup 에 박은 measured width 를
+    //    프리셋(auto/small/medium/large) 으로 덮음. RAF 한 번 더 보강해서
+    //    sticky thead 가 0-width 컨테이너에서 lazy 재초기화되는 케이스 커버.
+    _applyColumnWidthsForVersion(doc, a);
+    try {
+      requestAnimationFrame(() => _applyColumnWidthsForVersion(doc, a));
+    } catch (_) {}
   }
 
   function applyActiveVersionMinimal() {
