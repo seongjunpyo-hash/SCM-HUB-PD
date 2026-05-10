@@ -2762,7 +2762,7 @@
         if (!iframe.contentWindow) return;
         showLoading(true);
         try { iframe.contentWindow.location.reload(); }
-        catch { iframe.src = state.currentPage; }
+        catch { iframe.src = _iframeUrl(state.currentPage); }
       });
 
       iframe.addEventListener('load', () => {
@@ -2946,6 +2946,16 @@
       refreshSaveBtn();
     }
 
+    // iframe.src 에 캐시 버스터 부착 — Cloudflare CDN edge 또는 브라우저에 박힌
+    // 이전 redirect 응답을 우회. 상수값이라 같은 path 의 후속 nav 는 cache hit 으로
+    // 빠른 로드 유지. URL 의 pathname 은 안 바뀌므로 iframe.contentWindow.location.
+    // pathname 비교 로직에 영향 없음.
+    function _iframeUrl(path) {
+      if (!path) return path;
+      var sep = path.indexOf('?') >= 0 ? '&' : '?';
+      return path + sep + '_voc=1';
+    }
+
     function navigateTo(path) {
       state.currentPage = path;
       urlText.textContent = path;
@@ -2955,7 +2965,7 @@
       syncMenuFromPath(path);
       state.iframeReady = false;
       showLoading(true);
-      iframe.src = path;
+      iframe.src = _iframeUrl(path);
     }
     function showLoading(on) { browserLoading.classList.toggle('is-on', !!on); }
 
@@ -3103,7 +3113,7 @@
       persistApplied();
       _clearPreviewed();
       // hard-reload the iframe so the demo re-applies cleanly
-      try { iframe.contentWindow.location.reload(); } catch { iframe.src = state.currentPage; }
+      try { iframe.contentWindow.location.reload(); } catch { iframe.src = _iframeUrl(state.currentPage); }
     }
 
     function postIframe(msg) {
