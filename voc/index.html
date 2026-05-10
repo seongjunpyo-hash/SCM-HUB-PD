@@ -7,6 +7,8 @@
   <script src="/auth-gate.js"></script>
   <!-- D1 영구 저장 sync — VOC init 이 await bootstrap() 으로 진실원천 받음. -->
   <script src="/voc-config-sync.js"></script>
+  <!-- 디자인 시스템 SVG 심볼 sprite — 메뉴관리 [아이콘] picker 가 SCM.icons.list() 사용. -->
+  <script src="/scm-icons.js"></script>
   <script src="/profile-menu.js" defer></script>
   <!-- 편집 탭 컴포넌트 라이브러리 (단일 source — 30개 atomic 컴포넌트). -->
   <script src="component-library.js"></script>
@@ -1761,6 +1763,42 @@
     .np-row__btn--show:hover { color: #fff; background: #4F46E5; }
     .np-row__btn--del { color: #DC2626; }
     .np-row__btn--del:hover { background: #FEE2E2; border-color: #FECACA; }
+    .np-row__btn--icon { color: #4338CA; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .np-row__btn--icon:hover { color: #fff; background: #4338CA; border-color: #4338CA; }
+
+    /* L1 아이콘 picker — 디자인 시스템 sprite 의 ic-* 그리드 */
+    .mi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+      gap: 8px;
+      max-height: 50vh;
+      overflow-y: auto;
+      padding: 4px;
+    }
+    .mi-card {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 12px 6px 8px;
+      border: 1px solid #E0E0E0; border-radius: 6px;
+      background: #fff; cursor: pointer;
+      font-family: inherit;
+      transition: border-color 0.12s, background 0.12s;
+    }
+    .mi-card:hover { border-color: #4338CA; background: #F5F3FF; }
+    .mi-card.is-selected {
+      border-color: #4338CA; background: #EDE9FE; border-width: 2px; padding: 11px 5px 7px;
+    }
+    .mi-card__ic {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; color: #1A1A1A;
+      font-size: 18px;
+    }
+    .mi-card__ic svg { width: 24px; height: 24px; display: block; }
+    .mi-card__id {
+      font-size: 10px; color: #6B7280; font-family: ui-monospace, monospace;
+      max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .mi-card.is-selected .mi-card__id { color: #4338CA; font-weight: 600; }
+    .mi-card--default .mi-card__ic { background: #F3F4F6; border-radius: 6px; color: #6B7280; }
 
     /* 삭제 확인 모달 — 영구 삭제는 native confirm 보다 시각적으로 명시적인
        warning UI 필요. 모달 + 빨간 강조 + "원복 불가" 명시. */
@@ -2455,6 +2493,10 @@
     // 버튼 + 경고 모달 → 이 list 에 add. 한 번 들어가면 UI 에 노출 / 미노출
     // 토글로도 못 되돌림 (storage 직접 편집해야 복원).
     const MENU_DELETED_KEY = 'scm:voc:menu-deleted:v1';
+    // L1 그룹별 아이콘 override — { l1key: 'ic-XXX' }. lnb.js 의 mount 가
+    // 캐노니컬 inline SVG 를 sprite use 로 교체. picker UI: 메뉴관리 L1 행의
+    // [아이콘] 버튼 → 디자인 시스템 sprite 의 ic-* 전체 목록 모달.
+    const MENU_ICONS_KEY = 'scm:voc:menu-icons:v1';
     // 사용자가 신규 컴포넌트를 저장한 라이브러리 — 다른 페이지에서 [라이브러리] 탭의
     // "내 컴포넌트" 그룹에서 다시 불러올 수 있게 됨. addComponent 시 자동 저장,
     // dedupe 는 HTML 해시 기준.
@@ -2838,6 +2880,14 @@
       state.menuOrder = (function () {
         try {
           const raw = localStorage.getItem(MENU_ORDER_KEY);
+          const v = raw ? JSON.parse(raw) : {};
+          return (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
+        } catch (_) { return {}; }
+      })();
+      // L1 그룹별 아이콘 override — { l1key: 'ic-XXX' }.
+      state.menuIcons = (function () {
+        try {
+          const raw = localStorage.getItem(MENU_ICONS_KEY);
           const v = raw ? JSON.parse(raw) : {};
           return (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
         } catch (_) { return {}; }
@@ -7241,6 +7291,67 @@
       try { localStorage.setItem(MENU_ORDER_KEY, JSON.stringify(state.menuOrder || {})); } catch {}
       _syncPush(MENU_ORDER_KEY);
     }
+    // L1 그룹 아이콘 setter — l1key 의 아이콘을 sprite 의 ic-XXX 로 override.
+    // iconId === null → override 제거 (캐노니컬 inline SVG 로 복귀).
+    function setMenuIcon(l1key, iconId) {
+      if (!l1key) return;
+      state.menuIcons = state.menuIcons || {};
+      if (iconId == null || iconId === '') {
+        delete state.menuIcons[l1key];
+      } else {
+        state.menuIcons[l1key] = String(iconId);
+      }
+      persistMenuIcons();
+      renderNewPageList();
+      _refreshIframeLnb();
+    }
+    function persistMenuIcons() {
+      try { localStorage.setItem(MENU_ICONS_KEY, JSON.stringify(state.menuIcons || {})); } catch {}
+      _syncPush(MENU_ICONS_KEY);
+    }
+    // L1 아이콘 picker 모달 — 디자인 시스템 sprite 의 ic-* 전체 그리드.
+    // 현재 적용된 아이콘은 강조. 클릭 → setMenuIcon → 즉시 LNB 반영.
+    // 캐노니컬 inline SVG 로 되돌리려면 [기본 아이콘] 옵션 클릭.
+    function openMenuIconPicker(l1key, l1Label) {
+      const ids = (window.SCM && SCM.icons && SCM.icons.list) ? SCM.icons.list() : [];
+      const current = (state.menuIcons || {})[l1key] || '';
+      const defaultCard = ''
+        + '<button type="button" class="mi-card mi-card--default' + (current ? '' : ' is-selected') + '" data-icon="">'
+        +   '<span class="mi-card__ic">⌫</span>'
+        +   '<span class="mi-card__id">기본 아이콘</span>'
+        + '</button>';
+      const cards = ids.map(function (id) {
+        const sel = (id === current) ? ' is-selected' : '';
+        return ''
+          + '<button type="button" class="mi-card' + sel + '" data-icon="' + escapeHtml(id) + '" title="' + escapeHtml(id) + '">'
+          +   '<span class="mi-card__ic"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#' + escapeHtml(id) + '"/></svg></span>'
+          +   '<span class="mi-card__id">' + escapeHtml(id.replace(/^ic-/, '')) + '</span>'
+          + '</button>';
+      }).join('');
+      const html = ''
+        + '<div class="mi-picker-info" style="font-size:12px; color:var(--ld-fg-lower); margin-bottom:10px;">'
+        +   '<strong>' + escapeHtml(l1Label) + '</strong> 그룹의 LNB 아이콘 선택'
+        + '</div>'
+        + '<div class="mi-grid">' + defaultCard + cards + '</div>';
+      openConfirmModal({
+        title: 'L1 아이콘 선택',
+        descHtml: html,
+        cancelLabel: '닫기',
+        confirmLabel: '확인',
+        onConfirm: function () { /* 선택은 클릭으로 즉시 반영, confirm 은 단순 닫기 */ },
+      });
+      // 클릭 핸들러 부착 (open 이후 DOM 사용 가능)
+      setTimeout(function () {
+        $$('.mi-card').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            const next = btn.getAttribute('data-icon') || null;
+            setMenuIcon(l1key, next);
+            $$('.mi-card').forEach(function (b) { b.classList.remove('is-selected'); });
+            btn.classList.add('is-selected');
+          });
+        });
+      }, 0);
+    }
     // iframe 안 LNB 가 hidden / order 변경을 즉시 반영하도록 lnb.js 의 mount 재호출.
     // mount() 는 idempotent — DOM 이 이미 칠해져 있어도 다시 정렬/숨김만 적용.
     function _refreshIframeLnb() {
@@ -7431,9 +7542,14 @@
         // - 신규 그룹: setMenuHidden 으로 동일 hide 처리. 삭제는 그룹의
         //   newPages entry + 하위 L2 newPages 들 모두 cascade 삭제.
         let l1ActionsHtml = '';
+        // [아이콘] 버튼 — 디자인 시스템 sprite ic-* 전체에서 선택. 현재 적용된
+        // 아이콘 ID 가 있으면 라벨을 그 ID 로, 없으면 '아이콘' 으로 표기.
+        const curIcon = (state.menuIcons || {})[g.l1] || '';
+        const iconBtnLabel = curIcon ? curIcon.replace(/^ic-/, '') : '아이콘';
+        l1ActionsHtml = `<button type="button" class="np-row__btn np-row__btn--icon" data-menu-icon-l1="${escapeHtml(g.l1)}" data-menu-icon-label="${escapeHtml(g.label)}" title="L1 아이콘 선택">${escapeHtml(iconBtnLabel)}</button>`;
         const l1ToggleLabel = l1Hidden ? '노출' : '미노출';
         const l1ToggleCls = l1Hidden ? 'np-row__btn np-row__btn--show' : 'np-row__btn np-row__btn--hide';
-        l1ActionsHtml = `<button type="button" class="${l1ToggleCls}" data-menu-toggle-l1="${escapeHtml(g.l1)}" data-currently-hidden="${l1Hidden ? '1' : '0'}">${l1ToggleLabel}</button>`;
+        l1ActionsHtml += `<button type="button" class="${l1ToggleCls}" data-menu-toggle-l1="${escapeHtml(g.l1)}" data-currently-hidden="${l1Hidden ? '1' : '0'}">${l1ToggleLabel}</button>`;
         if (g.isNewL1) {
           l1ActionsHtml += `<button type="button" class="np-row__btn np-row__btn--del" data-newl1-del="${escapeHtml(g.l1)}" data-menu-del-name="${escapeHtml(g.label)}">삭제</button>`;
         } else {
@@ -7495,6 +7611,13 @@
           e.preventDefault();
           const nextHidden = b.dataset.currentlyHidden !== '1';
           setMenuHidden('l1', b.dataset.menuToggleL1, nextHidden);
+        });
+      });
+      // L1 아이콘 picker 열기
+      host.querySelectorAll('[data-menu-icon-l1]').forEach((b) => {
+        b.addEventListener('click', (e) => {
+          e.preventDefault();
+          openMenuIconPicker(b.dataset.menuIconL1, b.dataset.menuIconLabel || b.dataset.menuIconL1);
         });
       });
     }

@@ -589,6 +589,38 @@
     }
   }
 
+  // VOC 메뉴관리에서 사용자가 L1 그룹별 아이콘을 변경한 결과 적용.
+  // localStorage 'scm:voc:menu-icons:v1' = { l1key: 'ic-XXX', ... }
+  // 캐노니컬 lnb.js 의 inline SVG 를 디자인 시스템 sprite 의 <use href="#ic-XXX">
+  // 로 교체. sprite (scm-icons.js) 가 같은 페이지에 로드되어 있어야 보임.
+  // 신규 L1 그룹도 동일하게 적용.
+  var MENU_ICONS_KEY = 'scm:voc:menu-icons:v1';
+  function _loadMenuIcons() {
+    try {
+      if (typeof localStorage === 'undefined') return {};
+      var raw = localStorage.getItem(MENU_ICONS_KEY);
+      var v = raw ? JSON.parse(raw) : {};
+      return (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
+    } catch (_) { return {}; }
+  }
+  function _applyMenuIconsToLnb(el) {
+    if (!el) return;
+    var icons = _loadMenuIcons();
+    var keys = Object.keys(icons);
+    if (!keys.length) return;
+    keys.forEach(function (l1key) {
+      var iconId = icons[l1key];
+      if (!iconId || typeof iconId !== 'string' || iconId.indexOf('ic-') !== 0) return;
+      var item = el.querySelector('.scm-lnb-item[data-key="' + l1key + '"]');
+      if (!item) return;
+      var iconSpan = item.querySelector('.scm-lnb-row > .scm-lnb-icon');
+      if (!iconSpan) return;
+      // sprite 의 use href 로 교체. viewBox 24x24 (LNB icon 기본 사이즈) 로
+      // 통일 — sprite 안 심볼들은 자체 viewBox 가 있어 use 가 자동 스케일링.
+      iconSpan.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#' + iconId + '"/></svg>';
+    });
+  }
+
   function mount(el, opts) {
     if (!el) return null;
     // Empty placeholder → inject canonical LNB markup (단일 source).
@@ -601,6 +633,8 @@
     _applyMenuHiddenToLnb(el);
     // 사용자가 드래그-리오더 한 메뉴 순서 적용 (canonical + 신규 모두 대상).
     _applyMenuOrderToLnb(el);
+    // VOC 메뉴관리에서 L1 그룹별로 아이콘을 변경한 결과 적용.
+    _applyMenuIconsToLnb(el);
     var options = opts || {};
     var active = options.active || el.getAttribute('data-active');
     if (active) setActive(el, active);
@@ -617,8 +651,8 @@
           var nodes = document.querySelectorAll('.scm-lnb');
           for (var i = 0; i < nodes.length; i++) applyStatusTags(nodes[i]);
         }
-        // voc 가 메뉴 hidden / deleted / order 변경 시 — 다른 탭의 LNB 도 즉시 재반영.
-        if (e.key === 'scm:voc:menu-hidden:v1' || e.key === 'scm:voc:menu-deleted:v1' || e.key === 'scm:voc:menu-order:v1' || e.key === 'scm:voc:newpages:v1') {
+        // voc 가 메뉴 hidden / deleted / order / icons 변경 시 — 다른 탭의 LNB 도 즉시 재반영.
+        if (e.key === 'scm:voc:menu-hidden:v1' || e.key === 'scm:voc:menu-deleted:v1' || e.key === 'scm:voc:menu-order:v1' || e.key === 'scm:voc:newpages:v1' || e.key === MENU_ICONS_KEY) {
           var nodes = document.querySelectorAll('.scm-lnb');
           for (var i = 0; i < nodes.length; i++) {
             nodes[i].innerHTML = '';

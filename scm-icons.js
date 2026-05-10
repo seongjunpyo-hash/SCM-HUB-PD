@@ -28,4 +28,23 @@
       }
     }, { once: true });
   }
+
+  // ===== SCM.icons API — sprite 안의 모든 ic-* 심볼 ID 리스트업 =====
+  // 사용처: VOC 메뉴관리에서 L1 그룹 아이콘 picker 모달이 디자인 시스템
+  // 아이콘 카탈로그를 보여주기 위해 호출. 다른 페이지에서도 자유롭게 사용.
+  window.SCM = window.SCM || {};
+  window.SCM.icons = {
+    /** sprite 안 모든 ic-* symbol ID 배열 — 알파벳 정렬. */
+    list: function () {
+      var ids = [];
+      // sprite 문자열 자체에서 정규식으로 추출 (DOM 조회보다 빠름 + sprite 가
+      // 아직 inject 되기 전이어도 동작).
+      var re = /<symbol\s+id="(ic-[a-zA-Z0-9_-]+)"/g;
+      var m;
+      while ((m = re.exec(SPRITE)) !== null) ids.push(m[1]);
+      return ids.sort();
+    },
+    /** ID 가 sprite 에 존재하는지 검증 — VOC 가 사용자 입력 검증 시 사용. */
+    has: function (id) { return this.list().indexOf(id) >= 0; },
+  };
 })();
