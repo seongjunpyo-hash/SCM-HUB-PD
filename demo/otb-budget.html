@@ -377,25 +377,27 @@
     }
     .otb-hero__metrics {
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(10, minmax(0, 1fr));
+      gap: 8px;
       padding-bottom: 16px;
     }
     .otb-metric {
-      padding: 8px 12px;
+      padding: 8px 10px;
       border-left: 1px solid var(--ld-border);
       display: flex; flex-direction: column; gap: 2px;
+      min-width: 0;
     }
     .otb-metric:first-child { border-left: 0; padding-left: 0; }
     .otb-metric__label {
       font-size: 11px; color: var(--ld-fg-lower);
       font-weight: 500;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .otb-metric__value {
-      font-size: 14px; font-weight: 700;
+      font-size: 13px; font-weight: 700;
       font-variant-numeric: tabular-nums;
       color: var(--ld-fg);
-      display: flex; align-items: baseline; gap: 6px;
+      display: flex; align-items: baseline; gap: 4px; flex-wrap: wrap;
     }
     .otb-metric__value .yoy {
       font-size: 11px; font-weight: 600;
