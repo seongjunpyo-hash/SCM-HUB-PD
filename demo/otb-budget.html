@@ -393,8 +393,8 @@
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .otb-metric__value {
-      font-size: 19px; font-weight: 700;
-      letter-spacing: -0.2px;
+      font-size: 24px; font-weight: 700;
+      letter-spacing: -0.3px;
       font-variant-numeric: tabular-nums;
       color: var(--ld-fg);
       display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap;
@@ -509,6 +509,14 @@
     .otb-section__tools {
       display: inline-flex; align-items: center; gap: 8px;
       flex-wrap: wrap;
+    }
+    /* 브랜드별 상세 액션바 좌측 — 카운트 + diff 토글 묶음 */
+    .otb-section__head-left {
+      display: inline-flex; align-items: center; gap: 16px;
+      flex-wrap: wrap;
+    }
+    .otb-section__head-left #otb-diff-toggle.is-on {
+      background: #EAF1FF; border-color: #245EFF; color: #245EFF;
     }
     .otb-section__tools .scm-stats-bar__v-divider {
       width: 1px; height: 16px; background: var(--ld-border); margin: 0 4px;
@@ -686,14 +694,13 @@
     <div class="scm-page-head scm-page-head--list" id="page-head">
       <h1 class="scm-page-head__title">OTB 예산 관리</h1>
 
-      <!-- 헤드 보조 (버전 / 상태 / diff 토글) -->
+      <!-- 헤드 보조 (버전 / 상태) — diff 토글은 브랜드별 상세 액션바로 이동 -->
       <span class="otb-head-aux">
         <button class="otb-version-trigger" type="button" id="otb-version-btn" aria-haspopup="dialog">
           <span id="otb-version-label">26Y 2차 상신</span>
           <span class="chev" aria-hidden="true">▼</span>
         </button>
         <span class="otb-status-tag" id="otb-status-tag" data-state="draft">작성중</span>
-        <button class="scm-button" type="button" id="otb-diff-toggle" aria-pressed="false">1차 대비 변경분 표시</button>
       </span>
 
       <div class="scm-page-head__actions">
@@ -793,6 +800,7 @@
           <table class="mp-table otb-summary-table" id="otb-summary-table">
             <thead>
               <tr>
+                <th style="text-align:center; width:48px;">No</th>
                 <th style="text-align:center; width:64px;">그룹</th>
                 <th style="text-align:left;">그룹명</th>
                 <th style="text-align:center; width:120px;">브랜드</th>
@@ -821,19 +829,23 @@
     <section class="otb-section">
       <div class="otb-section__head">
         <!-- 사용자 요청: 타이틀 영역에 stats (브랜드 / 신규 / 변경) 컴포넌트 노출 -->
-        <div class="scm-stats-bar__counts" style="margin: 0;">
-          <span class="scm-stat scm-stat--all">
-            <span class="scm-stat__label">브랜드</span>
-            <span class="scm-stat__num" id="otb-stat-total">13</span>
-          </span>
-          <span class="scm-stat">
-            <span class="scm-stat__label">신규</span>
-            <span class="scm-stat__num" id="otb-stat-new">2</span>
-          </span>
-          <span class="scm-stat">
-            <span class="scm-stat__label">변경</span>
-            <span class="scm-stat__num" id="otb-stat-changed">0</span>
-          </span>
+        <div class="otb-section__head-left">
+          <div class="scm-stats-bar__counts" style="margin: 0;">
+            <span class="scm-stat scm-stat--all">
+              <span class="scm-stat__label">브랜드</span>
+              <span class="scm-stat__num" id="otb-stat-total">13</span>
+            </span>
+            <span class="scm-stat">
+              <span class="scm-stat__label">신규</span>
+              <span class="scm-stat__num" id="otb-stat-new">2</span>
+            </span>
+            <span class="scm-stat">
+              <span class="scm-stat__label">변경</span>
+              <span class="scm-stat__num" id="otb-stat-changed">0</span>
+            </span>
+          </div>
+          <!-- diff 토글 — 브랜드 카운트 옆에 배치 (사용자 요청). -->
+          <button class="scm-button scm-button--sm" type="button" id="otb-diff-toggle" aria-pressed="false">1차 대비 변경분 표시</button>
         </div>
         <div class="otb-section__tools">
           <!-- 엑셀 업로드 / 다운로드 (둘 다 download-btn 스타일) -->
@@ -875,9 +887,11 @@
           <table class="mp-table is-cell-selectable" id="otb-detail-table" data-scm-frozen="3">
             <thead>
               <tr>
-                <th class="col-medium col-frozen-1" style="text-align:left; width:200px;">브랜드 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
-                <th class="col-auto col-frozen-2" style="text-align:center;">그룹</th>
-                <th class="col-medium col-frozen-3" style="text-align:left;">본부 / 실</th>
+                <th class="col-auto col-frozen-1" style="text-align:center; width:48px;">No</th>
+                <th class="col-medium col-frozen-2" style="text-align:left; width:200px;">브랜드 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+                <th class="col-auto col-frozen-3" style="text-align:center;">그룹</th>
+                <th class="col-medium" style="text-align:left;">본부</th>
+                <th class="col-medium" style="text-align:left;">실</th>
                 <th class="col-medium cell-numeric">기초재고 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg></th>
                 <th class="col-medium cell-numeric" data-sort-key="otb">입고재고(OTB) <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg></th>
                 <th class="col-auto cell-numeric">전년대비(YoY)</th>
@@ -1296,8 +1310,9 @@
     // 그룹별 요약 테이블 — G1/G2/G3 만 (전체 합계 row 는 hero 로 분리).
     // 그룹 / 그룹명 / 브랜드(버튼) 3 컬럼 분리.
     var html = '';
-    groups.forEach(function (it) {
+    groups.forEach(function (it, idx) {
       html += '<tr class="is-group">'
+        + '<td style="text-align:center; color:var(--ld-fg-lower); font-variant-numeric:tabular-nums;">' + (idx + 1) + '</td>'
         + '<td style="text-align:center;"><span class="otb-group-pill" data-g="' + it.g + '">' + it.g + '</span></td>'
         + '<td style="text-align:left;">' + groupLabels[it.g].name + '</td>'
         + '<td style="text-align:center;"><button type="button" class="scm-button scm-button--sm" data-otb-brand-list="' + it.g + '">'
@@ -1391,7 +1406,8 @@
     renderPager(paged.totalPages, paged.totalItems);
 
     var html = '';
-    list.forEach(function (b) {
+    var pageStartIdx = (state.page - 1) * state.pageSize;
+    list.forEach(function (b, idx) {
       var d = calcDerived(b);
       var isNew = !!b.isNew;
       var otbYoY  = isNew ? null : calcYoY(b.otb, b.prev && b.prev.otb);
@@ -1403,9 +1419,11 @@
       };
       html += ''
         + '<tr class="' + (isNew ? 'is-new' : '') + '" data-brand-id="' + b.id + '">'
-        + '<td class="col-frozen-1" style="text-align:left; width:200px;">' + escapeHtml(b.brand) + '</td>'
-        + '<td class="col-frozen-2" style="text-align:center;"><span class="otb-group-pill" data-g="' + b.group + '">' + b.group + '</span></td>'
-        + '<td class="col-frozen-3" style="text-align:left;">' + b.hq.replace('본부', '') + ' / ' + escapeHtml(b.team) + '</td>'
+        + '<td class="col-frozen-1" style="text-align:center; width:48px; color:var(--ld-fg-lower); font-variant-numeric:tabular-nums;">' + (pageStartIdx + idx + 1) + '</td>'
+        + '<td class="col-frozen-2" style="text-align:left; width:200px;">' + escapeHtml(b.brand) + '</td>'
+        + '<td class="col-frozen-3" style="text-align:center;"><span class="otb-group-pill" data-g="' + b.group + '">' + b.group + '</span></td>'
+        + '<td style="text-align:left;">' + escapeHtml(b.hq.replace('본부', '')) + '</td>'
+        + '<td style="text-align:left;">' + escapeHtml(b.team) + '</td>'
         + '<td class="cell-numeric">' + fmt(b.base) + '</td>'
         + '<td class="cell-input cell-numeric' + ch('otb') + '"><input type="number" inputmode="numeric" min="0" step="1" value="' + b.otb + '" data-field="otb" readonly /></td>'
         + '<td class="cell-numeric">' + fmtYoY(otbYoY) + '</td>'
