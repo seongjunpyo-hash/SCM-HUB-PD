@@ -2496,7 +2496,10 @@ ${jsxBody}
       const style = doc.createElement('style');
       style.id = 'scm-voc-layout-css';
       style.textContent = ''
-        + 'main { display: grid !important; grid-template-columns: repeat(12, 1fr) !important; gap: 12px !important; align-content: start !important; }\n'
+        // row-gap 0, column-gap 12 — voc/_ensureComponentGridLayoutCSS 와 동일.
+        // 데모 standalone (demo/*.html) 도 협업 화면(VOC iframe) 과 같은
+        // 시각적 간격으로 보이도록 통일.
+        + 'main { display: grid !important; grid-template-columns: repeat(12, 1fr) !important; row-gap: 0 !important; column-gap: 12px !important; align-content: start !important; }\n'
         + 'main > * { grid-column: span 12; min-width: 0; }\n'
         + 'main > .scm-voc-added-grid { display: contents !important; }\n'
         + 'main > .scm-voc-added-grid > .scm-voc-added-comp { min-width: 0; }\n'
