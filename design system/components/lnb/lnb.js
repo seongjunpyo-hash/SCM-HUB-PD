@@ -395,12 +395,20 @@
       return (a.createdAt || 0) - (b.createdAt || 0);
     });
     sorted.forEach(function (p) {
-      if (!p || !p.path) return;
+      if (!p) return;
       // 이미 존재하면 (재mount 등) skip — data-voc-np-id 로 마킹.
       if (el.querySelector('[data-voc-np-id="' + p.id + '"]')) return;
+      // 순수 L1 그룹 entry — path/name 없는 경우. 그룹만 만들고 L2 anchor 안 만듦.
+      // (사용자가 voc 에서 mode='l1' 선택 시 path/name 입력 안 받음.)
+      if (p.mode === 'l1' && (!p.path || !p.name)) {
+        var existsL1 = el.querySelector('.scm-lnb-item[data-key="' + p.l1 + '"]');
+        if (!existsL1) el.appendChild(_buildL1Group(p, ''));
+        return;
+      }
+      if (!p.path) return;
       var key = ((p.path.match(/\/([^\/]+?)(?:\.html)?$/) || [])[1]) || p.id;
       if (p.mode === 'l1') {
-        // 새 L1 그룹 — (이미 같은 l1 key 그룹이 있으면 그쪽에 l2 로 append)
+        // 옛 entry — path 도 있는 mode='l1' (하위 호환). 그룹 + L2 모두.
         var existing = el.querySelector('.scm-lnb-item[data-key="' + p.l1 + '"]');
         if (existing) {
           var l2List = existing.querySelector('.scm-lnb-l2-list');
@@ -458,7 +466,11 @@
     item.appendChild(btn);
     var l2List = document.createElement('div');
     l2List.className = 'scm-lnb-l2-list';
-    l2List.appendChild(_buildL2Anchor(p, key));
+    // 순수 L1 그룹 (path/key 없음) 이면 L2 anchor 안 추가 — 사용자가 별도로
+    // mode='l2' 로 페이지 추가해야 노출.
+    if (key && p.path && p.name) {
+      l2List.appendChild(_buildL2Anchor(p, key));
+    }
     item.appendChild(l2List);
     return item;
   }
