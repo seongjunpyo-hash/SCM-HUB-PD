@@ -3794,8 +3794,13 @@
     function applyComponentSectionToIframe() {
       rebuildAddedComponentsOnly();
       applyNativeComponentEdits();
-      applyComponentOrderToIframe();
+      // applyEditCss 를 먼저 — CSS hide/show 가 즉시 적용된 후 scan 해야
+      // un-hide 한 element 가 'visible' 로 잡혀 componentOrder 에 자연 위치로
+      // 들어감. 옛 순서 (Order → Css) 는 hide 의 CSS 룰이 살아있는 채로 scan
+      // 해 un-hide 한 element 가 hidden 으로 인식돼 order 에서 빠지고, 결국
+      // 화면 끝으로 밀려나 "사라진 것처럼" 보이는 사용자 보고.
       applyEditCss();
+      applyComponentOrderToIframe();
       _setPreviewedComponent();
       refreshSaveBtn();
     }
@@ -4447,7 +4452,11 @@
         const natives = (targets.components || []).map((it) => it.selector);
         const added   = ((d.added && d.added.components) || []).map((c) => `#voc-added-comp-${c.id}`);
         const all = new Set([...natives, ...added]);
-        const cleaned = (d.componentOrder || []).filter((s) => all.has(s));
+        // **VOC 가 hide 한 selector 도 위치 보존** — 옛 코드는 hidden 을
+        // 제거해서 다시 un-hide 시 끝으로 append 되어 "위치가 바뀌어 사라진
+        // 것처럼" 보임. d.hidden 에 있는 selector 는 keep.
+        const hiddenSet = new Set(d.hidden || []);
+        const cleaned = (d.componentOrder || []).filter((s) => all.has(s) || hiddenSet.has(s));
         const inArr = new Set(cleaned);
         // 디폴트 순서: natives 먼저, 그 다음 added.
         [...natives, ...added].forEach((s) => { if (!inArr.has(s)) cleaned.push(s); });
