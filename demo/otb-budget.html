@@ -332,23 +332,26 @@
       margin-top: 6px;
       font-size: 12px; color: var(--ld-fg-lower);
     }
-    /* 전체 브랜드 카드의 플랫폼 chip 들 — 공통 / 무신사 / 29CM */
+    /* 전체 브랜드 카드의 플랫폼 카운트 라벨 — 공통 / 무신사 / 29CM.
+       사용자 요청: 버튼 아님, 그냥 카운트 노출. 구분선으로 분리만. */
     .otb-kpi__chips {
       margin-top: 8px;
-      display: flex; gap: 6px; flex-wrap: wrap;
+      display: flex; align-items: center; flex-wrap: wrap;
+      gap: 0;
     }
     .otb-platform-chip {
-      appearance: none; cursor: pointer;
-      padding: 4px 10px;
-      border: 1px solid var(--ld-border);
-      border-radius: 999px;
-      background: #fff;
-      font-family: inherit; font-size: 12px; font-weight: 600;
+      appearance: none; border: 0; background: transparent;
+      padding: 0 12px;
+      font-family: inherit; font-size: 13px; font-weight: 600;
       color: var(--ld-fg);
       letter-spacing: 0.1px;
-      transition: background 0.12s, border-color 0.12s;
+      cursor: pointer;
+      border-right: 1px solid var(--ld-border);
+      line-height: 1.4;
     }
-    .otb-platform-chip:hover { background: #F3F4F6; border-color: #1A1A1A; }
+    .otb-platform-chip:first-child { padding-left: 0; }
+    .otb-platform-chip:last-child { border-right: 0; padding-right: 0; }
+    .otb-platform-chip:hover { color: #245EFF; }
     .otb-platform-chip span { color: var(--ld-fg-lower); font-weight: 500; margin-left: 2px; }
     /* 진행률 바 — 평균 집행률 KPI 안 */
     .otb-kpi__bar {
@@ -468,7 +471,15 @@
       table-layout: auto;
     }
     .otb-summary-table th, .otb-summary-table td { white-space: nowrap; }
-    .otb-summary-table .otb-total-hero__count-btn { font-weight: 500; }
+    /* 그룹별 요약 테이블의 [N개 브랜드] 버튼 — scm-button 의 검정 보더가 너무
+       강해 사용자 요청으로 그레이 보더로. hover 시 살짝 진해짐. */
+    .otb-summary-table .scm-button {
+      border-color: var(--ld-border) !important;
+      color: var(--ld-fg);
+    }
+    .otb-summary-table .scm-button:hover {
+      border-color: var(--ld-fg-lower) !important;
+    }
     /* 사용자 요청: "테이블 헤더는 전부 좌측 정렬". OTB 페이지의 두 테이블
        모두 헤더 좌측. cell-numeric 의 기본 right-align 을 inline style 로
        override 한 케이스도 함께 풀어주기 위해 !important. (tbody td 는 그대로) */
