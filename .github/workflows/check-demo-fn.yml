@@ -1,0 +1,41 @@
+name: demo function check
+
+# Cloudflare Pages Function (functions/demo/[[path]].js) 의 회귀 사전 차단.
+#
+# 검증 항목:
+#   1. functions/demo/_known-assets.js 가 demo/ 실제 파일 목록과 일치
+#      (새 데모 파일 추가/삭제 시 화이트리스트 갱신 누락 방지)
+#   2. 함수의 모든 분기 (캐노니컬 .html / clean URL / _blank 자체 / 미지 슬러그
+#      / ASSETS 308 leak / ASSETS throw / 워크스페이스 랜딩 회귀 시나리오) 가
+#      예상대로 동작 — PR #144 회귀 (신규 슬러그 → 워크스페이스 랜딩) 패턴
+#      재현 시 즉시 fail.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'functions/demo/**'
+      - 'demo/**'
+      - 'scripts/check-demo-fn.js'
+      - 'scripts/sync-demo-assets.js'
+      - '.github/workflows/check-demo-fn.yml'
+  pull_request:
+    paths:
+      - 'functions/demo/**'
+      - 'demo/**'
+      - 'scripts/check-demo-fn.js'
+      - 'scripts/sync-demo-assets.js'
+      - '.github/workflows/check-demo-fn.yml'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: 화이트리스트 sync 검증 (demo/*.html ↔ functions/demo/_known-assets.js)
+        run: node scripts/sync-demo-assets.js --check
+      - name: 함수 분기 단위 테스트
+        run: node scripts/check-demo-fn.js
