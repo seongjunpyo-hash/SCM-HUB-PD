@@ -2024,7 +2024,12 @@
   }
   _enforceSummaryWidths();
   try { requestAnimationFrame(function () { _enforceSummaryWidths(); }); } catch (_) {}
-  setTimeout(_enforceSummaryWidths, 200);
+  // dev-export 의 applyActiveVersionMinimal 은 scm-table API 대기 setTimeout
+  // chain 으로 최대 1.5초 후 _applyColumnWidthsForVersion 호출. 그 시점에서
+  // th.style.minWidth/maxWidth 를 덮어써 우리 widths 가 무력화 됨.
+  // 5초간 250ms 간격으로 계속 재박아 절대 못 덮어쓰게.
+  var _enforceTimer = setInterval(_enforceSummaryWidths, 250);
+  setTimeout(function () { clearInterval(_enforceTimer); }, 5000);
 
   // ----- SCM 테이블 모듈 mount (sticky thead, frozen, drag/resize, cell selection) -----
   // sku-management.html 와 동일한 mount 호출

@@ -2602,6 +2602,11 @@ ${jsxBody}
       let th;
       try { th = doc.querySelector(sel); } catch (_) { return; }
       if (!th) return;
+      // 가드: 페이지가 자체 너비 강제 모듈을 갖는 테이블은 dev-export 가
+      // 건드리지 않음. OTB 그룹별 요약처럼 fixed-layout + nth-child 로 폭이
+      // 결정되는 케이스에서 dev-export 가 min/max 를 덮어쓰면 모든 셀이
+      // clamp 결과로 균등해지는 회귀를 막기 위함.
+      if (th.closest('#otb-summary-table')) return;
       const tr = th.closest('tr');
       if (!tr) return;
       const colIdx = Array.prototype.indexOf.call(tr.children, th);
