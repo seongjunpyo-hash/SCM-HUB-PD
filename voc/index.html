@@ -2896,9 +2896,32 @@
       urlOpen.href = state.currentPage;
       // initial render — set up the menu UI then explicitly navigate so
       // the iframe actually loads (iframe.src starts at about:blank).
-      const initialMatch = findMenuByPath(state.currentPage) || { l1: MENU[0], l2: MENU[0].children[0] };
-      const initialPath = selectL1(initialMatch.l1.l1, initialMatch.l2.path);
-      navigateTo(initialPath);
+      // findMenuByPath 는 canonical MENU 만 검색하므로 신규 페이지 / 캐노니컬
+      // L1 이 deleted 상태인 페이지를 못 찾음 → selectL1 fallback 으로 tree[0]
+      // (대시보드) 로 가버림. 실제 화면 트리 (_buildMenuTree = canonical +
+      // 신규 + delete 적용) 에서 currentPage 를 포함한 L1 을 찾고, 못 찾을
+      // 때만 옛 fallback 사용.
+      let initL1 = null;
+      let initPath = state.currentPage;
+      try {
+        const fullTree = _buildMenuTree();
+        for (const g of fullTree) {
+          if (g.children && g.children.some((c) => c.path === state.currentPage)) {
+            initL1 = g.l1;
+            break;
+          }
+        }
+      } catch (_) {}
+      if (initL1) {
+        // selectL1 가 L1 chip / L2 select / L3 select 활성 + 반환값으로 실제
+        // navigation path 결정 (L3 child 케이스 등 처리).
+        initPath = selectL1(initL1, state.currentPage) || state.currentPage;
+      } else {
+        // 옛 fallback — canonical MENU 검색 후 fallback to MENU[0]
+        const initialMatch = findMenuByPath(state.currentPage) || { l1: MENU[0], l2: MENU[0].children[0] };
+        initPath = selectL1(initialMatch.l1.l1, initialMatch.l2.path);
+      }
+      navigateTo(initPath);
 
       reloadBtn.addEventListener('click', () => {
         if (!iframe.contentWindow) return;
