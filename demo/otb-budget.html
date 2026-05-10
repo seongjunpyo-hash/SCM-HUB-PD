@@ -833,7 +833,23 @@
               <col style="width:64px;">
               <col style="width:320px;">
               <col style="width:120px;">
-              <col><col><col><col><col><col><col><col><col><col><col><col><col>
+              <!-- 13 numeric cols — 명시 calc 로 잔여 폭 13 등분.
+                   (col 들에 width 미지정 시 last col 이 잉여를 흡수하는
+                   브라우저 quirk 가 사용자 보고됨 → 명시 박음.)
+                   552 = 48+64+320+120 (앞 4 cols 합계). -->
+              <col style="width:calc((100% - 552px) / 13);">
+              <col style="width:calc((100% - 552px) / 13);">
+              <col style="width:calc((100% - 552px) / 13);">
+              <col style="width:calc((100% - 552px) / 13);">
+              <col style="width:calc((100% - 552px) / 13);">
+              <col style="width:calc((100% - 552px) / 13);">
+              <col style="width:calc((100% - 552px) / 13);">
+              <col style="width:calc((100% - 552px) / 13);">
+              <col style="width:calc((100% - 552px) / 13);">
+              <col style="width:calc((100% - 552px) / 13);">
+              <col style="width:calc((100% - 552px) / 13);">
+              <col style="width:calc((100% - 552px) / 13);">
+              <col style="width:calc((100% - 552px) / 13);">
             </colgroup>
             <thead>
               <tr>
