@@ -435,11 +435,9 @@
     span.className = 'scm-lnb-l2-text';
     span.textContent = p.name || key;
     a.appendChild(span);
-    // 신규 표시 — voc 의 'NEW' 라벨과 일관.
-    var tag = document.createElement('span');
-    tag.className = 'scm-lnb-tag scm-lnb-tag--wip';
-    tag.textContent = '신규';
-    a.appendChild(tag);
+    // [신규] 라벨은 LNB 에 안 박음 — applyStatusTags 가 페이지 상태에 맞는
+    // 태그 (작업중 / 검토중 / 최종확정) 를 동적으로 한 개만 부착하도록 일임.
+    // 두 태그 (신규 + 작업중) 동시 노출은 시각 노이즈.
     return a;
   }
   function _buildL1Group(p, key) {

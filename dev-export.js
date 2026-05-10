@@ -1856,8 +1856,16 @@ ${jsxBody}
       }
       if (!applied) {
         const map = _loadAppliedMap();
-        const np = _normalizePageKey(location.pathname);
-        applied = map[np] || map[location.pathname] || null;
+        // 다중 키 시도 — 옛 raw 키 (.html 포함) 와 새 정규화 키 (.html 제거) 둘 다.
+        // PR #153 이후 voc 가 정규화 키로 저장하지만 옛 데이터가 raw 로 남아있을
+        // 수 있고, location.pathname 도 Pages clean URL 모드면 .html 떼어진
+        // 형태로 옴. 여러 변형을 try 해서 가장 보편적으로 매치.
+        const p = location.pathname;
+        const np = _normalizePageKey(p);
+        const candidates = [np, p, p + '.html', np + '.html'];
+        for (let i = 0; i < candidates.length; i++) {
+          if (map[candidates[i]]) { applied = map[candidates[i]]; break; }
+        }
       }
       const exposed = !applied || !applied.settings || applied.settings.exposed !== false;
       if (exposed) return;

@@ -155,15 +155,19 @@
       color: var(--fg-mute); transition: all 0.12s ease;
     }
     .topbar__back:hover { color: var(--fg); border-color: var(--line-2); }
-    /* [데모로 가기] 만 별도 스타일 — 보더 없음, 블랙, 더 크게 (요청). */
+    /* [데모로 가기] 만 별도 스타일 — 보더 없음, 블랙, 화살표/글자 세로 중앙 정렬. */
     #topbarGoDemo {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
       border: 0;
       background: transparent;
       color: #1A1A1A;
-      font-size: 15px;
+      font-size: 13.5px;
       font-weight: 600;
       padding: 6px 14px;
       letter-spacing: -0.01em;
+      line-height: 1;
     }
     #topbarGoDemo:hover {
       color: #000;
