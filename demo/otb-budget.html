@@ -341,7 +341,7 @@
     }
     .otb-platform-chip {
       appearance: none; border: 0; background: transparent;
-      padding: 0 12px;
+      padding: 0 6px;
       font-family: inherit; font-size: 13px; font-weight: 600;
       color: var(--ld-fg);
       letter-spacing: 0.1px;
@@ -1245,9 +1245,9 @@
       +     '<div class="otb-kpi__label">전체 브랜드</div>'
       +     '<div class="otb-kpi__value">' + list.length + '<span class="unit">개</span></div>'
       +     '<div class="otb-kpi__chips">'
-      +       '<button type="button" class="otb-platform-chip" data-otb-brand-list="all">공통 <span>(' + list.length + ')</span></button>'
-      +       '<button type="button" class="otb-platform-chip" data-otb-brand-list="무신사">무신사 <span>(' + list.filter(function (b) { return b.platform === '무신사'; }).length + ')</span></button>'
-      +       '<button type="button" class="otb-platform-chip" data-otb-brand-list="29CM">29CM <span>(' + list.filter(function (b) { return b.platform === '29CM'; }).length + ')</span></button>'
+      +       '<button type="button" class="otb-platform-chip" data-otb-brand-list="all">공통 <span>' + list.length + '</span></button>'
+      +       '<button type="button" class="otb-platform-chip" data-otb-brand-list="무신사">무신사 <span>' + list.filter(function (b) { return b.platform === '무신사'; }).length + '</span></button>'
+      +       '<button type="button" class="otb-platform-chip" data-otb-brand-list="29CM">29CM <span>' + list.filter(function (b) { return b.platform === '29CM'; }).length + '</span></button>'
       +     '</div>'
       +   '</div>'
       +   '<div class="otb-kpi otb-kpi--budget">'
