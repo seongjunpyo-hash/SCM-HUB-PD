@@ -608,9 +608,9 @@
     var icons = _loadMenuIcons();
     var keys = Object.keys(icons);
     if (!keys.length) return;
-    // 시각 stroke 두께 (px) — canonical 캐노니컬 1.4 보다 살짝 얇게 (1.2) 해
+    // 시각 stroke 두께 (px) — canonical 캐노니컬 1.4 보다 살짝 얇게 (1.3) 해
     // 사용자 요청 ("사이즈 키우고 굵기 줄여") 충족.
-    var TARGET_STROKE_PX = 1.2;
+    var TARGET_STROKE_PX = 1.3;
     var TARGET_PX = 24;
     keys.forEach(function (l1key) {
       var iconId = icons[l1key];
