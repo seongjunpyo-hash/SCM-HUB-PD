@@ -803,8 +803,11 @@
         <h2 class="otb-section__title">그룹별 요약</h2>
         <span style="font-size:12px; color:var(--ld-fg-lower);">단위: 백만원 (VAT 제외)</span>
       </div>
+      <!-- 그룹별 요약은 3 row (G1/G2/G3) 만 있어 sticky thead 불필요.
+           .mp-thead-sticky 래퍼를 빼서 scm-table 의 setupStickyThead 가
+           안 돌게 → table-layout:auto + width:100% 로 13 데이터 컬럼이
+           자연 분배 (잉여 폭이 마지막 컬럼 흡수되는 문제 회피). -->
       <div class="mp-table-host">
-        <div class="mp-thead-sticky"><div class="mp-thead-scroll"></div></div>
         <div class="mp-table-scroll">
           <table class="mp-table otb-summary-table" id="otb-summary-table">
             <thead>
@@ -826,10 +829,6 @@
                 <th class="cell-numeric">기말재고</th>
                 <th class="cell-numeric">소진율</th>
                 <th class="cell-numeric">재고일수</th>
-                <!-- col-spacer: scm-table 의 setupStickyThead 가 잉여 폭을 마지막
-                     데이터 컬럼 (재고일수) 에 다 보내버려 우측이 너무 넓어지던
-                     문제 fix. 디테일 테이블 패턴과 동일. -->
-                <th class="col-spacer" data-empty="true" aria-hidden="true"></th>
               </tr>
             </thead>
             <tbody id="otb-summary-body"></tbody>
