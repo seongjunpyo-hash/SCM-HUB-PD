@@ -155,6 +155,21 @@
       color: var(--fg-mute); transition: all 0.12s ease;
     }
     .topbar__back:hover { color: var(--fg); border-color: var(--line-2); }
+    /* [데모로 가기] 만 별도 스타일 — 보더 없음, 블랙, 더 크게 (요청). */
+    #topbarGoDemo {
+      border: 0;
+      background: transparent;
+      color: #1A1A1A;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 6px 14px;
+      letter-spacing: -0.01em;
+    }
+    #topbarGoDemo:hover {
+      color: #000;
+      background: rgba(0, 0, 0, 0.04);
+      border: 0;
+    }
 
     /* ============ Layout ============ */
     .layout {
@@ -2430,6 +2445,10 @@
     // canonical CANONICAL_LNB_HTML 은 코드에 박혀있어 진짜 삭제는 안 되고
     // 런타임에 LNB / 상단 chip / L2 select 에서 필터링.
     const MENU_HIDDEN_KEY = 'scm:voc:menu-hidden:v1';
+    // 캐노니컬 메뉴 영구 삭제 (원복 불가) — hidden 과 별도 list. UI 상 [삭제]
+    // 버튼 + 경고 모달 → 이 list 에 add. 한 번 들어가면 UI 에 노출 / 미노출
+    // 토글로도 못 되돌림 (storage 직접 편집해야 복원).
+    const MENU_DELETED_KEY = 'scm:voc:menu-deleted:v1';
     // 사용자가 신규 컴포넌트를 저장한 라이브러리 — 다른 페이지에서 [라이브러리] 탭의
     // "내 컴포넌트" 그룹에서 다시 불러올 수 있게 됨. addComponent 시 자동 저장,
     // dedupe 는 HTML 해시 기준.
@@ -2762,6 +2781,19 @@
       state.menuHidden = (function () {
         try {
           const raw = localStorage.getItem(MENU_HIDDEN_KEY);
+          const v = raw ? JSON.parse(raw) : {};
+          const safe = (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
+          return {
+            l1: Array.isArray(safe.l1) ? safe.l1 : [],
+            l2: Array.isArray(safe.l2) ? safe.l2 : [],
+          };
+        } catch { return { l1: [], l2: [] }; }
+      })();
+      // 사용자가 영구 삭제한 캐노니컬 메뉴 항목. menuHidden 과 별도 list —
+      // UI 에서 노출/미노출 토글로 못 되돌림.
+      state.menuDeleted = (function () {
+        try {
+          const raw = localStorage.getItem(MENU_DELETED_KEY);
           const v = raw ? JSON.parse(raw) : {};
           const safe = (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
           return {
@@ -6989,6 +7021,33 @@
     function persistMenuHidden() {
       try { localStorage.setItem(MENU_HIDDEN_KEY, JSON.stringify(state.menuHidden || { l1: [], l2: [] })); } catch {}
     }
+    // 캐노니컬 메뉴 영구 삭제 — 원복 불가. menuDeleted list 에 add 후
+    // hidden 동작과 동일하게 LNB / VOC tree 에서 제외. 토글 없음.
+    function setMenuDeleted(level, key) {
+      if (!key || (level !== 'l1' && level !== 'l2')) return;
+      state.menuDeleted = state.menuDeleted || { l1: [], l2: [] };
+      const arr = state.menuDeleted[level];
+      if (arr.indexOf(key) < 0) arr.push(key);
+      // hidden list 에서도 제거 (있으면) — 같은 항목이 두 list 에 있을 필요 없음.
+      if (state.menuHidden && state.menuHidden[level]) {
+        const idx = state.menuHidden[level].indexOf(key);
+        if (idx >= 0) state.menuHidden[level].splice(idx, 1);
+      }
+      persistMenuDeleted();
+      persistMenuHidden();
+      renderNewPageList();
+      _renderTopL1Chips();
+      const activeChip = menuL1.querySelector('.menu-l1__chip.is-active');
+      if (activeChip) selectL1(activeChip.dataset.l1, state.currentPage);
+      _refreshIframeLnb();
+    }
+    function isMenuDeleted(level, key) {
+      const arr = (state.menuDeleted && state.menuDeleted[level]) || [];
+      return arr.indexOf(key) >= 0;
+    }
+    function persistMenuDeleted() {
+      try { localStorage.setItem(MENU_DELETED_KEY, JSON.stringify(state.menuDeleted || { l1: [], l2: [] })); } catch {}
+    }
     function persistMenuOrder() {
       try { localStorage.setItem(MENU_ORDER_KEY, JSON.stringify(state.menuOrder || {})); } catch {}
     }
@@ -7029,15 +7088,17 @@
     // 통합 트리 빌드 — { l1Order: [{l1, label, isNewL1, children:[...]}], }
     // children = [{ key, label, path, isNewPage, npEntry? }]
     function _buildMenuTree() {
-      // 1. canonical L1 그룹들
+      // 1. canonical L1 그룹들 — 영구 삭제된 L1 / L2 는 제외 (원복 불가).
       const groups = {};
-      const canonicalL1Order = MENU.map((m) => m.l1);
-      MENU.forEach((m) => {
+      const canonicalL1Order = MENU.map((m) => m.l1).filter((k) => !isMenuDeleted('l1', k));
+      MENU.filter((m) => !isMenuDeleted('l1', m.l1)).forEach((m) => {
         groups[m.l1] = {
           l1: m.l1,
           label: m.label,
           isNewL1: false,
-          children: m.children.map((c) => ({
+          children: m.children
+            .filter((c) => !isMenuDeleted('l2', c.key || _newpageL2Key({ path: c.path })))
+            .map((c) => ({
             key: c.key || _newpageL2Key({ path: c.path }),
             label: c.label,
             path: c.path,
@@ -7107,14 +7168,16 @@
         const childRows = g.children.map((c) => {
           const newBadge = c.isNewPage ? '<span class="mt-row__badge mt-row__badge--new">신규</span>' : '';
           const l2Hidden = !c.isNewPage && isMenuHidden('l2', c.key);
-          // 모든 항목: [미노출/노출] 토글 버튼.
-          // 신규 페이지: 추가로 [삭제] 버튼 (영구 삭제, 경고 모달).
-          // 캐노니컬은 markup 에서 오므로 진짜 삭제 불가 — hide 만 가능.
+          // 모든 항목: [미노출/노출] 토글 + [삭제] 두 버튼.
+          // - 신규 페이지: 삭제 = deleteNewPage (newPages entry 영구 제거)
+          // - 캐노니컬: 삭제 = setMenuDeleted (menuDeleted list 에 add, 원복 불가)
           const hideToggleLabel = l2Hidden ? '노출' : '미노출';
           const hideToggleCls = l2Hidden ? 'np-row__btn np-row__btn--show' : 'np-row__btn np-row__btn--hide';
           let actionsHtml = `<button type="button" class="${hideToggleCls}" data-menu-toggle-l2="${escapeHtml(c.key)}" data-currently-hidden="${l2Hidden ? '1' : '0'}">${hideToggleLabel}</button>`;
           if (c.isNewPage) {
             actionsHtml += `<button type="button" class="np-row__btn np-row__btn--del" data-np-del="${escapeHtml(c.npEntry.id)}" data-np-name="${escapeHtml(c.label)}">삭제</button>`;
+          } else {
+            actionsHtml += `<button type="button" class="np-row__btn np-row__btn--del" data-menu-del-l2="${escapeHtml(c.key)}" data-menu-del-name="${escapeHtml(c.label)}">삭제</button>`;
           }
           const rowCls = ['mt-row', 'mt-row--l2'];
           if (l2Hidden) rowCls.push('is-hidden');
@@ -7126,13 +7189,15 @@
             </div>`;
         }).join('');
         const newL1Badge = g.isNewL1 ? '<span class="mt-row__badge mt-row__badge--new">신규 그룹</span>' : '';
-        // L1 — 캐노니컬: 미노출/노출 토글. 신규 그룹: hide 개념 없음 (그룹 자체
-        // 신규 페이지로 만든 거라 그 신규 페이지 삭제하면 그룹도 같이 정리).
+        // L1 — 캐노니컬: 미노출/노출 토글 + 삭제 (영구). 신규 그룹: hide 개념 없음
+        // (그룹 자체 신규 페이지로 만든 거라 그 신규 페이지 삭제하면 그룹도 같이
+        // 정리).
         let l1ActionsHtml = '';
         if (!g.isNewL1) {
           const l1ToggleLabel = l1Hidden ? '노출' : '미노출';
           const l1ToggleCls = l1Hidden ? 'np-row__btn np-row__btn--show' : 'np-row__btn np-row__btn--hide';
           l1ActionsHtml = `<button type="button" class="${l1ToggleCls}" data-menu-toggle-l1="${escapeHtml(g.l1)}" data-currently-hidden="${l1Hidden ? '1' : '0'}">${l1ToggleLabel}</button>`;
+          l1ActionsHtml += `<button type="button" class="np-row__btn np-row__btn--del" data-menu-del-l1="${escapeHtml(g.l1)}" data-menu-del-name="${escapeHtml(g.label)}">삭제</button>`;
         }
         const l1ActionBtn = l1ActionsHtml ? `<span class="np-row__actions">${l1ActionsHtml}</span>` : '';
         const groupCls = ['mt-group'];
@@ -7152,6 +7217,20 @@
         btn.addEventListener('click', (e) => {
           e.preventDefault();
           openDeleteConfirm(btn.dataset.npName || '메뉴', () => deleteNewPage(btn.dataset.npDel));
+        });
+      });
+      // 캐노니컬 L2 영구 삭제 — 경고 모달 + setMenuDeleted (원복 불가)
+      host.querySelectorAll('[data-menu-del-l2]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          openDeleteConfirm(btn.dataset.menuDelName || '메뉴', () => setMenuDeleted('l2', btn.dataset.menuDelL2));
+        });
+      });
+      // 캐노니컬 L1 그룹 영구 삭제 — 경고 모달 + setMenuDeleted (원복 불가)
+      host.querySelectorAll('[data-menu-del-l1]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          openDeleteConfirm(btn.dataset.menuDelName || '그룹', () => setMenuDeleted('l1', btn.dataset.menuDelL1));
         });
       });
       // L2 미노출/노출 토글

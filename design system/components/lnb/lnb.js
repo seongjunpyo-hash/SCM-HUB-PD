@@ -489,20 +489,37 @@
       };
     } catch (_) { return { l1: [], l2: [] }; }
   }
+  // voc 의 setMenuDeleted() 로 저장된 'scm:voc:menu-deleted:v1' 키 — 영구 삭제.
+  // hidden 과 별도. 캐노니컬 markup 에 있어도 LNB 에서 완전 제거. UI 토글 없음.
+  function _loadMenuDeleted() {
+    try {
+      if (typeof localStorage === 'undefined') return { l1: [], l2: [] };
+      var raw = localStorage.getItem('scm:voc:menu-deleted:v1');
+      var v = raw ? JSON.parse(raw) : null;
+      if (!v || typeof v !== 'object' || Array.isArray(v)) return { l1: [], l2: [] };
+      return {
+        l1: Array.isArray(v.l1) ? v.l1 : [],
+        l2: Array.isArray(v.l2) ? v.l2 : [],
+      };
+    } catch (_) { return { l1: [], l2: [] }; }
+  }
   function _applyMenuHiddenToLnb(el) {
     if (!el) return;
+    // hidden 과 deleted 를 합쳐 처리 — 둘 다 LNB 에서 제거. 차이는 voc UI
+    // 토글 가능 여부 (deleted 는 voc 에서도 안 보이게 _buildMenuTree 에서 제외).
     var hidden = _loadMenuHidden();
-    // L1 그룹 hide → 그 .scm-lnb-item 제거
-    if (hidden.l1.length) {
-      hidden.l1.forEach(function (l1key) {
+    var deleted = _loadMenuDeleted();
+    var l1All = hidden.l1.concat(deleted.l1);
+    var l2All = hidden.l2.concat(deleted.l2);
+    if (l1All.length) {
+      l1All.forEach(function (l1key) {
         var item = el.querySelector('.scm-lnb-item[data-key="' + l1key + '"]');
         if (item && item.parentNode) item.parentNode.removeChild(item);
       });
     }
-    // L2 hide → 해당 .scm-lnb-l2 anchor 제거 (그 후 빈 group 은 그대로 두되
-    // 추후 user 가 restore 할 수 있게 markup 자체는 유지 — voc 만 hide 토글).
-    if (hidden.l2.length) {
-      hidden.l2.forEach(function (l2key) {
+    // L2 hide / 삭제 → 해당 .scm-lnb-l2 anchor 제거.
+    if (l2All.length) {
+      l2All.forEach(function (l2key) {
         var a = el.querySelector('.scm-lnb-l2[data-key="' + l2key + '"]');
         if (a && a.parentNode) a.parentNode.removeChild(a);
       });
@@ -571,8 +588,8 @@
           var nodes = document.querySelectorAll('.scm-lnb');
           for (var i = 0; i < nodes.length; i++) applyStatusTags(nodes[i]);
         }
-        // voc 가 메뉴 hidden / order 변경 시 — 다른 탭의 LNB 도 즉시 재반영.
-        if (e.key === 'scm:voc:menu-hidden:v1' || e.key === 'scm:voc:menu-order:v1' || e.key === 'scm:voc:newpages:v1') {
+        // voc 가 메뉴 hidden / deleted / order 변경 시 — 다른 탭의 LNB 도 즉시 재반영.
+        if (e.key === 'scm:voc:menu-hidden:v1' || e.key === 'scm:voc:menu-deleted:v1' || e.key === 'scm:voc:menu-order:v1' || e.key === 'scm:voc:newpages:v1') {
           var nodes = document.querySelectorAll('.scm-lnb');
           for (var i = 0; i < nodes.length; i++) {
             nodes[i].innerHTML = '';
