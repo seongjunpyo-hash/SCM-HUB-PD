@@ -479,11 +479,15 @@
        style 만으로는 .mp-table thead th 의 cascade 와 user-agent default
        에 묻히는 케이스가 있어 nth-child 셀렉터 + !important 로 명시 박음.
        1: No 48px, 2: 그룹 64px, 3: 그룹명 320px, 4: 브랜드 120px,
-       5-17: 13 numeric 균등 (width 미지정 → fixed layout 이 균등 분배). */
+       5-17: 13 numeric 균등 (calc 로 잔여 폭 13등분 명시 — 마지막 col
+       잉여 흡수 quirk 회피). */
     #otb-summary-table.mp-table thead th:nth-child(1) { width: 48px !important; }
     #otb-summary-table.mp-table thead th:nth-child(2) { width: 64px !important; }
     #otb-summary-table.mp-table thead th:nth-child(3) { width: 320px !important; }
     #otb-summary-table.mp-table thead th:nth-child(4) { width: 120px !important; }
+    #otb-summary-table.mp-table thead th:nth-child(n+5) {
+      width: calc((100% - 552px) / 13) !important;
+    }
     .otb-summary-table th, .otb-summary-table td { white-space: nowrap; }
     /* 그룹별 요약 테이블의 [N개 브랜드] 버튼 — scm-button 의 검정 보더가 너무
        강해 사용자 요청으로 그레이 보더로. hover 시 살짝 진해짐. */
@@ -824,32 +828,6 @@
       <div class="mp-table-host">
         <div class="mp-table-scroll">
           <table class="mp-table otb-summary-table" id="otb-summary-table">
-            <!-- colgroup — table-layout:fixed 에서 col widths 가 최우선.
-                 inline th width / nth-child !important 가 적용 안 되던
-                 사용자 보고 → colgroup 으로 박음. 13 numeric 은 width 미지정
-                 (fixed layout 잔여 폭 균등 분배). -->
-            <colgroup>
-              <col style="width:48px;">
-              <col style="width:64px;">
-              <col style="width:320px;">
-              <col style="width:120px;">
-              <!-- 13 numeric cols — 같은 px 폭으로 명시 박아 마지막 col 잉여
-                   흡수 quirk 회피. 디테일 테이블처럼 끝에 col-spacer (auto) 를
-                   둬 calc rounding 의 잉여 1-2px 도 그쪽으로 보냄. -->
-              <col style="width:calc((100% - 552px - 1px) / 13);">
-              <col style="width:calc((100% - 552px - 1px) / 13);">
-              <col style="width:calc((100% - 552px - 1px) / 13);">
-              <col style="width:calc((100% - 552px - 1px) / 13);">
-              <col style="width:calc((100% - 552px - 1px) / 13);">
-              <col style="width:calc((100% - 552px - 1px) / 13);">
-              <col style="width:calc((100% - 552px - 1px) / 13);">
-              <col style="width:calc((100% - 552px - 1px) / 13);">
-              <col style="width:calc((100% - 552px - 1px) / 13);">
-              <col style="width:calc((100% - 552px - 1px) / 13);">
-              <col style="width:calc((100% - 552px - 1px) / 13);">
-              <col style="width:calc((100% - 552px - 1px) / 13);">
-              <col style="width:calc((100% - 552px - 1px) / 13);">
-            </colgroup>
             <thead>
               <tr>
                 <th style="text-align:center;">No</th>
