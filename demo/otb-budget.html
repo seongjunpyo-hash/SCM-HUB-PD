@@ -824,12 +824,23 @@
       <div class="mp-table-host">
         <div class="mp-table-scroll">
           <table class="mp-table otb-summary-table" id="otb-summary-table">
+            <!-- colgroup — table-layout:fixed 에서 col widths 가 최우선.
+                 inline th width / nth-child !important 가 적용 안 되던
+                 사용자 보고 → colgroup 으로 박음. 13 numeric 은 width 미지정
+                 (fixed layout 잔여 폭 균등 분배). -->
+            <colgroup>
+              <col style="width:48px;">
+              <col style="width:64px;">
+              <col style="width:320px;">
+              <col style="width:120px;">
+              <col><col><col><col><col><col><col><col><col><col><col><col><col>
+            </colgroup>
             <thead>
               <tr>
-                <th style="text-align:center; width:48px;">No</th>
-                <th style="text-align:center; width:64px;">그룹</th>
-                <th style="text-align:left; width:320px;">그룹명</th>
-                <th style="text-align:center; width:120px;">브랜드</th>
+                <th style="text-align:center;">No</th>
+                <th style="text-align:center;">그룹</th>
+                <th style="text-align:left;">그룹명</th>
+                <th style="text-align:center;">브랜드</th>
                 <th class="cell-numeric">기초재고</th>
                 <th class="cell-numeric">입고재고(OTB)</th>
                 <th class="cell-numeric">전년대비(YoY)</th>
