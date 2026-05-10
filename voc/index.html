@@ -3660,8 +3660,8 @@
       const style = doc.createElement('style');
       style.id = 'scm-voc-layout-css';
       style.textContent = ''
-        // main: 12-col grid
-        + 'main { display: grid !important; grid-template-columns: repeat(12, 1fr) !important; gap: 12px !important; align-content: start !important; }\n'
+        // main: 12-col grid. row-gap 0 (사용자 요청 — 행간 좁게), column-gap 12px.
+        + 'main { display: grid !important; grid-template-columns: repeat(12, 1fr) !important; row-gap: 0 !important; column-gap: 12px !important; align-content: start !important; }\n'
         // 모든 자식 디폴트 = 전체 너비 (사용자가 inline style 로 override)
         + 'main > * { grid-column: span 12; min-width: 0; }\n'
         // .scm-voc-added-grid 는 dissolve — 안의 added comp / rowbreak 가 main 의
