@@ -1827,7 +1827,7 @@
           </svg>
           코멘트
         </button>
-        <button type="button" class="side-tab" data-tab="new">
+        <button type="button" class="side-tab" data-tab="new" data-role-gate="super" hidden>
           <svg class="side-tab__icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
             <path d="M10 4.5v11M4.5 10h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
             <rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.4" fill="none"/>
@@ -2817,6 +2817,12 @@
       document.getElementById('sideTabs').addEventListener('click', (e) => {
         const btn = e.target.closest('.side-tab');
         if (!btn) return;
+        // role gate — hidden 이어도 DOM 조작으로 클릭 가능한 케이스 방어.
+        // data-role-gate 가 있으면 user role 이 일치할 때만 활성.
+        if (btn.dataset.roleGate) {
+          const allowed = btn.dataset.roleGate.split(',').map((s) => s.trim()).filter(Boolean);
+          if (!state.user || !allowed.includes(state.user.role)) return;
+        }
         const tab = btn.dataset.tab;
         document.querySelectorAll('.side-tab').forEach((b) => b.classList.toggle('is-active', b === btn));
         document.querySelectorAll('.side-pane').forEach((p) => p.classList.toggle('is-active', p.dataset.pane === tab));
@@ -2915,11 +2921,19 @@
         if (!u) return;
         state.user.email = u.email;
         state.user.name  = u.name || u.email;
+        state.user.role  = u.role;
         $('#userName').textContent = u.name || u.email;
         const roleEl = $('#userRole');
         roleEl.textContent = ROLE_LABEL_KO[u.role] || u.role;
         roleEl.dataset.role = u.role;
         roleEl.style.display = '';
+        // 역할 게이트 — [신규] 탭은 super (최고 어드민) 만 노출. 다른 권한은
+        // 메뉴 만들기 자체를 못 하게. data-role-gate 속성에 명시된 role 과
+        // 일치하지 않으면 hidden 유지.
+        document.querySelectorAll('[data-role-gate]').forEach((el) => {
+          const allowed = (el.dataset.roleGate || '').split(',').map((s) => s.trim()).filter(Boolean);
+          if (allowed.length === 0 || allowed.includes(u.role)) el.hidden = false;
+        });
         // 계정관리 버튼은 super / admin 만 노출 — 별도 페이지로 이동하지 않고
         // profile-menu.js 가 노출한 iframe 모달을 띄움.
         const acctEl = $('#topbarGoAccounts');
@@ -6735,7 +6749,16 @@
       document.querySelectorAll(`#${hostId} input[type="checkbox"]:checked`).forEach((cb) => out.push(cb.value));
       return out;
     }
+    // 신규 메뉴 생성/삭제는 super (최고 어드민) 만 가능. UI 도 hidden 이지만
+    // DOM 조작 / 콘솔 호출 / race 등으로 우회되어도 거부되도록 함수 입구에서
+    // 한 번 더 가드.
+    function _ensureSuperOrDeny() {
+      if (state.user && state.user.role === 'super') return true;
+      showToast('이 작업은 최고 어드민만 가능합니다');
+      return false;
+    }
     function submitNewPage() {
+      if (!_ensureSuperOrDeny()) return;
       const form = document.querySelector('.np-form');
       const mode = (form && form.dataset.mode) || 'l2';
       const name = (document.getElementById('npName').value || '').trim();
@@ -6817,6 +6840,7 @@
       showToast(`${tagPrefix}[${name}] 페이지 정의가 추가됐습니다`);
     }
     function deleteNewPage(id) {
+      if (!_ensureSuperOrDeny()) return;
       if (!confirm('이 신규 페이지 정의를 삭제할까요?')) return;
       const removed = (state.newPages || []).find((p) => p.id === id);
       state.newPages = (state.newPages || []).filter((p) => p.id !== id);
