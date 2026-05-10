@@ -515,6 +515,15 @@
       display: inline-flex; align-items: center; gap: 16px;
       flex-wrap: wrap;
     }
+    /* diff 토글 — 옆 엑셀 업/다운(.scm-download-btn) 과 시각 톤 맞춤.
+       scm-button 의 #000 보더는 액션바 안에서 너무 무거워 #E0E0E0 으로 완화. */
+    .otb-section__head-left #otb-diff-toggle {
+      border-color: #E0E0E0;
+      color: #000;
+    }
+    .otb-section__head-left #otb-diff-toggle:hover {
+      border-color: #BDBDBD;
+    }
     .otb-section__head-left #otb-diff-toggle.is-on {
       background: #EAF1FF; border-color: #245EFF; color: #245EFF;
     }
