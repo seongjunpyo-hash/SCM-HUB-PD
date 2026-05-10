@@ -538,13 +538,18 @@
   function _applyMenuOrderToLnb(el) {
     if (!el) return;
     var order = _loadMenuOrder();
-    // L1 그룹 reorder — 캐노니컬 + voc 신규 L1 모두 data-key 가 있어 모든
-    // 항목이 l1Order 에 들어옴. appendChild 만으로 충분히 정렬됨 (l1Order 순서대로
-    // 처리하면 마지막에 모든 항목이 의도한 순서로 정렬).
+    // L1 그룹 reorder — l1Order 에 안 들어있는 L1 (예: 새로 캐노니컬에 추가된
+    // 그룹, 또는 voc 신규 L1 가 추가됐는데 그 후 reorder 가 없었던 경우) 가 있을
+    // 때, 옛 appendChild 방식은 ordered 항목들을 끝으로 보내 unordered 항목이 TOP
+    // 에 남는 결과를 만듦 → VOC 메뉴관리 트리 (`_buildMenuTree`: ordered TOP +
+    // unseen BOTTOM) 와 정반대로 표시되어 사용자가 "메뉴관리 순서랑 LNB 가
+    // 안 맞는다" 라고 보고. L2 와 동일하게 reverse + insertBefore(firstChild)
+    // prepend 패턴으로 통일 — ordered 항목은 TOP 에 의도한 순서, unordered (신규
+    // 추가) 항목은 자연스럽게 BOTTOM 으로.
     if (Array.isArray(order.l1Order) && order.l1Order.length) {
-      order.l1Order.forEach(function (l1key) {
+      order.l1Order.slice().reverse().forEach(function (l1key) {
         var item = el.querySelector('.scm-lnb-item[data-key="' + l1key + '"]');
-        if (item) el.appendChild(item);
+        if (item) el.insertBefore(item, el.firstChild);
       });
     }
     // L2 reorder per L1 — placeholder (href="#") 들은 data-key 가 없어 arr 에
