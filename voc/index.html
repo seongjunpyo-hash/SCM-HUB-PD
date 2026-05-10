@@ -7987,8 +7987,14 @@
     let _dragState = null;
     function _dropOk(row) {
       if (!_dragState) return false;
-      if (row.dataset.dragKind   !== _dragState.kind)   return false;
-      if ((row.dataset.dragDepth  || '0') !== _dragState.depth)  return false;
+      // menu-l2 → menu-l1 drop 허용 (빈 L1 그룹으로 cross-L1 이동).
+      // L1 row 는 dragKind='menu-l1', dragDepth='0' 이라 일반 kind/depth
+      // 검사를 통과 못함 → 별도 분기.
+      const isL2OntoL1 = (_dragState.kind === 'menu-l2' && row.dataset.dragKind === 'menu-l1');
+      if (!isL2OntoL1) {
+        if (row.dataset.dragKind   !== _dragState.kind)   return false;
+        if ((row.dataset.dragDepth  || '0') !== _dragState.depth)  return false;
+      }
       // menu-l2 는 cross-L1 이동 허용 — parent 검사 제외. 다른 kind 들은
       // 같은 parent 안에서만 reorder.
       if (_dragState.kind !== 'menu-l2') {
@@ -8046,8 +8052,16 @@
         return;
       }
       if (_dragState.kind === 'menu-l2') {
-        // 타겟 L1 = drop row 의 dragParent (다른 L1 그룹 row 위로 떨어졌으면
-        // sourceL1 과 다를 수 있음 → cross-L1 이동).
+        // L2 → L1 row drop = 빈 L1 그룹으로 cross-L1 이동 (그 L1 의 children
+        // 마지막에 append). L1 row 의 drag-id 는 그 L1 의 key.
+        if (row.dataset.dragKind === 'menu-l1') {
+          const targetL1 = row.dataset.dragId;
+          moveMenuL2(_dragState.id, null, false, _dragState.parent, targetL1);
+          _dragState = null;
+          return;
+        }
+        // L2 → L2 row drop. 타겟 L1 = drop row 의 dragParent (다른 L1 그룹의
+        // L2 row 위면 sourceL1 과 다를 수 있음 → cross-L1 이동).
         const targetL1 = row.dataset.dragParent || _dragState.parent;
         moveMenuL2(_dragState.id, row.dataset.dragId, above, _dragState.parent, targetL1);
         _dragState = null;
