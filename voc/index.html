@@ -4571,17 +4571,26 @@
       // !important alone doesn't decide ties.
       a.showSort.forEach((s)   => lines.push(`.mp-table thead ${s} .sort-ic, .mp-table thead ${s} .scm-th-sort { display: inline-block !important; }`));
       a.showFilter.forEach((s) => lines.push(`.mp-table thead ${s} .filter-ic { display: inline-block !important; }`));
-      // 컬럼 너비 프리셋 — 라벨 수정 모달의 [컬럼 너비] 에서 설정. table-layout
-      // fixed 가정: th 의 width 를 따라 col 전체가 결정. min/max 도 적용.
-      Object.keys(a.columnWidths || {}).forEach((sel) => {
+      // 컬럼 너비 프리셋 — 라벨 수정 모달의 [컬럼 너비] 에서 설정.
+      // th 만 룰 적용하면 table-layout: auto 인 케이스에 width 가 무시될 수
+      // 있어, 적용 시 mp-table 에 table-layout: fixed 강제 (auto 에서도 width
+      // 가 column 결정), 그리고 scm-table 의 .col-* 클래스의 width 룰을 이기기
+      // 위해 여러 selector 조합으로 inject.
+      const widthEntries = Object.keys(a.columnWidths || {}).filter((sel) => COLUMN_WIDTH_PRESETS[a.columnWidths[sel]]);
+      if (widthEntries.length) {
+        // 적어도 하나라도 width override 가 있으면 mp-table 전체를 fixed.
+        lines.push(`.mp-table-host .mp-table { table-layout: fixed !important; width: 100% !important; }`);
+      }
+      widthEntries.forEach((sel) => {
         const preset = COLUMN_WIDTH_PRESETS[a.columnWidths[sel]];
-        if (!preset) return;
-        let css = `${sel} { min-width: ${preset.min}px !important;`;
-        if (preset.fixed) css += ` width: ${preset.fixed}px !important; max-width: ${preset.fixed}px !important;`;
-        else if (preset.max) css += ` max-width: ${preset.max}px !important;`;
-        else css += ` max-width: none !important;`;
-        css += ` }`;
-        lines.push(css);
+        // th 와 (frozen 셀 포함) — base 룰
+        let body = `min-width: ${preset.min}px !important;`;
+        if (preset.fixed) body += ` width: ${preset.fixed}px !important; max-width: ${preset.fixed}px !important;`;
+        else if (preset.max) body += ` max-width: ${preset.max}px !important;`;
+        else body += ` max-width: none !important;`;
+        // .mp-table prefix 로 specificity 확보 — scm-table.css 의 .col-medium /
+        // .col-large 등이 .mp-table th.col-* 형태일 때도 우선.
+        lines.push(`.mp-table ${sel} { ${body} }`);
       });
       // marker styles for added items
       lines.push(`
@@ -5385,6 +5394,7 @@
         frozenCount:       (p.frozenCount == null ? null : p.frozenCount),
         labels:            (p.labels && p.labels.column) || {},
         cellTypes:         p.cellTypes || {},
+        columnWidths:      p.columnWidths || {},
       });
     }
     // Component slice — anything in p.hidden that's NOT a filter chip and
