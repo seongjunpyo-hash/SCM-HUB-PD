@@ -37,6 +37,10 @@
   gap: 16px;
 }
 
+/* PBO 룩 — underline = tab-text variant.
+   default fg `#8A8A8A` = PBO --tab-text-fg (--fg-lower)
+   active fg `#000` = PBO --tab-text-fg-selected (--actionCard-fg)
+   값 100% 일치 (gray-500 / gray-900). */
 .scm-tabs--underline .scm-tab {
   padding: 0 0 8px;
   border: 0;
@@ -49,7 +53,7 @@
   font-size: 18px;
   font-weight: 600;
   line-height: 24.48px;
-  color: #8A8A8A;
+  color: var(--tab-text-fg, #8A8A8A);
 }
 
 .scm-tabs--underline .scm-tab .scm-tab__label,
@@ -57,24 +61,24 @@
   font-size: 18px;
   font-weight: 600;
   line-height: 24.48px;
-  color: #8A8A8A;
+  color: var(--tab-text-fg, #8A8A8A);
 }
 
 .scm-tabs--underline .scm-tab.is-active {
-  border-bottom: 2px solid #000;
-  color: #000;
+  border-bottom: 2px solid var(--bg-contrast, #000);
+  color: var(--tab-text-fg-selected, #000);
 }
 
 .scm-tabs--underline .scm-tab.is-active .scm-tab__label,
 .scm-tabs--underline .scm-tab.is-active .scm-tab__count {
-  color: #000;
+  color: var(--tab-text-fg-selected, #000);
 }
 
-/* ===== Pill variant ===== */
+/* ===== Pill variant — PBO 의 tab-text-bg-* 시리즈와 거의 일치 */
 .scm-tabs--pill {
   display: inline-flex;
   padding: 2px;
-  background: rgba(138, 138, 138, 0.10);
+  background: var(--tab-text-bg-hover, rgba(138, 138, 138, 0.10));
   border-radius: 6px;
 }
 
@@ -87,13 +91,13 @@
   font-size: 14px;
   font-weight: 500;
   line-height: 19.6px;
-  color: #666;
+  color: var(--fg-low, #666);
   border-radius: 4px;
   white-space: nowrap;
 }
 
 .scm-tabs--pill .scm-tab.is-active {
-  background: #fff;
-  color: #000;
+  background: var(--tab-text-bg-selected, #fff);
+  color: var(--tab-text-fg-selected, #000);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
