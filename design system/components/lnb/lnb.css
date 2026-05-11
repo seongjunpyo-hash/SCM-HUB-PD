@@ -26,7 +26,10 @@ body {
   font-family: var(--ld-font-family-base);
   color: var(--ld-fg);
   background: #fff;
-  min-width: 1440px;
+  /* voc 편집모드 iframe (1440 viewport 기준 stage ≈ 1000px) 안에서 데모
+     페이지가 가로 스크롤 없이 fit 되도록 1024 로 낮춤. 페이지의 컬럼 합이
+     이보다 크면 .mp-table-scroll 의 overflow-x:auto 에서 처리. */
+  min-width: 1024px;
 }
 .app {
   display: grid;
