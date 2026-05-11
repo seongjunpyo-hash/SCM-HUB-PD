@@ -53,12 +53,14 @@
   pointer-events: none;
 }
 
+/* PBO 룩 — generic semantic 토큰 사용. fallback = 기존 우리 값.
+   checked 상태는 PBO 의 bg-contrast (=#000) + fg-onContrast (=#fff) 로 black/white 일치. */
 .scm-radio-dot {
   width: 16px;
   height: 16px;
-  border: 1px solid #CCCCCC;
+  border: 1px solid var(--stroke-border, #CCCCCC);
   border-radius: 50%;
-  background: #fff;
+  background: var(--bg, #fff);
   display: inline-block;
   flex-shrink: 0;
   position: relative;
@@ -66,8 +68,8 @@
 }
 
 .scm-radio input[type="radio"]:checked + .scm-radio-dot {
-  border-color: #000;
-  background: #000;
+  border-color: var(--bg-contrast, #000);
+  background: var(--bg-contrast, #000);
 }
 
 .scm-radio input[type="radio"]:checked + .scm-radio-dot::after {
@@ -78,21 +80,21 @@
   transform: translate(-50%, -50%);
   width: 8px;
   height: 8px;
-  background: #fff;
+  background: var(--fg-onContrast, #fff);
   border-radius: 50%;
 }
 
 /* Disabled */
 .scm-radio[aria-disabled="true"],
 .scm-radio:has(input:disabled) {
-  color: rgba(0, 0, 0, 0.20);
+  color: var(--fg-disabled, rgba(0, 0, 0, 0.20));
   cursor: not-allowed;
 }
 
 .scm-radio[aria-disabled="true"] .scm-radio-dot,
 .scm-radio:has(input:disabled) .scm-radio-dot {
-  border-color: #EBEBEB;
-  background: #F5F5F5;
+  border-color: var(--stroke-border-disabled, #EBEBEB);
+  background: var(--bg-low, #F5F5F5);
 }
 
 /* Group */
