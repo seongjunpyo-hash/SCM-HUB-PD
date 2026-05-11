@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>로그인 · musinsa-platform</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #FAFBFC;
+      color: #242424;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .card {
+      width: 360px;
+      padding: 40px 32px;
+      background: #fff;
+      border: 1px solid #EBEBEB;
+      border-radius: 8px;
+    }
+    h1 { font-size: 22px; font-weight: 600; margin: 0 0 8px; }
+    .sub { font-size: 14px; color: #666; margin-bottom: 24px; }
+    label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+    input {
+      width: 100%;
+      height: 44px;
+      padding: 12px 16px;
+      border: 1px solid #E0E0E0;
+      border-radius: 4px;
+      font-size: 15px;
+      outline: none;
+    }
+    input:focus { border-color: #000; }
+    button {
+      width: 100%;
+      height: 44px;
+      margin-top: 16px;
+      background: #242424;
+      color: #fff;
+      border: 0;
+      border-radius: 4px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    button:disabled { background: rgba(138,138,138,0.10); color: rgba(0,0,0,0.20); cursor: not-allowed; }
+    .msg { margin-top: 16px; font-size: 13px; color: #1EA514; }
+    .msg--err { color: #F31110; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>musinsa-platform</h1>
+    <p class="sub">사내 이메일로 매직 링크를 받아 로그인합니다.</p>
+
+    <form id="login-form">
+      <label for="email">이메일</label>
+      <input id="email" name="email" type="email" required placeholder="name@musinsa.com" />
+      <button type="submit" id="submit-btn">매직 링크 전송</button>
+      <div class="msg" id="msg"></div>
+    </form>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    const cfg = window.__MUSINSA_PLATFORM__ || {};
+    const sb = createClient(
+      cfg.supabaseUrl    || 'https://YOUR_PROJECT_REF.supabase.co',
+      cfg.supabaseAnonKey || 'YOUR_ANON_KEY'
+    );
+
+    // 이미 로그인 상태면 next 또는 hub 로
+    const { data: { user } } = await sb.auth.getUser();
+    if (user) {
+      const next = new URLSearchParams(location.search).get('next') || '/hub/';
+      location.replace(next);
+    }
+
+    const form = document.getElementById('login-form');
+    const msg = document.getElementById('msg');
+    const btn = document.getElementById('submit-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = form.email.value.trim();
+      btn.disabled = true;
+      btn.textContent = '전송 중...';
+
+      const { error } = await sb.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: location.origin + '/hub/' },
+      });
+
+      if (error) {
+        msg.textContent = '전송 실패: ' + error.message;
+        msg.className = 'msg msg--err';
+        btn.disabled = false;
+        btn.textContent = '매직 링크 전송';
+      } else {
+        msg.textContent = '메일함을 확인하세요. 링크 클릭 시 자동 로그인됩니다.';
+        msg.className = 'msg';
+        btn.textContent = '전송 완료';
+      }
+    });
+  </script>
+</body>
+</html>

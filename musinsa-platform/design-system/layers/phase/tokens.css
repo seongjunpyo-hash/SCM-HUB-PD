@@ -1,0 +1,53 @@
+/* ============================================================
+ * design-system · layers/phase — scm-portal / o4o 용
+ * ------------------------------------------------------------
+ * Musinsa 의 Phase 디자인 시스템 토큰. layer 와 동일한 변수 이름,
+ * 다른 값. 페이지에서 이 파일 1개만 import 하면 core 컴포넌트가
+ * Phase 톤으로 렌더됨.
+ *
+ * TBD — 실제 Phase 토큰 값으로 채울 것. 지금은 layer 와 동일 placeholder.
+ * ============================================================ */
+
+:root {
+  --ld-font-family-base: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Primitive — phase 의 실제 palette 로 교체 필요 */
+  --primitive-gray-100: #FAFBFC;
+  --primitive-gray-200: #F5F5F5;
+  --primitive-gray-300: #EBEBEB;
+  --primitive-gray-400: #E0E0E0;
+  --primitive-gray-500: #CCCCCC;
+  --primitive-gray-600: #8A8A8A;
+  --primitive-gray-700: #666;
+  --primitive-gray-800: #1A1A1A;     /* phase 특유 */
+  --primitive-gray-900: #000;
+
+  --primitive-blue-500: #0066FF;     /* phase 특유 */
+  --primitive-red-500:  #F31110;
+  --primitive-green-500: #1EA514;
+  --primitive-yellow-500: #FA9200;
+
+  /* Semantic */
+  --bg:              #fff;
+  --bg-low:          var(--primitive-gray-100);
+  --bg-disabled:     rgba(138, 138, 138, 0.10);
+
+  --fg:              var(--primitive-gray-900);
+  --fg-low:          var(--primitive-gray-700);
+  --fg-lower:        var(--primitive-gray-600);
+  --fg-disabled:     rgba(0, 0, 0, 0.20);
+  --fg-accent:       var(--primitive-blue-500);
+  --fg-critical:     var(--primitive-red-500);
+  --fg-success:      var(--primitive-green-500);
+  --fg-warning:      var(--primitive-yellow-500);
+
+  --stroke-border:        var(--primitive-gray-400);
+  --stroke-border-strong: var(--primitive-gray-900);
+  --stroke-border-disabled: var(--primitive-gray-300);
+
+  /* Component */
+  --button-primary-bg:           var(--primitive-gray-800);
+  --button-primary-bg-hover:     var(--primitive-gray-900);
+  --button-primary-fg-contrast:  #fff;
+  --button-primary-bg-disabled:  var(--bg-disabled);
+}

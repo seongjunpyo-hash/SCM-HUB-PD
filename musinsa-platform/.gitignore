@@ -1,0 +1,28 @@
+# Environment files — 절대 commit 금지
+.env
+.env.local
+.env.*.local
+hub/.env
+hub/config.js
+
+# Node / build artifacts
+node_modules/
+dist/
+build/
+.cache/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+Thumbs.db
+
+# Supabase local dev
+.supabase/
+supabase/.temp/
+
+# Logs
+*.log
+npm-debug.log*

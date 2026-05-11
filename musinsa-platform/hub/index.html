@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>musinsa-platform · 도메인 허브</title>
+  <script src="/hub/auth-gate.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #FAFBFC;
+      color: #242424;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      padding: 0 32px;
+      background: #fff;
+      border-bottom: 1px solid #EBEBEB;
+    }
+    .topbar h1 { font-size: 18px; font-weight: 600; margin: 0; }
+    .topbar .user { font-size: 14px; color: #666; }
+    .topbar .user button {
+      margin-left: 12px;
+      padding: 6px 12px;
+      border: 1px solid #E0E0E0;
+      background: #fff;
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    main { padding: 48px 32px; max-width: 1200px; margin: 0 auto; }
+    h2 { font-size: 24px; font-weight: 600; margin: 0 0 32px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 24px;
+      background: #fff;
+      border: 1px solid #EBEBEB;
+      border-radius: 8px;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .card:hover { border-color: #000; transform: translateY(-2px); }
+    .card[aria-disabled="true"] { opacity: 0.4; pointer-events: none; }
+    .card .name { font-size: 16px; font-weight: 600; }
+    .card .meta { font-size: 13px; color: #666; }
+    .card .layer {
+      display: inline-block;
+      padding: 2px 8px;
+      background: rgba(36, 94, 255, 0.08);
+      color: #245EFF;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      width: fit-content;
+    }
+    .card .status-wip { color: #FA9200; }
+    .card .status-live { color: #1EA514; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <h1>musinsa-platform</h1>
+    <div class="user">
+      <span id="user-email">…</span>
+      <button id="logout-btn">로그아웃</button>
+    </div>
+  </header>
+
+  <main>
+    <h2>도메인</h2>
+    <div class="grid" id="domain-grid">
+      <!-- JS 에서 채움 -->
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('scm:auth-ready', async (e) => {
+      const user = e.detail.user;
+      document.getElementById('user-email').textContent = user.email;
+      document.getElementById('logout-btn').onclick = () => window.SCM.logout();
+
+      // 도메인 목록 + 본인 권한 동시 조회
+      const sb = window.__SUPABASE__;
+      const [domainsRes, udRes] = await Promise.all([
+        sb.from('domains').select('*').order('id'),
+        sb.from('user_domains').select('domain_id, role').eq('user_id', user.id),
+      ]);
+
+      const roles = Object.fromEntries((udRes.data || []).map((r) => [r.domain_id, r.role]));
+      const grid = document.getElementById('domain-grid');
+
+      (domainsRes.data || []).forEach((d) => {
+        const role = roles[d.id];
+        const accessible = !!role;
+        const a = document.createElement('a');
+        a.className = 'card';
+        a.href = accessible ? `/${d.id}/` : '#';
+        if (!accessible) a.setAttribute('aria-disabled', 'true');
+        a.innerHTML = `
+          <div class="layer">${d.layer}</div>
+          <div class="name">${d.name}</div>
+          <div class="meta">
+            <span class="status-${d.status}">${d.status}</span>
+            ${role ? ` · 권한: ${role}` : ' · 접근 권한 없음'}
+          </div>
+        `;
+        grid.appendChild(a);
+      });
+    });
+  </script>
+</body>
+</html>
