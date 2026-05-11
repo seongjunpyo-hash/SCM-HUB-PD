@@ -23,18 +23,23 @@
  *   .scm-select__dot      앞 상태 도트 (sd-select-mock 흡수, 옵션)
  * ============================================================ */
 
+/* PBO 룩 — select-* 시맨틱 토큰. 우리 input 과 동일한 스타일.
+   PBO 의 --select-bg = --bg-inset = #fff (= 우리 #fff)
+   --select-border = --stroke-border = #E0E0E0 (정확 일치)
+   --select-border-hover/active = --stroke-border-strong = #000 (정확 일치)
+   placeholder/dot 는 generic 토큰 사용. */
 .scm-select {
   width: 100%;
   height: 44px;
   padding: 12px 16px;
-  background: #fff;
-  border: 1px solid #E0E0E0;
+  background: var(--select-bg, #fff);
+  border: 1px solid var(--select-border, #E0E0E0);
   border-radius: 4px;
   font-family: inherit;
   font-size: 15px;
   font-weight: 400;
   line-height: 20.4px;
-  color: #000;
+  color: var(--fg, #000);
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
@@ -45,8 +50,8 @@
   white-space: nowrap;
 }
 
-.scm-select:hover { border-color: #000; }
-.scm-select[aria-expanded="true"] { border-color: #000; }
+.scm-select:hover { border-color: var(--select-border-hover, #000); }
+.scm-select[aria-expanded="true"] { border-color: var(--select-border-active, #000); }
 
 .scm-select__value {
   flex: 1;
@@ -57,7 +62,7 @@
 }
 
 .scm-select[data-state="placeholder"] .scm-select__value {
-  color: #8A8A8A;
+  color: var(--fg-lower, #8A8A8A);
   font-weight: 500;
 }
 
@@ -65,7 +70,7 @@
   width: 16px;
   height: 16px;
   flex-shrink: 0;
-  color: #000;
+  color: var(--fg, #000);
 }
 
 /* 앞 도트 (옵션) — sd-select-mock 흡수 */
@@ -75,9 +80,9 @@
   border-radius: 50%;
   flex-shrink: 0;
 }
-.scm-select__dot--accent { background: #245EFF; }
-.scm-select__dot--success { background: #1EA514; }
-.scm-select__dot--disabled { background: rgba(0, 0, 0, 0.20); }
+.scm-select__dot--accent { background: var(--layerDesktop-bg-accent, #245EFF); }
+.scm-select__dot--success { background: var(--primitive-color-green-500, #1EA514); }
+.scm-select__dot--disabled { background: var(--fg-disabled, rgba(0, 0, 0, 0.20)); }
 
 /* Sizes */
 .scm-select--sm {
@@ -90,21 +95,21 @@
 .scm-select--bu {
   height: 40px;
   padding: 8px 12px;
-  border-color: #CCCCCC;
+  border-color: var(--select-border, #CCCCCC);
   font-size: 14px;
   line-height: 19.6px;
   min-width: 240px;
 }
 
-/* Disabled */
+/* Disabled — PBO --select-bg-disabled / --select-border-disabled (값 정확 일치) */
 .scm-select.is-disabled,
 .scm-select[disabled] {
-  background: rgba(138, 138, 138, 0.10);
-  border-color: #EBEBEB;
-  color: rgba(0, 0, 0, 0.20);
+  background: var(--select-bg-disabled, rgba(138, 138, 138, 0.10));
+  border-color: var(--select-border-disabled, #EBEBEB);
+  color: var(--fg-disabled, rgba(0, 0, 0, 0.20));
   cursor: not-allowed;
 }
 .scm-select.is-disabled .scm-select__chev,
-.scm-select[disabled] .scm-select__chev { color: rgba(0, 0, 0, 0.20); }
+.scm-select[disabled] .scm-select__chev { color: var(--fg-disabled, rgba(0, 0, 0, 0.20)); }
 .scm-select.is-disabled .scm-select__value,
-.scm-select[disabled] .scm-select__value { color: rgba(0, 0, 0, 0.20); font-weight: 400; }
+.scm-select[disabled] .scm-select__value { color: var(--fg-disabled, rgba(0, 0, 0, 0.20)); font-weight: 400; }
