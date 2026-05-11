@@ -528,12 +528,17 @@
   --ld-tooltip-font-size:     14px;
   --ld-tooltip-line-height:   1.4;
   --ld-tooltip-title-weight:  600;
-  --ld-tooltip-black-bg: var(--ld-gray-800);
-  --ld-tooltip-black-fg: var(--ld-gray-0);
-  --ld-tooltip-white-bg: var(--ld-gray-0);
-  --ld-tooltip-white-fg: var(--ld-gray-900);
-  --ld-tooltip-link-fg:             var(--ld-blue-500);
-  --ld-tooltip-link-fg-on-contrast: var(--ld-blue-200);
+  /* PBO 룩 — tooltip 컴포넌트 토큰 PBO 시맨틱 토큰으로 alias.
+     --tooltip-black-bg = --bg-neutral = gray-800 = #1A1A1A (우리 ld-gray-800 정확 일치)
+     --tooltip-white-bg = gray-0 = #fff (우리 ld-gray-0 일치)
+     fg 는 PBO 가 별도 토큰 없음 — generic --fg-onContrast / --fg 로 매핑.
+     link 는 PBO --layerDesktop-fg-accent (= blue-500). on-contrast 는 primitive blue-200. */
+  --ld-tooltip-black-bg: var(--tooltip-black-bg, var(--ld-gray-800));
+  --ld-tooltip-black-fg: var(--fg-onContrast, var(--ld-gray-0));
+  --ld-tooltip-white-bg: var(--tooltip-white-bg, var(--ld-gray-0));
+  --ld-tooltip-white-fg: var(--fg, var(--ld-gray-900));
+  --ld-tooltip-link-fg:             var(--layerDesktop-fg-accent, var(--ld-blue-500));
+  --ld-tooltip-link-fg-on-contrast: var(--primitive-color-blue-200, var(--ld-blue-200));
 
   /* ---- Tab ---- */
   --ld-tab-line-bg-hover:        var(--ld-gray-alpha-500-10);
