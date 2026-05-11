@@ -36,7 +36,7 @@
   gap: 28px;
   padding: 16px 28px 10px 30px;   /* 하단 padding 10px — 테이블과의 갭을 stats-bar 본인의 padding 으로 흡수 (스크롤 시 데이터 비침 방지) */
   flex-wrap: wrap;
-  background: #fff;
+  background: var(--bg, #fff);
   margin: 0 -28px;             /* 부모 padding 반대로 빼서 풀폭 sticky */
 }
 
@@ -84,7 +84,7 @@
 }
 
 .scm-stats-bar__ts {
-  color: #8A8A8A;
+  color: var(--fg-lower, #8A8A8A);
   font-size: 15px;
   font-weight: 400;
   line-height: 20.4px;
@@ -94,6 +94,6 @@
 .scm-stats-bar__v-divider {
   width: 1px;
   height: 16px;
-  background: #EBEBEB;
+  background: var(--stroke-border-disabled, #EBEBEB);
   flex-shrink: 0;
 }

@@ -6,8 +6,8 @@
  *
  * Variants:
  *   기본              검정
- *   .scm-state-text--accent     파랑 (#245EFF) + weight 500
- *   .scm-state-text--critical   빨강 (#F31110)
+ *   .scm-state-text--accent     파랑 (var(--layerDesktop-fg-accent, #245EFF)) + weight 500
+ *   .scm-state-text--critical   빨강 (var(--primitive-color-red-500, #F31110))
  * ============================================================ */
 
 .scm-state-text {
@@ -17,8 +17,8 @@
   font-size: 15px;
   font-weight: 400;
   line-height: 20.4px;
-  color: #000;
+  color: var(--fg, #000);
 }
 
-.scm-state-text--accent   { color: #245EFF; font-weight: 500; }
-.scm-state-text--critical { color: #F31110; }
+.scm-state-text--accent   { color: var(--layerDesktop-fg-accent, #245EFF); font-weight: 500; }
+.scm-state-text--critical { color: var(--primitive-color-red-500, #F31110); }

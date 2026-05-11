@@ -19,7 +19,7 @@
 
 .scm-deploy-popover {
   position: fixed;
-  background: #fff;
+  background: var(--bg, #fff);
   border: 1px solid var(--ld-border, #E0E0E0);
   border-radius: 4px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
@@ -46,7 +46,7 @@
   cursor: pointer;
   font-size: 15px;
   line-height: 20.4px;
-  color: #000;
+  color: var(--fg, #000);
   white-space: nowrap;
 }
 
@@ -55,7 +55,7 @@
 }
 
 .scm-deploy-popover li[data-current="true"] {
-  background: #F5F5F5;
+  background: var(--bg-low, #F5F5F5);
   font-weight: 500;
 }
 

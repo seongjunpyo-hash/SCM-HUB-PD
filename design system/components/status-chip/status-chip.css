@@ -8,11 +8,11 @@
   font-size: 13px;
   font-weight: 500;
   line-height: 18px;
-  background: rgba(138, 138, 138, 0.10);
-  color: #000;
+  background: var(--bg-disabled, rgba(138, 138, 138, 0.10));
+  color: var(--fg, #000);
 }
-.scm-status-chip--processing { background: #E2F1FF; color: #245EFF; }
-.scm-status-chip--done       { background: #ECFFEC; color: #1EA514; }
-.scm-status-chip--cancel     { background: #FFECEC; color: #F31110; }
-.scm-status-chip--waiting    { background: rgba(138, 138, 138, 0.10); color: #666; }
+.scm-status-chip--processing { background: var(--primitive-color-blue-0, #E2F1FF); color: var(--layerDesktop-fg-accent, #245EFF); }
+.scm-status-chip--done       { background: var(--primitive-color-green-0, #ECFFEC); color: var(--primitive-color-green-500, #1EA514); }
+.scm-status-chip--cancel     { background: var(--primitive-color-red-0, #FFECEC); color: var(--primitive-color-red-500, #F31110); }
+.scm-status-chip--waiting    { background: var(--bg-disabled, rgba(138, 138, 138, 0.10)); color: var(--fg-low, #666); }
 .scm-status-chip--moving     { background: rgba(140, 17, 255, 0.10); color: #981AFF; }

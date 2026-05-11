@@ -18,7 +18,7 @@
  *
  * aria-expanded="true":
  *   - chev 180도 회전
- *   - border #000
+ *   - border var(--fg, #000)
  *
  * 부속:
  *   .scm-filter-select__req-dot     필수 도트
@@ -29,8 +29,8 @@
   min-width: 120px;
   height: 44px;
   padding: 12px 16px;
-  background: #fff;
-  border: 1px solid #E0E0E0;
+  background: var(--bg, #fff);
+  border: 1px solid var(--stroke-border, #E0E0E0);
   border-radius: 4px;
   display: inline-flex;
   align-items: center;
@@ -39,7 +39,7 @@
   font-size: 15px;
   font-weight: 400;
   line-height: 20.4px;
-  color: #000;
+  color: var(--fg, #000);
   cursor: pointer;
   text-align: left;
   transition: border-color 0.18s ease;
@@ -49,7 +49,7 @@
 
 .scm-filter-select:focus,
 .scm-filter-select[aria-expanded="true"] {
-  border: 1px solid #000;            /* 모든 4면 #000 */
+  border: 1px solid var(--fg, #000);            /* 모든 4면 var(--fg, #000) */
   outline: none;
   z-index: 2;
 }
@@ -60,11 +60,11 @@
   top: -9px;
   height: 18px;
   padding: 0 4px;
-  background: #fff;
+  background: var(--bg, #fff);
   font-size: 12px;
   font-weight: 400;
   line-height: 18px;
-  color: #8A8A8A;
+  color: var(--fg-lower, #8A8A8A);
   display: flex;
   align-items: flex-start;
   gap: 2px;
@@ -77,7 +77,7 @@
 .scm-filter-select__req-dot {
   width: 4px;
   height: 4px;
-  background: #245EFF;
+  background: var(--layerDesktop-fg-accent, #245EFF);
   border-radius: 50%;
   margin-top: 2px;
   flex-shrink: 0;
@@ -93,7 +93,7 @@
   width: 16px;
   height: 16px;
   flex-shrink: 0;
-  color: #000;
+  color: var(--fg, #000);
   transition: transform 0.15s ease;
 }
 
@@ -107,7 +107,7 @@
   transform: translateY(14px) scale(0.92);
 }
 .scm-filter-select[data-state="placeholder"] .scm-filter-select__value {
-  color: #8A8A8A;
+  color: var(--fg-lower, #8A8A8A);
   font-weight: 500;
 }
 
@@ -116,25 +116,25 @@
   transform: translateY(0) scale(1);
 }
 .scm-filter-select[data-state="filled"] .scm-filter-select__value {
-  color: #000;
+  color: var(--fg, #000);
   font-weight: 500;
 }
 
 .scm-filter-select[data-state="active"] .scm-filter-select__value {
-  color: #000;
+  color: var(--fg, #000);
   font-weight: 400;
 }
 
 /* Chev disabled (선택 불가 상태 시 chev 만 흐리게) */
 .scm-filter-select[data-chev="disabled"] .scm-filter-select__chev {
-  color: rgba(0, 0, 0, 0.20);
+  color: var(--fg-disabled, rgba(0, 0, 0, 0.20));
 }
 
 /* Disabled — 의존성 차단 (예: 매입형태=위탁 선택 시 제조구분 비활성) */
 .scm-filter-select[disabled],
 .scm-filter-select.is-disabled {
   background: rgba(138, 138, 138, 0.05);
-  border-color: #EBEBEB;
+  border-color: var(--stroke-border-disabled, #EBEBEB);
   color: rgba(0, 0, 0, 0.30);
   cursor: not-allowed;
   pointer-events: none;
@@ -145,13 +145,13 @@
 }
 .scm-filter-select[disabled] .scm-filter-select__chev,
 .scm-filter-select.is-disabled .scm-filter-select__chev {
-  color: rgba(0, 0, 0, 0.20);
+  color: var(--fg-disabled, rgba(0, 0, 0, 0.20));
 }
 
 /* Filter group — 인접 필터 사이 보더 처리.
- * 활성 chip 자체의 우측 보더는 #000 으로 유지 (border: 1px solid #000),
+ * 활성 chip 자체의 우측 보더는 var(--fg, #000) 으로 유지 (border: 1px solid var(--fg, #000)),
  * 다음 sibling chip 의 좌측 보더를 width 0 으로 제거 (transparent 가 disabled rule 의
- * border-color: #EBEBEB 와 specificity 가 동일해지는 케이스 회피). */
+ * border-color: var(--stroke-border-disabled, #EBEBEB) 와 specificity 가 동일해지는 케이스 회피). */
 .scm-filter-group {
   display: inline-flex;
   align-items: center;
@@ -165,5 +165,5 @@
   z-index: 3;
   border-right-width: 0;
   padding-right: 17px;       /* 1px border + 16px 원본 padding = 보정 */
-  box-shadow: 1px 0 0 0 #000;
+  box-shadow: 1px 0 0 0 var(--fg, #000);
 }

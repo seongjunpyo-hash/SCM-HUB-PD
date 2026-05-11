@@ -12,9 +12,9 @@
  *
  * Variants:
  *   --all              num 검정
- *   --deployed         num 파랑 (#245EFF)
- *   --undeployed       num 회색 (#666)
- *   --selected         "선택 N" — num 파랑 (#245EFF)
+ *   --deployed         num 파랑 (var(--layerDesktop-fg-accent, #245EFF))
+ *   --undeployed       num 회색 (var(--fg-low, #666))
+ *   --selected         "선택 N" — num 파랑 (var(--layerDesktop-fg-accent, #245EFF))
  *
  * 보조:
  *   .scm-stat-divider  3×3 점 (회색, 카운트 사이 구분)
@@ -28,7 +28,7 @@
   padding: 8px;
   font-size: 15px;
   line-height: 20.4px;
-  color: #000;
+  color: var(--fg, #000);
 }
 
 /* 첫 stat (전체) — 좌측 padding 0 */
@@ -51,11 +51,11 @@
 }
 
 /* Variants — num 색상 */
-.scm-stat--all .scm-stat__num         { color: #000; }
-.scm-stat--deployed .scm-stat__num    { color: #245EFF; }
-.scm-stat--undeployed .scm-stat__num  { color: #666; }
-.scm-stat--selected .scm-stat__num    { color: #245EFF; }
-.scm-stat--selected .scm-stat__label  { color: #000; font-weight: 500; }
+.scm-stat--all .scm-stat__num         { color: var(--fg, #000); }
+.scm-stat--deployed .scm-stat__num    { color: var(--layerDesktop-fg-accent, #245EFF); }
+.scm-stat--undeployed .scm-stat__num  { color: var(--fg-low, #666); }
+.scm-stat--selected .scm-stat__num    { color: var(--layerDesktop-fg-accent, #245EFF); }
+.scm-stat--selected .scm-stat__label  { color: var(--fg, #000); font-weight: 500; }
 
 /* Selected variant — 좌측 padding 0 (전체 stat 처럼) */
 .scm-stat--selected {
@@ -74,6 +74,6 @@
   width: 3px;
   height: 3px;
   border-radius: 50%;
-  background: #CCCCCC;
+  background: var(--primitive-color-gray-400, #CCCCCC);
   flex-shrink: 0;
 }

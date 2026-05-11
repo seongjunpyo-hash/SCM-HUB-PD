@@ -25,7 +25,7 @@ body {
   margin: 0;
   font-family: var(--ld-font-family-base);
   color: var(--ld-fg);
-  background: #fff;
+  background: var(--bg, #fff);
   min-width: 1440px;
 }
 .app {
@@ -50,10 +50,10 @@ main {
  *      이 LNB 우측 border 를 덮지 않도록 위로 올림)
  *   - width: var(--scm-lnb-width)  (collapsed 56 / expanded 260)
  *   - height: calc(100vh - 64px)
- *   - background #fff (legacy 와 동일), border-right 1px #E5E5E5
+ *   - background var(--bg, #fff) (legacy 와 동일), border-right 1px #E5E5E5
  *   - transition: width 0.2s
  *   - L1 row: 48 min-h, padding 12/16, hover #FAFAFA, is-active 시
- *     배경 #F5F5F5 + 좌측 3px 파란(#245EFF) 인디케이터
+ *     배경 var(--bg-low, #F5F5F5) + 좌측 3px 파란(var(--layerDesktop-fg-accent, #245EFF)) 인디케이터
  *   - L2 row: 36h, padding 8 16 8 54, hover #FAFAFA, is-active 시 600
  *   - L1 chevron: collapsed→opacity 0, expanded→opacity 1
  *   - is-open 일 때 chevron 회전 (default 180 → is-open 0)
@@ -71,7 +71,7 @@ main {
   z-index: 15;
   width: var(--scm-lnb-width, 56px);
   height: calc(100vh - 64px);
-  background: #fff;
+  background: var(--bg, #fff);
   border-right: 1px solid #E5E5E5;
   overflow-y: auto;
   overflow-x: hidden;
@@ -117,8 +117,8 @@ main {
   background: transparent;
 }
 
-.scm-lnb-item.is-active > .scm-lnb-row { background: #F5F5F5; }
-.scm-lnb-item.is-active > .scm-lnb-row::before { background: #245EFF; }
+.scm-lnb-item.is-active > .scm-lnb-row { background: var(--bg-low, #F5F5F5); }
+.scm-lnb-item.is-active > .scm-lnb-row::before { background: var(--layerDesktop-fg-accent, #245EFF); }
 
 .scm-lnb-icon {
   width: 24px;
@@ -127,7 +127,7 @@ main {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #1A1A1A;
+  color: var(--bg-neutral, #1A1A1A);
 }
 .scm-lnb-icon svg { width: 24px; height: 24px; }
 
@@ -137,7 +137,7 @@ main {
   font-size: 15px;
   font-weight: 600;
   line-height: 1.36;
-  color: #000;
+  color: var(--fg, #000);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -153,7 +153,7 @@ main {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #000;
+  color: var(--fg, #000);
   transition: transform 0.18s ease, opacity 0.12s ease;
   transform: rotate(180deg);
   opacity: 0;
@@ -178,7 +178,7 @@ html.is-lnb-open .scm-lnb-item.is-open .scm-lnb-l2-list {
 html:not(.is-lnb-open) .scm-lnb:hover {
   width: 260px;
   z-index: 30;
-  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 2px 0 6px var(--primitive-color-gray-alpha900-5, rgba(0, 0, 0, 0.05));
 }
 html:not(.is-lnb-open) .scm-lnb:hover .scm-lnb-label,
 html:not(.is-lnb-open) .scm-lnb:hover .scm-lnb-chev { opacity: 1; }
@@ -198,12 +198,12 @@ html:not(.is-lnb-open) .scm-lnb:hover .scm-lnb-item.is-open .scm-lnb-l2-list {
   font-size: 15px;
   font-weight: 400;
   line-height: 1.4;
-  color: #000;
+  color: var(--fg, #000);
   overflow: hidden;
   white-space: nowrap;
 }
 .scm-lnb-l2:hover { background: #FAFAFA; }
-.scm-lnb-l2.is-active { font-weight: 600; color: #000; }
+.scm-lnb-l2.is-active { font-weight: 600; color: var(--fg, #000); }
 
 .scm-lnb-l2-text {
   overflow: hidden;
@@ -227,16 +227,16 @@ html:not(.is-lnb-open) .scm-lnb:hover .scm-lnb-item.is-open .scm-lnb-l2-list {
   flex-shrink: 0;
   letter-spacing: 0.2px;
 }
-.scm-lnb-tag--new      { background: #E2F1FF; color: #1A56DB; }
+.scm-lnb-tag--new      { background: var(--primitive-color-blue-0, #E2F1FF); color: #1A56DB; }
 .scm-lnb-tag--modified { background: #FEF3C7; color: #B45309; }
 /* 작업중 — 회색 톤 (in progress, demo not yet exposed) */
 .scm-lnb-tag--wip {
-  background: #F5F5F5;
+  background: var(--bg-low, #F5F5F5);
   color: rgba(0, 0, 0, 0.50);
 }
 /* 검토중 — 블루 톤 (versions saved + exposed, awaiting final sign-off) */
 .scm-lnb-tag--review {
-  background: #E2F1FF;
+  background: var(--primitive-color-blue-0, #E2F1FF);
   color: #1A56DB;
 }
 /* 최종확정 — 그린 톤 (final / signed off) */

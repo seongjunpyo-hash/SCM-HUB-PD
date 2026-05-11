@@ -15,7 +15,7 @@
   position: sticky;
   top: 0;
   z-index: 20;
-  background: #fff;
+  background: var(--bg, #fff);
   border-bottom: 1px solid #E5E5E5;
   padding: 0 12px 0 0;
   height: 64px;
@@ -62,7 +62,7 @@
   align-items: center;
   height: 18px;
   width: 96px;
-  color: #000;
+  color: var(--fg, #000);
   text-decoration: none;
   flex-shrink: 0;
 }
@@ -79,8 +79,8 @@
   padding: 0 6px;
   margin-left: -4px;
   border-radius: 3px;
-  background: #1A1A1A;
-  color: #fff;
+  background: var(--bg-neutral, #1A1A1A);
+  color: var(--bg, #fff);
   font-size: 10px;
   font-weight: 700;
   line-height: 1;
@@ -109,7 +109,7 @@
   font-size: 14px;
   font-weight: 500;
   line-height: 32px;
-  color: #000;
+  color: var(--fg, #000);
 }
 
 .scm-topbar__name-group {
@@ -128,20 +128,20 @@
   font-size: 15px;
   font-weight: 500;
   line-height: 20.4px;
-  color: #000;
+  color: var(--fg, #000);
 }
 
 .scm-topbar__name-suffix {
   font-size: 14px;
   font-weight: 500;
   line-height: 17.64px;
-  color: #000;
+  color: var(--fg, #000);
 }
 
 .scm-topbar__chev {
   width: 16px;
   height: 16px;
-  color: #000;
+  color: var(--fg, #000);
   display: inline-flex;
   align-items: center;
   justify-content: center;

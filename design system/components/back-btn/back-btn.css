@@ -20,7 +20,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #000;
+  color: var(--fg, #000);
   margin-right: 4px;
   flex-shrink: 0;
 }

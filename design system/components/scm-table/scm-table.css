@@ -61,91 +61,91 @@
   display:inline-flex; align-items:center; gap:8px;
   height:36px; min-width:48px; padding:8px 12px;
   font-size:14px; font-weight:500; line-height:19.6px;
-  border:1px solid #E0E0E0; border-radius:4px;
-  background:#fff; color:#000; cursor:pointer;
+  border:1px solid var(--stroke-border, #E0E0E0); border-radius:4px;
+  background:var(--bg, #fff); color:var(--fg, #000); cursor:pointer;
   font-family:inherit;
 }
-.mp-mini-action svg { width:16px; height:16px; color:#000; }
+.mp-mini-action svg { width:16px; height:16px; color:var(--fg, #000); }
 .mp-mini-action[disabled] {
-  background:rgba(138,138,138,0.10); border-color:#EBEBEB;
-  color:rgba(0,0,0,0.20); cursor:not-allowed;
+  background:var(--bg-disabled, rgba(138,138,138,0.10)); border-color:var(--stroke-border-disabled, #EBEBEB);
+  color:var(--fg-disabled, rgba(0,0,0,0.20)); cursor:not-allowed;
 }
-.mp-mini-action[disabled] svg { color:rgba(0,0,0,0.20); }
+.mp-mini-action[disabled] svg { color:var(--fg-disabled, rgba(0,0,0,0.20)); }
 /* primary filled (검정 fill) — 상품 매핑 등 */
 .mp-mini-action--primary {
-  background:#000; border-color:#000; color:#fff;
+  background:var(--fg, #000); border-color:var(--fg, #000); color:var(--bg, #fff);
 }
-.mp-mini-action--primary svg { color:#fff; }
+.mp-mini-action--primary svg { color:var(--bg, #fff); }
 .mp-mini-action--primary[disabled] {
-  background:rgba(138,138,138,0.10); border-color:#EBEBEB; color:rgba(0,0,0,0.20);
+  background:var(--bg-disabled, rgba(138,138,138,0.10)); border-color:var(--stroke-border-disabled, #EBEBEB); color:var(--fg-disabled, rgba(0,0,0,0.20));
 }
-.mp-mini-action--primary[disabled] svg { color:rgba(0,0,0,0.20); }
+.mp-mini-action--primary[disabled] svg { color:var(--fg-disabled, rgba(0,0,0,0.20)); }
 
 /* mp-stat 기본 — "전체 N" / "선택됨 N / total" 공용 */
-.mp-stat { display:inline-flex; align-items:center; gap:4px; height:36px; padding:8px; font-size:15px; line-height:20.4px; color:#000; }
+.mp-stat { display:inline-flex; align-items:center; gap:4px; height:36px; padding:8px; font-size:15px; line-height:20.4px; color:var(--fg, #000); }
 .mp-stat--all { padding:8px 8px 8px 0; }
 .mp-stat .label { font-weight:500; }
 .mp-stat .num { font-weight:600; font-variant-numeric:tabular-nums; }
-.mp-stat--all .num { color:#000; }
-.mp-stat--deployed .num { color:#245EFF; }
-.mp-stat--undeployed .num { color:#666; }
-.mp-stat-divider { width:3px; height:3px; border-radius:50%; background:#CCCCCC; flex-shrink:0; }
+.mp-stat--all .num { color:var(--fg, #000); }
+.mp-stat--deployed .num { color:var(--layerDesktop-fg-accent, #245EFF); }
+.mp-stat--undeployed .num { color:var(--fg-low, #666); }
+.mp-stat-divider { width:3px; height:3px; border-radius:50%; background:var(--primitive-color-gray-400, #CCCCCC); flex-shrink:0; }
 
 /* selected stat — Figma: 선택됨 N / total
    "전체" 와 동일한 좌측 0 패딩으로 위치 안정 (sku-management 가 우측으로 밀리던 버그 수정) */
 .mp-stat--selected { padding:8px 8px 8px 0; }
-.mp-stat--selected .label { color:#000; font-weight:500; }
-.mp-stat--selected .num { color:#245EFF; font-weight:600; }
+.mp-stat--selected .label { color:var(--fg, #000); font-weight:500; }
+.mp-stat--selected .num { color:var(--layerDesktop-fg-accent, #245EFF); font-weight:600; }
 .mp-stat--selected .divider,
-.mp-stat--selected .num-total { color:#8A8A8A; font-weight:500; }
+.mp-stat--selected .num-total { color:var(--fg-lower, #8A8A8A); font-weight:500; }
 
 
 /* ============================================================
  * 0-1. 필터 영역 — 셀렉트 / 검색 / 초기화
  * ============================================================ */
 /* 필터 셀렉트 (chip-select with floating label) */
-.mp-filter-select { position:relative; min-width:120px; padding:12px 16px; background:#fff; border:1px solid #E0E0E0; border-radius:4px; display:inline-flex; align-items:center; gap:8px; font-size:15px; font-weight:400; line-height:20.4px; color:#000; cursor:pointer; text-align:left; transition:border-color .18s ease; }
-.mp-filter-select .label { position:absolute; left:12px; top:-9px; height:18px; padding:0 4px; background:#fff; font-size:12px; font-weight:400; line-height:18px; color:#8A8A8A; display:flex; align-items:flex-start; gap:2px; transform-origin:left center; pointer-events:none; transition:opacity .18s ease, transform .18s ease; }
-.mp-filter-select .label .req-dot { width:4px; height:4px; background:#245EFF; border-radius:50%; margin-top:2px; }
+.mp-filter-select { position:relative; min-width:120px; padding:12px 16px; background:var(--bg, #fff); border:1px solid var(--stroke-border, #E0E0E0); border-radius:4px; display:inline-flex; align-items:center; gap:8px; font-size:15px; font-weight:400; line-height:20.4px; color:var(--fg, #000); cursor:pointer; text-align:left; transition:border-color .18s ease; }
+.mp-filter-select .label { position:absolute; left:12px; top:-9px; height:18px; padding:0 4px; background:var(--bg, #fff); font-size:12px; font-weight:400; line-height:18px; color:var(--fg-lower, #8A8A8A); display:flex; align-items:flex-start; gap:2px; transform-origin:left center; pointer-events:none; transition:opacity .18s ease, transform .18s ease; }
+.mp-filter-select .label .req-dot { width:4px; height:4px; background:var(--layerDesktop-fg-accent, #245EFF); border-radius:50%; margin-top:2px; }
 .mp-filter-select .value { min-width:64px; flex:1; transition:color .18s ease, font-weight .18s ease; }
-.mp-filter-select .chev { width:16px; height:16px; flex-shrink:0; color:#000; transition:transform .15s ease; }
+.mp-filter-select .chev { width:16px; height:16px; flex-shrink:0; color:var(--fg, #000); transition:transform .15s ease; }
 .mp-filter-select[aria-expanded="true"] .chev { transform:rotate(180deg); }
 .mp-filter-select[data-state="filled"] .label { opacity:1; transform:translateY(0) scale(1); }
-.mp-filter-select[data-state="filled"] .value { color:#000; font-weight:500; }
-.mp-filter-select[data-state="active"] .value { color:#000; font-weight:400; }
+.mp-filter-select[data-state="filled"] .value { color:var(--fg, #000); font-weight:500; }
+.mp-filter-select[data-state="active"] .value { color:var(--fg, #000); font-weight:400; }
 .mp-filter-select[data-state="placeholder"] .label { opacity:0; transform:translateY(14px) scale(0.92); }
-.mp-filter-select[data-state="placeholder"] .value { color:#8A8A8A; font-weight:500; }
-.mp-filter-select:focus, .mp-filter-select[aria-expanded="true"] { border-color:#000; outline:none; z-index:1; }
-.mp-filter-select[data-chev="disabled"] .chev { color:rgba(0,0,0,0.20); }
+.mp-filter-select[data-state="placeholder"] .value { color:var(--fg-lower, #8A8A8A); font-weight:500; }
+.mp-filter-select:focus, .mp-filter-select[aria-expanded="true"] { border-color:var(--fg, #000); outline:none; z-index:1; }
+.mp-filter-select[data-chev="disabled"] .chev { color:var(--fg-disabled, rgba(0,0,0,0.20)); }
 
 /* [공통] 필터 셀렉트 disabled — 다른 필터값에 의존해 비활성화될 때 사용
    예: sku-management 매입형태=위탁 → 제조구분 disabled */
 .mp-filter-select[disabled],
 .mp-filter-select[aria-disabled="true"] {
-  background: rgba(138,138,138,0.10);
-  border-color: #EBEBEB;
-  color: rgba(0,0,0,0.20);
+  background: var(--bg-disabled, rgba(138,138,138,0.10));
+  border-color: var(--stroke-border-disabled, #EBEBEB);
+  color: var(--fg-disabled, rgba(0,0,0,0.20));
   cursor: not-allowed;
   pointer-events: none;
 }
 .mp-filter-select[disabled] .label,
 .mp-filter-select[aria-disabled="true"] .label,
 .mp-filter-select[disabled] .value,
-.mp-filter-select[aria-disabled="true"] .value { color: rgba(0,0,0,0.20); }
+.mp-filter-select[aria-disabled="true"] .value { color: var(--fg-disabled, rgba(0,0,0,0.20)); }
 .mp-filter-select[disabled] .chev,
-.mp-filter-select[aria-disabled="true"] .chev { color: rgba(0,0,0,0.20); }
+.mp-filter-select[aria-disabled="true"] .chev { color: var(--fg-disabled, rgba(0,0,0,0.20)); }
 
 /* 검색 / 초기화 액션 영역 */
 .mp-filter-actions { flex-shrink:0; display:inline-flex; align-items:center; gap:6px; }
 /* 검색 활성: outlined (검정 라인) */
-.mp-search-btn { min-width:84px; padding:12px 16px; box-sizing:border-box; background:rgba(138,138,138,0.10); border:1px solid #EBEBEB; border-radius:4px; font-size:15px; font-weight:500; line-height:20.4px; color:rgba(0,0,0,0.20); cursor:not-allowed; display:inline-flex; align-items:center; justify-content:center; }
-.mp-search-btn:not(:disabled) { background:#fff; border:1px solid #000; color:#000; cursor:pointer; }
+.mp-search-btn { min-width:84px; padding:12px 16px; box-sizing:border-box; background:var(--bg-disabled, rgba(138,138,138,0.10)); border:1px solid var(--stroke-border-disabled, #EBEBEB); border-radius:4px; font-size:15px; font-weight:500; line-height:20.4px; color:var(--fg-disabled, rgba(0,0,0,0.20)); cursor:not-allowed; display:inline-flex; align-items:center; justify-content:center; }
+.mp-search-btn:not(:disabled) { background:var(--bg, #fff); border:1px solid var(--fg, #000); color:var(--fg, #000); cursor:pointer; }
 .mp-search-btn:not(:disabled):hover { background:var(--ld-bg-low, #F5F5F5); }
-.mp-search-btn[disabled] { background:rgba(138,138,138,0.10); border-color:transparent; color:rgba(0,0,0,0.20); cursor:not-allowed; }
+.mp-search-btn[disabled] { background:var(--bg-disabled, rgba(138,138,138,0.10)); border-color:transparent; color:var(--fg-disabled, rgba(0,0,0,0.20)); cursor:not-allowed; }
 /* 초기화 버튼 ghost */
-.mp-filter-reset-btn { height:44px; min-width:56px; padding:12px 12px 12px 8px; background:transparent; border:0; border-radius:4px; font-size:15px; font-weight:500; line-height:20.4px; color:#666; display:inline-flex; align-items:center; justify-content:center; gap:4px; cursor:pointer; font-family:inherit; }
+.mp-filter-reset-btn { height:44px; min-width:56px; padding:12px 12px 12px 8px; background:transparent; border:0; border-radius:4px; font-size:15px; font-weight:500; line-height:20.4px; color:var(--fg-low, #666); display:inline-flex; align-items:center; justify-content:center; gap:4px; cursor:pointer; font-family:inherit; }
 .mp-filter-reset-btn[hidden] { display:none; }
-.mp-filter-reset-btn svg { width:20px; height:20px; color:#666; }
+.mp-filter-reset-btn svg { width:20px; height:20px; color:var(--fg-low, #666); }
 .mp-filter-reset-btn:hover { background:var(--ld-bg-low, #F5F5F5); }
 
 
@@ -158,14 +158,14 @@
   overflow-y: visible;
   /* 표 하단 마감선 — tbody 의 마지막 row td 별 border-bottom 대신 컨테이너에 단일 1px 라인.
      sticky frozen cell 과 non-sticky cell 의 border-bottom 이 z-index 차이로 doubled 되는 현상 방지. */
-  border-bottom: 1px solid #EBEBEB;
+  border-bottom: 1px solid var(--stroke-border-disabled, #EBEBEB);
 }
 
 .mp-thead-sticky {
   position: sticky;
   top: calc(var(--scm-sticky-gnb) + var(--scm-sticky-filter) + var(--scm-sticky-stats));
   z-index: 9;
-  background: #fff;
+  background: var(--bg, #fff);
   /* 강한 블랙 구분선 — 상단(스택 경계) */
   isolation: isolate;
 }
@@ -174,7 +174,7 @@
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 1.5px;
-  background: #000;
+  background: var(--fg, #000);
   z-index: 10;
 }
 
@@ -192,7 +192,7 @@
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 1.5px;
-  background: #000;
+  background: var(--fg, #000);
   z-index: 10;
 }
 .mp-thead-scroll {
@@ -212,22 +212,22 @@
   border-collapse: separate;
   border-spacing: 0;
   font-size: 13px;
-  color: #000;
+  color: var(--fg, #000);
 }
 
 .mp-table thead th {
   position: relative; /* resize 핸들 기준 */
-  background: #fff;
+  background: var(--bg, #fff);
   font-size: 14px;
   font-weight: 500;
   line-height: 19.6px;
-  color: #000;
+  color: var(--fg, #000);
   /* box-sizing 은 body td 와 동일하게 content-box (default) — width 계산 일관 → thead/body column divider 1px 어긋남 방지 */
   height: 44px;
   padding: 12px 16px;
   text-align: left;
-  border-bottom: 1px solid #E0E0E0;
-  border-left: 1px solid #EBEBEB;
+  border-bottom: 1px solid var(--stroke-border, #E0E0E0);
+  border-left: 1px solid var(--stroke-border-disabled, #EBEBEB);
   /* [공통] border-LEFT 시스템 — 페이지 inline 의 border-right 무력화 */
   border-right: 0;
   white-space: nowrap;
@@ -244,34 +244,34 @@
   width: 16px; height: 16px;
   vertical-align: middle;
   margin-left: 4px;
-  color: #CCCCCC;
+  color: var(--primitive-color-gray-400, #CCCCCC);
 }
 .mp-table thead th .sort svg { width: 16px; height: 16px; }
 
 /* ===== 정렬 아이콘 (sort-ic) — 데이터 리스트 page 의 th 에 사용 =====
  * 마크업: <th><svg class="sort-ic"><use href="#ic-arrowUpDown"/></svg></th>
  *   - default: 회색 (#CCC) 더블 화살표 (ic-arrowUpDown — 신규 키보드 스타일)
- *   - th:hover: 진한 회색 (#666)
- *   - th[data-sort="asc"]: 파랑 (#245EFF) — JS 가 use href 를 #ic-sort-asc 로 swap
- *   - th[data-sort="desc"]: 파랑 (#245EFF) — JS 가 use href 를 #ic-sort-desc 로 swap
+ *   - th:hover: 진한 회색 (var(--fg-low, #666))
+ *   - th[data-sort="asc"]: 파랑 (var(--layerDesktop-fg-accent, #245EFF)) — JS 가 use href 를 #ic-sort-asc 로 swap
+ *   - th[data-sort="desc"]: 파랑 (var(--layerDesktop-fg-accent, #245EFF)) — JS 가 use href 를 #ic-sort-desc 로 swap
  */
 .mp-table thead th .sort-ic {
   display: inline-block;
   width: 16px; height: 16px;
   vertical-align: middle;
   margin-left: 4px;
-  color: #CCCCCC;
+  color: var(--primitive-color-gray-400, #CCCCCC);
   cursor: pointer;
   transition: color 0.15s ease;
 }
-.mp-table thead th:hover .sort-ic { color: #666; }
+.mp-table thead th:hover .sort-ic { color: var(--fg-low, #666); }
 .mp-table thead th[data-sort="asc"] .sort-ic,
-.mp-table thead th[data-sort="desc"] .sort-ic { color: #245EFF; }
+.mp-table thead th[data-sort="desc"] .sort-ic { color: var(--layerDesktop-fg-accent, #245EFF); }
 
 /* ===== 컬럼 헤더 아이콘 (sort + filter) =====
  * - sort-ic: 텍스트 옆에 inline (정렬 아이콘 — 항상 노출)
  * - .th-icons: sort-ic 우측 8px 간격 inline 배치 — filter-ic
- * - filter-ic: 항상 노출. 기본 회색, 컬럼 필터 적용 시 #245EFF
+ * - filter-ic: 항상 노출. 기본 회색, 컬럼 필터 적용 시 var(--layerDesktop-fg-accent, #245EFF)
  * - more-ic: 미노출 (display: none) — 더보기 메뉴 미사용
  */
 .mp-table thead th .th-icons {
@@ -289,19 +289,19 @@
   pointer-events: none;
   transition: color 0.15s ease, opacity 0.15s ease;
 }
-.mp-table thead th:hover .filter-ic { opacity: 1; pointer-events: auto; color: #666; }
-.mp-table thead th .filter-ic:hover { color: #000; }
+.mp-table thead th:hover .filter-ic { opacity: 1; pointer-events: auto; color: var(--fg-low, #666); }
+.mp-table thead th .filter-ic:hover { color: var(--fg, #000); }
 .mp-table thead th .more-ic { display: none; }
 
 /* 컬럼 필터가 적용된 경우 — 호버 여부와 무관하게 항상 노출 + 블루 활성 */
-.mp-table thead th .filter-ic.is-active { opacity: 1 !important; pointer-events: auto !important; color: #245EFF !important; }
+.mp-table thead th .filter-ic.is-active { opacity: 1 !important; pointer-events: auto !important; color: var(--layerDesktop-fg-accent, #245EFF) !important; }
 
 /* ----- 본문 셀 — 1줄 nowrap, 잘림 (말줄임 ... 미노출), 좌측 상단 정렬 -----
    row 헤이트 = padding 12+12 + line-height 20.4 ≈ 44.4 (1줄). thumb·multi-line 셀이 있으면 그만큼 stretch. */
 .mp-table tbody td {
   padding: 12px 16px;
-  border-top: 1px solid #EBEBEB;
-  border-left: 1px solid #EBEBEB;
+  border-top: 1px solid var(--stroke-border-disabled, #EBEBEB);
+  border-left: 1px solid var(--stroke-border-disabled, #EBEBEB);
   /* [공통] border-LEFT 시스템 — 페이지 inline 의 border-right 무력화 */
   border-right: 0;
   white-space: nowrap;             /* 1줄 유지 (창 줄여도 줄 안 내려감) */
@@ -313,7 +313,7 @@
   font-size: 15px;
   font-weight: 400;
   line-height: 20.4px;
-  color: #000;
+  color: var(--fg, #000);
 }
 /* 숫자/금액 — 우측 상단 정렬 */
 .mp-table tbody td.cell-numeric,
@@ -338,7 +338,7 @@
    border-LEFT 시스템 (각 셀의 border-left 로 column divider) 위에 col-frozen-last 만 예외적으로
    border-right 를 추가 → 가로 스크롤 시 frozen 영역과 함께 라인이 따라가서 사라지지 않음.
    다음 cell 의 border-left 는 제거 (이중선 방지 — 총 1px 만 표시).
-   톤은 일반 column divider(#EBEBEB) 보다 진한 rgba(0,0,0,0.12) — frozen 경계 강조.
+   톤은 일반 column divider(var(--stroke-border-disabled, #EBEBEB)) 보다 진한 rgba(0,0,0,0.12) — frozen 경계 강조.
    2단 thead row1 (.group-row) 은 519줄 부근 별도 rule (동일 rgba 색). */
 .mp-table tbody td.col-frozen-last,
 .mp-table thead tr:not(.group-row) th.col-frozen-last {
@@ -356,8 +356,8 @@
    하단 = tbody 마지막 row 직하단이라 시각적 효과는 동일) */
 .mp-table tbody tr:hover td { background: #FAFBFC; }
 
-/* group head row(대표스타일이 바뀌는 첫 행)은 #E0E0E0 진한 라인 */
-.mp-table tbody tr[data-group="true"] td { border-top-color: #E0E0E0; }
+/* group head row(대표스타일이 바뀌는 첫 행)은 var(--stroke-border, #E0E0E0) 진한 라인 */
+.mp-table tbody tr[data-group="true"] td { border-top-color: var(--stroke-border, #E0E0E0); }
 
 
 /* ============================================================
@@ -389,7 +389,7 @@
   font-size: 14px;
   font-weight: 500;
   line-height: 19.6px;
-  color: #000;
+  color: var(--fg, #000);
   vertical-align: middle;
 }
 /* [공통] cb 가 단독 (라벨 없는 경우 — 편집샵) margin-right 제거 → cb 가 셀 가운데에 정확히 위치 */
@@ -494,14 +494,14 @@
 .mp-table thead th.col-frozen-3,
 .mp-table thead th.col-frozen-4,
 .mp-table thead th.col-frozen-5,
-.mp-table thead th.col-frozen-6 { background: #fff; }
+.mp-table thead th.col-frozen-6 { background: var(--bg, #fff); }
 
 .mp-table tbody td.col-frozen-1,
 .mp-table tbody td.col-frozen-2,
 .mp-table tbody td.col-frozen-3,
 .mp-table tbody td.col-frozen-4,
 .mp-table tbody td.col-frozen-5,
-.mp-table tbody td.col-frozen-6 { background: #fff; }
+.mp-table tbody td.col-frozen-6 { background: var(--bg, #fff); }
 .mp-table tbody tr:hover td.col-frozen-1,
 .mp-table tbody tr:hover td.col-frozen-2,
 .mp-table tbody tr:hover td.col-frozen-3,
@@ -571,7 +571,7 @@
 .mp-table thead th.is-dragging       { opacity: 0.4; }
 .mp-table thead th.is-drop-target    {
   background: rgba(0, 0, 0, 0.06);
-  box-shadow: inset 2px 0 0 0 #245EFF;
+  box-shadow: inset 2px 0 0 0 var(--layerDesktop-fg-accent, #245EFF);
 }
 
 
@@ -583,12 +583,12 @@
   padding: 8px 16px;
   font-weight: 500;
   font-size: 14px;
-  background: #fff;
+  background: var(--bg, #fff);
   /* box-sizing 은 body td 와 일관 (content-box, default) — column divider 위치 1px shift 방지 */
-  border-bottom: 1px solid #EBEBEB;
-  border-left: 1px solid #EBEBEB;
+  border-bottom: 1px solid var(--stroke-border-disabled, #EBEBEB);
+  border-left: 1px solid var(--stroke-border-disabled, #EBEBEB);
   border-right: 0;
-  color: #000;
+  color: var(--fg, #000);
   text-align: left;
   vertical-align: middle;
 }
@@ -601,7 +601,7 @@
 .mp-table thead .group-row th[rowspan="2"] {
   height: auto;
   vertical-align: middle;
-  border-bottom: 1px solid #E0E0E0;
+  border-bottom: 1px solid var(--stroke-border, #E0E0E0);
 }
 .mp-table thead .group-row .col-frozen-group {
   border-right: 1px solid rgba(0, 0, 0, 0.12);
@@ -626,7 +626,7 @@
   position: sticky;
   left: var(--frozen-l-end, 0);
   z-index: 4;                      /* frozen group cell (z:5) 보다 낮음 — frozen 영역과 겹칠 일 없지만 안전 */
-  background: #fff;
+  background: var(--bg, #fff);
 }
 
 
@@ -655,7 +655,7 @@
   flex: 1 0 auto;
 }
 .sku-stack > .sub-row + .sub-row {
-  border-top: 1px solid #EBEBEB;
+  border-top: 1px solid var(--stroke-border-disabled, #EBEBEB);
   /* border-top 1px 가 border-box min-height 안에 먹혀서 콘텐츠 영역이 1px 작아지는 것을 보상.
      모든 sub-row 의 콘텐츠 영역(box - border - padding)을 동일하게 유지 → align-items:center 가
      모든 row 에서 동일한 y 위치에 콘텐츠를 배치 → 컬럼 간 1px 어긋남 제거. */
@@ -676,24 +676,24 @@
 .mp-cb {
   display: inline-block;
   width: 16px; height: 16px;
-  border: 1px solid #CCCCCC;
+  border: 1px solid var(--primitive-color-gray-400, #CCCCCC);
   border-radius: 2px;
-  background: #fff;
+  background: var(--bg, #fff);
   cursor: pointer;
   vertical-align: middle;
   box-sizing: border-box;
   position: relative;
 }
 .mp-cb[aria-checked="true"] {
-  background: #000;
-  border-color: #000;
+  background: var(--fg, #000);
+  border-color: var(--fg, #000);
 }
 .mp-cb[aria-checked="true"]::after {
   content: '';
   position: absolute;
   left: 4px; top: 1px;
   width: 5px; height: 9px;
-  border-right: 2px solid #fff;
-  border-bottom: 2px solid #fff;
+  border-right: 2px solid var(--bg, #fff);
+  border-bottom: 2px solid var(--bg, #fff);
   transform: rotate(45deg);
 }

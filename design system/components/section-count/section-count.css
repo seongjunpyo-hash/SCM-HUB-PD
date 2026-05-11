@@ -9,5 +9,5 @@
   font-size: 18px;
   font-weight: 600;
   line-height: 24.48px;
-  color: #000;
+  color: var(--fg, #000);
 }

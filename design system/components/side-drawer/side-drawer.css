@@ -49,7 +49,7 @@
   bottom: 0;
   width: 848px;
   max-width: 96vw;
-  background: #fff;
+  background: var(--bg, #fff);
   box-shadow: -8px 0 16px rgba(0, 0, 0, 0.06), -2px 0 4px rgba(0, 0, 0, 0.04);
   z-index: 51;
   display: flex;
@@ -85,7 +85,7 @@
   font-size: 14px;
   font-weight: 500;
   line-height: 19.6px;
-  color: #666;
+  color: var(--fg-low, #666);
 }
 
 .scm-side-drawer__close {
@@ -99,7 +99,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #000;
+  color: var(--fg, #000);
   flex-shrink: 0;
 }
 
@@ -126,6 +126,6 @@
   justify-content: flex-end;
   gap: 8px;
   padding: 16px 24px;
-  border-top: 1px solid #EBEBEB;
+  border-top: 1px solid var(--stroke-border-disabled, #EBEBEB);
   flex-shrink: 0;
 }

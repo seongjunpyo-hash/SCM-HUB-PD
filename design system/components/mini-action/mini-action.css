@@ -18,8 +18,8 @@
  *   </span>
  *
  * Variants:
- *   기본               outlined (border #E0E0E0, bg #fff)
- *   --primary          solid (bg #000, color #fff)
+ *   기본               outlined (border var(--stroke-border, #E0E0E0), bg var(--bg, #fff))
+ *   --primary          solid (bg var(--fg, #000), color var(--bg, #fff))
  *
  * States:
  *   [aria-expanded="true"]   chevron 회전
@@ -42,10 +42,10 @@
   font-size: 14px;
   font-weight: 500;
   line-height: 19.6px;
-  border: 1px solid #E0E0E0;
+  border: 1px solid var(--stroke-border, #E0E0E0);
   border-radius: 4px;
-  background: #fff;
-  color: #000;
+  background: var(--bg, #fff);
+  color: var(--fg, #000);
   cursor: pointer;
   white-space: nowrap;
   box-sizing: border-box;
@@ -55,14 +55,14 @@
 .scm-mini-action svg {
   width: 16px;
   height: 16px;
-  color: #000;
+  color: var(--fg, #000);
   transition: transform 0.15s ease;
   flex-shrink: 0;
 }
 
 .scm-mini-action:hover:not(:disabled):not([disabled]) {
   background: var(--ld-bg-low, #FAFBFC);
-  border-color: #000;     /* hover 시 보더 진하게 — 클릭 가능 시각 강조 */
+  border-color: var(--fg, #000);     /* hover 시 보더 진하게 — 클릭 가능 시각 강조 */
 }
 
 .scm-mini-action[aria-expanded="true"] svg {
@@ -71,32 +71,32 @@
 
 /* Variants */
 .scm-mini-action--primary {
-  background: #000;
-  border-color: #000;
-  color: #fff;
+  background: var(--fg, #000);
+  border-color: var(--fg, #000);
+  color: var(--bg, #fff);
 }
-.scm-mini-action--primary svg { color: #fff; }
+.scm-mini-action--primary svg { color: var(--bg, #fff); }
 .scm-mini-action--primary:hover:not(:disabled):not([disabled]) {
-  background: #333;       /* #1A1A1A → #333 (가독성 향상) */
+  background: #333;       /* var(--bg-neutral, #1A1A1A) → #333 (가독성 향상) */
   border-color: #333;
 }
 
 /* Disabled */
 .scm-mini-action:disabled,
 .scm-mini-action[disabled] {
-  background: rgba(138, 138, 138, 0.10);
-  border-color: #EBEBEB;
-  color: rgba(0, 0, 0, 0.20);
+  background: var(--bg-disabled, rgba(138, 138, 138, 0.10));
+  border-color: var(--stroke-border-disabled, #EBEBEB);
+  color: var(--fg-disabled, rgba(0, 0, 0, 0.20));
   cursor: not-allowed;
 }
 .scm-mini-action:disabled svg,
-.scm-mini-action[disabled] svg { color: rgba(0, 0, 0, 0.20); }
+.scm-mini-action[disabled] svg { color: var(--fg-disabled, rgba(0, 0, 0, 0.20)); }
 
 .scm-mini-action--primary:disabled,
 .scm-mini-action--primary[disabled] {
-  background: rgba(138, 138, 138, 0.10);
-  border-color: #EBEBEB;
-  color: rgba(0, 0, 0, 0.20);
+  background: var(--bg-disabled, rgba(138, 138, 138, 0.10));
+  border-color: var(--stroke-border-disabled, #EBEBEB);
+  color: var(--fg-disabled, rgba(0, 0, 0, 0.20));
 }
 
 /* Popup (드롭다운) */
@@ -135,11 +135,11 @@
 }
 
 .scm-mini-popup li.is-current {
-  color: #000;
+  color: var(--fg, #000);
   font-weight: 400;
 }
 
 .scm-mini-popup li .accent {
-  color: #245EFF;
+  color: var(--layerDesktop-fg-accent, #245EFF);
   font-weight: 700;
 }

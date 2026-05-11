@@ -24,10 +24,10 @@
   height: 36px;
   min-width: 64px;
   padding: 8px 12px;
-  border: 1px solid #E0E0E0;
+  border: 1px solid var(--stroke-border, #E0E0E0);
   border-radius: 4px;
-  background: #fff;
-  color: #000;
+  background: var(--bg, #fff);
+  color: var(--fg, #000);
   font-family: inherit;
   font-size: 14px;
   font-weight: 500;
@@ -49,26 +49,26 @@
 }
 
 .scm-sizeset-btn__num em {
-  color: #245EFF;
+  color: var(--layerDesktop-fg-accent, #245EFF);
   font-style: normal;
   font-weight: 600;
 }
 
 .scm-sizeset-btn__num .divider,
 .scm-sizeset-btn__num .total {
-  color: #666;
+  color: var(--fg-low, #666);
   font-weight: 400;
 }
 
 /* Disabled (사이즈 데이터 없거나 전체 미운영 시) */
 .scm-sizeset-btn:disabled,
 .scm-sizeset-btn[disabled] {
-  background: rgba(138, 138, 138, 0.10);
-  border-color: #EBEBEB;
-  color: rgba(0, 0, 0, 0.20);
+  background: var(--bg-disabled, rgba(138, 138, 138, 0.10));
+  border-color: var(--stroke-border-disabled, #EBEBEB);
+  color: var(--fg-disabled, rgba(0, 0, 0, 0.20));
   cursor: not-allowed;
 }
 .scm-sizeset-btn:disabled .scm-sizeset-btn__num em,
 .scm-sizeset-btn[disabled] .scm-sizeset-btn__num em {
-  color: rgba(0, 0, 0, 0.20);
+  color: var(--fg-disabled, rgba(0, 0, 0, 0.20));
 }

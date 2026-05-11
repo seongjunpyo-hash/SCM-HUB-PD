@@ -29,10 +29,10 @@
 
 .scm-filter-popover {
   width: 280px;
-  background: #fff;
-  border: 1px solid #EBEBEB;
+  background: var(--bg, #fff);
+  border: 1px solid var(--stroke-border-disabled, #EBEBEB);
   border-radius: 4px;
-  box-shadow: 0 10px 15px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 15px 8px var(--primitive-color-gray-alpha900-5, rgba(0, 0, 0, 0.05));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -86,8 +86,8 @@
 .scm-filter-popover__textarea {
   align-self: stretch;
   padding: 12px 16px;
-  background: #fff;
-  border: 1px solid #000;
+  background: var(--bg, #fff);
+  border: 1px solid var(--fg, #000);
   border-radius: 4px;
   overflow: hidden;
   display: flex;
@@ -108,10 +108,10 @@
   font-size: 15px;
   font-weight: 500;
   line-height: 20.4px;
-  color: #000;
+  color: var(--fg, #000);
 }
 .scm-filter-popover__textarea textarea::placeholder {
-  color: #8A8A8A;
+  color: var(--fg-lower, #8A8A8A);
   font-weight: 500;
 }
 
@@ -120,9 +120,9 @@
   align-items: center;
   font-size: 12px;
   line-height: 18px;
-  color: #000;
+  color: var(--fg, #000);
 }
-.scm-filter-popover__counter .total { color: #666; font-weight: 400; }
+.scm-filter-popover__counter .total { color: var(--fg-low, #666); font-weight: 400; }
 
 /* Codeinput tabs (한 칩 안에서 입력 종류 라디오 전환 — SKU번호 / SKU명 등)
  * Multi mode 의 목록 선택 / 직접 입력 라디오 row 도 동일 스타일 사용.
@@ -140,7 +140,7 @@
   font-size: 15px;
   font-weight: 400;
   line-height: 20.4px;
-  color: #000;
+  color: var(--fg, #000);
   cursor: pointer;
   user-select: none;
 }
@@ -149,9 +149,9 @@
   height: 16px;
   appearance: none;
   -webkit-appearance: none;
-  border: 1px solid #E0E0E0;
+  border: 1px solid var(--stroke-border, #E0E0E0);
   border-radius: 50%;
-  background: #fff;
+  background: var(--bg, #fff);
   cursor: pointer;
   flex-shrink: 0;
   margin: 0;
@@ -159,13 +159,13 @@
   box-sizing: border-box;
 }
 .scm-filter-popover__tab input[type="radio"]:checked {
-  border-color: #000;
+  border-color: var(--fg, #000);
   background:
-    radial-gradient(circle, #fff 0 3.5px, transparent 4px) center/100% 100% no-repeat,
-    #000;
+    radial-gradient(circle, var(--bg, #fff) 0 3.5px, transparent 4px) center/100% 100% no-repeat,
+    var(--fg, #000);
 }
 /* 선택된 탭의 텍스트 강조 (legacy 는 별도 active 스타일 없음 — 텍스트 두께 변화 X) */
-.scm-filter-popover__tab.is-active { font-weight: 400; color: #000; }
+.scm-filter-popover__tab.is-active { font-weight: 400; color: var(--fg, #000); }
 
 /* ===== Multi 2-col 레이아웃 (검색결과 + 선택됨) — 어제 legacy mp-af-2col 이식 ===== */
 .scm-filter-popover__multi-search {
@@ -176,15 +176,15 @@
   align-items: center;
   gap: 8px;
   padding: 12px 8px;
-  border-bottom: 1px solid #EBEBEB;
+  border-bottom: 1px solid var(--stroke-border-disabled, #EBEBEB);
 }
 .scm-filter-popover__multi-search-row svg {
   width: 20px;
   height: 20px;
   flex-shrink: 0;
 }
-.scm-filter-popover__multi-search-row svg.ic-search { color: #8A8A8A; }
-.scm-filter-popover__multi-search-row svg.ic-clear  { color: #000; cursor: pointer; }
+.scm-filter-popover__multi-search-row svg.ic-search { color: var(--fg-lower, #8A8A8A); }
+.scm-filter-popover__multi-search-row svg.ic-clear  { color: var(--fg, #000); cursor: pointer; }
 .scm-filter-popover__multi-search-row input {
   flex: 1;
   min-width: 0;
@@ -194,10 +194,10 @@
   font-size: 15px;
   font-weight: 500;
   line-height: 20.4px;
-  color: #000;
+  color: var(--fg, #000);
   font-family: inherit;
 }
-.scm-filter-popover__multi-search-row input::placeholder { color: #8A8A8A; }
+.scm-filter-popover__multi-search-row input::placeholder { color: var(--fg-lower, #8A8A8A); }
 
 .scm-filter-popover__multi-2col {
   display: flex;
@@ -216,7 +216,7 @@
 .scm-filter-popover__multi-2col .col-divider {
   width: 1px;
   align-self: stretch;
-  background: rgba(138, 138, 138, 0.10);
+  background: var(--bg-disabled, rgba(138, 138, 138, 0.10));
   margin: 16px 0 4px;
 }
 .scm-filter-popover__multi-2col .col-inner {
@@ -233,7 +233,7 @@
   font-size: 13px;
   font-weight: 500;
   line-height: 19.5px;
-  color: #8A8A8A;
+  color: var(--fg-lower, #8A8A8A);
 }
 .scm-filter-popover__multi-2col .opt-row {
   height: 36px;
@@ -249,13 +249,13 @@
   flex: 0 0 auto;       /* col-inner flex column 에서 stretch 방지 */
 }
 .scm-filter-popover__multi-2col .opt-row:hover { background: #FAFAFA; }
-.scm-filter-popover__multi-2col .opt-row[data-selected="true"] { background: #F5F5F5; }
+.scm-filter-popover__multi-2col .opt-row[data-selected="true"] { background: var(--bg-low, #F5F5F5); }
 .scm-filter-popover__multi-2col .opt-row .pop-cb {
   width: 16px;
   height: 16px;
-  border: 1px solid #CCCCCC;
+  border: 1px solid var(--primitive-color-gray-400, #CCCCCC);
   border-radius: 2px;
-  background: #fff;
+  background: var(--bg, #fff);
   box-sizing: border-box;
   flex-shrink: 0;
   position: relative;
@@ -269,7 +269,7 @@
   min-width: 0;
   font-size: 14px;
   line-height: 19.6px;
-  color: #000;
+  color: var(--fg, #000);
 }
 /* 선택됨 컬럼: 체크박스 없이 라벨 + 우측 체크 아이콘, 매우 연한 블루 bg.
  * 높이는 검색결과 컬럼 (.opt-row) 과 동일 — 36px box-sizing border-box. */
@@ -282,17 +282,17 @@
   box-sizing: border-box;
   flex: 0 0 auto;
 }
-.scm-filter-popover__multi-2col .opt-row--sel:hover { background: #E2F1FF; }
+.scm-filter-popover__multi-2col .opt-row--sel:hover { background: var(--primitive-color-blue-0, #E2F1FF); }
 .scm-filter-popover__multi-2col .opt-row--sel .ic-check {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
-  color: #000;
+  color: var(--fg, #000);
 }
 .scm-filter-popover__multi-2col .col-empty {
   padding: 24px 12px;
   text-align: center;
-  color: #8A8A8A;
+  color: var(--fg-lower, #8A8A8A);
   font-size: 13px;
 }
 
@@ -303,7 +303,7 @@
 }
 .scm-filter-popover--multi .scm-filter-popover__textarea {
   padding: 12px 16px;
-  border: 1px solid #000;
+  border: 1px solid var(--fg, #000);
   border-radius: 4px;
   height: 200px;
   flex: 0 0 auto;
@@ -330,7 +330,7 @@
 /* ===== Search row (list / list-single) ===== */
 .scm-filter-popover__search {
   align-self: stretch;
-  border-bottom: 1px solid #EBEBEB;
+  border-bottom: 1px solid var(--stroke-border-disabled, #EBEBEB);
 }
 .scm-filter-popover__search-row {
   padding: 12px 16px;
@@ -344,8 +344,8 @@
   height: 20px;
   flex-shrink: 0;
 }
-.scm-filter-popover__search-row svg.ic-search { color: #8A8A8A; }
-.scm-filter-popover__search-row svg.ic-clear  { color: #000; cursor: pointer; }
+.scm-filter-popover__search-row svg.ic-search { color: var(--fg-lower, #8A8A8A); }
+.scm-filter-popover__search-row svg.ic-clear  { color: var(--fg, #000); cursor: pointer; }
 .scm-filter-popover__search-row input {
   flex: 1;
   min-width: 0;
@@ -356,11 +356,11 @@
   font-size: 15px;
   font-weight: 500;
   line-height: 20.4px;
-  color: #000;
+  color: var(--fg, #000);
   font-family: inherit;
 }
 .scm-filter-popover__search-row input::placeholder {
-  color: #8A8A8A;
+  color: var(--fg-lower, #8A8A8A);
   font-weight: 500;
 }
 
@@ -379,7 +379,7 @@
   font-size: 13px;
   font-weight: 400;
   line-height: 19.5px;
-  color: #8A8A8A;
+  color: var(--fg-lower, #8A8A8A);
 }
 
 .scm-filter-popover__item-row {
@@ -393,7 +393,7 @@
   flex: 1;
   min-width: 0;
   padding: 10px 8px;
-  background: #fff;
+  background: var(--bg, #fff);
   border-radius: 4px;
   display: flex;
   align-items: center;
@@ -401,11 +401,11 @@
   font-size: 15px;
   font-weight: 400;
   line-height: 20.4px;
-  color: #000;
+  color: var(--fg, #000);
   cursor: pointer;
 }
 .scm-filter-popover__item:hover { background: var(--ld-bg-low, #FAFBFC); }
-.scm-filter-popover__item[data-selected="true"] { background: #F5F5F5; }
+.scm-filter-popover__item[data-selected="true"] { background: var(--bg-low, #F5F5F5); }
 
 .scm-filter-popover__item .label {
   flex: 1;
@@ -416,9 +416,9 @@
 .scm-filter-popover__item .pop-cb {
   width: 16px;
   height: 16px;
-  border: 1px solid #CCCCCC;
+  border: 1px solid var(--primitive-color-gray-400, #CCCCCC);
   border-radius: 2px;
-  background: #fff;
+  background: var(--bg, #fff);
   box-sizing: border-box;
   flex-shrink: 0;
   position: relative;
@@ -442,7 +442,7 @@
 .scm-filter-popover__item--single .check {
   width: 16px;
   height: 16px;
-  color: #000;
+  color: var(--fg, #000);
   flex-shrink: 0;
 }
 /* 단일 선택 disabled 옵션 (예: 위탁일 때 자체제작) */
@@ -472,10 +472,10 @@
   height: 36px;
   min-width: 48px;
   padding: 8px 12px;
-  background: #fff;
-  border: 1px solid #E0E0E0;
+  background: var(--bg, #fff);
+  border: 1px solid var(--stroke-border, #E0E0E0);
   border-radius: 4px;
-  color: #000;
+  color: var(--fg, #000);
   font-family: inherit;
   font-size: 14px;
   font-weight: 500;
@@ -492,20 +492,20 @@
   height: 36px;
   min-width: 60px;
   padding: 8px 14px;
-  background: #000;
-  border: 1px solid #000;
+  background: var(--fg, #000);
+  border: 1px solid var(--fg, #000);
   border-radius: 4px;
-  color: #fff;
+  color: var(--bg, #fff);
   font-family: inherit;
   font-size: 14px;
   font-weight: 500;
   line-height: 19.6px;
   cursor: pointer;
 }
-.scm-filter-popover__apply:hover { background: #1A1A1A; }
+.scm-filter-popover__apply:hover { background: var(--bg-neutral, #1A1A1A); }
 .scm-filter-popover__apply:disabled {
-  background: rgba(138, 138, 138, 0.10);
-  border-color: #EBEBEB;
-  color: rgba(0, 0, 0, 0.20);
+  background: var(--bg-disabled, rgba(138, 138, 138, 0.10));
+  border-color: var(--stroke-border-disabled, #EBEBEB);
+  color: var(--fg-disabled, rgba(0, 0, 0, 0.20));
   cursor: not-allowed;
 }

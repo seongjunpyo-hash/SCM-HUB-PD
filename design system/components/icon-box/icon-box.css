@@ -23,8 +23,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #F5F5F5;
-  color: #1A1A1A;
+  background: var(--bg-low, #F5F5F5);
+  color: var(--bg-neutral, #1A1A1A);
   flex-shrink: 0;
 }
 
@@ -34,10 +34,10 @@
 }
 
 /* Variants — 색상 톤 */
-.scm-icon-box--blue   { background: #E2F1FF; color: #245EFF; }
-.scm-icon-box--green  { background: #ECFFEC; color: #1EA514; }
-.scm-icon-box--orange { background: #FFF4E5; color: #B7791F; }
-.scm-icon-box--red    { background: #FFECEC; color: #F31110; }
+.scm-icon-box--blue   { background: var(--primitive-color-blue-0, #E2F1FF); color: var(--layerDesktop-fg-accent, #245EFF); }
+.scm-icon-box--green  { background: var(--primitive-color-green-0, #ECFFEC); color: var(--primitive-color-green-500, #1EA514); }
+.scm-icon-box--orange { background: var(--primitive-color-yellow-0, #FFF4E5); color: #B7791F; }
+.scm-icon-box--red    { background: var(--primitive-color-red-0, #FFECEC); color: var(--primitive-color-red-500, #F31110); }
 
 /* Size — 작은 변형 (activity list 등) */
 .scm-icon-box--sm {

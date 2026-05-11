@@ -21,14 +21,14 @@
   min-width: 56px;
   height: 44px;
   padding: 12px 16px;
-  background: #fff;
-  border: 1px solid #E0E0E0;
+  background: var(--bg, #fff);
+  border: 1px solid var(--stroke-border, #E0E0E0);
   border-radius: 4px;
   font-family: inherit;
   font-size: 15px;
   font-weight: 500;
   line-height: 20.4px;
-  color: #000;
+  color: var(--fg, #000);
   cursor: pointer;
   white-space: nowrap;
   box-sizing: border-box;
@@ -46,7 +46,7 @@
 }
 
 .scm-filter-chip__count {
-  color: #245EFF;
+  color: var(--layerDesktop-fg-accent, #245EFF);
   font-weight: 600;
   line-height: 20.4px;
   font-variant-numeric: tabular-nums;
