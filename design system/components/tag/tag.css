@@ -11,23 +11,27 @@
  *   .scm-tag--gray                rgba(138,138,138,0.10) (예: 재발주, 수동)
  * ============================================================ */
 
+/* PBO 룩 — 우리 tag 는 일반 라벨/배지로 PBO 의 tag-filter / tag-removable
+   구조 (selectable / closable) 와 컨셉 다름. semantic 매핑 대신 PBO primitive
+   palette 토큰 직접 사용. 모든 색이 PBO 와 정확 일치 (gray-alpha900-5,
+   blue-0, green-0, gray-alpha500-10). */
 .scm-tag {
   display: inline-flex;
   align-items: center;
   height: 24px;
   padding: 2px 8px;
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.05);
-  color: #000;
+  background: var(--primitive-color-gray-alpha900-5, rgba(0, 0, 0, 0.05));
+  color: var(--fg, #000);
   font-size: 13px;
   font-weight: 500;
   line-height: 18px;
   white-space: nowrap;
 }
 
-.scm-tag--blue  { background: #E2F1FF; }
-.scm-tag--green { background: #ECFFEC; }
-.scm-tag--gray  { background: rgba(138, 138, 138, 0.10); }
+.scm-tag--blue  { background: var(--primitive-color-blue-0, #E2F1FF); }
+.scm-tag--green { background: var(--primitive-color-green-0, #ECFFEC); }
+.scm-tag--gray  { background: var(--primitive-color-gray-alpha500-10, rgba(138, 138, 138, 0.10)); }
 
 /* Stack (여러 태그를 가로로 묶을 때) */
 .scm-tag-stack {
