@@ -66,11 +66,11 @@
 | `member` | 본인 도메인 read + 본인 작성 comment write |
 | `viewer` | 본인 도메인 read 만 |
 
-## VOC 편집 시스템 (voc-core)
+## Conductor 편집 시스템 (conductor)
 
-도메인 공통. 페이지의 각 element 에 `data-voc-key` 부여 → 사용자가 라벨/숨김/추가 편집 → `voc_versions` 테이블에 snapshot 저장 → 페이지 로드 시 dev-export 가 적용.
+도메인 공통. 페이지의 각 element 에 `data-conductor-key` 부여 → 사용자가 라벨/숨김/추가 편집 → `conductor_versions` 테이블에 snapshot 저장 → 페이지 로드 시 dev-export 가 적용.
 
-`design-system/core/components/*/[name].html` 의 canonical markers 에 `data-voc-key` 부여 규칙을 박아둘 것 (자동 stamp 또는 수동).
+`design-system/core/components/*/[name].html` 의 canonical markers 에 `data-conductor-key` 부여 규칙을 박아둘 것 (자동 stamp 또는 수동).
 
 ## 흔한 사고 패턴 — 방지
 
@@ -78,7 +78,7 @@
 2. **토큰 우회 — hex 직접 사용** — 컴포넌트 CSS 에 `color: #245EFF` 같이 hex 직접. 해결: 토큰 변수만 (`var(--fg-accent, fallback)`).
 3. **layer 토큰을 core 가 import** — `core/components/button/button.css` 가 layer 의 토큰 파일 import. 해결: core 는 CSS variable 만 사용, 정의는 layer 가 페이지에서 선언.
 4. **인증 client-side only** — `if (role === 'admin')` 만으로 권한 제어. 해결: Supabase RLS 정책으로 server-enforce.
-5. **VOC 데이터를 localStorage** — SCM-HUB-PD 초기 패턴. 해결: 모두 Supabase 테이블.
+5. **Conductor 데이터를 localStorage** — SCM-HUB-PD 초기 패턴. 해결: 모두 Supabase 테이블.
 
 ## 도메인 추가 체크리스트
 

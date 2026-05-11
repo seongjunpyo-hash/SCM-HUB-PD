@@ -24,8 +24,8 @@ create table if not exists public.user_domains (
 
 create index if not exists user_domains_user_idx on public.user_domains (user_id);
 
--- ===== 3. voc_versions — 페이지별 편집 snapshot =====
-create table if not exists public.voc_versions (
+-- ===== 3. conductor_versions — 페이지별 편집 snapshot =====
+create table if not exists public.conductor_versions (
   id          uuid primary key default gen_random_uuid(),
   domain_id   text not null references public.domains on delete cascade,
   path        text not null,
@@ -37,30 +37,30 @@ create table if not exists public.voc_versions (
   created_by  uuid not null references auth.users
 );
 
-create index if not exists voc_versions_domain_path_idx
-  on public.voc_versions (domain_id, path);
+create index if not exists conductor_versions_domain_path_idx
+  on public.conductor_versions (domain_id, path);
 
 -- 도메인 × 페이지 당 active 는 최대 1개만 (partial unique)
-create unique index if not exists voc_versions_one_active_per_page
-  on public.voc_versions (domain_id, path) where is_active;
+create unique index if not exists conductor_versions_one_active_per_page
+  on public.conductor_versions (domain_id, path) where is_active;
 
--- ===== 4. voc_comments — element 단위 댓글 =====
-create table if not exists public.voc_comments (
+-- ===== 4. conductor_comments — element 단위 댓글 =====
+create table if not exists public.conductor_comments (
   id          uuid primary key default gen_random_uuid(),
   domain_id   text not null references public.domains on delete cascade,
   path        text not null,
-  voc_key     text not null,
+  conductor_key     text not null,
   body        text not null,
   resolved    boolean not null default false,
   created_at  timestamptz not null default now(),
   created_by  uuid not null references auth.users
 );
 
-create index if not exists voc_comments_domain_path_key_idx
-  on public.voc_comments (domain_id, path, voc_key);
+create index if not exists conductor_comments_domain_path_key_idx
+  on public.conductor_comments (domain_id, path, conductor_key);
 
--- ===== 5. voc_edits — draft 편집 (active version 만들기 전 임시) =====
-create table if not exists public.voc_edits (
+-- ===== 5. conductor_edits — draft 편집 (active version 만들기 전 임시) =====
+create table if not exists public.conductor_edits (
   id          uuid primary key default gen_random_uuid(),
   domain_id   text not null references public.domains on delete cascade,
   path        text not null,
@@ -84,74 +84,74 @@ alter table public.user_domains enable row level security;
 create policy "user_domains_read_self" on public.user_domains
   for select using (user_id = auth.uid());
 
--- voc_versions — 본인 도메인만 read, admin 이상만 write
-alter table public.voc_versions enable row level security;
+-- conductor_versions — 본인 도메인만 read, admin 이상만 write
+alter table public.conductor_versions enable row level security;
 
-create policy "voc_versions_read_own_domain" on public.voc_versions
+create policy "conductor_versions_read_own_domain" on public.conductor_versions
   for select using (
     exists (
       select 1 from public.user_domains
-      where user_id = auth.uid() and domain_id = voc_versions.domain_id
+      where user_id = auth.uid() and domain_id = conductor_versions.domain_id
     )
   );
 
-create policy "voc_versions_admin_write" on public.voc_versions
+create policy "conductor_versions_admin_write" on public.conductor_versions
   for all using (
     exists (
       select 1 from public.user_domains
       where user_id = auth.uid()
-        and domain_id = voc_versions.domain_id
+        and domain_id = conductor_versions.domain_id
         and role in ('super', 'admin')
     )
   ) with check (
     exists (
       select 1 from public.user_domains
       where user_id = auth.uid()
-        and domain_id = voc_versions.domain_id
+        and domain_id = conductor_versions.domain_id
         and role in ('super', 'admin')
     )
   );
 
--- voc_comments — 본인 도메인 read, member 이상 본인 작성 write
-alter table public.voc_comments enable row level security;
+-- conductor_comments — 본인 도메인 read, member 이상 본인 작성 write
+alter table public.conductor_comments enable row level security;
 
-create policy "voc_comments_read_own_domain" on public.voc_comments
+create policy "conductor_comments_read_own_domain" on public.conductor_comments
   for select using (
     exists (
       select 1 from public.user_domains
-      where user_id = auth.uid() and domain_id = voc_comments.domain_id
+      where user_id = auth.uid() and domain_id = conductor_comments.domain_id
     )
   );
 
-create policy "voc_comments_member_insert" on public.voc_comments
+create policy "conductor_comments_member_insert" on public.conductor_comments
   for insert with check (
     created_by = auth.uid()
     and exists (
       select 1 from public.user_domains
       where user_id = auth.uid()
-        and domain_id = voc_comments.domain_id
+        and domain_id = conductor_comments.domain_id
         and role in ('super', 'admin', 'member')
     )
   );
 
-create policy "voc_comments_self_update" on public.voc_comments
+create policy "conductor_comments_self_update" on public.conductor_comments
   for update using (created_by = auth.uid())
   with check (created_by = auth.uid());
 
-create policy "voc_comments_self_or_admin_delete" on public.voc_comments
+create policy "conductor_comments_self_or_admin_delete" on public.conductor_comments
   for delete using (
     created_by = auth.uid()
     or exists (
       select 1 from public.user_domains
       where user_id = auth.uid()
-        and domain_id = voc_comments.domain_id
+        and domain_id = conductor_comments.domain_id
         and role in ('super', 'admin')
     )
   );
 
--- voc_edits — 본인 draft 만 read/write
-alter table public.voc_edits enable row level security;
+-- conductor_edits — 본인 draft 만 read/write
+alter table public.conductor_edits enable row level security;
 
-create policy "voc_edits_self_all" on public.voc_edits
+create policy "conductor_edits_self_all" on public.conductor_edits
   for all using (user_id = auth.uid())
   with check (user_id = auth.uid());

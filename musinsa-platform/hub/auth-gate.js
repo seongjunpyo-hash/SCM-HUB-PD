@@ -39,7 +39,7 @@
   // /hub/...            → null (hub 자체는 모든 사용자 접근)
   function inferDomain(pathname) {
     var seg = (pathname.split('/')[1] || '').toLowerCase();
-    if (!seg || seg === 'hub' || seg === 'voc-core') return null;
+    if (!seg || seg === 'hub' || seg === 'conductor') return null;
     var known = ['scm-hub', 'scm-portal', 'o4o', 'logistics'];
     return known.indexOf(seg) !== -1 ? seg : null;
   }

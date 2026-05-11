@@ -22,13 +22,13 @@ supabase db push
 |---|---|
 | `domains` | 도메인 카탈로그 (scm-hub, scm-portal, o4o, logistics) |
 | `user_domains` | 사용자 × 도메인 × 역할 |
-| `voc_versions` | 페이지별 편집 snapshot (현 SCM-HUB-PD 의 `scm:voc:versions:v1` 대체) |
-| `voc_comments` | element 단위 댓글 |
-| `voc_edits` | 편집 중인 변경사항 (draft) |
+| `conductor_versions` | 페이지별 편집 snapshot (현 SCM-HUB-PD 의 `scm:conductor:versions:v1` 대체) |
+| `conductor_comments` | element 단위 댓글 |
+| `conductor_edits` | 편집 중인 변경사항 (draft) |
 
 ## RLS 정책 모델
 
-모든 voc_* 테이블에 RLS 활성. 정책:
+모든 conductor_* 테이블에 RLS 활성. 정책:
 
 - **read**: `user_domains` 에 본인 매핑 있는 도메인만
 - **write**: 본인 매핑의 role 이 `super` 또는 `admin` 인 도메인만

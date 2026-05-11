@@ -31,7 +31,7 @@ musinsa-platform 은 4 도메인 (`scm-hub`, `scm-portal`, `o4o`, `logistics`) �
                       │   - auth.users          │
                       │   - domains             │
                       │   - user_domains        │
-                      │   - voc_versions / …    │
+                      │   - conductor_versions / …    │
                       └─────────────────────────┘
 ```
 
@@ -89,7 +89,7 @@ musinsa-platform/
 │   └── migrations/
 │       ├── 0001_initial.sql           ← 5 테이블 + RLS
 │       └── 0002_seed_domains.sql      ← 4 도메인 시드
-├── voc-core/                          ← (단계 12 에서)
+├── conductor/                          ← (단계 12 에서)
 └── .github/workflows/deploy.yml       ← Cloudflare Pages
 ```
 
@@ -187,7 +187,7 @@ supabase db push
 ```
 
 ✅ **검증**:
-- 좌측 **Table Editor** → 5 테이블 (`domains`, `user_domains`, `voc_versions`, `voc_comments`, `voc_edits`) 보임
+- 좌측 **Table Editor** → 5 테이블 (`domains`, `user_domains`, `conductor_versions`, `conductor_comments`, `conductor_edits`) 보임
 - `domains` 테이블에 4 row (scm-hub / scm-portal / o4o / logistics)
 - 좌측 **Authentication** → **Policies** → 각 테이블에 RLS 정책들 보임
 
@@ -400,7 +400,7 @@ After:
 |---|---|
 | 2 | hub auth-gate 의 path prefix 권한 규칙 확정. SCM-HUB-PD 의 모든 페이지에 CDN 적용 (sed 일괄) |
 | 3 | `domains/logistics/` 의 첫 페이지 1~2개 (flow layer 토큰 작성) |
-| 4 | `voc-core/` 분리 — SCM-HUB-PD 의 `dev-export.js` + `voc/` 를 이 platform 으로 이전 + localStorage → Supabase 로 데이터 전환 |
+| 4 | `conductor/` 분리 — SCM-HUB-PD 의 `dev-export.js` + `voc/` 를 이 platform 으로 이전 + localStorage → Supabase 로 데이터 전환 |
 | 5 | `domains/scm-portal/`, `domains/o4o/` (phase layer 사용) |
 
 ---
@@ -469,8 +469,8 @@ After:
 **Q. SCM-HUB-PD 와 musinsa-platform 의 사용자 데이터는 분리되나?**
 A. (b) 선택했으므로 별 repo + 별 Supabase project = 별 user pool. 미래에 통합하려면 user export/import 또는 SSO 도입.
 
-**Q. SCM-HUB-PD 의 현 VOC 데이터 (localStorage) 는 어떻게?**
-A. 일단 그대로. 단계 4주차의 voc-core 분리 시점에 SCM-HUB-PD 의 localStorage → Supabase 로 마이그레이션 스크립트 작성 (사용자 본인이 본인 브라우저에서 export → import).
+**Q. SCM-HUB-PD 의 현 Conductor (구 VOC) 데이터 (localStorage) 는 어떻게?**
+A. 일단 그대로. 단계 4주차의 conductor 분리 시점에 SCM-HUB-PD 의 localStorage → Supabase 로 마이그레이션 스크립트 작성 (사용자 본인이 본인 브라우저에서 export → import).
 
 **Q. design-system 의 토큰을 새로 만들어야 하는가? PBO 토큰 재사용 가능?**
 A. layers/layer/tokens.css 에 SCM-HUB-PD 의 musinsa-tokens/* 를 그대로 import 하거나 통합 가능. 12 단계에서 결정.

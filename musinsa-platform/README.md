@@ -16,7 +16,7 @@ musinsa-platform/
 │   ├── scm-portal/     (uses phase)
 │   ├── o4o/            (uses phase)
 │   └── logistics/      (uses flow)
-├── voc-core/                       ← 도메인 공통 VOC 편집 시스템
+├── conductor/                       ← 도메인 공통 Conductor 편집 시스템
 ├── supabase/                       ← DB schema + RLS migration
 └── legacy/                         ← 원본 마크업 fixture
 ```

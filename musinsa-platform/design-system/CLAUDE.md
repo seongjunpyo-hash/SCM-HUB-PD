@@ -22,11 +22,11 @@ core/components/<name>/
 5. **JS helper 선택적**: 행동 없는 컴포넌트 (Tag, Typography 등) 는 .js 생략 OK. 행동 있는 컴포넌트 (Button, Toggle 등) 는 `SCM.<name>.mount(el, opts)` 시그니처.
 6. **상태는 attribute / class**: `aria-checked`, `aria-disabled`, `data-state`, `.is-active`. JS 가 상태 추적 안 함 (DOM 이 진실).
 
-## VOC 통합
+## Conductor 통합
 
-각 컴포넌트의 root element 는 page-head 등 *반복 단위* 가 아닌 한 `data-voc-key` 부여 가능해야 한다. VOC 의 dev-export 가 `data-voc-key` 를 hook 으로 사용.
+각 컴포넌트의 root element 는 page-head 등 *반복 단위* 가 아닌 한 `data-conductor-key` 부여 가능해야 한다. Conductor 의 dev-export 가 `data-conductor-key` 를 hook 으로 사용.
 
-`<name>.html` 의 canonical markers 에 `data-voc-key="..."` 를 직접 박지는 말 것 — 페이지에서 자동 stamp 또는 manual 부여.
+`<name>.html` 의 canonical markers 에 `data-conductor-key="..."` 를 직접 박지는 말 것 — 페이지에서 자동 stamp 또는 manual 부여.
 
 ## Layer 시스템
 
