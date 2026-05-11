@@ -1,13 +1,13 @@
 /* ============================================================
  * scm-toast — 우상단 스낵바 토스트 (Figma snackBar)
  * ------------------------------------------------------------
- * 390w / padding 16/24 / radius 4 / bg rgba(0,0,0,0.80)
+ * 390w / padding 16/24 / radius 4 / bg var(--primitive-color-gray-alpha900-80, rgba(0,0,0,0.80))
  * 우상단(top: 80px, right: 24px) 슬라이드 인/아웃.
  *
  * Variants:
- *   .scm-toast--success    초록 아이콘 (#1EA514)
- *   .scm-toast--info       파랑 아이콘 (#245EFF)
- *   .scm-toast--critical   빨강 아이콘 (#F31110)
+ *   .scm-toast--success    초록 아이콘 (var(--primitive-color-green-500, #1EA514))
+ *   .scm-toast--info       파랑 아이콘 (var(--layerDesktop-fg-accent, #245EFF))
+ *   .scm-toast--critical   빨강 아이콘 (var(--primitive-color-red-500, #F31110))
  *
  * States:
  *   .is-leaving            슬라이드 아웃 (220ms)
@@ -29,8 +29,8 @@
   pointer-events: auto;
   width: 390px;
   min-width: 150px;
-  background: rgba(0, 0, 0, 0.80);
-  color: #fff;
+  background: var(--primitive-color-gray-alpha900-80, rgba(0, 0, 0, 0.80));
+  color: var(--bg, #fff);
   border-radius: 4px;
   padding: 16px 24px;
   display: flex;
@@ -68,20 +68,20 @@
   flex-shrink: 0;
 }
 
-.scm-toast--success .scm-toast__icon  { color: #1EA514; }
-.scm-toast--info .scm-toast__icon     { color: #245EFF; }
-.scm-toast--critical .scm-toast__icon { color: #F31110; }
+.scm-toast--success .scm-toast__icon  { color: var(--primitive-color-green-500, #1EA514); }
+.scm-toast--info .scm-toast__icon     { color: var(--layerDesktop-fg-accent, #245EFF); }
+.scm-toast--critical .scm-toast__icon { color: var(--primitive-color-red-500, #F31110); }
 
 /* 흰색 배경으로 아이콘 컷아웃(체크 / "!" 등) 안쪽이 흰색으로 보이게.
    icon viewBox = 0 0 20 20, 가시 도형은 약 18x18 (10에서 r≈8.125 원 / 동일 크기 삼각형).
    24px 컨테이너 기준 9.5px 반경의 흰 원을 정확히 도형 크기에 맞춰 배치. */
 .scm-toast--success .scm-toast__icon,
 .scm-toast--info .scm-toast__icon {
-  background: radial-gradient(circle 9.5px at 50% 50%, #fff 99%, transparent 100%);
+  background: radial-gradient(circle 9.5px at 50% 50%, var(--bg, #fff) 99%, transparent 100%);
 }
 /* alertTriangle: 삼각형 안 inscribed circle 위치(중앙 약간 아래) 에 흰 원 배치 */
 .scm-toast--critical .scm-toast__icon {
-  background: radial-gradient(circle 5px at 50% 57%, #fff 99%, transparent 100%);
+  background: radial-gradient(circle 5px at 50% 57%, var(--bg, #fff) 99%, transparent 100%);
 }
 
 .scm-toast__body {
@@ -97,20 +97,20 @@
   font-size: 15px;
   font-weight: 600;
   line-height: 20.4px;
-  color: #fff;
+  color: var(--bg, #fff);
 }
 
 .scm-toast__desc {
   font-size: 14px;
   font-weight: 400;
   line-height: 19.6px;
-  color: #fff;
+  color: var(--bg, #fff);
 }
 
 .scm-toast__close {
   background: transparent;
   border: 0;
-  color: #fff;
+  color: var(--bg, #fff);
   cursor: pointer;
   padding: 0;
   width: 24px;

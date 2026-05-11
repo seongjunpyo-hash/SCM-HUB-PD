@@ -16,7 +16,7 @@
   font-size: 15px;
   font-weight: 500;
   line-height: 20.4px;
-  color: #666;
+  color: var(--fg-low, #666);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -32,7 +32,7 @@
 .scm-filter-reset-btn svg {
   width: 20px;
   height: 20px;
-  color: #666;
+  color: var(--fg-low, #666);
 }
 
 .scm-filter-reset-btn:hover {

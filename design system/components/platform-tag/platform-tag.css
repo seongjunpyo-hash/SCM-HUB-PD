@@ -4,9 +4,9 @@
  * MUSINSA / 29CM 등 플랫폼 식별. 24px height, 13/500.
  *
  * Color (data-attr):
- *   data-color="blue"     #E2F1FF
- *   data-color="yellow"   #FFF4E5
- *   data-color="gray"     #F5F5F5
+ *   data-color="blue"     var(--primitive-color-blue-0, #E2F1FF)
+ *   data-color="yellow"   var(--primitive-color-yellow-0, #FFF4E5)
+ *   data-color="gray"     var(--bg-low, #F5F5F5)
  * ============================================================ */
 
 .scm-platform-tag {
@@ -19,10 +19,10 @@
   font-size: 13px;
   font-weight: 500;
   line-height: 19.5px;
-  color: #000;
+  color: var(--fg, #000);
   white-space: nowrap;
 }
 
-.scm-platform-tag[data-color="blue"]   { background: #E2F1FF; }
-.scm-platform-tag[data-color="yellow"] { background: #FFF4E5; }
-.scm-platform-tag[data-color="gray"]   { background: #F5F5F5; }
+.scm-platform-tag[data-color="blue"]   { background: var(--primitive-color-blue-0, #E2F1FF); }
+.scm-platform-tag[data-color="yellow"] { background: var(--primitive-color-yellow-0, #FFF4E5); }
+.scm-platform-tag[data-color="gray"]   { background: var(--bg-low, #F5F5F5); }

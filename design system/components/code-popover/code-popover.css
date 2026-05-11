@@ -90,7 +90,7 @@
 
 .scm-code-popover__actions button.primary {
   background: var(--ld-fg, #000);
-  color: #fff;
+  color: var(--bg, #fff);
   border-color: var(--ld-fg, #000);
 }
 

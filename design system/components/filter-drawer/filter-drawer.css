@@ -48,7 +48,7 @@
   bottom: 0;
   width: 480px;
   max-width: 90vw;
-  background: #fff;
+  background: var(--bg, #fff);
   box-shadow: 8px 0 16px rgba(0, 0, 0, 0.06), 2px 0 4px rgba(0, 0, 0, 0.04);
   z-index: 12;
   display: flex;
@@ -73,7 +73,7 @@
   font-size: 18px;
   font-weight: 600;
   line-height: 25.2px;
-  color: #000;
+  color: var(--fg, #000);
 }
 .scm-filter-drawer__close {
   width: 36px;
@@ -88,7 +88,7 @@
   justify-content: center;
 }
 .scm-filter-drawer__close:hover { background: var(--ld-bg-low, #FAFBFC); }
-.scm-filter-drawer__close svg { width: 20px; height: 20px; color: #000; }
+.scm-filter-drawer__close svg { width: 20px; height: 20px; color: var(--fg, #000); }
 
 /* Body */
 .scm-filter-drawer__body {
@@ -112,7 +112,7 @@
   font-size: 14px;
   font-weight: 600;
   line-height: 19.6px;
-  color: #000;
+  color: var(--fg, #000);
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -120,7 +120,7 @@
 .scm-filter-drawer__section h3 .req-dot {
   width: 4px;
   height: 4px;
-  background: #245EFF;
+  background: var(--layerDesktop-fg-accent, #245EFF);
   border-radius: 50%;
 }
 
@@ -145,14 +145,14 @@
 .scm-filter-drawer__chip {
   height: 36px;
   padding: 8px 12px;
-  background: #fff;
-  border: 1px solid #E0E0E0;
+  background: var(--bg, #fff);
+  border: 1px solid var(--stroke-border, #E0E0E0);
   border-radius: 4px;
   font-family: inherit;
   font-size: 14px;
   font-weight: 500;
   line-height: 19.6px;
-  color: #000;
+  color: var(--fg, #000);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -160,24 +160,24 @@
 }
 .scm-filter-drawer__chip:hover { background: var(--ld-bg-low, #FAFBFC); }
 .scm-filter-drawer__chip[data-selected="true"] {
-  background: #000;
-  border-color: #000;
-  color: #fff;
+  background: var(--fg, #000);
+  border-color: var(--fg, #000);
+  color: var(--bg, #fff);
 }
 /* disabled 가 selected 보다 우선 — selected 상태에서도 disabled 시 회색 표시 */
 .scm-filter-drawer__chip[disabled],
 .scm-filter-drawer__chip[aria-disabled="true"],
 .scm-filter-drawer__chip[disabled][data-selected="true"],
 .scm-filter-drawer__chip[aria-disabled="true"][data-selected="true"] {
-  background: #F5F5F5;
-  border-color: #EBEBEB;
+  background: var(--bg-low, #F5F5F5);
+  border-color: var(--stroke-border-disabled, #EBEBEB);
   color: rgba(0, 0, 0, 0.30);
   cursor: not-allowed;
   pointer-events: none;
 }
 .scm-filter-drawer__chip[disabled]:hover,
 .scm-filter-drawer__chip[aria-disabled="true"]:hover {
-  background: #F5F5F5;
+  background: var(--bg-low, #F5F5F5);
 }
 
 /* Multi-select with search + list */
@@ -187,16 +187,16 @@
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  border: 1px solid #E0E0E0;
+  border: 1px solid var(--stroke-border, #E0E0E0);
   border-radius: 4px;
-  background: #fff;
+  background: var(--bg, #fff);
 }
-.scm-filter-drawer__search:focus-within { border-color: #000; }
+.scm-filter-drawer__search:focus-within { border-color: var(--fg, #000); }
 .scm-filter-drawer__search svg {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
-  color: #8A8A8A;
+  color: var(--fg-lower, #8A8A8A);
 }
 .scm-filter-drawer__search input {
   flex: 1;
@@ -207,11 +207,11 @@
   font-size: 14px;
   font-weight: 500;
   line-height: 19.6px;
-  color: #000;
+  color: var(--fg, #000);
   font-family: inherit;
 }
 .scm-filter-drawer__search input::placeholder {
-  color: #8A8A8A;
+  color: var(--fg-lower, #8A8A8A);
   font-weight: 500;
 }
 .scm-filter-drawer__search-clear {
@@ -224,7 +224,7 @@
   display: none;
   flex-shrink: 0;
 }
-.scm-filter-drawer__search-clear svg { color: #000; }
+.scm-filter-drawer__search-clear svg { color: var(--fg, #000); }
 .scm-filter-drawer__search.has-q .scm-filter-drawer__search-clear { display: inline-flex; }
 
 .scm-filter-drawer__list {
@@ -233,9 +233,9 @@
   display: flex;
   flex-direction: column;
   padding: 4px 0;
-  border: 1px solid #EBEBEB;
+  border: 1px solid var(--stroke-border-disabled, #EBEBEB);
   border-radius: 4px;
-  background: #fff;
+  background: var(--bg, #fff);
 }
 
 /* ===== Multi 2-col (검색결과 + 선택됨) — drawer 내부 ===== */
@@ -248,7 +248,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  border: 1px solid #E0E0E0;
+  border: 1px solid var(--stroke-border, #E0E0E0);
   border-radius: 4px;
 }
 .scm-filter-drawer__multi-search-row svg {
@@ -256,8 +256,8 @@
   height: 20px;
   flex-shrink: 0;
 }
-.scm-filter-drawer__multi-search-row svg.ic-search { color: #8A8A8A; }
-.scm-filter-drawer__multi-search-row svg.ic-clear  { color: #000; cursor: pointer; }
+.scm-filter-drawer__multi-search-row svg.ic-search { color: var(--fg-lower, #8A8A8A); }
+.scm-filter-drawer__multi-search-row svg.ic-clear  { color: var(--fg, #000); cursor: pointer; }
 .scm-filter-drawer__multi-search-row input {
   flex: 1;
   min-width: 0;
@@ -267,17 +267,17 @@
   font-size: 14px;
   font-weight: 400;
   line-height: 19.6px;
-  color: #000;
+  color: var(--fg, #000);
   font-family: inherit;
 }
-.scm-filter-drawer__multi-search-row input::placeholder { color: #8A8A8A; }
+.scm-filter-drawer__multi-search-row input::placeholder { color: var(--fg-lower, #8A8A8A); }
 
 .scm-filter-drawer__multi-2col {
   display: flex;
   align-items: stretch;
-  border: 1px solid #EBEBEB;
+  border: 1px solid var(--stroke-border-disabled, #EBEBEB);
   border-radius: 4px;
-  background: #fff;
+  background: var(--bg, #fff);
   overflow: hidden;
   max-height: 300px;
 }
@@ -289,7 +289,7 @@
 }
 .scm-filter-drawer__multi-2col .col-divider {
   width: 1px;
-  background: #EBEBEB;
+  background: var(--stroke-border-disabled, #EBEBEB);
 }
 .scm-filter-drawer__multi-2col .col-inner {
   padding: 4px;
@@ -305,7 +305,7 @@
   font-size: 13px;
   font-weight: 500;
   line-height: 19.5px;
-  color: #8A8A8A;
+  color: var(--fg-lower, #8A8A8A);
 }
 /* 선택됨 컬럼 헤더 — 좌측 라벨 + 우측 초기화 텍스트 버튼 */
 .scm-filter-drawer__multi-2col .col-label-row {
@@ -326,11 +326,11 @@
   font-size: 13px;
   font-weight: 500;
   line-height: 19.5px;
-  color: #666;
+  color: var(--fg-low, #666);
   cursor: pointer;
 }
 .scm-filter-drawer__multi-2col .col-reset:hover {
-  color: #000;
+  color: var(--fg, #000);
   text-decoration: underline;
 }
 .scm-filter-drawer__multi-2col .opt-row {
@@ -350,13 +350,13 @@
   margin-top: 2px;
 }
 .scm-filter-drawer__multi-2col .opt-row:hover { background: #FAFAFA; }
-.scm-filter-drawer__multi-2col .opt-row[data-selected="true"] { background: #F5F5F5; }
+.scm-filter-drawer__multi-2col .opt-row[data-selected="true"] { background: var(--bg-low, #F5F5F5); }
 .scm-filter-drawer__multi-2col .opt-row .pop-cb {
   width: 16px;
   height: 16px;
-  border: 1px solid #CCCCCC;
+  border: 1px solid var(--primitive-color-gray-400, #CCCCCC);
   border-radius: 2px;
-  background: #fff;
+  background: var(--bg, #fff);
   box-sizing: border-box;
   flex-shrink: 0;
 }
@@ -369,7 +369,7 @@
   min-width: 0;
   font-size: 14px;
   line-height: 19.6px;
-  color: #000;
+  color: var(--fg, #000);
 }
 .scm-filter-drawer__multi-2col .opt-row--sel {
   background: #F0F7FF;
@@ -381,16 +381,16 @@
   align-items: flex-start;
   gap: 10px;
 }
-.scm-filter-drawer__multi-2col .opt-row--sel:hover { background: #E2F1FF; }
+.scm-filter-drawer__multi-2col .opt-row--sel:hover { background: var(--primitive-color-blue-0, #E2F1FF); }
 .scm-filter-drawer__multi-2col .opt-row--sel .ic-check {
   width: 16px; height: 16px;
   flex-shrink: 0;
-  color: #000;
+  color: var(--fg, #000);
 }
 .scm-filter-drawer__multi-2col .col-empty {
   padding: 24px 12px;
   text-align: center;
-  color: #8A8A8A;
+  color: var(--fg-lower, #8A8A8A);
   font-size: 13px;
 }
 
@@ -399,7 +399,7 @@
   font-size: 13px;
   font-weight: 400;
   line-height: 19.5px;
-  color: #8A8A8A;
+  color: var(--fg-lower, #8A8A8A);
 }
 
 .scm-filter-drawer__row {
@@ -410,14 +410,14 @@
   cursor: pointer;
 }
 .scm-filter-drawer__row:hover { background: var(--ld-bg-low, #FAFBFC); }
-.scm-filter-drawer__row[data-selected="true"] { background: #F5F5F5; }
+.scm-filter-drawer__row[data-selected="true"] { background: var(--bg-low, #F5F5F5); }
 
 .scm-filter-drawer__row .pop-cb {
   width: 16px;
   height: 16px;
-  border: 1px solid #CCCCCC;
+  border: 1px solid var(--primitive-color-gray-400, #CCCCCC);
   border-radius: 2px;
-  background: #fff;
+  background: var(--bg, #fff);
   box-sizing: border-box;
   flex-shrink: 0;
   position: relative;
@@ -433,13 +433,13 @@
   min-width: 0;
   font-size: 14px;
   line-height: 19.6px;
-  color: #000;
+  color: var(--fg, #000);
 }
 
 .scm-filter-drawer__empty {
   padding: 24px 12px;
   text-align: center;
-  color: #8A8A8A;
+  color: var(--fg-lower, #8A8A8A);
   font-size: 13px;
 }
 
@@ -448,35 +448,35 @@
   width: 100%;
   min-height: 100px;
   padding: 12px 16px;
-  border: 1px solid #E0E0E0;
+  border: 1px solid var(--stroke-border, #E0E0E0);
   border-radius: 4px;
   font-family: inherit;
   font-size: 15px;
   font-weight: 500;
   line-height: 20.4px;
-  color: #000;
+  color: var(--fg, #000);
   resize: vertical;
   outline: none;
   box-sizing: border-box;
 }
-.scm-filter-drawer__textarea:focus { border-color: #000; }
-.scm-filter-drawer__textarea::placeholder { color: #8A8A8A; }
+.scm-filter-drawer__textarea:focus { border-color: var(--fg, #000); }
+.scm-filter-drawer__textarea::placeholder { color: var(--fg-lower, #8A8A8A); }
 
 .scm-filter-drawer__counter {
   font-size: 12px;
   line-height: 18px;
-  color: #666;
+  color: var(--fg-low, #666);
   align-self: flex-end;
 }
 .scm-filter-drawer__counter strong {
-  color: #000;
+  color: var(--fg, #000);
   font-weight: 500;
 }
 
 /* Footer */
 .scm-filter-drawer__footer {
   padding: 16px 24px;
-  border-top: 1px solid #EBEBEB;
+  border-top: 1px solid var(--stroke-border-disabled, #EBEBEB);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -494,7 +494,7 @@
   font-size: 15px;
   font-weight: 500;
   line-height: 20.4px;
-  color: #666;
+  color: var(--fg-low, #666);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -507,21 +507,21 @@
   height: 44px;
   min-width: 120px;
   padding: 12px 16px;
-  background: #fff;
-  border: 1px solid #000;
+  background: var(--bg, #fff);
+  border: 1px solid var(--fg, #000);
   border-radius: 4px;
   font-family: inherit;
   font-size: 15px;
   font-weight: 500;
   line-height: 20.4px;
-  color: #000;
+  color: var(--fg, #000);
   cursor: pointer;
   transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
 .scm-filter-drawer__apply:hover { background: var(--ld-bg-low, #FAFBFC); }
 .scm-filter-drawer__apply[disabled] {
   background: rgba(138, 138, 138, 0.05);
-  border-color: #EBEBEB;
+  border-color: var(--stroke-border-disabled, #EBEBEB);
   color: rgba(0, 0, 0, 0.30);
   cursor: not-allowed;
 }

@@ -8,9 +8,9 @@
   font-size: 13px;
   font-weight: 500;
   line-height: 18px;
-  background: rgba(138, 138, 138, 0.10);
-  color: #000;
+  background: var(--bg-disabled, rgba(138, 138, 138, 0.10));
+  color: var(--fg, #000);
 }
-.scm-kind-chip--inbound  { background: #E2F1FF; color: #245EFF; }
-.scm-kind-chip--order    { background: #ECFFEC; color: #1EA514; }
+.scm-kind-chip--inbound  { background: var(--primitive-color-blue-0, #E2F1FF); color: var(--layerDesktop-fg-accent, #245EFF); }
+.scm-kind-chip--order    { background: var(--primitive-color-green-0, #ECFFEC); color: var(--primitive-color-green-500, #1EA514); }
 .scm-kind-chip--reorder  { background: #FEF3E2; color: #B7791F; }

@@ -26,7 +26,7 @@
  * 스티키:
  *   top: var(--scm-sticky-gnb)  (페이지 정의 변수, 보통 64)
  *   z-index: 12
- *   bg: #fff
+ *   bg: var(--bg, #fff)
  *   필터 자체는 세로 마진 0, 페이지의 좌우 padding 반대로 빼서
  *   filter-bar 가 풀폭으로 sticky 되도록.
  * ============================================================ */
@@ -40,7 +40,7 @@
   position: sticky;
   top: var(--scm-sticky-gnb, 64px);
   z-index: 12;
-  background: #fff;
+  background: var(--bg, #fff);
   margin: 0 -28px;             /* 부모 padding 반대로 빼서 풀폭 sticky */
 }
 
@@ -90,11 +90,11 @@
 }
 .scm-filter-overflow__fade--left {
   left: 0;
-  background: linear-gradient(90deg, #fff 0%, rgba(255, 255, 255, 0) 100%);
+  background: linear-gradient(90deg, var(--bg, #fff) 0%, rgba(255, 255, 255, 0) 100%);
 }
 .scm-filter-overflow__fade--right {
   right: 0;
-  background: linear-gradient(270deg, #fff 0%, rgba(255, 255, 255, 0) 100%);
+  background: linear-gradient(270deg, var(--bg, #fff) 0%, rgba(255, 255, 255, 0) 100%);
 }
 
 /* Arrow pair — overflow 발생 시 좌/우 끝으로 스크롤 점프 */
@@ -117,8 +117,8 @@
   width: 32px;
   height: 32px;
   padding: 6px;
-  background: #fff;
-  border: 1px solid #E0E0E0;
+  background: var(--bg, #fff);
+  border: 1px solid var(--stroke-border, #E0E0E0);
   border-radius: 4px;
   display: inline-flex;
   align-items: center;
@@ -132,7 +132,7 @@
 .scm-filter-arrow-btn svg {
   width: 20px;
   height: 20px;
-  color: #000;
+  color: var(--fg, #000);
 }
 .scm-filter-arrow-btn:hover { background: var(--ld-bg-low, #FAFAFA); }
 

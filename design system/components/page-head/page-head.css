@@ -42,7 +42,7 @@
   gap: 12px;
   flex-wrap: wrap;
   box-sizing: border-box;
-  background: #fff;
+  background: var(--bg, #fff);
 }
 
 .scm-page-head__title {
@@ -50,7 +50,7 @@
   font-size: 22px;
   font-weight: 600;
   line-height: 30.8px;            /* 22 × 1.4 */
-  color: #000;
+  color: var(--fg, #000);
 }
 
 .scm-page-head__actions {
@@ -65,7 +65,7 @@
   font-size: 15px;
   font-weight: 400;
   line-height: 20.4px;
-  color: #666;
+  color: var(--fg-low, #666);
 }
 
 .scm-page-head__titles {

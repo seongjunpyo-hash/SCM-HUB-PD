@@ -14,14 +14,14 @@
   min-width: 84px;
   height: 44px;
   padding: 12px 16px;
-  background: rgba(138, 138, 138, 0.10);
-  border: 1px solid #EBEBEB;
+  background: var(--bg-disabled, rgba(138, 138, 138, 0.10));
+  border: 1px solid var(--stroke-border-disabled, #EBEBEB);
   border-radius: 4px;
   font-family: inherit;
   font-size: 15px;
   font-weight: 500;
   line-height: 20.4px;
-  color: rgba(0, 0, 0, 0.20);
+  color: var(--fg-disabled, rgba(0, 0, 0, 0.20));
   cursor: not-allowed;
   display: inline-flex;
   align-items: center;
@@ -31,9 +31,9 @@
 }
 
 .scm-search-btn:not(:disabled) {
-  background: #fff;
-  border: 1px solid #000;
-  color: #000;
+  background: var(--bg, #fff);
+  border: 1px solid var(--fg, #000);
+  color: var(--fg, #000);
   cursor: pointer;
 }
 
@@ -42,8 +42,8 @@
 }
 
 .scm-search-btn[disabled] {
-  background: rgba(138, 138, 138, 0.10);
+  background: var(--bg-disabled, rgba(138, 138, 138, 0.10));
   border-color: transparent;
-  color: rgba(0, 0, 0, 0.20);
+  color: var(--fg-disabled, rgba(0, 0, 0, 0.20));
   cursor: not-allowed;
 }

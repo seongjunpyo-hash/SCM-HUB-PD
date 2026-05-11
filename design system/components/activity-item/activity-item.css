@@ -7,6 +7,6 @@
 }
 .scm-activity-item:hover { background: var(--ld-bg-low, #FAFBFC); }
 .scm-activity-item__content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-.scm-activity-item__title { font-size: 14px; font-weight: 500; color: #000; line-height: 19.6px; }
-.scm-activity-item__desc  { font-size: 13px; font-weight: 400; color: #666; line-height: 18.2px; }
-.scm-activity-item__time  { font-size: 12px; font-weight: 400; color: #8A8A8A; line-height: 18px; flex-shrink: 0; }
+.scm-activity-item__title { font-size: 14px; font-weight: 500; color: var(--fg, #000); line-height: 19.6px; }
+.scm-activity-item__desc  { font-size: 13px; font-weight: 400; color: var(--fg-low, #666); line-height: 18.2px; }
+.scm-activity-item__time  { font-size: 12px; font-weight: 400; color: var(--fg-lower, #8A8A8A); line-height: 18px; flex-shrink: 0; }

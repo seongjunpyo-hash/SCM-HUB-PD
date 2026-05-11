@@ -49,9 +49,9 @@
   width: 1024px;
   max-width: calc(100vw - 64px);
   max-height: calc(100vh - 80px);
-  background: #fff;
+  background: var(--bg, #fff);
   border-radius: 8px;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.20);
+  box-shadow: 0 24px 64px var(--fg-disabled, rgba(0, 0, 0, 0.20));
   z-index: 91;
   display: none;
   flex-direction: column;
@@ -70,7 +70,7 @@
   font-size: 18px;
   font-weight: 600;
   line-height: 24.48px;
-  color: #000;
+  color: var(--fg, #000);
 }
 
 .scm-bu-close {
@@ -84,10 +84,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #000;
+  color: var(--fg, #000);
   flex-shrink: 0;
 }
-.scm-bu-close:hover { background: #F5F5F5; }
+.scm-bu-close:hover { background: var(--bg-low, #F5F5F5); }
 .scm-bu-close svg { width: 20px; height: 20px; }
 
 .scm-bu-body {
@@ -105,7 +105,7 @@
 
 /* ================ Warning banner ================ */
 .scm-bu-warning {
-  background: #FFF4E5;
+  background: var(--primitive-color-yellow-0, #FFF4E5);
   border: 1px solid rgba(255, 203, 133, 0.50);
   border-radius: 4px;
   padding: 12px;
@@ -118,7 +118,7 @@
 .scm-bu-warning__icon {
   width: 20px;
   height: 20px;
-  color: #FA9200;
+  color: var(--primitive-color-yellow-500, #FA9200);
   flex-shrink: 0;
 }
 .scm-bu-warning__head-body {
@@ -132,7 +132,7 @@
   font-size: 15px;
   font-weight: 500;
   line-height: 20.4px;
-  color: #000;
+  color: var(--fg, #000);
 }
 .scm-bu-warning__toggle {
   width: 20px;
@@ -141,7 +141,7 @@
   border: 0;
   background: transparent;
   cursor: pointer;
-  color: #000;
+  color: var(--fg, #000);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -170,26 +170,26 @@
   font-size: 14px;
   font-weight: 400;
   line-height: 19.6px;
-  color: #000;
+  color: var(--fg, #000);
 }
 .scm-bu-warning__list li::before {
   content: '';
   width: 3px;
   height: 3px;
   border-radius: 50%;
-  background: #000;
+  background: var(--fg, #000);
   flex-shrink: 0;
   margin: 8px 4.5px 0 4.5px;
 }
-.scm-bu-warning__list li.is-critical { color: #F31110; line-height: 22px; }
-.scm-bu-warning__list li.is-critical::before { background: #F31110; }
+.scm-bu-warning__list li.is-critical { color: var(--primitive-color-red-500, #F31110); line-height: 22px; }
+.scm-bu-warning__list li.is-critical::before { background: var(--primitive-color-red-500, #F31110); }
 
 /* ================ Type section ================ */
 .scm-bu-type-section {
   align-self: stretch;
   padding: 16px 24px;
   background: rgba(235, 235, 235, 0.20);
-  border: 1px solid #EBEBEB;
+  border: 1px solid var(--stroke-border-disabled, #EBEBEB);
   border-radius: 4px;
   display: flex;
   flex-direction: column;
@@ -209,13 +209,13 @@
   font-size: 15px;
   font-weight: 500;
   line-height: 20.4px;
-  color: #000;
+  color: var(--fg, #000);
 }
 .scm-bu-type-label .req {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #245EFF;
+  background: var(--layerDesktop-fg-accent, #245EFF);
   display: inline-block;
   align-self: flex-start;
   margin-top: 6px;
@@ -245,7 +245,7 @@
   font-size: 14px;
   font-weight: 400;
   line-height: 19.6px;
-  color: #666;
+  color: var(--fg-low, #666);
 }
 .scm-bu-template-btn {
   display: inline-flex;
@@ -255,19 +255,19 @@
   height: 40px;
   min-width: 64px;
   padding: 10px 12px;
-  border: 1px solid #000;
+  border: 1px solid var(--fg, #000);
   border-radius: 4px;
-  background: #fff;
+  background: var(--bg, #fff);
   font-family: inherit;
   font-size: 14px;
   font-weight: 500;
   line-height: 19.6px;
-  color: #000;
+  color: var(--fg, #000);
   cursor: pointer;
   white-space: nowrap;
 }
 .scm-bu-template-btn:hover { background: #FAFAFA; }
-.scm-bu-template-btn svg { width: 16px; height: 16px; color: #000; }
+.scm-bu-template-btn svg { width: 16px; height: 16px; color: var(--fg, #000); }
 
 /* ================ History section ================ */
 .scm-bu-history-section {
@@ -299,7 +299,7 @@
   position: sticky;
   left: 0;
   z-index: 2;
-  background: #fff;
+  background: var(--bg, #fff);
   width: 60px;
   min-width: 60px;
 }
@@ -308,11 +308,11 @@
   position: sticky;
   left: 60px;             /* 1번 컬럼 폭 */
   z-index: 2;
-  background: #fff;
+  background: var(--bg, #fff);
   width: 112px;
   min-width: 112px;
   /* 고정 영역 경계 — 우측에 명확한 보더 */
-  box-shadow: 1px 0 0 0 #E0E0E0;
+  box-shadow: 1px 0 0 0 var(--stroke-border, #E0E0E0);
 }
 /* hover 시에도 sticky 셀 배경 유지 (유지력 우선) */
 .scm-bu-history-table tbody tr:hover td:nth-child(1),
@@ -325,7 +325,7 @@
   font-size: 15px;
   font-weight: 500;
   line-height: 20.4px;
-  color: #000;
+  color: var(--fg, #000);
 }
 
 /* mp-table 디자인 시스템 토큰에 맞춤 — thead 14/500/h44, tbody 14/400, padding 12 16 */
@@ -333,7 +333,7 @@
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  color: #000;
+  color: var(--fg, #000);
   table-layout: fixed;
 }
 /* mp-table 동일: thead ::before 로 상단 1.5px 검정 라인 제공 */
@@ -346,22 +346,22 @@
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 1.5px;
-  background: #000;
+  background: var(--fg, #000);
   z-index: 10;
 }
 .scm-bu-history-table thead th {
   position: relative;
   height: 44px;
   padding: 12px 16px;
-  background: #fff;
+  background: var(--bg, #fff);
   font-size: 14px;
   font-weight: 500;
   line-height: 19.6px;
-  color: #000;
+  color: var(--fg, #000);
   text-align: left;
   vertical-align: middle;
-  border-bottom: 1px solid #E0E0E0;
-  border-left: 1px solid #EBEBEB;
+  border-bottom: 1px solid var(--stroke-border, #E0E0E0);
+  border-left: 1px solid var(--stroke-border-disabled, #EBEBEB);
   white-space: nowrap;
 }
 .scm-bu-history-table thead th:first-child { border-left: 0; }
@@ -370,7 +370,7 @@
   width: 16px;
   height: 16px;
   vertical-align: middle;
-  color: #CCCCCC;
+  color: var(--primitive-color-gray-400, #CCCCCC);
   margin-left: 4px;
 }
 .scm-bu-history-table tbody td {
@@ -378,16 +378,16 @@
   font-size: 14px;
   font-weight: 400;
   line-height: 19.6px;
-  color: #000;
+  color: var(--fg, #000);
   vertical-align: middle;
-  border-top: 1px solid #EBEBEB;
-  border-left: 1px solid #EBEBEB;
+  border-top: 1px solid var(--stroke-border-disabled, #EBEBEB);
+  border-left: 1px solid var(--stroke-border-disabled, #EBEBEB);
   white-space: nowrap;
   /* 컨텐츠 fit — 잘림/ellipsis 없음. 컬럼 width 부족 시 가로 스크롤 (mp-table-scroll) 로 처리 */
 }
 .scm-bu-history-table tbody td:first-child { border-left: 0; }
 .scm-bu-history-table tbody tr:hover td { background: #FAFBFC; }
-.scm-bu-history-table tbody tr:last-child td { border-bottom: 1px solid #EBEBEB; }
+.scm-bu-history-table tbody tr:last-child td { border-bottom: 1px solid var(--stroke-border-disabled, #EBEBEB); }
 
 /* status pills — scm-tag 톤 (h24 / 13/500 / padding 2 8) */
 .scm-bu-status-pill {
@@ -401,8 +401,8 @@
   line-height: 18px;
   white-space: nowrap;
 }
-.scm-bu-status-pill[data-state="processing"] { background: #E2F1FF; color: #245EFF; }
-.scm-bu-status-pill[data-state="done"]       { background: #ECFFEC; color: #1EA514; }
+.scm-bu-status-pill[data-state="processing"] { background: var(--primitive-color-blue-0, #E2F1FF); color: var(--layerDesktop-fg-accent, #245EFF); }
+.scm-bu-status-pill[data-state="done"]       { background: var(--primitive-color-green-0, #ECFFEC); color: var(--primitive-color-green-500, #1EA514); }
 .scm-bu-status-pill[data-state="partial"]    { background: #E6FFFB; color: #08979C; }
 
 /* result cell */
@@ -421,18 +421,18 @@
   font-size: 14px;
   font-weight: 400;
   line-height: 19.6px;
-  color: #000;
+  color: var(--fg, #000);
 }
 .scm-bu-history-table .scm-bu-result-group em {
   font-style: normal;
   font-weight: 500;
 }
-.scm-bu-history-table .scm-bu-result-group--success em { color: #1EA514; }
-.scm-bu-history-table .scm-bu-result-group--fail em    { color: #F31110; }
+.scm-bu-history-table .scm-bu-result-group--success em { color: var(--primitive-color-green-500, #1EA514); }
+.scm-bu-history-table .scm-bu-result-group--fail em    { color: var(--primitive-color-red-500, #F31110); }
 .scm-bu-history-table .scm-bu-result-divider {
   width: 1px;
   height: 16px;
-  background: #EBEBEB;
+  background: var(--stroke-border-disabled, #EBEBEB);
   flex-shrink: 0;
 }
 .scm-bu-history-table .scm-bu-result-dl {
@@ -442,13 +442,13 @@
   height: 32px;
   min-width: 64px;
   padding: 6px 10px;
-  border: 1px solid #E0E0E0;
+  border: 1px solid var(--stroke-border, #E0E0E0);
   border-radius: 4px;
-  background: #fff;
+  background: var(--bg, #fff);
   font-size: 13px;
   font-weight: 400;
   line-height: 19.5px;
-  color: #000;
+  color: var(--fg, #000);
   cursor: pointer;
   white-space: nowrap;
   font-family: inherit;

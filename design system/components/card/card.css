@@ -13,20 +13,20 @@
  *   </article>
  *
  * Variants:
- *   기본 (white)            bg #fff, border 1px #E0E0E0, radius 8
- *   .scm-card--gray         bg #F8F9FC, border #EBEBEB, radius 4 (폼 그룹 박스)
+ *   기본 (white)            bg var(--bg, #fff), border 1px var(--stroke-border, #E0E0E0), radius 8
+ *   .scm-card--gray         bg #F8F9FC, border var(--stroke-border-disabled, #EBEBEB), radius 4 (폼 그룹 박스)
  *
  * Body modifier:
  *   .scm-card-body--flush   padding 0 (e.g. 차트 / 테이블 풀폭)
  *
  * Sub:
- *   .scm-card-divider       1px #EBEBEB (섹션 구분)
- *   .scm-card-link          우측 14/500 회색 → hover #000
+ *   .scm-card-divider       1px var(--stroke-border-disabled, #EBEBEB) (섹션 구분)
+ *   .scm-card-link          우측 14/500 회색 → hover var(--fg, #000)
  * ============================================================ */
 
 .scm-card {
-  background: #fff;
-  border: 1px solid #E0E0E0;
+  background: var(--bg, #fff);
+  border: 1px solid var(--stroke-border, #E0E0E0);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -34,13 +34,13 @@
 
 .scm-card--gray {
   background: #F8F9FC;
-  border-color: #EBEBEB;
+  border-color: var(--stroke-border-disabled, #EBEBEB);
   border-radius: 4px;
 }
 
 .scm-card-head {
   padding: 20px 24px;
-  border-bottom: 1px solid #EBEBEB;
+  border-bottom: 1px solid var(--stroke-border-disabled, #EBEBEB);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -52,7 +52,7 @@
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #000;
+  color: var(--fg, #000);
   line-height: 21.76px;
 }
 
@@ -67,13 +67,13 @@
 .scm-card-link {
   font-size: 14px;
   font-weight: 500;
-  color: #666;
+  color: var(--fg-low, #666);
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   gap: 4px;
 }
-.scm-card-link:hover { color: #000; }
+.scm-card-link:hover { color: var(--fg, #000); }
 
 .scm-card-body {
   padding: 20px 24px;
@@ -90,6 +90,6 @@
 
 .scm-card-divider {
   height: 1px;
-  background: #EBEBEB;
+  background: var(--stroke-border-disabled, #EBEBEB);
   flex-shrink: 0;
 }

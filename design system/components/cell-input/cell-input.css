@@ -2,7 +2,7 @@
  * cell-input — 테이블 셀 안 inline 입력 (Excel 패턴)
  * ------------------------------------------------------------
  * scm-input-cell (input + 최대 버튼) 와 다른 패턴: TD 전체가 입력
- * 영역. 보충요청의 입력창 톤(흰 bg + #E0E0E0 border + tabular-nums)
+ * 영역. 보충요청의 입력창 톤(흰 bg + var(--stroke-border, #E0E0E0) border + tabular-nums)
  * 그대로 차용. disabled / error 상태 동일 토큰 사용.
  *
  * Markup:
@@ -35,7 +35,7 @@
   font-size: 14px;
   font-weight: 500;
   line-height: 19.6px;
-  color: #000;
+  color: var(--fg, #000);
   text-align: right;
   font-variant-numeric: tabular-nums;
   box-sizing: border-box;
@@ -51,7 +51,7 @@
 
 /* focus 상태 — input 자체에 border 강조 */
 .mp-table td.cell-input > input:focus {
-  outline: 1px solid #000;
+  outline: 1px solid var(--fg, #000);
   outline-offset: -1px;
 }
 
@@ -62,16 +62,16 @@
 
 /* disabled — bg #88888810, fg #00000020, cursor not-allowed (보충요청 동일) */
 .mp-table td.cell-input > input:disabled {
-  background: rgba(138, 138, 138, 0.10);
-  color: rgba(0, 0, 0, 0.20);
+  background: var(--bg-disabled, rgba(138, 138, 138, 0.10));
+  color: var(--fg-disabled, rgba(0, 0, 0, 0.20));
   cursor: not-allowed;
 }
 .mp-table td.cell-input > input:disabled::placeholder {
-  color: rgba(0, 0, 0, 0.20);
+  color: var(--fg-disabled, rgba(0, 0, 0, 0.20));
   opacity: 1;
 }
 .mp-table tbody td.cell-input.is-disabled {
-  background: rgba(138, 138, 138, 0.10);
+  background: var(--bg-disabled, rgba(138, 138, 138, 0.10));
 }
 
 /* error — wrapper td 가 faded red bg, input 자체는 흰 bg + red border + red text */
@@ -82,10 +82,10 @@
 .mp-table td.cell-input.is-error > input,
 .mp-table td.cell-input > input.is-error,
 .mp-table td.cell-input > input[aria-invalid="true"] {
-  background: #fff;
-  outline: 1px solid #F31110;
+  background: var(--bg, #fff);
+  outline: 1px solid var(--primitive-color-red-500, #F31110);
   outline-offset: -1px;
-  color: #F31110;
+  color: var(--primitive-color-red-500, #F31110);
 }
 
 /* 셀 단위 변경 표시 (is-changed) — OTB 도메인 보조용. 페이지 레벨 변수 사용 */

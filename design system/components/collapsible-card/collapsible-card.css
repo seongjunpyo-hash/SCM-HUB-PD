@@ -32,7 +32,7 @@
 
 .scm-collapsible-card__head {
   padding: 16px 16px 16px 0;
-  border-bottom: 1px solid rgba(138, 138, 138, 0.10);
+  border-bottom: 1px solid var(--bg-disabled, rgba(138, 138, 138, 0.10));
   display: flex;
   align-items: center;
   gap: 10px;
@@ -54,7 +54,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #1A1A1A;
+  color: var(--bg-neutral, #1A1A1A);
   flex-shrink: 0;
 }
 

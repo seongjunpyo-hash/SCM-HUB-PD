@@ -8,14 +8,14 @@
  *   <a class="scm-code-link" data-code-type="uid">383827</a>
  *
  * Variant:
- *   기본              underlined 15/400 #000
+ *   기본              underlined 15/400 var(--fg, #000)
  *
  * 보조:
  *   .scm-code-link__extra      "외 N" 부가 텍스트 (옵션)
  * ============================================================ */
 
 .scm-code-link {
-  color: #000;
+  color: var(--fg, #000);
   text-decoration: underline;
   cursor: pointer;
   font-size: 15px;
@@ -33,5 +33,5 @@
   cursor: pointer;
   font-size: 15px;
   font-weight: 400;
-  color: #000;
+  color: var(--fg, #000);
 }

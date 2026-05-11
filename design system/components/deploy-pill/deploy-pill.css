@@ -17,8 +17,8 @@
  *   </td>
  *
  * State variants:
- *   .scm-deploy-pill--deployed     파랑 (#E2F1FF / #245EFF)
- *   .scm-deploy-pill--undeployed   회색 (rgba(138,138,138,0.10) / #666 / dot #999)
+ *   .scm-deploy-pill--deployed     파랑 (var(--primitive-color-blue-0, #E2F1FF) / var(--layerDesktop-fg-accent, #245EFF))
+ *   .scm-deploy-pill--undeployed   회색 (var(--bg-disabled, rgba(138,138,138,0.10)) / var(--fg-low, #666) / dot #999)
  *   .scm-deploy-pill--partial      주황 (#FEF3E2 / #B7791F / dot #D97706)
  *
  * Cell helper (table 안 셀 hover/cursor 적용용):
@@ -66,10 +66,10 @@
 }
 
 /* State variants */
-.scm-deploy-pill--deployed   .scm-deploy-pill__pill { background: #E2F1FF; color: #245EFF; }
-.scm-deploy-pill--deployed   .scm-deploy-pill__dot  { background: #245EFF; }
+.scm-deploy-pill--deployed   .scm-deploy-pill__pill { background: var(--primitive-color-blue-0, #E2F1FF); color: var(--layerDesktop-fg-accent, #245EFF); }
+.scm-deploy-pill--deployed   .scm-deploy-pill__dot  { background: var(--layerDesktop-fg-accent, #245EFF); }
 
-.scm-deploy-pill--undeployed .scm-deploy-pill__pill { background: rgba(138, 138, 138, 0.10); color: #666; }
+.scm-deploy-pill--undeployed .scm-deploy-pill__pill { background: var(--bg-disabled, rgba(138, 138, 138, 0.10)); color: var(--fg-low, #666); }
 .scm-deploy-pill--undeployed .scm-deploy-pill__dot  { background: #999; }
 
 .scm-deploy-pill--partial    .scm-deploy-pill__pill { background: #FEF3E2; color: #B7791F; }
@@ -84,7 +84,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #8A8A8A;
+  color: var(--fg-lower, #8A8A8A);
   cursor: pointer;
   padding: 0;
   pointer-events: auto;
@@ -98,7 +98,7 @@
 }
 
 .scm-deploy-pill__chev:hover {
-  color: #000;
+  color: var(--fg, #000);
 }
 
 /* popover 열린 상태 → chevron 위로 회전 */
