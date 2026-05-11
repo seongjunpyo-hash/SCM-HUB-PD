@@ -1,0 +1,87 @@
+import { Meta, Story, Canvas, ArgTypes } from '@storybook/blocks';
+import * as TabStories from './Tab.stories';
+
+<Meta of={TabStories} />
+
+# Tab
+
+## Anatomy
+
+- `Tab.Root`
+- `Tab.Item`
+
+## Example
+
+```tsx
+function TabComposition() {
+  type Fruit = 'Apple' | 'Banana' | 'Cherry';
+  const [tabValue, setTabValue] = useState<Fruit>('Apple');
+
+  return (
+    <Tab.Root value={tabValue} onValueChange={setTabValue}>
+      <Tab.Item value="Apple" label="사과" />
+      <Tab.Item value="Banana" label="바나나" />
+      <Tab.Item value="Cherry" label="체리" />
+    </Tab.Root>
+  );
+}
+```
+
+<Canvas of={TabStories.Default} />
+
+## Case
+
+type prop을 통해 Tab의 타입을 지정할 수 있습니다.
+
+```tsx
+function TypeCase() {
+  type Fruit = 'Apple' | 'Banana' | 'Cherry';
+  const [tabValue, setTabValue] = useState<Fruit>('Apple');
+
+  return (
+    <Column>
+      {/* tabLine */}
+      <Tab.Root type="tabLine" size="large" value={tabValue} onValueChange={setTabValue}>
+        <Tab.Item value="Apple" label="사과" />
+        <Tab.Item value="Banana" label="바나나" />
+        <Tab.Item value="Cherry" label="체리" />
+      </Tab.Root>
+      <Tab.Root type="tabLine" size="medium" value={tabValue} onValueChange={setTabValue}>
+        <Tab.Item value="Apple" label="사과" />
+        <Tab.Item value="Banana" label="바나나" />
+        <Tab.Item value="Cherry" label="체리" />
+      </Tab.Root>
+
+      {/* tabBox */}
+      <Tab.Root type="tabBox" size="large" value={tabValue} onValueChange={setTabValue}>
+        <Tab.Item value="Apple" label="사과" />
+        <Tab.Item value="Banana" label="바나나" />
+        <Tab.Item value="Cherry" label="체리" />
+      </Tab.Root>
+      <Tab.Root type="tabBox" size="medium" value={tabValue} onValueChange={setTabValue}>
+        <Tab.Item value="Apple" label="사과" />
+        <Tab.Item value="Banana" label="바나나" />
+        <Tab.Item value="Cherry" label="체리" />
+      </Tab.Root>
+
+      {/* tabText */}
+      <Tab.Root type="tabText" size="large" value={tabValue} onValueChange={setTabValue}>
+        <Tab.Item value="Apple" label="사과" />
+        <Tab.Item value="Banana" label="바나나" />
+        <Tab.Item value="Cherry" label="체리" />
+      </Tab.Root>
+      <Tab.Root type="tabText" size="medium" value={tabValue} onValueChange={setTabValue}>
+        <Tab.Item value="Apple" label="사과" />
+        <Tab.Item value="Banana" label="바나나" />
+        <Tab.Item value="Cherry" label="체리" />
+      </Tab.Root>
+    </Column>
+  );
+}
+```
+
+<Canvas of={TabStories.TypeProp} />
+
+## Props
+
+<ArgTypes of={TabStories} />

@@ -1,0 +1,49 @@
+import { Meta, Story, Canvas, ArgTypes } from '@storybook/blocks';
+import * as BottomSheetStories from './BottomSheet.stories';
+
+<Meta of={BottomSheetStories} />
+
+# BottomSheet
+
+현재는 optionSelect 타입만 지원합니다.
+
+## Anatomy
+
+- `BottomSheet`
+
+## Example
+
+최초 높이는 화면의 68%이며, 옵션이 많아져 scroll이 생길 경우 스크롤시 100%로 확장됩니다.
+
+```tsx
+function BottomSheetDefault() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Container>
+      {/* Button */}
+      <Button label="Open" onClick={() => setOpen(true)} />
+
+      {/* BottomSheet */}
+      <BottomSheet type="optionSelect" title="옵션 선택" open={open} onClose={() => setOpen(false)}>
+        <OptionList label="option 1" />
+        <OptionList label="option 2" isChecked />
+        <OptionList label="option 3" />
+        <OptionList label="option 4" />
+        <OptionList label="option 5" />
+        <OptionList label="option 6" />
+        <OptionList label="option 7" />
+        <OptionList label="option 8" />
+        <OptionList label="option 9" />
+        <OptionList label="option 10" />
+      </BottomSheet>
+    </Container>
+  );
+}
+```
+
+<Canvas of={BottomSheetStories.OptionSelect} />
+
+## Props
+
+<ArgTypes of={BottomSheetStories} />

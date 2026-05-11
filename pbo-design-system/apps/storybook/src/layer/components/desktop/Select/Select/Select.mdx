@@ -1,0 +1,449 @@
+import { Meta, Story, Canvas, ArgTypes } from '@storybook/blocks';
+import * as SelectStories from './Select.stories';
+
+<Meta of={SelectStories} />
+
+# Select
+
+## Anatomy
+
+- `Select` (기본 형태를 사용할 경우 `Select`를 사용해주세요. - 간소화된 형태로 제공)
+- `Select.Root`
+- `Select.Trigger`
+- `Select.OptionList`
+- `Select.OptionGroup`
+- `Select.OptionGroupTitle`
+- `Select.Option`
+- `Select.OptionInput`
+- `Select.OptionCreatable`
+- `Select.OptionEmpty`
+
+## Example
+
+```tsx
+function SelectComposition() {
+  const [fruit, setFruit] = useState('');
+
+  const options = [
+    { value: 'apple', label: '사과' },
+    { value: 'banana', label: '바나나' },
+    { value: 'cherry', label: '체리' },
+  ];
+
+  return (
+    <Column width="300px">
+      {/* 기본 형태 */}
+      <Select value={fruit} onValueChange={setFruit} options={options} placeholder="과일을 선택해주세요." />
+
+      {/* 커스텀이 필요한 경우 */}
+      <Select.Root value={fruit} onValueChange={setFruit} options={options}>
+        <Select.Trigger placeholder="과일을 선택해주세요." />
+        <Select.OptionList placement="bottom">
+          <Select.OptionGroup>
+            <Select.OptionGroupTitle title="과일1" />
+            <Select.Option value="apple" label="사과" />
+          </Select.OptionGroup>
+          <Select.OptionGroup>
+            <Select.OptionGroupTitle title="과일2" />
+            <Select.Option value="banana" label="바나나" />
+            <Select.Option value="cherry" label="체리" />
+          </Select.OptionGroup>
+        </Select.OptionList>
+      </Select.Root>
+    </Column>
+  );
+}
+```
+
+<Canvas of={SelectStories.Default} />
+
+## Case
+
+### OptionList Custom
+
+`Select.OptionList` , `Select.OptionGroup` , `Select.OptionGroupTitle` , `Select.Option` 을 조합하여 리스트를 커스텀할 수 있습니다. (추가되는 케이스는 추가예정)
+
+```tsx
+function CustomOptionListCase() {
+  const [fruit, setFruit] = useState('apple');
+
+  return (
+    <Column width="300px">
+      <Select.Root
+        value={fruit}
+        onValueChange={setFruit}
+        options={[
+          { value: 'apple', label: '사과' },
+          { value: 'banana', label: '바나나' },
+          { value: 'cherry', label: '체리' },
+        ]}
+      >
+        <Select.Trigger placeholder="과일을 선택해주세요." />
+        <Select.OptionList maxHeight={300}>
+          <Select.OptionGroup>
+            <Select.OptionGroupTitle title="과일1" />
+            <Select.Option value="apple" label="사과" />
+            <Select.Option value="banana" label="바나나" />
+            <Select.Option value="cherry" label="체리" />
+          </Select.OptionGroup>
+          <Select.OptionGroup>
+            <Select.OptionGroupTitle title="과일2" />
+            <Select.Option value="strawberry" label="딸기" />
+            <Select.Option value="pineapple" label="파인애플" />
+            <Select.Option value="orange" label="오렌지" />
+          </Select.OptionGroup>
+          <Select.OptionGroup>
+            <Select.OptionGroupTitle title="과일3" />
+            <Select.Option value="grape" label="포도" />
+            <Select.Option value="melon" label="메론" />
+          </Select.OptionGroup>
+        </Select.OptionList>
+      </Select.Root>
+    </Column>
+  );
+}
+```
+
+<Canvas of={SelectStories.CustomOptionList} />
+
+### Option Search
+
+```tsx
+function SearchCase() {
+  const [fruit, setFruit] = useState('apple');
+  const [input, setInput] = useState('');
+
+  const options = [
+    { value: 'apple', label: '사과' },
+    { value: 'banana', label: '바나나' },
+    { value: 'cherry', label: '체리' },
+  ];
+
+  return (
+    <Column width="300px">
+      <Select.Root value={fruit} onValueChange={setFruit} options={options}>
+        <Select.Trigger placeholder="과일을 선택해주세요." />
+        <Select.OptionList>
+          <Select.OptionGroup>
+            <Select.OptionInput value={input} onValueChange={setInput} placeholder="과일을 검색해주세요." />
+          </Select.OptionGroup>
+          <Select.OptionGroup>
+            {options
+              .filter((option) => option.label.includes(input))
+              .map((option) => (
+                <Select.Option key={option.value} value={option.value} label={option.label} />
+              ))}
+          </Select.OptionGroup>
+        </Select.OptionList>
+      </Select.Root>
+    </Column>
+  );
+}
+```
+
+<Canvas of={SelectStories.Search} />
+
+### Size Prop
+
+```tsx
+function SizeCase() {
+  const [fruit, setFruit] = useState('');
+
+  const options = [
+    { value: 'apple', label: '사과' },
+    { value: 'banana', label: '바나나' },
+    { value: 'cherry', label: '체리' },
+  ];
+
+  return (
+    <Column width="300px">
+      <Select.Root value={fruit} onValueChange={setFruit} options={options}>
+        <Select.Trigger size="medium" placeholder="과일을 선택해주세요." />
+        <Select.OptionList>
+          <Select.OptionGroup>
+            {options.map((option) => (
+              <Select.Option key={option.value} value={option.value} label={option.label} />
+            ))}
+          </Select.OptionGroup>
+        </Select.OptionList>
+      </Select.Root>
+
+      <Select.Root value={fruit} onValueChange={setFruit} options={options}>
+        <Select.Trigger size="small" placeholder="과일을 선택해주세요." />
+        <Select.OptionList>
+          <Select.OptionGroup>
+            {options.map((option) => (
+              <Select.Option key={option.value} value={option.value} label={option.label} />
+            ))}
+          </Select.OptionGroup>
+        </Select.OptionList>
+      </Select.Root>
+    </Column>
+  );
+}
+```
+
+<Canvas of={SelectStories.Size} />
+
+### With label
+
+`Select.Trigger`에 `floatingBlockLabel` prop을 통해 내부 label을 추가할 수 있습니다.  
+(`required` prop은 floatingBlockLabel과 같이 사용되야합니다.)
+
+```tsx
+function WithLabelCase() {
+  const [fruit, setFruit] = useState('');
+
+  const options = [
+    { value: 'apple', label: '사과' },
+    { value: 'banana', label: '바나나' },
+    { value: 'cherry', label: '체리' },
+  ];
+
+  return (
+    <Column width="300px">
+      <Select.Root value={fruit} onValueChange={setFruit} options={options}>
+        <Select.Trigger required floatingBlockLabel="과일" placeholder="과일을 선택해주세요." />
+        <Select.OptionList>
+          <Select.OptionGroup>
+            {options.map((option) => (
+              <Select.Option key={option.value} value={option.value} label={option.label} />
+            ))}
+          </Select.OptionGroup>
+        </Select.OptionList>
+      </Select.Root>
+    </Column>
+  );
+}
+```
+
+<Canvas of={SelectStories.WithLabel} />
+
+### Placement
+
+`Select.OptionList`에 `placement` prop을 통해 드롭다운의 위치를 조절할 수 있습니다.
+
+```tsx
+function PlacementCase() {
+  const [fruit, setFruit] = useState('');
+
+  const options = [
+    { value: 'apple', label: '사과' },
+    { value: 'banana', label: '바나나' },
+    { value: 'cherry', label: '체리' },
+  ];
+
+  return (
+    <Column width="300px">
+      <Select.Root value={fruit} onValueChange={setFruit} options={options}>
+        <Select.Trigger placeholder="아래로 열림" />
+        <Select.OptionList placement="bottom">
+          <Select.OptionGroup>
+            {options.map((option) => (
+              <Select.Option key={option.value} value={option.value} label={option.label} />
+            ))}
+          </Select.OptionGroup>
+        </Select.OptionList>
+      </Select.Root>
+
+      <Select.Root value={fruit} onValueChange={setFruit} options={options}>
+        <Select.Trigger placeholder="위로 열림" />
+        <Select.OptionList placement="top">
+          <Select.OptionGroup>
+            {options.map((option) => (
+              <Select.Option key={option.value} value={option.value} label={option.label} />
+            ))}
+          </Select.OptionGroup>
+        </Select.OptionList>
+      </Select.Root>
+    </Column>
+  );
+}
+```
+
+<Canvas of={SelectStories.Placement} />
+
+### Disabled & ReadOnly
+
+`Select.Trigger`에 `disabled` or `readOnly` prop을 통해 비활성화 상태를 조절할 수 있습니다.
+
+```tsx
+function DisabledReadOnlyCase() {
+  const [fruit, setFruit] = useState('apple');
+
+  const options = [
+    { value: 'apple', label: '사과' },
+    { value: 'banana', label: '바나나' },
+    { value: 'cherry', label: '체리' },
+  ];
+
+  return (
+    <Column width="300px">
+      <Select.Root value={fruit} onValueChange={setFruit} options={options}>
+        <Select.Trigger disabled placeholder="과일을 선택해주세요." />
+        <Select.OptionList placement="bottom">
+          <Select.OptionGroup>
+            {options.map((option) => (
+              <Select.Option key={option.value} value={option.value} label={option.label} />
+            ))}
+          </Select.OptionGroup>
+        </Select.OptionList>
+      </Select.Root>
+
+      <Select.Root value={fruit} onValueChange={setFruit} options={options}>
+        <Select.Trigger readOnly placeholder="과일을 선택해주세요." />
+        <Select.OptionList placement="top">
+          <Select.OptionGroup>
+            {options.map((option) => (
+              <Select.Option key={option.value} value={option.value} label={option.label} />
+            ))}
+          </Select.OptionGroup>
+        </Select.OptionList>
+      </Select.Root>
+    </Column>
+  );
+}
+```
+
+<Canvas of={SelectStories.DisabledReadOnly} />
+
+### OnClear
+
+`Select.Trigger`에 `onClear` prop을 통해 선택된 값을 초기화할 수 있습니다. (값이 있을때 아이콘버튼 노출)
+
+```tsx
+function OnClearCase() {
+  const [fruit, setFruit] = useState('apple');
+
+  const options = [
+    { value: 'apple', label: '사과' },
+    { value: 'banana', label: '바나나' },
+    { value: 'cherry', label: '체리' },
+  ];
+
+  return (
+    <Column width="300px">
+      <Select.Root value={fruit} onValueChange={setFruit} options={options}>
+        <Select.Trigger placeholder="과일을 선택해주세요." onClear={() => setFruit('')} />
+        <Select.OptionList>
+          <Select.OptionGroup>
+            {options.map((option) => (
+              <Select.Option key={option.value} value={option.value} label={option.label} />
+            ))}
+          </Select.OptionGroup>
+        </Select.OptionList>
+      </Select.Root>
+    </Column>
+  );
+}
+```
+
+<Canvas of={SelectStories.OnClear} />
+
+### Validation
+
+`Select.Trigger`에 `validation` prop을 통해 유효성 상태를 조절할 수 있습니다.
+
+```tsx
+function ValidationCase() {
+  const [fruit, setFruit] = useState('apple');
+
+  const options = [
+    { value: 'apple', label: '사과' },
+    { value: 'banana', label: '바나나' },
+    { value: 'cherry', label: '체리' },
+  ];
+
+  return (
+    <Column width="300px">
+      <Select.Root value={fruit} onValueChange={setFruit} options={options}>
+        <Select.Trigger validation="error" placeholder="과일을 선택해주세요." />
+        <Select.OptionList>
+          <Select.OptionGroup>
+            {options.map((option) => (
+              <Select.Option key={option.value} value={option.value} label={option.label} />
+            ))}
+          </Select.OptionGroup>
+        </Select.OptionList>
+      </Select.Root>
+    </Column>
+  );
+}
+```
+
+<Canvas of={SelectStories.Validation} />
+
+### OptionList Prop
+
+`Select.OptionList`에 `width` or `maxHeight` prop을 통해 드롭다운의 크기를 조절할 수 있습니다.
+
+```tsx
+function OptionListPropCase() {
+  const [fruit, setFruit] = useState('apple');
+
+  const options = [
+    { value: 'apple', label: '사과' },
+    { value: 'banana', label: '바나나' },
+    { value: 'cherry', label: '체리' },
+    { value: 'strawberry', label: '딸기' },
+    { value: 'pineapple', label: '파인애플' },
+    { value: 'orange', label: '오렌지' },
+    { value: 'grape', label: '포도' },
+    { value: 'melon', label: '메론' },
+  ];
+
+  return (
+    <Column width="300px">
+      <Select.Root value={fruit} onValueChange={setFruit} options={options}>
+        <Select.Trigger placeholder="과일을 선택해주세요." />
+        <Select.OptionList width="420px" maxHeight="200px">
+          <Select.OptionGroup>
+            {options.map((option) => (
+              <Select.Option key={option.value} value={option.value} label={option.label} />
+            ))}
+          </Select.OptionGroup>
+        </Select.OptionList>
+      </Select.Root>
+    </Column>
+  );
+}
+```
+
+<Canvas of={SelectStories.OptionList} />
+
+### CheckMark
+
+`Select.Root`에 `checkMark` prop을 통해 선택된 상태를 체크 아이콘으로 표시할 수 있습니다.
+
+```tsx
+function CheckMarkCase() {
+  const [fruit, setFruit] = useState('apple');
+
+  const options = [
+    { value: 'apple', label: '사과' },
+    { value: 'banana', label: '바나나' },
+    { value: 'cherry', label: '체리' },
+  ];
+
+  return (
+    <Column width="300px">
+      <Select.Root value={fruit} onValueChange={setFruit} options={options}>
+        <Select.Trigger placeholder="과일을 선택해주세요." />
+        <Select.OptionList>
+          <Select.OptionGroup>
+            {options.map((option) => (
+              <Select.Option key={option.value} value={option.value} label={option.label} selectionType="checkMark" />
+            ))}
+          </Select.OptionGroup>
+        </Select.OptionList>
+      </Select.Root>
+    </Column>
+  );
+}
+```
+
+<Canvas of={SelectStories.CheckMark} />
+
+## Props
+
+<ArgTypes of={SelectStories} />

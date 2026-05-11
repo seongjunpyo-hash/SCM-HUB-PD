@@ -1,0 +1,106 @@
+import { Meta } from '@storybook/blocks';
+import { Typography } from '@musinsa/layer-components-pda';
+import { typography } from '@musinsa/layer-tokens/pda';
+
+<Meta title="Layer/tokens/typography/PDA" />
+
+# PDA Typography
+
+타이포그래피는 콘텐츠 구성 및 구조화를 통해 시각적 계층 구조를 명확히 할 수 있습니다. <br/>
+Layer에서는 제목(Title)과 본문(Text) 두 가지 형태로 패턴을 단순화하여 제공합니다. 타이포그래피 디자인 토큰은 픽셀(px) 단위를 사용합니다. <br/>
+또한 line-height는 퍼센트(%) 단위로 설정되며, 스타일에 따라 다르게 적용됩니다. 이는 4px 그리드에 맞게 정렬되도록 설계되었습니다. <br/>
+각 타이포그래피 스타일은 명확한 설계 의도를 가지며, 타이포그래피 토큰을 통해 font-size, font-family, font-weight, line-height, letter-spacing, text-decoration를 단일 CSS 선언으로 제어할 수 있습니다.
+
+<div data-layer-theme="light" data-layer-platform="pda">
+    <h1>Base</h1>
+
+    {(() => {
+        const baseTypographyNames = Object.keys(typography.base).map((key) => `base-${key}`);
+
+        return (
+            <table style={{ width: '100%', textAlign: 'center' }}>
+                <thead>
+                    <tr>
+                        <th style={{ width: '25%' }}>name</th>
+                        <th style={{ width: '45%' }}>example</th>
+                        <th style={{ width: '30%' }}>value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {baseTypographyNames.map((name) => {
+                        const key = name.replace('base-', '');
+
+                        return (
+                            <tr key={name}>
+                                <td>{name}</td>
+                                <td>
+                                    <Typography className="sb-unstyled" name={name}>
+                                        TEAM MUSINSA01
+                                    </Typography>
+                                </td>
+                                <td>
+                                    <pre style={{
+                                        background: '#f5f5f5',
+                                        padding: '8px',
+                                        borderRadius: '4px',
+                                        fontSize: '12px',
+                                        margin: 0,
+                                        textAlign: 'left'
+                                    }}>
+                                        <code>{JSON.stringify(typography.base[key], null, 2)}</code>
+                                    </pre>
+                                </td>
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+        );
+    })()}
+
+    <h1>Mono</h1>
+
+    {(() => {
+        const monoTypographyNames = Object.keys(typography.mono).map((key) => `mono-${key}`);
+
+        return (
+            <table style={{ width: '100%', textAlign: 'center' }}>
+                <thead>
+                    <tr>
+                        <th style={{ width: '25%' }}>name</th>
+                        <th style={{ width: '45%' }}>example</th>
+                        <th style={{ width: '30%' }}>value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {monoTypographyNames.map((name) => {
+                        const key = name.replace('mono-', '');
+                        return (
+                            <tr key={name}>
+                                <td>{name}</td>
+                                <td>
+                                    <Typography className="sb-unstyled" name={name}>
+                                        TEAM MUSINSA01
+                                    </Typography>
+                                </td>
+                                <td>
+                                    <pre style={{
+                                        background: '#f5f5f5',
+                                        padding: '8px',
+                                        borderRadius: '4px',
+                                        fontSize: '12px',
+                                        margin: 0,
+                                        textAlign: 'left'
+                                    }}>
+                                        <code>{JSON.stringify(typography.mono[key], null, 2)}</code>
+                                    </pre>
+                                </td>
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+        );
+    })()}
+
+</div>

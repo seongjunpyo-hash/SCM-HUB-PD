@@ -1,0 +1,10 @@
+{
+  "codeConnect": {
+    "include": ["/**/*.{tsx,jsx}"],
+    "label": "React",
+    "interactiveSetupFigmaFileUrl": "https://www.figma.com/design/azBO7iFMFUXArom84hBXIm/LayerPDA",
+    "importPaths": {
+      "src/components/*": "@musinsa/layer-components-pda"
+    }
+  }
+}

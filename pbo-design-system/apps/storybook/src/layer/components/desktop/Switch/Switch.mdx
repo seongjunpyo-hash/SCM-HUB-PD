@@ -1,0 +1,45 @@
+import { Meta, Story, Canvas, ArgTypes } from '@storybook/blocks';
+import * as SwitchStories from './Switch.stories';
+
+<Meta of={SwitchStories} />
+
+# Switch
+
+현재는 Switch 본체만 제공하고있으며, 그 외는 사용처에서 직접 정의하여 적용해야합니다. (ex: Label, HelperText 등...)
+
+## Anatomy
+
+- `Switch`
+
+## Example
+
+```tsx
+function SwitchComposition() {
+  const [checked, setChecked] = useState(false);
+
+  return <Switch checked={checked} onCheckedChange={setChecked} />;
+}
+```
+
+<Canvas of={SwitchStories.Default} />
+
+## Case
+
+```tsx
+function SwitchCase() {
+  return (
+    <Flex>
+      {/* unchecked disabled */}
+      <Switch disabled />
+      {/* checked disabled */}
+      <Switch checked disabled />
+    </Flex>
+  );
+}
+```
+
+<Canvas of={SwitchStories.DisabledProps} />
+
+## Props
+
+<ArgTypes of={SwitchStories} />

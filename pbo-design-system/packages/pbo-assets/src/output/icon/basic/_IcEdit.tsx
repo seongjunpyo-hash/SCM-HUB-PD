@@ -1,0 +1,56 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable no-unused-vars */
+import { forwardRef } from 'react';
+
+import type { BasicSvgProps } from '@/types/types';
+import type { ForwardedRef } from 'react';
+
+const _IcEdit = (
+  { size = 24, filled = false, strokeWidth = 1.4, color, ...props }: BasicSvgProps,
+  ref: ForwardedRef<SVGSVGElement>,
+) => {
+  if (filled) {
+    return (
+      <svg
+        ref={ref}
+        {...props}
+        width={size}
+        height={size}
+        viewBox="0 0 20 20"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M9.00879 7.75986C8.91839 7.85034 8.84498 7.95613 8.79102 8.07138L8.74316 8.18954L7.9043 10.7061C7.61817 11.5658 8.43628 12.3839 9.2959 12.0977L11.8125 11.2589C11.9743 11.2049 12.1215 11.1138 12.2422 10.9933L16.585 6.65048V15.92C16.5849 16.1961 16.3611 16.42 16.085 16.42H4.08008C3.80402 16.4199 3.58012 16.1961 3.58008 15.92V3.91513C3.58008 3.63903 3.80399 3.4152 4.08008 3.41513H13.3535L9.00879 7.75986Z"
+          fill={color}
+        />
+        <path
+          d="M15.5508 2.63193C15.6679 2.51485 15.8585 2.5148 15.9756 2.63193L17.3701 4.02646C17.4872 4.14359 17.4872 4.3341 17.3701 4.45126L11.5352 10.2862L11.5684 10.252C11.5354 10.285 11.4954 10.3106 11.4512 10.3253L9.35938 11.0226C9.12485 11.1007 8.90132 10.8772 8.97949 10.6427L9.67676 8.55087C9.69149 8.50669 9.71707 8.46662 9.75 8.43368L15.5508 2.63193Z"
+          fill={color}
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <svg
+      ref={ref}
+      {...props}
+      width={size}
+      height={size}
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        vectorEffect="non-scaling-stroke"
+        d="M10.9402 3.91505H4.0802V15.92H16.0852V9.06004M15.2612 2.92273L17.0802 4.74176L11.0168 10.8052L8.28823 11.7147L9.19774 8.98616L15.2612 2.92273Z"
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};
+
+export const IcEdit = forwardRef(_IcEdit);

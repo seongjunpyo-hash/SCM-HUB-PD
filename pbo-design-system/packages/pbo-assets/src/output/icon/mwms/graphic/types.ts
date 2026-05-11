@@ -1,0 +1,17 @@
+export type GraphicIconName =
+  | 'ic-combinedPackaging'
+  | 'ic-inbound'
+  | 'ic-individualPackaging'
+  | 'ic-inventory'
+  | 'ic-inventoryBlue'
+  | 'ic-locationInventory'
+  | 'ic-masterBagging'
+  | 'ic-moving'
+  | 'ic-picking'
+  | 'ic-problem'
+  | 'ic-productInventory'
+  | 'ic-productTag'
+  | 'ic-return'
+  | 'ic-sorting'
+  | 'ic-stocking'
+  | 'ic-toteSearch';

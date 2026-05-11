@@ -1,0 +1,32 @@
+import { forwardRef } from 'react';
+
+import type { GraphicSvgProps } from '@/types/types';
+import type { ForwardedRef } from 'react';
+
+const _IcLocationInventory = ({ size = 24, ...props }: GraphicSvgProps, ref: ForwardedRef<SVGSVGElement>) => (
+  <svg
+    ref={ref}
+    {...props}
+    width={size}
+    height={size}
+    viewBox="0 0 40 40"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M19.9998 6.25C17.3445 6.25301 14.7988 7.3079 12.9212 9.18325C11.0435 11.0586 9.98739 13.6013 9.98438 16.2534C9.98438 24.8131 19.0893 33.3149 19.4774 33.5854C19.6305 33.6925 19.8129 33.75 19.9998 33.75C20.1867 33.75 20.3691 33.6925 20.5222 33.5854C20.9103 33.3149 30.0152 24.8131 30.0152 16.2534C30.0122 13.6013 28.9561 11.0586 27.0785 9.18325C25.2009 7.3079 22.6551 6.25301 19.9998 6.25Z"
+      fill="#B3BCD4"
+    />
+    <path
+      opacity="0.2"
+      d="M19.8664 33.75C19.6795 33.75 19.4971 33.6925 19.344 33.5854L19.8664 6.25C22.5217 6.25301 25.0674 7.3079 26.945 9.18325C28.8226 11.0586 29.8788 13.6013 29.8818 16.2534C29.8818 24.8131 20.7769 33.3149 20.3888 33.5854C20.2357 33.6925 20.0533 33.75 19.8664 33.75Z"
+      fill="white"
+    />
+    <circle cx="19.9995" cy="16.276" r="7.73438" fill="white" />
+    <path d="M24.5819 12.5961H15.4152V20.0961H24.5819V12.5961Z" fill="#245EFF" />
+    <path d="M21.249 12.5961H18.749V15.9294L19.999 15.4532L21.249 15.9294V12.5961Z" fill="white" />
+    <path opacity="0.2" d="M24.5819 12.5961H19.9919V20.0961H24.5819V12.5961Z" fill="white" />
+  </svg>
+);
+
+export const IcLocationInventory = forwardRef(_IcLocationInventory);

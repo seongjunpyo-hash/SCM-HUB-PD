@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "composite": false,
+    "incremental": false,
+    "declarationMap": false
+  },
+  "include": ["src"]
+}

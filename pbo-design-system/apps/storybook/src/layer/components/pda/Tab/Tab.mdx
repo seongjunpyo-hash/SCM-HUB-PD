@@ -1,0 +1,97 @@
+import { Meta, Story, Canvas, ArgTypes } from '@storybook/blocks';
+import * as TabStories from './Tab.stories';
+
+<Meta of={TabStories} />
+
+# Tab
+
+## Anatomy
+
+- `Tab.Root`
+- `Tab.Item`
+
+## Example
+
+```tsx
+function TabComposition() {
+  type Fruit = 'Apple' | 'Banana' | 'Cherry';
+  const [tabValue, setTabValue] = useState<Fruit>('Apple');
+
+  return (
+    <Tab.Root value={tabValue} onValueChange={setTabValue}>
+      <Tab.Item value="Apple" label="사과" />
+      <Tab.Item value="Banana" label="바나나" />
+      <Tab.Item value="Cherry" label="체리" />
+    </Tab.Root>
+  );
+}
+```
+
+<Canvas of={TabStories.Default} />
+
+## Case
+
+widthMode를 통해 Tab의 너비를 조절할 수 있습니다.
+
+```tsx
+function TabWidthMode() {
+  type Fruit = 'Apple' | 'Banana' | 'Cherry';
+  const [tabValue, setTabValue] = useState<Fruit>('Apple');
+
+  return (
+    <Column>
+      <Tab.Root widthMode="hug" value={tabValue} onValueChange={setTabValue}>
+        <Tab.Item value="Apple" label="사과" />
+        <Tab.Item value="Banana" label="바나나" />
+        <Tab.Item value="Cherry" label="체리" />
+      </Tab.Root>
+
+      <Tab.Root widthMode="fill" value={tabValue} onValueChange={setTabValue}>
+        <Tab.Item value="Apple" label="사과" />
+        <Tab.Item value="Banana" label="바나나" />
+        <Tab.Item value="Cherry" label="체리" />
+      </Tab.Root>
+    </Column>
+  );
+}
+```
+
+<Canvas of={TabStories.WidthMode} />
+
+커스텀 요소가 필요한 경우 label 대신 children을 사용할 수 있습니다. (children 사용시 label은 never 타입)
+
+```tsx
+function TabItemChildren() {
+  type Fruit = 'Apple' | 'Banana' | 'Cherry';
+  const [tabValue, setTabValue] = useState<Fruit>('Apple');
+
+  return (
+    <Tab.Root widthMode="fill" value={tabValue} onValueChange={setTabValue}>
+      <Tab.Item value="Apple">
+        <Flex gap={4}>
+          사과
+          <Icon name="ic-checkCircle" />
+        </Flex>
+      </Tab.Item>
+      <Tab.Item value="Banana">
+        <Flex gap={4}>
+          바나나
+          <Icon name="ic-checkCircle" />
+        </Flex>
+      </Tab.Item>
+      <Tab.Item value="Cherry">
+        <Flex gap={4}>
+          체리
+          <Icon name="ic-checkCircle" />
+        </Flex>
+      </Tab.Item>
+    </Tab.Root>
+  );
+}
+```
+
+<Canvas of={TabStories.ItemChildren} />
+
+## Props
+
+<ArgTypes of={TabStories} />

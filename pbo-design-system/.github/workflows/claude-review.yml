@@ -1,0 +1,35 @@
+name: Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  claude-review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      actions: read
+      id-token: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Claude Code Review
+        uses: musinsa/workflows/claude-code-review@claude-code-review/v1.0.4
+        with:
+          review_language: 'Korean'
+          project_guide_path: './cursor/rules/layer.mdc'
+          custom_prompt_addition: |
+            `.cursor/skills/*` 가이드 라인을 참고해 리뷰해주세요
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+          claude_code_oauth_token_fallback: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+          github_token: ${{ github.token }}

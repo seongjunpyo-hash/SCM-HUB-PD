@@ -1,0 +1,42 @@
+{
+  "primitive": {
+    "lineHeight": {
+      "200": {
+        "value": "20",
+        "type": "lineHeights"
+      },
+      "250": {
+        "value": "22",
+        "type": "lineHeights"
+      },
+      "300": {
+        "value": "24",
+        "type": "lineHeights"
+      },
+      "350": {
+        "value": "26",
+        "type": "lineHeights"
+      },
+      "400": {
+        "value": "28",
+        "type": "lineHeights"
+      },
+      "500": {
+        "value": "32",
+        "type": "lineHeights"
+      },
+      "650": {
+        "value": "38",
+        "type": "lineHeights"
+      },
+      "700": {
+        "value": "40",
+        "type": "lineHeights"
+      },
+      "850": {
+        "value": "46",
+        "type": "lineHeights"
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "primitive": {
+    "iconStroke": {
+      "100": {
+        "value": "1",
+        "description": "LayerAssets 내 Stoke UI(시스템) 아이콘 전용 선 두께",
+        "type": "borderWidth"
+      },
+      "150": {
+        "value": "1.4",
+        "description": "LayerAssets 내 Stoke UI(시스템) 아이콘 전용 선 두께",
+        "type": "borderWidth"
+      },
+      "200": {
+        "value": "2",
+        "description": "LayerAssets 내 Stoke UI(시스템) 아이콘 전용 선 두께",
+        "type": "borderWidth"
+      }
+    }
+  }
+}

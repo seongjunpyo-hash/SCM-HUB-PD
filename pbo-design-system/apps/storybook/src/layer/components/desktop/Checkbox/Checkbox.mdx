@@ -1,0 +1,75 @@
+import { Meta, Story, Canvas, ArgTypes } from '@storybook/blocks';
+import * as CheckboxStories from './Checkbox.stories';
+
+<Meta of={CheckboxStories} />
+
+# Checkbox
+
+현재는 Checkbox 본체만 제공하고있으며, 그 외는 사용처에서 직접 정의하여 적용해야합니다. (ex: Label, HelperText 등...)
+
+## Anatomy
+
+- `Checkbox`
+
+## Example
+
+```tsx
+function CheckboxComposition() {
+  const [checked, setChecked] = useState(false);
+
+  return <Checkbox checked={checked} onCheckedChange={setChecked} />;
+}
+```
+
+<Canvas of={CheckboxStories.Default} />
+
+## Case
+
+```tsx
+function CheckedCase() {
+  return (
+    <Flex>
+      <Checkbox size="medium" />
+      <Checkbox size="medium" checked />
+      <Checkbox size="medium" checked isIndeterminate />
+    </Flex>
+  );
+}
+```
+
+<Canvas of={CheckboxStories.CheckedCase} />
+
+```tsx
+function SizeCase() {
+  return (
+    <Flex>
+      <Checkbox size="small" />
+      <Checkbox size="small" checked />
+      <Checkbox size="small" checked isIndeterminate />
+      <Checkbox size="medium" />
+      <Checkbox size="medium" checked />
+      <Checkbox size="medium" checked isIndeterminate />
+    </Flex>
+  );
+}
+```
+
+<Canvas of={CheckboxStories.SizeCase} />
+
+```tsx
+function DisabledCase() {
+  return (
+    <Flex>
+      <Checkbox size="medium" disabled />
+      <Checkbox size="medium" checked disabled />
+      <Checkbox size="medium" checked isIndeterminate disabled />
+    </Flex>
+  );
+}
+```
+
+<Canvas of={CheckboxStories.DisabledCase} />
+
+## Props
+
+<ArgTypes of={CheckboxStories} />

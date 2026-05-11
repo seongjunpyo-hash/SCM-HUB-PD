@@ -1,0 +1,40 @@
+import { forwardRef } from 'react';
+
+import type { GraphicSvgProps } from '@/types/types';
+import type { ForwardedRef } from 'react';
+
+const _IcStocking = ({ size = 24, ...props }: GraphicSvgProps, ref: ForwardedRef<SVGSVGElement>) => (
+  <svg
+    ref={ref}
+    {...props}
+    width={size}
+    height={size}
+    viewBox="0 0 42 41"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path d="M30.5184 8.60266H10.8879V18.5323H30.5184V8.60266Z" fill="#EBEDF5" />
+    <path d="M30.3691 29.4227V31.5047H11.6309V29.4227H30.3691Z" fill="#7B839C" />
+    <path d="M30.3691 17.8234V19.9054H11.6309V17.8234H30.3691Z" fill="#7B839C" />
+    <path
+      d="M23.2429 10.6844V14.0938L24.5962 13.1328L25.8054 14.0938V10.6844H28.8053V17.8224H20.4772V10.6844H23.2429Z"
+      fill="#245EFF"
+    />
+    <path
+      opacity="0.2"
+      d="M25.8054 14.0938L24.5962 13.1328L24.6412 17.8224H28.8053V10.6844H25.8054V14.0938Z"
+      fill="white"
+    />
+    <path
+      d="M16.1958 22.2847V25.625L17.5481 24.6641L18.7583 25.625V22.2847H21.597V29.4227H13.2689V22.2847H16.1958Z"
+      fill="#245EFF"
+    />
+    <path opacity="0.2" d="M18.7582 25.625L17.548 24.6641L17.548 29.4227H21.597V22.2847H18.7582V25.625Z" fill="white" />
+    <path d="M11.6309 32.9922H8.50781V8.00781H11.6309V32.9922Z" fill="#697A8A" />
+    <path d="M11.6309 32.9922H8.50781V8.00781H11.6309V32.9922Z" fill="#B3BCD4" />
+    <path d="M33.4922 32.9922H30.3691V8.00781H33.4922V32.9922Z" fill="#697A8A" />
+    <path d="M33.4922 32.9922H30.3691V8.00781H33.4922V32.9922Z" fill="#B3BCD4" />
+  </svg>
+);
+
+export const IcStocking = forwardRef(_IcStocking);

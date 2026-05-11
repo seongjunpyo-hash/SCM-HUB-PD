@@ -1,0 +1,266 @@
+{
+  "pda": {
+    "actionBar": {
+      "bg": {
+        "value": "{bg-contrast}",
+        "description": "locationActionBar 기본 배경 색상",
+        "type": "color"
+      },
+      "bg-onContrast": {
+        "value": "{primitive.color.gray.alpha.15}",
+        "description": "locationActionBar에서 위계나 강조를 위한 보조 배경 색상",
+        "type": "color"
+      },
+      "fg-onContrast-low": {
+        "value": "{primitive.color.gray.alpha.80}",
+        "type": "color"
+      }
+    },
+    "locationActionBar": {
+      "text-xxs-medium": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.medium-500}",
+          "fontSize": "{primitive.fontSize.100}",
+          "lineHeight": "{primitive.lineHeight.3}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography"
+      }
+    },
+    "banner": {
+      "text-xxs-medium": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.medium-500}",
+          "fontSize": "{primitive.fontSize.100}",
+          "lineHeight": "{primitive.lineHeight.3}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography"
+      }
+    },
+    "resultFeedback": {
+      "bg-success": {
+        "value": "{primitive.color.green.alpha500.90}",
+        "description": "success 상태 배경 색상",
+        "type": "color"
+      },
+      "bg-critical": {
+        "value": "{primitive.color.red.alpha500.90}",
+        "description": "경고・위험 등 critical 상태 배경 색상",
+        "type": "color"
+      }
+    },
+    "optionSelect": {
+      "border": {
+        "value": "{primitive.color.gray.alpha900.20}",
+        "type": "color"
+      },
+      "bg-pressed": {
+        "value": "{bg-low}",
+        "type": "color"
+      }
+    },
+    "stepper": {
+      "bg": {
+        "value": "{bg}",
+        "type": "color"
+      },
+      "bg-disabled": {
+        "value": "{bg-disabled}",
+        "type": "color"
+      },
+      "border": {
+        "value": "{stroke.border}",
+        "type": "color"
+      },
+      "border-disabled": {
+        "value": "{stroke.border-disabled}",
+        "type": "color"
+      }
+    },
+    "card": {
+      "bg": {
+        "value": "{primitive.color.gray.100}",
+        "type": "color"
+      }
+    },
+    "dialog": {
+      "bg-dim": {
+        "value": "{primitive.color.gray.alpha900.70}",
+        "type": "color"
+      }
+    }
+  },
+  "button": {
+    "primary": {
+      "bg": {
+        "value": "{pda.bg-accent}",
+        "type": "color"
+      },
+      "bg-pressed": {
+        "value": "{primitive.color.blue.700}",
+        "type": "color"
+      },
+      "bg-disabled": {
+        "value": "{bg-disabled}",
+        "type": "color"
+      },
+      "fg-contrast": {
+        "value": "{fg-onContrast}",
+        "type": "color"
+      },
+      "fg-pressed": {
+        "value": "{fg-onContrast}",
+        "type": "color"
+      },
+      "fg-disabled": {
+        "value": "{fg-disabled}",
+        "type": "color"
+      }
+    },
+    "secondary": {
+      "bg": {
+        "value": "{bg-contrast}",
+        "type": "color"
+      },
+      "bg-pressed": {
+        "value": "{bg-contrast}",
+        "type": "color"
+      },
+      "bg-disabled": {
+        "value": "{bg-disabled}",
+        "type": "color"
+      },
+      "fg-contrast": {
+        "value": "{fg-onContrast}",
+        "type": "color"
+      },
+      "fg-pressed": {
+        "value": "{primitive.color.gray.alpha.60}",
+        "type": "color"
+      },
+      "fg-disabled": {
+        "value": "{fg-disabled}",
+        "type": "color"
+      }
+    },
+    "negative": {
+      "bg-pressed": {
+        "value": "{primitive.color.red.700}",
+        "type": "color"
+      },
+      "bg": {
+        "value": "{bg-critical}",
+        "type": "color"
+      },
+      "bg-disabled": {
+        "value": "{bg-disabled}",
+        "type": "color"
+      },
+      "fg-contrast": {
+        "value": "{fg-onContrast}",
+        "type": "color"
+      },
+      "fg-pressed": {
+        "value": "{fg-onContrast}",
+        "type": "color"
+      },
+      "fg-disabled": {
+        "value": "{fg-disabled}",
+        "type": "color"
+      }
+    },
+    "tertiary": {
+      "bg": {
+        "value": "{bg-low}",
+        "type": "color"
+      },
+      "bg-pressed": {
+        "value": "{primitive.color.gray.400}",
+        "type": "color"
+      },
+      "bg-disabled": {
+        "value": "{bg-disabled}",
+        "type": "color"
+      },
+      "fg": {
+        "value": "{fg}",
+        "type": "color"
+      },
+      "fg-pressed": {
+        "value": "{fg}",
+        "type": "color"
+      },
+      "fg-disabled": {
+        "value": "{fg-disabled}",
+        "type": "color"
+      }
+    }
+  },
+  "textButton": {
+    "primary": {
+      "fg-pressed": {
+        "value": "{primitive.color.gray.600}",
+        "type": "color"
+      }
+    },
+    "secondary": {
+      "fg": {
+        "value": "{fg-lower}",
+        "type": "color"
+      },
+      "fg-pressed": {
+        "value": "{primitive.color.gray.500}",
+        "type": "color"
+      }
+    },
+    "accent": {
+      "fg-pressed": {
+        "value": "{primitive.color.blue.700}",
+        "type": "color"
+      },
+      "fg-onContrast-pressed": {
+        "value": "{primitive.color.blue.400}",
+        "type": "color"
+      }
+    }
+  },
+  "textField": {
+    "placeholder": {
+      "value": "{primitive.color.gray.500}",
+      "type": "color"
+    },
+    "clearButton": {
+      "value": "{primitive.color.gray.500}",
+      "type": "color"
+    }
+  },
+  "tab": {
+    "fg-off": {
+      "value": "{primitive.color.gray.500}",
+      "type": "color"
+    },
+    "bg-pressed": {
+      "value": "{bg-low}",
+      "type": "color"
+    }
+  },
+  "control": {
+    "bg-checked": {
+      "value": "{pda.fg-accent}",
+      "type": "color"
+    },
+    "bg-checkedPressed": {
+      "value": "{primitive.color.blue.700}",
+      "type": "color"
+    }
+  },
+  "textArea": {
+    "border-active": {
+      "value": "{pda.border-accent}",
+      "type": "color"
+    }
+  }
+}

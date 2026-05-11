@@ -1,0 +1,151 @@
+import { Meta, Story, Canvas, ArgTypes } from '@storybook/blocks';
+import * as TooltipStories from './Tooltip.stories';
+
+<Meta of={TooltipStories} />
+
+# Tooltip
+
+## Anatomy
+
+- `Tooltip.Root`
+- `Tooltip.Trigger`
+- `Tooltip.Content`
+
+## Example
+
+```tsx
+function TooltipComposition() {
+  return (
+    <Tooltip.Root>
+      <Tooltip.Trigger>
+        <Icon name="ic-alertCircle" />
+      </Tooltip.Trigger>
+      <Tooltip.Content>Hello~ MUSINSA</Tooltip.Content>
+    </Tooltip.Root>
+  );
+}
+```
+
+<Story of={TooltipStories.Default} />
+
+`action prop` 을 사용하여 Tooltip.Trigger의 액션을 설정할 수 있습니다.
+
+```tsx
+function ActionProp() {
+  return (
+    <Flex gap={24}>
+      {/* hover */}
+      <Tooltip.Root>
+        <Tooltip.Trigger action="hover">
+          <PrimaryButton>hover</PrimaryButton>
+        </Tooltip.Trigger>
+        <Tooltip.Content>Hello~ MUSINSA</Tooltip.Content>
+      </Tooltip.Root>
+
+      {/* click */}
+      <Tooltip.Root>
+        <Tooltip.Trigger action="click">
+          <PrimaryButton>click</PrimaryButton>
+        </Tooltip.Trigger>
+        <Tooltip.Content>Hello~ MUSINSA</Tooltip.Content>
+      </Tooltip.Root>
+    </Flex>
+  );
+}
+```
+
+<Story of={TooltipStories.UseActionProp} />
+
+`variant prop` 을 사용하여 Tooltip.Content의 배경색을 설정할 수 있습니다.
+
+```tsx
+function VariantProp() {
+  return (
+    <Flex gap={24}>
+      {/* black */}
+      <Tooltip.Root>
+        <Tooltip.Trigger>
+          <Icon name="ic-alertCircle" />
+        </Tooltip.Trigger>
+        <Tooltip.Content variant="black">Hello~ MUSINSA</Tooltip.Content>
+      </Tooltip.Root>
+
+      {/* white */}
+      <Tooltip.Root>
+        <Tooltip.Trigger>
+          <Icon name="ic-alertCircle" />
+        </Tooltip.Trigger>
+        <Tooltip.Content variant="white">Hello~ MUSINSA</Tooltip.Content>
+      </Tooltip.Root>
+    </Flex>
+  );
+}
+```
+
+<Story of={TooltipStories.VariantProps} />
+
+`placement prop` 을 사용하여 Tooltip.Content의 위치를 설정할 수 있습니다.
+
+```tsx
+function PlacementProp() {
+  return (
+    <Grid>
+      <Tooltip.Root>
+        <Tooltip.Trigger>
+          <PrimaryButton>topStart</PrimaryButton>
+        </Tooltip.Trigger>
+        <Tooltip.Content placement="topStart">Hello~ MUSINSA</Tooltip.Content>
+      </Tooltip.Root>
+      <Tooltip.Root>
+        <Tooltip.Trigger>
+          <PrimaryButton>top</PrimaryButton>
+        </Tooltip.Trigger>
+        <Tooltip.Content placement="top">Hello~ MUSINSA</Tooltip.Content>
+      </Tooltip.Root>
+      <Tooltip.Root>
+        <Tooltip.Trigger>
+          <PrimaryButton>topEnd</PrimaryButton>
+        </Tooltip.Trigger>
+        <Tooltip.Content placement="topEnd">Hello~ MUSINSA</Tooltip.Content>
+      </Tooltip.Root>
+      <Tooltip.Root>
+        <Tooltip.Trigger>
+          <PrimaryButton>left</PrimaryButton>
+        </Tooltip.Trigger>
+        <Tooltip.Content placement="left">Hello~ MUSINSA</Tooltip.Content>
+      </Tooltip.Root>
+      <div />
+      <Tooltip.Root>
+        <Tooltip.Trigger>
+          <PrimaryButton>right</PrimaryButton>
+        </Tooltip.Trigger>
+        <Tooltip.Content placement="right">Hello~ MUSINSA</Tooltip.Content>
+      </Tooltip.Root>
+      <Tooltip.Root>
+        <Tooltip.Trigger>
+          <PrimaryButton>bottomStart</PrimaryButton>
+        </Tooltip.Trigger>
+        <Tooltip.Content placement="bottomStart">Hello~ MUSINSA</Tooltip.Content>
+      </Tooltip.Root>
+      <Tooltip.Root>
+        <Tooltip.Trigger>
+          <PrimaryButton>bottom</PrimaryButton>
+        </Tooltip.Trigger>
+        <Tooltip.Content placement="bottom">Hello~ MUSINSA</Tooltip.Content>
+      </Tooltip.Root>
+      <Tooltip.Root>
+        <Tooltip.Trigger>
+          <PrimaryButton>bottomEnd</PrimaryButton>
+        </Tooltip.Trigger>
+        <Tooltip.Content placement="bottomEnd">Hello~ MUSINSA</Tooltip.Content>
+      </Tooltip.Root>
+    </Grid>
+  );
+}
+```
+
+<Canvas of={TooltipStories.PlacementProps} />
+
+## Props
+
+<ArgTypes of={TooltipStories} />

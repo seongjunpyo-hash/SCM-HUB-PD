@@ -1,0 +1,51 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable no-unused-vars */
+import { forwardRef } from 'react';
+
+import type { BasicSvgProps } from '@/types/types';
+import type { ForwardedRef } from 'react';
+
+const _IcSearch = (
+  { size = 24, filled = false, strokeWidth = 1.4, color, ...props }: BasicSvgProps,
+  ref: ForwardedRef<SVGSVGElement>,
+) => {
+  if (filled) {
+    return (
+      <svg
+        ref={ref}
+        {...props}
+        width={size}
+        height={size}
+        viewBox="0 0 20 20"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M12.7998 8.5C12.7998 6.12518 10.8748 4.2002 8.5 4.2002C6.12518 4.2002 4.2002 6.12518 4.2002 8.5C4.2002 10.8748 6.12518 12.7998 8.5 12.7998C10.8748 12.7998 12.7998 10.8748 12.7998 8.5ZM14.2002 8.5C14.2002 9.82153 13.7479 11.0362 12.9932 12.0029L16.9951 16.0049L16.0049 16.9951L12.0029 12.9932C11.0362 13.7479 9.82153 14.2002 8.5 14.2002C5.35198 14.2002 2.7998 11.648 2.7998 8.5C2.7998 5.35198 5.35198 2.7998 8.5 2.7998C11.648 2.7998 14.2002 5.35198 14.2002 8.5Z"
+          fill={color}
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <svg
+      ref={ref}
+      {...props}
+      width={size}
+      height={size}
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        vectorEffect="non-scaling-stroke"
+        d="M12 12L16.5 16.5M13.5 8.5C13.5 11.2614 11.2614 13.5 8.5 13.5C5.73858 13.5 3.5 11.2614 3.5 8.5C3.5 5.73858 5.73858 3.5 8.5 3.5C11.2614 3.5 13.5 5.73858 13.5 8.5Z"
+        stroke={color}
+        strokeWidth={strokeWidth}
+      />
+    </svg>
+  );
+};
+
+export const IcSearch = forwardRef(_IcSearch);

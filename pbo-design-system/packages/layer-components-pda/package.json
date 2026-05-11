@@ -1,0 +1,66 @@
+{
+  "name": "@musinsa/layer-components-pda",
+  "description": "MUSINSA PBO design system layer components for PDA",
+  "version": "0.4.1",
+  "type": "module",
+  "license": "MIT",
+  "author": "MUSINSA-PBO-FE",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/musinsa/pbo-design-system.git"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./package.json": "./package.json",
+    "./style.css": "./dist/layer-components-pda.css"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "require": "./dist/index.cjs",
+        "import": "./dist/index.mjs"
+      },
+      "./package.json": "./package.json",
+      "./style.css": "./dist/layer-components-pda.css"
+    },
+    "types": "./dist/index.d.ts",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.mjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "code-connect": "figma connect",
+    "code-connect:publish": "figma connect publish",
+    "layer:up": "pnpm update @musinsa/*"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "dependencies": {
+    "@musinsa/layer-tokens": "^1.2.1",
+    "@musinsa/pbo-assets": "^1.1.0",
+    "@radix-ui/react-checkbox": "^1.3.3",
+    "@radix-ui/react-radio-group": "^1.3.8",
+    "@radix-ui/react-tabs": "^1.1.13",
+    "@vanilla-extract/css": "^1.17.4",
+    "@vanilla-extract/recipes": "^0.5.7",
+    "body-scroll-lock": "4.0.0-beta.0"
+  },
+  "devDependencies": {
+    "@figma/code-connect": "^1.3.11",
+    "@types/body-scroll-lock": "^3.1.2",
+    "@types/react": "18.3.1",
+    "@types/react-dom": "18.3.1",
+    "@vanilla-extract/vite-plugin": "^5.1.0",
+    "@vitejs/plugin-react": "^4.6.0",
+    "vite": "^7.0.3",
+    "vite-plugin-dts": "^4.5.4"
+  }
+}

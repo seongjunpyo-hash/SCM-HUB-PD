@@ -1,0 +1,72 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable no-unused-vars */
+import { forwardRef } from 'react';
+
+import type { BasicSvgProps } from '@/types/types';
+import type { ForwardedRef } from 'react';
+
+const _IcAddTote = (
+  { size = 24, filled = false, strokeWidth = 1.4, color, ...props }: BasicSvgProps,
+  ref: ForwardedRef<SVGSVGElement>,
+) => {
+  if (filled) {
+    return (
+      <svg
+        ref={ref}
+        {...props}
+        width={size}
+        height={size}
+        viewBox="0 0 20 20"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <g clipPath="url(#clip0_3016_3540)">
+          <path
+            d="M5.43805 3.26173C5.55537 3.09748 5.74479 3 5.94664 3H14.0534C14.2552 3 14.4446 3.09748 14.5619 3.26173L17.5 7.375H2.5L5.43805 3.26173Z"
+            fill={color}
+          />
+          <path
+            fillRule="evenodd"
+            clipRule="evenodd"
+            d="M17.5 16.4873C17.5 16.8739 17.1864 17.1875 16.7998 17.1875H3.2002C2.8136 17.1875 2.5 16.8739 2.5 16.4873V8.4375H17.5V16.4873ZM8.18848 10C8.01589 10 7.87598 10.1399 7.87598 10.3125V11.1875C7.87598 11.3601 8.01589 11.5 8.18848 11.5H11.5635C11.7361 11.5 11.876 11.3601 11.876 11.1875V10.3125C11.876 10.1399 11.7361 10 11.5635 10H8.18848Z"
+            fill={color}
+          />
+        </g>
+        <defs>
+          <clipPath id="clip0_3016_3540">
+            <rect width="20" height="20" fill={color} />
+          </clipPath>
+        </defs>
+      </svg>
+    );
+  }
+
+  return (
+    <svg
+      ref={ref}
+      {...props}
+      width={size}
+      height={size}
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <g clipPath="url(#clip0_3016_3521)">
+        <path
+          vectorEffect="non-scaling-stroke"
+          d="M17.5 7.925L14.5591 3.29015C14.4445 3.10947 14.2454 3 14.0314 3H5.96863C5.75465 3 5.55554 3.10947 5.4409 3.29015L2.5 7.925M17.5 7.925H2.5M17.5 7.925V16.4873C17.5 16.8739 17.1864 17.1875 16.7998 17.1875H3.2002C2.8136 17.1875 2.5 16.8739 2.5 16.4873V7.925M7.69 10.5H12.06"
+          stroke={color}
+          strokeWidth={strokeWidth}
+          strokeLinejoin="round"
+        />
+      </g>
+      <defs>
+        <clipPath id="clip0_3016_3521">
+          <rect width="20" height="20" fill={color} />
+        </clipPath>
+      </defs>
+    </svg>
+  );
+};
+
+export const IcAddTote = forwardRef(_IcAddTote);

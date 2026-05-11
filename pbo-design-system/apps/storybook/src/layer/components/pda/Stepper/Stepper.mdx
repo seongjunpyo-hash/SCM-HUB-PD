@@ -1,0 +1,56 @@
+import { Meta, Story, Canvas, ArgTypes } from '@storybook/blocks';
+import * as StepperStories from './Stepper.stories';
+
+<Meta of={StepperStories} />
+
+# Stepper
+
+## Anatomy
+
+- `Stepper.Root`
+- `Stepper.Input` (단독으로 사용할 경우 `Stepper`를 사용해주세요.)
+- `Stepper.HelpText`
+
+## Example
+
+```tsx
+function StepperComposition() {
+  const [value, setValue] = useState(0);
+
+  return (
+    <Div width="300px">
+      <Stepper.Root>
+        <Stepper.Input value={value} maxCount={10} onNumberChange={setValue} />
+        <Stepper.HelpText>Help text</Stepper.HelpText>
+      </Stepper.Root>
+    </Div>
+  );
+}
+```
+
+<Canvas of={StepperStories.Default} />
+
+## Case
+
+```tsx
+function StepperCase() {
+  return (
+    <Column width="300px">
+      {/* error */}
+      <Stepper validationState="error" value={5} maxCount={10} />
+      {/* disabled */}
+      <Stepper disabled value={5} maxCount={10} />
+      {/* readOnly */}
+      <Stepper readOnly value={5} maxCount={10} />
+      {/* countTotalSmall */}
+      <Stepper countTotalSmall count={5} totalCount={10} />
+    </Column>
+  );
+}
+```
+
+<Canvas of={StepperStories.Case} />
+
+## Props
+
+<ArgTypes of={StepperStories} />

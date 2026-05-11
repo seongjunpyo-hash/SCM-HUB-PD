@@ -1,0 +1,42 @@
+import { forwardRef } from 'react';
+
+import type { GraphicSvgProps } from '@/types/types';
+import type { ForwardedRef } from 'react';
+
+const _IcInventoryBlue = ({ size = 24, ...props }: GraphicSvgProps, ref: ForwardedRef<SVGSVGElement>) => (
+  <svg
+    ref={ref}
+    {...props}
+    width={size}
+    height={size}
+    viewBox="0 0 40 40"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path d="M23.5202 20.5888L20.6683 9.6286H12.0381V16.2041L16.206 20.5888H23.5202Z" fill="#245EFF" />
+    <path opacity="0.2" d="M23.5214 20.5888L20.6696 9.6286H16.2077V16.2041L16.2073 20.5888H23.5214Z" fill="white" />
+    <path d="M12.0381 16.4897L16.2305 21.1107H21.9544L19.2284 11.1943H12.0381V16.4897Z" fill="#B8D4FF" />
+    <path opacity="0.2" d="M16.2317 11.1943V21.1107H21.9556L19.2296 11.1943H16.2317Z" fill="white" />
+    <path d="M16.2134 20.5888H24.564V29.9833H16.2134V20.5888Z" fill="#245EFF" />
+    <path opacity="0.2" d="M16.2128 20.5888H24.5634V29.9833H16.2128V20.5888Z" fill="white" />
+    <path d="M16.2135 20.5888V29.9832L7.34094 28.012V16.4135H11.9705L16.2135 20.5888Z" fill="#245EFF" />
+    <path d="M24.564 29.9832L27.1735 29.9832L27.1735 7.54093L24.564 7.54093L24.564 29.9832Z" fill="#B8D4FF" />
+    <path d="M24.564 29.9832L32.3927 29.9832L32.3927 27.3736L24.564 27.3736L24.564 29.9832Z" fill="#B8D4FF" />
+    <circle cx="10.9946" cy="28.9393" r="3.6534" fill="#153EAD" />
+    <circle cx="20.9108" cy="29.9832" r="2.60957" fill="#153EAD" />
+    <circle cx="10.9958" cy="28.9391" r="1.87889" fill="#B8D4FF" />
+    <circle cx="20.9114" cy="29.9833" r="1.34206" fill="#B8D4FF" />
+    <path
+      opacity="0.2"
+      d="M20.9108 32.5928C22.3521 32.5928 23.5204 31.4244 23.5204 29.9832H18.3013C18.3013 31.4244 19.4696 32.5928 20.9108 32.5928Z"
+      fill="white"
+    />
+    <path
+      opacity="0.2"
+      d="M10.9946 25.2859C8.97687 25.2859 7.34119 26.9216 7.34119 28.9393H14.648C14.648 26.9216 13.0123 25.2859 10.9946 25.2859Z"
+      fill="white"
+    />
+  </svg>
+);
+
+export const IcInventoryBlue = forwardRef(_IcInventoryBlue);

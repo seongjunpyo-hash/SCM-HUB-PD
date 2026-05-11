@@ -1,0 +1,59 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable no-unused-vars */
+import { forwardRef } from 'react';
+
+import type { BasicSvgProps } from '@/types/types';
+import type { ForwardedRef } from 'react';
+
+const _IcDragHorizontal = (
+  { size = 24, filled = false, strokeWidth = 1.4, color, ...props }: BasicSvgProps,
+  ref: ForwardedRef<SVGSVGElement>,
+) => {
+  if (filled) {
+    return (
+      <svg
+        ref={ref}
+        {...props}
+        width={size}
+        height={size}
+        viewBox="0 0 20 20"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M7.62173 4.06577C8.09451 3.59299 8.90335 3.92771 8.9035 4.59625L8.9035 15.402C8.90304 16.0702 8.09445 16.4049 7.62173 15.9325L2.21975 10.5296C1.9267 10.2366 1.9268 9.76178 2.21975 9.46866L7.62173 4.06577Z"
+          fill={color}
+        />
+        <path
+          d="M12.3783 15.9323C11.9055 16.405 11.0967 16.0703 11.0965 15.4018L11.0965 4.596C11.097 3.92782 11.9056 3.59313 12.3783 4.06552L17.7802 9.46841C18.0733 9.76147 18.0732 10.2363 17.7802 10.5294L12.3783 15.9323Z"
+          fill={color}
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <svg
+      ref={ref}
+      {...props}
+      width={size}
+      height={size}
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        vectorEffect="non-scaling-stroke"
+        d="M7.62173 4.06577C8.09451 3.59299 8.90335 3.92771 8.9035 4.59625L8.9035 15.402C8.90304 16.0702 8.09445 16.4049 7.62173 15.9325L2.21975 10.5296C1.9267 10.2366 1.9268 9.76178 2.21975 9.46866L7.62173 4.06577Z"
+        fill={color}
+      />
+      <path
+        vectorEffect="non-scaling-stroke"
+        d="M12.3783 15.9323C11.9055 16.405 11.0967 16.0703 11.0965 15.4018L11.0965 4.596C11.097 3.92782 11.9056 3.59313 12.3783 4.06552L17.7802 9.46841C18.0733 9.76147 18.0732 10.2363 17.7802 10.5294L12.3783 15.9323Z"
+        fill={color}
+      />
+    </svg>
+  );
+};
+
+export const IcDragHorizontal = forwardRef(_IcDragHorizontal);
