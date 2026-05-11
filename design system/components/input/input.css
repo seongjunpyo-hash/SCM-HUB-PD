@@ -17,40 +17,44 @@
  *   .scm-input-wrap--with-counter .scm-input  → padding-right 64
  * ============================================================ */
 
+/* PBO 룩 — generic semantic 토큰. 모든 색이 PBO palette 와 정확 일치
+   (border #E0E0E0=stroke-border, placeholder #8A8A8A=fg-lower, disabled bg
+   rgba(138,138,138,0.1)=bg-disabled, disabled border #EBEBEB=stroke-border-disabled,
+   disabled fg rgba(0,0,0,0.2)=fg-disabled). */
 .scm-input {
   width: 100%;
   height: 44px;
   padding: 12px 16px;
-  background: #fff;
-  border: 1px solid #E0E0E0;
+  background: var(--bg, #fff);
+  border: 1px solid var(--stroke-border, #E0E0E0);
   border-radius: 4px;
   font-family: inherit;
   font-size: 15px;
   font-weight: 400;
   line-height: 20.4px;
-  color: #000;
+  color: var(--fg, #000);
   outline: none;
   box-sizing: border-box;
 }
 
 .scm-input::placeholder {
-  color: #8A8A8A;
+  color: var(--fg-lower, #8A8A8A);
   font-weight: 500;
 }
 
 .scm-input:focus {
-  border-color: #000;
+  border-color: var(--stroke-border-strong, #000);
 }
 
 .scm-input:disabled {
-  background: rgba(138, 138, 138, 0.10);
-  border-color: #EBEBEB;
-  color: rgba(0, 0, 0, 0.20);
+  background: var(--bg-disabled, rgba(138, 138, 138, 0.10));
+  border-color: var(--stroke-border-disabled, #EBEBEB);
+  color: var(--fg-disabled, rgba(0, 0, 0, 0.20));
   cursor: not-allowed;
 }
 
 .scm-input:disabled::placeholder {
-  color: rgba(0, 0, 0, 0.20);
+  color: var(--fg-disabled, rgba(0, 0, 0, 0.20));
 }
 
 /* Sizes */
@@ -75,7 +79,7 @@
   transform: translateY(-50%);
   font-size: 12px;
   line-height: 18px;
-  color: #8A8A8A;
+  color: var(--fg-lower, #8A8A8A);
   pointer-events: none;
 }
 
