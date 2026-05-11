@@ -1,0 +1,21 @@
+<!-- ============================================================
+     scm-textarea — canonical markers
+     ============================================================ -->
+
+<!-- 기본 -->
+<textarea class="scm-textarea" rows="4" placeholder="내용을 입력하세요"></textarea>
+
+<!-- 사용자 resize 허용 -->
+<textarea class="scm-textarea scm-textarea--resize-vertical" rows="4" placeholder="크기 조절 가능"></textarea>
+
+<!-- autoresize (helper 가 input 이벤트에 따라 height 조정) -->
+<textarea class="scm-textarea scm-textarea--autoresize" rows="2" placeholder="입력 시 늘어남"></textarea>
+
+<!-- Disabled -->
+<textarea class="scm-textarea" rows="4" disabled placeholder="비활성"></textarea>
+
+<!-- Wrap + count -->
+<div class="scm-textarea-wrap">
+  <textarea class="scm-textarea" rows="4" maxlength="200" placeholder="최대 200자"></textarea>
+  <span class="scm-textarea-count"><span class="scm-textarea-count__num">0</span>/200</span>
+</div>

@@ -1,0 +1,67 @@
+/* ============================================================
+ * scm-text — Typography helper (PBO Typography 매핑)
+ * ------------------------------------------------------------
+ * PBO 의 layerDesktop.base.* + helperText.* 시리즈를 1:1 매핑.
+ * 사용:
+ *   <h1 class="scm-text scm-text--title-xl-semibold">제목</h1>
+ *   <p  class="scm-text scm-text--text-l">본문</p>
+ *
+ * 모든 사이즈는 Pretendard family + line-height 140% (helperText 만 150%).
+ *
+ * Variants (size + weight):
+ *   title-xl / title-xl-medium / title-xl-semibold     (30px)
+ *   title-l-medium / title-l-semibold                  (26px)
+ *   title-m-medium / title-m-semibold                  (22px)
+ *   title-s-medium / title-s-semibold                  (18px)
+ *   text-xl / text-xl-medium / text-xl-semibold        (16px)
+ *   text-l  / text-l-medium  / text-l-semibold         (15px)
+ *   text-m  / text-m-medium  / text-m-semibold         (14px)
+ *   text-s  / text-s-medium  / text-s-semibold         (13px)
+ *   helper-text-m                                      (12px / 150%)
+ *   helper-text-s                                      (11px / 150%)
+ * ============================================================ */
+
+.scm-text {
+  font-family: var(--ld-font-family-base, 'Pretendard', sans-serif);
+  margin: 0;
+  color: var(--fg, #000);
+}
+
+/* Title — line-height 140% (= 1.4) */
+.scm-text--title-xl          { font-size: 30px; line-height: 42px;   font-weight: 400; }
+.scm-text--title-xl-medium   { font-size: 30px; line-height: 42px;   font-weight: 500; }
+.scm-text--title-xl-semibold { font-size: 30px; line-height: 42px;   font-weight: 600; }
+.scm-text--title-l-medium    { font-size: 26px; line-height: 36.4px; font-weight: 500; }
+.scm-text--title-l-semibold  { font-size: 26px; line-height: 36.4px; font-weight: 600; }
+.scm-text--title-m-medium    { font-size: 22px; line-height: 30.8px; font-weight: 500; }
+.scm-text--title-m-semibold  { font-size: 22px; line-height: 30.8px; font-weight: 600; }
+.scm-text--title-s-medium    { font-size: 18px; line-height: 25.2px; font-weight: 500; }
+.scm-text--title-s-semibold  { font-size: 18px; line-height: 25.2px; font-weight: 600; }
+
+/* Text — 140% */
+.scm-text--text-xl           { font-size: 16px; line-height: 22.4px; font-weight: 400; }
+.scm-text--text-xl-medium    { font-size: 16px; line-height: 22.4px; font-weight: 500; }
+.scm-text--text-xl-semibold  { font-size: 16px; line-height: 22.4px; font-weight: 600; }
+.scm-text--text-l            { font-size: 15px; line-height: 21px;   font-weight: 400; }
+.scm-text--text-l-medium     { font-size: 15px; line-height: 21px;   font-weight: 500; }
+.scm-text--text-l-semibold   { font-size: 15px; line-height: 21px;   font-weight: 600; }
+.scm-text--text-m            { font-size: 14px; line-height: 19.6px; font-weight: 400; }
+.scm-text--text-m-medium     { font-size: 14px; line-height: 19.6px; font-weight: 500; }
+.scm-text--text-m-semibold   { font-size: 14px; line-height: 19.6px; font-weight: 600; }
+.scm-text--text-s            { font-size: 13px; line-height: 18.2px; font-weight: 400; }
+.scm-text--text-s-medium     { font-size: 13px; line-height: 18.2px; font-weight: 500; }
+.scm-text--text-s-semibold   { font-size: 13px; line-height: 18.2px; font-weight: 600; }
+
+/* Helper text — 150% */
+.scm-text--helper-text-m     { font-size: 12px; line-height: 18px; font-weight: 400; }
+.scm-text--helper-text-s     { font-size: 11px; line-height: 16.5px; font-weight: 400; }
+
+/* Color helpers — generic semantic tokens (정렬용, 필요시 부착) */
+.scm-text--fg          { color: var(--fg, #000); }
+.scm-text--fg-low      { color: var(--fg-low, #666); }
+.scm-text--fg-lower    { color: var(--fg-lower, #8A8A8A); }
+.scm-text--fg-disabled { color: var(--fg-disabled, rgba(0, 0, 0, 0.20)); }
+.scm-text--fg-accent   { color: var(--layerDesktop-fg-accent, #245EFF); }
+.scm-text--fg-critical { color: var(--fg-critical, #F31110); }
+.scm-text--fg-success  { color: var(--fg-success, #1EA514); }
+.scm-text--fg-warning  { color: var(--fg-warning, #FA9200); }

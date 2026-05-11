@@ -1,0 +1,82 @@
+/* ============================================================
+ * scm-textarea — multi-line 텍스트 입력 (PBO Textarea 매핑)
+ * ------------------------------------------------------------
+ * 단일 회선 input (scm-input) 과 시각 일관 — same bg/border/focus.
+ * count addon 은 wrap container 안 자식으로.
+ *
+ * Marker:
+ *   <textarea class="scm-textarea" rows="4" placeholder="..."></textarea>
+ *
+ *   <!-- with count -->
+ *   <div class="scm-textarea-wrap">
+ *     <textarea class="scm-textarea" maxlength="200"></textarea>
+ *     <span class="scm-textarea-count"><span class="scm-textarea-count__num">0</span>/200</span>
+ *   </div>
+ *
+ * Modifiers:
+ *   .scm-textarea--resize-vertical   사용자가 세로 resize 가능
+ *   .scm-textarea--autoresize        JS 가 내용 길이에 맞춰 height 조정 (helper 참조)
+ *
+ * States:
+ *   :focus       border --stroke-border-strong (#000)
+ *   :disabled    회색 톤 + cursor not-allowed
+ * ============================================================ */
+
+.scm-textarea {
+  width: 100%;
+  min-height: 88px;
+  padding: 12px 16px;
+  background: var(--bg, #fff);
+  border: 1px solid var(--stroke-border, #E0E0E0);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 21px; /* 1.4 of 15px */
+  color: var(--fg, #000);
+  outline: none;
+  box-sizing: border-box;
+  resize: none;
+}
+
+.scm-textarea::placeholder {
+  color: var(--fg-lower, #8A8A8A);
+  font-weight: 500;
+}
+
+.scm-textarea:focus {
+  border-color: var(--stroke-border-strong, #000);
+}
+
+.scm-textarea:disabled {
+  background: var(--bg-disabled, rgba(138, 138, 138, 0.10));
+  border-color: var(--stroke-border-disabled, #EBEBEB);
+  color: var(--fg-disabled, rgba(0, 0, 0, 0.20));
+  cursor: not-allowed;
+}
+.scm-textarea:disabled::placeholder {
+  color: var(--fg-disabled, rgba(0, 0, 0, 0.20));
+}
+
+/* Modifiers */
+.scm-textarea--resize-vertical { resize: vertical; }
+
+/* Wrap (counter) */
+.scm-textarea-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.scm-textarea-count {
+  align-self: flex-end;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg-lower, #8A8A8A);
+  pointer-events: none;
+}
+.scm-textarea-count__num {
+  color: var(--fg, #000);
+  font-weight: 500;
+}

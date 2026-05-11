@@ -1,0 +1,110 @@
+/* ============================================================
+ * scm-text-button — 텍스트 전용 버튼 (PBO TextButton 매핑)
+ * ------------------------------------------------------------
+ * 박스/border 없이 텍스트만으로 액션을 표현. inline link 류와는
+ * 다른 button semantics (focus ring, hover bg). underline 옵션.
+ *
+ * Variants:
+ *   기본 = primary             fg #000 / hover bg ghost
+ *   .scm-text-button--secondary  fg --fg-low (#666) — secondary 액션
+ *   .scm-text-button--negative   fg --fg-critical (#f31110) — 삭제/취소
+ *   .scm-text-button--accent     fg --layerDesktop-fg-accent (#245EFF)
+ *
+ * Sizes:
+ *   .scm-text-button--sm    14px / line 19.6
+ *   기본 = md               15px / line 20.4
+ *   .scm-text-button--lg    16px / line 21.76
+ *   .scm-text-button--xl    18px / line 24.48
+ *
+ * Modifiers:
+ *   .scm-text-button--underline   text-decoration underline
+ * ============================================================ */
+
+.scm-text-button {
+  border: 0;
+  background: transparent;
+  padding: 2px 4px;
+  border-radius: 2px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 20.4px;
+  color: var(--textButton-primary-fg, #000);
+  transition: background-color 0.15s, color 0.15s;
+  width: fit-content;
+}
+
+.scm-text-button:hover:not(:disabled):not([disabled]) {
+  color: var(--textButton-primary-fg-hover, #666);
+  background: var(--button-primary-bgGhost-hover, rgba(138, 138, 138, 0.10));
+}
+.scm-text-button:active:not(:disabled):not([disabled]) {
+  color: var(--textButton-primary-fg-pressed, #666);
+  background: var(--button-primary-bgGhost-pressed, rgba(138, 138, 138, 0.10));
+}
+.scm-text-button:disabled,
+.scm-text-button[disabled] {
+  background: transparent;
+  color: var(--textButton-primary-fg-disabled, rgba(0, 0, 0, 0.20));
+  cursor: not-allowed;
+}
+.scm-text-button:focus-visible {
+  outline: 2px solid var(--layerDesktop-border-accent, #245EFF);
+  outline-offset: 1px;
+}
+
+/* Variants */
+.scm-text-button--secondary { color: var(--textButton-secondary-fg, #666); }
+.scm-text-button--secondary:hover:not(:disabled):not([disabled]) {
+  color: var(--textButton-secondary-fg-hover, #8A8A8A);
+  background: var(--button-secondary-bgGhost-hover, rgba(138, 138, 138, 0.10));
+}
+.scm-text-button--secondary:disabled,
+.scm-text-button--secondary[disabled] {
+  color: var(--textButton-secondary-fg-disabled, rgba(0, 0, 0, 0.20));
+}
+
+.scm-text-button--negative { color: var(--textButton-negative-fg, #F31110); }
+.scm-text-button--negative:hover:not(:disabled):not([disabled]) {
+  color: var(--textButton-negative-fg-hover, rgba(243, 17, 16, 0.9));
+  background: rgba(243, 17, 16, 0.10);
+}
+.scm-text-button--negative:disabled,
+.scm-text-button--negative[disabled] {
+  color: var(--textButton-negative-fg-disabled, rgba(0, 0, 0, 0.20));
+}
+
+.scm-text-button--accent { color: var(--layerDesktop-fg-accent, #245EFF); }
+.scm-text-button--accent:hover:not(:disabled):not([disabled]) {
+  color: var(--textButton-accent-fg-hover, rgba(36, 94, 255, 0.9));
+  background: rgba(36, 94, 255, 0.10);
+}
+.scm-text-button--accent:disabled,
+.scm-text-button--accent[disabled] {
+  color: var(--textButton-accent-fg-disabled, rgba(0, 0, 0, 0.20));
+}
+
+/* Modifier */
+.scm-text-button--underline { text-decoration: underline; text-underline-offset: 2px; }
+
+/* Sizes */
+.scm-text-button--sm { font-size: 14px; line-height: 19.6px; }
+.scm-text-button--lg { font-size: 16px; line-height: 21.76px; }
+.scm-text-button--xl { font-size: 18px; line-height: 24.48px; }
+
+/* Internal: SVG icon size */
+.scm-text-button > svg,
+.scm-text-button > .scm-text-button__icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.scm-text-button--lg > svg,
+.scm-text-button--xl > svg {
+  width: 20px;
+  height: 20px;
+}
