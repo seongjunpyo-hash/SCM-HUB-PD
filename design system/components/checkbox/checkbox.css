@@ -15,13 +15,16 @@
  *   .is-disabled          비활성
  * ============================================================ */
 
+/* PBO 룩 적용 — 색 값은 PBO generic semantic 토큰 사용. fallback = 기존 우리 값.
+   참고: SVG data-uri 안의 fill (#000 / #fff) 은 var() 적용 불가 — primitive
+   black/white 라 PBO --fg / --fg-onContrast 와 완전 일치, 변환 불필요. */
 .scm-checkbox {
   display: inline-block;
   width: 16px;
   height: 16px;
-  border: 1px solid #CCCCCC;
+  border: 1px solid var(--stroke-border, #CCCCCC);
   border-radius: 2px;
-  background: #fff;
+  background: var(--bg, #fff);
   cursor: pointer;
   vertical-align: middle;
   box-sizing: border-box;
@@ -41,17 +44,17 @@
   background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'><path d='M0 2C0 0.895431 0.895431 0 2 0H14C15.1046 0 16 0.895431 16 2V14C16 15.1046 15.1046 16 14 16H2C0.895431 16 0 15.1046 0 14V2Z' fill='black'/><path d='M4 8H12' stroke='white' stroke-width='1.6' stroke-linecap='round'/></svg>") center/16px no-repeat;
 }
 
-/* Disabled — bg #F5F5F5 + border #E0E0E0 (체크/믹스드 상태도 평탄화) */
+/* Disabled — bg-low + stroke-border-low (PBO 가 우리보다 약간 옅음 — 의도된 PBO 룩) */
 .scm-checkbox.is-disabled,
 .scm-checkbox[aria-disabled="true"] {
-  background: #F5F5F5;
-  border: 1px solid #E0E0E0;
+  background: var(--bg-low, #F5F5F5);
+  border: 1px solid var(--stroke-border-low, #E0E0E0);
   cursor: not-allowed;
   pointer-events: none;
 }
 
-/* Focus ring (키보드 접근성) */
+/* Focus ring (키보드 접근성) — PBO accent blue */
 .scm-checkbox:focus-visible {
-  outline: 2px solid #245EFF;
+  outline: 2px solid var(--layerDesktop-fg-accent, #245EFF);
   outline-offset: 2px;
 }

@@ -48,10 +48,12 @@
   height: 0;
 }
 
+/* PBO 룩 — switch-* 시맨틱 토큰. track-checked 가 bg-contrast (#000) 라
+   기존 우리 #000 과 일치. thumb 도 fg-onContrast (#fff) 로 일치. */
 .scm-toggle-track {
   position: absolute;
   inset: 0;
-  background: #CCCCCC;
+  background: var(--switch-track, #CCCCCC);
   border-radius: 999px;
   transition: background 0.15s;
 }
@@ -62,7 +64,7 @@
   left: 2px;
   width: 16px;
   height: 16px;
-  background: #fff;
+  background: var(--switch-thumb, #fff);
   border-radius: 50%;
   transition: transform 0.15s, background 0.15s, left 0.15s;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
@@ -71,7 +73,7 @@
 /* On 상태 — input:checked 또는 .is-on */
 .scm-toggle .scm-toggle-input:checked ~ .scm-toggle-track,
 .scm-toggle.is-on .scm-toggle-track {
-  background: #000;
+  background: var(--switch-track-checked, #000);
 }
 
 .scm-toggle .scm-toggle-input:checked ~ .scm-toggle-knob {
@@ -102,8 +104,10 @@
   color: #000;
 }
 
+/* off label — PBO --fg-low (#666666, gray-600). 기존 우리 #8A8A8A (gray-500)
+   보다 약간 더 진함 (PBO 룩 의도). */
 .scm-toggle-label.is-off {
-  color: #8A8A8A;
+  color: var(--fg-low, #8A8A8A);
 }
 
 /* 라벨과 토글을 묶는 셀 */
