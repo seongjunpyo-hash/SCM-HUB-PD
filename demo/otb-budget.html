@@ -382,7 +382,14 @@
     }
     .otb-hero__metrics {
       display: grid;
-      grid-template-columns: repeat(10, 200px);
+      /* 10 metric — viewport 폭에 따라 자동 wrap.
+         넓은 화면 (≥1920px main 영역): 10 컬럼 1줄
+         일반 (1440px viewport ≈ 1328px metrics): 7 컬럼 → 2줄 (7+3)
+         좁은 (1024px viewport ≈ 912px metrics): 5 컬럼 → 2줄 (5+5)
+         voc 편집모드 (≈944px metrics): 5 컬럼 → 2줄
+         원래 repeat(10, 200px) 고정 폭 (= 2090px) 이 좁은 viewport 에서 페이지
+         가로 스크롤 유발. */
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 10px;
     }
     .otb-metric {
