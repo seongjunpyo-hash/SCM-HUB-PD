@@ -5,7 +5,7 @@
 ## 핵심 원칙
 
 1. **정적 시스템 — build 없음.** HTML/CSS/JS 파일 그대로 서비스. React/Vue/번들러 도입 금지.
-2. **공통 자원은 단일 source of truth.** hub 의 auth-gate / scm-shell / design-system 의 토큰 모두 한 곳.
+2. **공통 자원은 단일 source of truth.** home 의 auth-gate / scm-shell / design-system 의 토큰 모두 한 곳.
 3. **디자인 시스템은 별 도메인에서 CDN.** `https://ds.musinsa.com` 에서 로드, 모든 도메인이 그 URL 의 CSS/JS 사용.
 4. **권한은 서버에서.** Supabase RLS 가 진짜 검증. client `if (role)` 은 UX 용도.
 5. **도메인 간 격리.** 한 도메인의 specialized 컴포넌트가 다른 도메인 침범 금지. 공유될 거면 `design-system/core` 로.
@@ -14,7 +14,7 @@
 
 ```html
 <head>
-  <script src="/hub/auth-gate.js"></script>           ← 동기 (Supabase 인증 게이트)
+  <script src="/home/auth-gate.js"></script>           ← 동기 (Supabase 인증 게이트)
   <script src="https://ds.musinsa.com/scm-shell.js" defer></script>
   <link rel="stylesheet" href="https://ds.musinsa.com/layers/<layer>/tokens.css" />
   <link rel="stylesheet" href="https://ds.musinsa.com/core/components/.../*.css" /> × N
@@ -52,7 +52,7 @@
 ### 흐름
 
 1. 페이지 로드 → `auth-gate.js` 가 `supabase.auth.getUser()` 호출
-2. 미인증 → `/hub/login.html?next=...` 리다이렉트
+2. 미인증 → `/home/login.html?next=...` 리다이렉트
 3. 인증 → `user_domains` 테이블 조회 → 본인 권한 있는 도메인이면 통과
 4. `window.SCM_USER = { id, email, role, domain }` 전역 노출
 5. `scm:auth-ready` 이벤트 dispatch
@@ -86,7 +86,7 @@
 
 - [ ] `domains/<name>/` 디렉토리 생성 + 자체 `CLAUDE.md` (도메인 한정 원칙)
 - [ ] `supabase/migrations/` 에 `insert into domains values ('<name>', ..., '<layer>');` 추가
-- [ ] `hub/index.html` 의 도메인 카드 목록에 추가
+- [ ] `home/index.html` 의 도메인 카드 목록에 추가
 - [ ] 사용할 layer 결정 — 기존 (layer/phase/flow) 중 또는 신규
 - [ ] 첫 페이지 1개 작성 (`legacy/<name>/` 의 fixture 참고)
 - [ ] `auth-gate.js` 의 path prefix 권한 규칙에 도메인 추가
@@ -94,7 +94,7 @@
 
 ## 페이지 추가 체크리스트 (도메인 내)
 
-- [ ] `<script src="/hub/auth-gate.js"></script>` 동기
+- [ ] `<script src="/home/auth-gate.js"></script>` 동기
 - [ ] layer tokens.css link
 - [ ] `<header class="scm-topbar">` placeholder
 - [ ] `<nav class="scm-lnb" data-active="...">` placeholder

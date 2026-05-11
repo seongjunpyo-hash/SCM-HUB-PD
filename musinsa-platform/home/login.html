@@ -75,10 +75,10 @@
       cfg.supabaseAnonKey || 'YOUR_ANON_KEY'
     );
 
-    // 이미 로그인 상태면 next 또는 hub 로
+    // 이미 로그인 상태면 next 또는 home 로
     const { data: { user } } = await sb.auth.getUser();
     if (user) {
-      const next = new URLSearchParams(location.search).get('next') || '/hub/';
+      const next = new URLSearchParams(location.search).get('next') || '/home/';
       location.replace(next);
     }
 
@@ -94,7 +94,7 @@
 
       const { error } = await sb.auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: location.origin + '/hub/' },
+        options: { emailRedirectTo: location.origin + '/home/' },
       });
 
       if (error) {

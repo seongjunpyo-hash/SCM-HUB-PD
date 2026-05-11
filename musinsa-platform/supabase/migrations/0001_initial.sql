@@ -74,7 +74,7 @@ create table if not exists public.conductor_edits (
 -- RLS Policies
 -- ============================================================
 
--- domains — 누구나 read (도메인 카탈로그는 hub 에 노출). write 는 service role 만.
+-- domains — 누구나 read (도메인 카탈로그는 home 에 노출). write 는 service role 만.
 alter table public.domains enable row level security;
 create policy "domains_read_all" on public.domains
   for select using (true);

@@ -5,14 +5,14 @@
  *
  * 흐름:
  *   1. supabase.auth.getUser() 로 현재 세션 조회
- *   2. 미인증 → /hub/login.html?next=... 리다이렉트
+ *   2. 미인증 → /home/login.html?next=... 리다이렉트
  *   3. URL path 의 첫 segment 로 도메인 추정 (e.g. /scm-hub/... → 'scm-hub')
- *   4. user_domains 테이블 조회 → 권한 있으면 통과, 없으면 /hub/forbidden.html
+ *   4. user_domains 테이블 조회 → 권한 있으면 통과, 없으면 /home/forbidden.html
  *   5. window.SCM_USER = { id, email, role, domain } 전역 노출
  *   6. document 에 'scm:auth-ready' 이벤트 dispatch
  *
  * Usage:
- *   <script src="/hub/auth-gate.js"></script>
+ *   <script src="/home/auth-gate.js"></script>
  *   ...
  *   document.addEventListener('scm:auth-ready', (e) => {
  *     console.log(e.detail.user);  // { id, email, role, domain }
@@ -22,12 +22,12 @@
   'use strict';
 
   // 로그인/공개 페이지는 게이트 스킵
-  var SKIP = ['/hub/login.html', '/hub/forbidden.html', '/hub/invite-accept.html'];
+  var SKIP = ['/home/login.html', '/home/forbidden.html', '/home/invite-accept.html'];
   if (SKIP.indexOf(location.pathname) !== -1) return;
 
   // ─── Supabase 설정 ─────────────────────────────────────────
-  // production 에서는 빌드 시 inject 또는 hub/config.js 에서 주입.
-  // 지금은 placeholder — 실제 키는 hub/config.js 에 분리해서 .gitignore.
+  // production 에서는 빌드 시 inject 또는 home/config.js 에서 주입.
+  // 지금은 placeholder — 실제 키는 home/config.js 에 분리해서 .gitignore.
   var SUPABASE_URL = (window.__MUSINSA_PLATFORM__ && window.__MUSINSA_PLATFORM__.supabaseUrl)
     || 'https://YOUR_PROJECT_REF.supabase.co';
   var SUPABASE_ANON_KEY = (window.__MUSINSA_PLATFORM__ && window.__MUSINSA_PLATFORM__.supabaseAnonKey)
@@ -36,16 +36,16 @@
   // ─── path 에서 도메인 ID 추정 ─────────────────────────────
   // /scm-hub/...        → 'scm-hub'
   // /scm-portal/demo/...→ 'scm-portal'
-  // /hub/...            → null (hub 자체는 모든 사용자 접근)
+  // /home/...            → null (home 자체는 모든 사용자 접근)
   function inferDomain(pathname) {
     var seg = (pathname.split('/')[1] || '').toLowerCase();
-    if (!seg || seg === 'hub' || seg === 'conductor') return null;
+    if (!seg || seg === 'home' || seg === 'conductor') return null;
     var known = ['scm-hub', 'scm-portal', 'o4o', 'logistics'];
     return known.indexOf(seg) !== -1 ? seg : null;
   }
 
   function redirectToLogin() {
-    location.replace('/hub/login.html?next=' + encodeURIComponent(location.pathname + location.search));
+    location.replace('/home/login.html?next=' + encodeURIComponent(location.pathname + location.search));
   }
 
   // ─── Supabase JS 로드 (ESM CDN) ───────────────────────────
@@ -64,7 +64,7 @@
     "  if (domainId) {",
     "    const { data: ud } = await sb.from('user_domains')",
     "      .select('role').eq('user_id', user.id).eq('domain_id', domainId).maybeSingle();",
-    "    if (!ud) { location.replace('/hub/forbidden.html'); return; }",
+    "    if (!ud) { location.replace('/home/forbidden.html'); return; }",
     "    role = ud.role;",
     "  }",
     "  window.SCM_USER = { id: user.id, email: user.email, name: user.user_metadata?.name || user.email, role, domain: domainId };",
@@ -74,7 +74,7 @@
     "window.SCM = window.SCM || {};",
     "window.SCM.logout = async function () {",
     "  await sb.auth.signOut();",
-    "  location.replace('/hub/login.html');",
+    "  location.replace('/home/login.html');",
     "};",
   ].join('\n');
   document.head.appendChild(script);

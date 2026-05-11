@@ -4,7 +4,7 @@ Musinsa 사내 시스템 4 도메인의 데모/디자인 시스템 + 공통 인�
 
 ```
 musinsa-platform/
-├── hub/                            ← 전체 도메인 관리 (인덱스 + auth)
+├── home/                            ← 전체 도메인 관리 (인덱스 + auth)
 ├── design-system/                  ← 공통 디자인 시스템 (별도 CDN 배포)
 │   ├── core/                       ← 마크업 + JS 행동 (모든 layer 공유)
 │   └── layers/                     ← 시각 layer (토큰 set)
@@ -39,7 +39,7 @@ musinsa-platform/
 # 별도 install 불필요. Live Server 또는 http-server 만 있으면 됨.
 
 # 2. Supabase 환경 변수
-cp hub/.env.example hub/.env
+cp home/.env.example home/.env
 # .env 의 SUPABASE_URL / SUPABASE_ANON_KEY 채우기
 
 # 3. 로컬 실행
@@ -61,7 +61,7 @@ npx http-server . -p 8080
 
 1. `domains/<name>/` 디렉토리 생성
 2. `supabase/migrations/` 에 `domains` 테이블 row insert SQL 추가
-3. `hub/index.html` 의 카드 목록에 도메인 추가
+3. `home/index.html` 의 카드 목록에 도메인 추가
 4. 사용할 layer 결정 (layer/phase/flow 중) — 없으면 새 layer 추가
 5. 첫 페이지 1개 — `legacy/<name>/` 의 fixture 보고 마크업 작성
 6. `auth-gate.js` 의 path prefix 권한 규칙에 도메인 추가 (필요 시)

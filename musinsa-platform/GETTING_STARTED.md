@@ -12,12 +12,12 @@
 
 ## 0. 개요 — 무엇을 만드는가
 
-musinsa-platform 은 4 도메인 (`scm-hub`, `scm-portal`, `o4o`, `logistics`) 의 데모 + 공통 디자인 시스템 + 도메인 관리 허브를 통합한 정적 플랫폼.
+musinsa-platform 은 4 도메인 (`scm-hub`, `scm-portal`, `o4o`, `logistics`) 의 데모 + 공통 디자인 시스템 + 도메인 관리 홈를 통합한 정적 플랫폼.
 
 ```
                       ┌─────────────────────────┐
-                      │   musinsa-platform.com  │  ← hub (auth + 도메인 카드)
-                      │   /hub/, /scm-portal/, …│
+                      │   musinsa-platform.com  │  ← home (auth + 도메인 카드)
+                      │   /home/, /scm-portal/, …│
                       └────────────┬────────────┘
                                    │
                                    ▼  CDN <link>/<script>
@@ -70,7 +70,7 @@ musinsa-platform/
 ├── CLAUDE.md                          ← 플랫폼 전역 원칙
 ├── README.md                          ← 빠른 시작
 ├── GETTING_STARTED.md                 ← 이 문서
-├── hub/                               ← 도메인 관리 허브
+├── home/                               ← 도메인 관리 홈
 │   ├── auth-gate.js
 │   ├── index.html
 │   ├── login.html
@@ -112,7 +112,7 @@ git checkout main
 
 ```bash
 ls ~/Documents/GitHub/musinsa-platform
-# CLAUDE.md  README.md  GETTING_STARTED.md  hub/  design-system/  domains/  supabase/  ...
+# CLAUDE.md  README.md  GETTING_STARTED.md  home/  design-system/  domains/  supabase/  ...
 ```
 
 ---
@@ -138,7 +138,7 @@ cd ~/Documents/GitHub/musinsa-platform
 # git init + 첫 commit
 git init -b main
 git add -A
-git commit -m "chore: initial skeleton — hub + design-system + 4 domains + supabase schema"
+git commit -m "chore: initial skeleton — home + design-system + 4 domains + supabase schema"
 
 # 위 Step 2 에서 만든 repo URL 로 push
 git remote add origin git@github.com:yourname/musinsa-platform.git
@@ -214,8 +214,8 @@ supabase db push
 1. 좌측 **Authentication** → **URL Configuration**
 2. **Site URL**: `http://localhost:8080` (개발 중) — 나중에 prod 도메인으로 교체
 3. **Redirect URLs** 에 다음 추가:
-   - `http://localhost:8080/hub/`
-   - `https://musinsa-platform.pages.dev/hub/` (Step 10 이후)
+   - `http://localhost:8080/home/`
+   - `https://musinsa-platform.pages.dev/home/` (Step 10 이후)
 
 ✅ **검증**: Providers 화면에서 Email / Google 옆에 초록 토글.
 
@@ -227,28 +227,28 @@ supabase db push
 2. 다음 두 값 복사:
    - **Project URL**: `https://xxxxx.supabase.co`
    - **Project API keys** → **anon (public)**: `eyJhbG...` (긴 JWT)
-3. macOS 에서 `hub/config.js` 새 파일:
+3. macOS 에서 `home/config.js` 새 파일:
 
 ```js
-// hub/config.js — Supabase 키 주입. .gitignore 됨.
+// home/config.js — Supabase 키 주입. .gitignore 됨.
 window.__MUSINSA_PLATFORM__ = {
   supabaseUrl:     'https://xxxxx.supabase.co',
   supabaseAnonKey: 'eyJhbG...',
 };
 ```
 
-4. `hub/index.html` 과 `hub/login.html` 의 `<script src="/hub/auth-gate.js">` **앞에** `<script src="/hub/config.js"></script>` 추가:
+4. `home/index.html` 과 `home/login.html` 의 `<script src="/home/auth-gate.js">` **앞에** `<script src="/home/config.js"></script>` 추가:
 
 ```html
 <head>
-  <script src="/hub/config.js"></script>           <!-- 추가 -->
-  <script src="/hub/auth-gate.js"></script>
+  <script src="/home/config.js"></script>           <!-- 추가 -->
+  <script src="/home/auth-gate.js"></script>
   ...
 ```
 
 > **anon key 는 공개돼도 안전** (RLS 가 진짜 권한 검증) 하지만, 코드 검색 용이성 차원에서 분리 권장.
 
-✅ **검증**: `hub/config.js` 가 `.gitignore` 의 룰 (`hub/config.js`) 로 무시되는지 `git status` 로 확인.
+✅ **검증**: `home/config.js` 가 `.gitignore` 의 룰 (`home/config.js`) 로 무시되는지 `git status` 로 확인.
 
 ---
 
@@ -259,15 +259,15 @@ cd ~/Documents/GitHub/musinsa-platform
 npx http-server . -p 8080
 ```
 
-브라우저 [http://localhost:8080/hub/](http://localhost:8080/hub/) 접속:
+브라우저 [http://localhost:8080/home/](http://localhost:8080/home/) 접속:
 
-1. auth-gate 가 미인증 감지 → `/hub/login.html?next=/hub/` 리다이렉트
+1. auth-gate 가 미인증 감지 → `/home/login.html?next=/home/` 리다이렉트
 2. 사내 이메일 입력 → **매직 링크 전송**
-3. 메일함에서 링크 클릭 → 자동 로그인 → `/hub/` 로 돌아옴
+3. 메일함에서 링크 클릭 → 자동 로그인 → `/home/` 로 돌아옴
 4. **단**: 도메인 카드들이 "접근 권한 없음" 표시 (아직 user_domains 에 본인 row 없음)
 
 ✅ **검증**:
-- 로그인 후 hub 상단에 본인 이메일 표시
+- 로그인 후 home 상단에 본인 이메일 표시
 - Supabase Studio → Authentication → Users → 본인 row 1개 생김
 
 ---
@@ -287,7 +287,7 @@ insert into user_domains (user_id, domain_id, role) values
 
 → **Run**
 
-3. 브라우저에서 `localhost:8080/hub/` 새로고침
+3. 브라우저에서 `localhost:8080/home/` 새로고침
 
 ✅ **검증**: 도메인 카드 4개가 활성 (클릭 가능) 상태로 노출. 각 카드에 "권한: super" 표시.
 
@@ -308,7 +308,7 @@ insert into user_domains (user_id, domain_id, role) values
 
 1. Supabase Studio → **Authentication** → **URL Configuration**
 2. **Redirect URLs** 에 추가:
-   - `https://musinsa-platform.pages.dev/hub/`
+   - `https://musinsa-platform.pages.dev/home/`
 3. **Save**
 
 ### 환경 변수 주입 (config.js)
@@ -318,9 +318,9 @@ insert into user_domains (user_id, domain_id, role) values
 **A. config.js 를 repo 에 직접 commit** (anon key 는 공개 안전)
 **B. Cloudflare Pages 의 Build environment 에 변수 등록 후 build hook 으로 inject** (복잡)
 
-→ **A 추천**: `.gitignore` 의 `hub/config.js` 한 줄을 제거 + commit + push.
+→ **A 추천**: `.gitignore` 의 `home/config.js` 한 줄을 제거 + commit + push.
 
-✅ **검증**: `https://musinsa-platform.pages.dev/hub/` 접속 → 로그인 + 도메인 카드 노출.
+✅ **검증**: `https://musinsa-platform.pages.dev/home/` 접속 → 로그인 + 도메인 카드 노출.
 
 ---
 
@@ -398,7 +398,7 @@ After:
 
 | 주차 | 작업 |
 |---|---|
-| 2 | hub auth-gate 의 path prefix 권한 규칙 확정. SCM-HUB-PD 의 모든 페이지에 CDN 적용 (sed 일괄) |
+| 2 | home auth-gate 의 path prefix 권한 규칙 확정. SCM-HUB-PD 의 모든 페이지에 CDN 적용 (sed 일괄) |
 | 3 | `domains/logistics/` 의 첫 페이지 1~2개 (flow layer 토큰 작성) |
 | 4 | `conductor/` 분리 — SCM-HUB-PD 의 `dev-export.js` + `voc/` 를 이 platform 으로 이전 + localStorage → Supabase 로 데이터 전환 |
 | 5 | `domains/scm-portal/`, `domains/o4o/` (phase layer 사용) |
@@ -413,7 +413,7 @@ After:
 - 사내 메일 서버가 supabase.io 도메인 차단했을 수도 — IT 에 문의.
 
 ### 로그인 후 즉시 로그아웃됨
-- `hub/config.js` 의 SUPABASE_URL / SUPABASE_ANON_KEY 가 다른 project 의 값으로 잘못 들어갔을 가능성.
+- `home/config.js` 의 SUPABASE_URL / SUPABASE_ANON_KEY 가 다른 project 의 값으로 잘못 들어갔을 가능성.
 - Supabase URL Configuration 의 Redirect URLs 에 현재 origin 이 등록 안 됨.
 
 ### 도메인 카드가 안 보임
@@ -454,7 +454,7 @@ After:
 - [ ] 4. Supabase project 생성
 - [ ] 5. `0001_initial.sql` + `0002_seed_domains.sql` 실행
 - [ ] 6. Email + Google OAuth provider 활성화 + URL Configuration
-- [ ] 7. `hub/config.js` 작성 + Supabase URL/anon key 주입
+- [ ] 7. `home/config.js` 작성 + Supabase URL/anon key 주입
 - [ ] 8. `npx http-server . -p 8080` → Magic Link 첫 로그인
 - [ ] 9. `user_domains` 에 본인을 super 로 4 도메인 등록
 - [ ] 10. Cloudflare Pages 에 platform 배포

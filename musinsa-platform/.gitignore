@@ -2,8 +2,8 @@
 .env
 .env.local
 .env.*.local
-hub/.env
-hub/config.js
+home/.env
+home/config.js
 
 # Node / build artifacts
 node_modules/
