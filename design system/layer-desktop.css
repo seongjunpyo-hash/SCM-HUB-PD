@@ -18,6 +18,12 @@
  * ============================================================
  */
 
+/* PBO Design System 토큰 — primitive (color palette) + semantic (button-primary-*, bg-low, …)
+   가 :root[data-layer-theme='light'][data-layer-platform='desktop'] 안에 정의.
+   auth-gate.js 가 root 에 두 data-attribute 를 sync 로 set → 본 import 의 토큰이 모든
+   페이지에서 활성. 기존 --ld-* 토큰과 namespace 가 겹치지 않으므로 공존. */
+@import url('./musinsa-tokens/layer-desktop-light-colors.css');
+
 :root {
 
   /* ============================================================ */
