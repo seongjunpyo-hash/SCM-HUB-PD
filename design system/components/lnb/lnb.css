@@ -26,7 +26,15 @@ body {
   font-family: var(--ld-font-family-base);
   color: var(--ld-fg);
   background: #fff;
-  min-width: 1440px;
+  /* voc 편집모드 iframe (1440 viewport 기준 stage ≈ 1000px) 안에서 데모
+     페이지가 가로 스크롤 없이 fit 되도록 1024 로 낮춤. 페이지의 컬럼 합이
+     이보다 크면 .mp-table-scroll 의 overflow-x:auto 에서 처리. */
+  min-width: 1024px;
+  /* 광폭 자식 (detail-table 의 sticky thead clone, frozen 컬럼 sticky 등) 이
+     main 의 min-width:0 을 비집고 viewport 가로 스크롤을 만드는 것을 차단.
+     데이터는 .mp-table-scroll 의 자체 가로 스크롤로만 접근. 의도적인 page-
+     level 가로 스크롤 케이스는 데모/디자인 시스템에 없음. */
+  overflow-x: hidden;
 }
 .app {
   display: grid;
