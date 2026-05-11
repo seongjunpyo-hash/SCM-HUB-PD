@@ -14,7 +14,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: musinsa-platform
+          projectName: pbo-design
           directory: .
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
 
@@ -27,6 +27,6 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: musinsa-design-system
+          projectName: pbo-design-system
           directory: design-system
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}

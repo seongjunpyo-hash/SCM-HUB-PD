@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>로그인 · musinsa-platform</title>
+  <title>로그인 · pbo-design</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -55,7 +55,7 @@
 </head>
 <body>
   <div class="card">
-    <h1>musinsa-platform</h1>
+    <h1>pbo-design</h1>
     <p class="sub">사내 이메일로 매직 링크를 받아 로그인합니다.</p>
 
     <form id="login-form">
@@ -69,7 +69,7 @@
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-    const cfg = window.__MUSINSA_PLATFORM__ || {};
+    const cfg = window.__PBO_DESIGN__ || {};
     const sb = createClient(
       cfg.supabaseUrl    || 'https://YOUR_PROJECT_REF.supabase.co',
       cfg.supabaseAnonKey || 'YOUR_ANON_KEY'

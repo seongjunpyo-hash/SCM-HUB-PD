@@ -1,5 +1,5 @@
 /* ============================================================
- * musinsa-platform · auth-gate
+ * pbo-design · auth-gate
  * ------------------------------------------------------------
  * Supabase 인증 + 도메인 권한 게이트.
  *
@@ -28,9 +28,9 @@
   // ─── Supabase 설정 ─────────────────────────────────────────
   // production 에서는 빌드 시 inject 또는 home/config.js 에서 주입.
   // 지금은 placeholder — 실제 키는 home/config.js 에 분리해서 .gitignore.
-  var SUPABASE_URL = (window.__MUSINSA_PLATFORM__ && window.__MUSINSA_PLATFORM__.supabaseUrl)
+  var SUPABASE_URL = (window.__PBO_DESIGN__ && window.__PBO_DESIGN__.supabaseUrl)
     || 'https://YOUR_PROJECT_REF.supabase.co';
-  var SUPABASE_ANON_KEY = (window.__MUSINSA_PLATFORM__ && window.__MUSINSA_PLATFORM__.supabaseAnonKey)
+  var SUPABASE_ANON_KEY = (window.__PBO_DESIGN__ && window.__PBO_DESIGN__.supabaseAnonKey)
     || 'YOUR_ANON_KEY';
 
   // ─── path 에서 도메인 ID 추정 ─────────────────────────────

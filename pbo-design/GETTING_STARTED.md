@@ -1,6 +1,6 @@
-# Getting Started — musinsa-platform 0일차 가이드
+# Getting Started — pbo-design 0일차 가이드
 
-이 문서는 musinsa-platform 을 처음부터 끝까지 셋업하는 단계별 가이드. 각 단계는 누가 무엇을 하는지 명시:
+이 문서는 pbo-design 을 처음부터 끝까지 셋업하는 단계별 가이드. 각 단계는 누가 무엇을 하는지 명시:
 
 - 🤖 **자동** — AI 가 이미 만들어둔 파일/구조. 너는 확인만.
 - 👤 **수동** — 너가 직접 해야 할 작업.
@@ -12,11 +12,11 @@
 
 ## 0. 개요 — 무엇을 만드는가
 
-musinsa-platform 은 4 도메인 (`scm-hub`, `scm-portal`, `o4o`, `logistics`) 의 데모 + 공통 디자인 시스템 + 도메인 관리 홈를 통합한 정적 플랫폼.
+pbo-design 은 4 도메인 (`scm-hub`, `scm-portal`, `o4o`, `logistics`) 의 데모 + 공통 디자인 시스템 + 도메인 관리 홈를 통합한 정적 플랫폼.
 
 ```
                       ┌─────────────────────────┐
-                      │   musinsa-platform.com  │  ← home (auth + 도메인 카드)
+                      │   pbo-design.com  │  ← home (auth + 도메인 카드)
                       │   /home/, /scm-portal/, …│
                       └────────────┬────────────┘
                                    │
@@ -51,7 +51,7 @@ musinsa-platform 은 4 도메인 (`scm-hub`, `scm-portal`, `o4o`, `logistics`) �
 | GitHub 계정 | repo 생성 | 무료 |
 | Supabase 계정 ([supabase.com](https://supabase.com)) | 백엔드 | 무료 tier OK |
 | Cloudflare 계정 ([cloudflare.com](https://cloudflare.com)) | hosting | 무료 |
-| 도메인 (선택) | `musinsa-platform.com`, `ds.musinsa.com` | 보유 시 |
+| 도메인 (선택) | `pbo-design.com`, `ds.musinsa.com` | 보유 시 |
 | 사내 이메일 | Magic Link 테스트 | - |
 
 **도구**:
@@ -63,10 +63,10 @@ musinsa-platform 은 4 도메인 (`scm-hub`, `scm-portal`, `o4o`, `logistics`) �
 
 ## 2. Step 1 — Local 골격 받기 [🤖 자동 + 👤 수동]
 
-🤖 **이미 완료**: SCM-HUB-PD 의 `claude/musinsa-platform-skeleton` branch 에 `musinsa-platform/` 폴더로 골격 push 됨. 폴더 구조:
+🤖 **이미 완료**: SCM-HUB-PD 의 `claude/pbo-design-skeleton` branch 에 `pbo-design/` 폴더로 골격 push 됨. 폴더 구조:
 
 ```
-musinsa-platform/
+pbo-design/
 ├── CLAUDE.md                          ← 플랫폼 전역 원칙
 ├── README.md                          ← 빠른 시작
 ├── GETTING_STARTED.md                 ← 이 문서
@@ -98,11 +98,11 @@ musinsa-platform/
 ```bash
 # 1. SCM-HUB-PD 의 해당 branch checkout
 cd ~/Documents/GitHub/SCM-HUB-PD     # 또는 너의 SCM-HUB-PD 경로
-git fetch origin claude/musinsa-platform-skeleton
-git checkout claude/musinsa-platform-skeleton
+git fetch origin claude/pbo-design-skeleton
+git checkout claude/pbo-design-skeleton
 
-# 2. musinsa-platform 폴더만 별 위치로 복사
-cp -r musinsa-platform ~/Documents/GitHub/musinsa-platform
+# 2. pbo-design 폴더만 별 위치로 복사
+cp -r pbo-design ~/Documents/GitHub/pbo-design
 
 # 3. SCM-HUB-PD 는 main 으로 복귀 (clutter 방지)
 git checkout main
@@ -111,7 +111,7 @@ git checkout main
 ✅ **검증**:
 
 ```bash
-ls ~/Documents/GitHub/musinsa-platform
+ls ~/Documents/GitHub/pbo-design
 # CLAUDE.md  README.md  GETTING_STARTED.md  home/  design-system/  domains/  supabase/  ...
 ```
 
@@ -120,11 +120,11 @@ ls ~/Documents/GitHub/musinsa-platform
 ## 3. Step 2 — GitHub 새 repo 생성 [👤 수동]
 
 1. [github.com/new](https://github.com/new) 접속
-2. Repository name: **`musinsa-platform`**
+2. Repository name: **`pbo-design`**
 3. Private ✅
 4. **"Add a README" / ".gitignore" / "license" 모두 체크 해제** (빈 repo)
 5. Create repository
-6. 생성 후 표시되는 URL 기록 (예: `git@github.com:yourname/musinsa-platform.git`)
+6. 생성 후 표시되는 URL 기록 (예: `git@github.com:yourname/pbo-design.git`)
 
 ✅ **검증**: 빈 repo 페이지가 "Quick setup" 안내를 보여줌.
 
@@ -133,7 +133,7 @@ ls ~/Documents/GitHub/musinsa-platform
 ## 4. Step 3 — Local 폴더를 GitHub 에 push [👤 수동]
 
 ```bash
-cd ~/Documents/GitHub/musinsa-platform
+cd ~/Documents/GitHub/pbo-design
 
 # git init + 첫 commit
 git init -b main
@@ -141,7 +141,7 @@ git add -A
 git commit -m "chore: initial skeleton — home + design-system + 4 domains + supabase schema"
 
 # 위 Step 2 에서 만든 repo URL 로 push
-git remote add origin git@github.com:yourname/musinsa-platform.git
+git remote add origin git@github.com:yourname/pbo-design.git
 git push -u origin main
 ```
 
@@ -155,7 +155,7 @@ git push -u origin main
 2. **New project** 클릭
 3. 입력:
    - Organization: 본인 organization (없으면 생성)
-   - Name: `musinsa-platform`
+   - Name: `pbo-design`
    - Database password: **강력한 비밀번호 + 안전한 곳에 기록** (나중에 필요)
    - Region: `Northeast Asia (Seoul)` 추천
    - Pricing plan: Free
@@ -179,7 +179,7 @@ git push -u origin main
 방법 B (Supabase CLI):
 
 ```bash
-cd ~/Documents/GitHub/musinsa-platform
+cd ~/Documents/GitHub/pbo-design
 npm i -g supabase
 supabase login
 supabase link --project-ref <YOUR_PROJECT_REF>   # project 대시보드의 Settings → General → Reference ID
@@ -215,7 +215,7 @@ supabase db push
 2. **Site URL**: `http://localhost:8080` (개발 중) — 나중에 prod 도메인으로 교체
 3. **Redirect URLs** 에 다음 추가:
    - `http://localhost:8080/home/`
-   - `https://musinsa-platform.pages.dev/home/` (Step 10 이후)
+   - `https://pbo-design.pages.dev/home/` (Step 10 이후)
 
 ✅ **검증**: Providers 화면에서 Email / Google 옆에 초록 토글.
 
@@ -231,7 +231,7 @@ supabase db push
 
 ```js
 // home/config.js — Supabase 키 주입. .gitignore 됨.
-window.__MUSINSA_PLATFORM__ = {
+window.__PBO_DESIGN__ = {
   supabaseUrl:     'https://xxxxx.supabase.co',
   supabaseAnonKey: 'eyJhbG...',
 };
@@ -255,7 +255,7 @@ window.__MUSINSA_PLATFORM__ = {
 ## 9. Step 8 — 로컬 실행 + Magic Link 첫 로그인 [👤 수동]
 
 ```bash
-cd ~/Documents/GitHub/musinsa-platform
+cd ~/Documents/GitHub/pbo-design
 npx http-server . -p 8080
 ```
 
@@ -296,19 +296,19 @@ insert into user_domains (user_id, domain_id, role) values
 ## 11. Step 10 — Cloudflare Pages 배포 (platform) [👤 수동]
 
 1. [Cloudflare Dashboard](https://dash.cloudflare.com) 로그인 → **Workers & Pages** → **Create application** → **Pages** → **Connect to Git**
-2. GitHub 연동 + `musinsa-platform` repo 선택
+2. GitHub 연동 + `pbo-design` repo 선택
 3. 빌드 설정:
    - **Build command**: (빈 칸)
    - **Build output directory**: `/` (root)
    - **Production branch**: `main`
 4. **Save and Deploy**
-5. 배포 완료 후 URL 확인: `https://musinsa-platform.pages.dev`
+5. 배포 완료 후 URL 확인: `https://pbo-design.pages.dev`
 
 ### Supabase URL Configuration 추가
 
 1. Supabase Studio → **Authentication** → **URL Configuration**
 2. **Redirect URLs** 에 추가:
-   - `https://musinsa-platform.pages.dev/home/`
+   - `https://pbo-design.pages.dev/home/`
 3. **Save**
 
 ### 환경 변수 주입 (config.js)
@@ -320,21 +320,21 @@ insert into user_domains (user_id, domain_id, role) values
 
 → **A 추천**: `.gitignore` 의 `home/config.js` 한 줄을 제거 + commit + push.
 
-✅ **검증**: `https://musinsa-platform.pages.dev/home/` 접속 → 로그인 + 도메인 카드 노출.
+✅ **검증**: `https://pbo-design.pages.dev/home/` 접속 → 로그인 + 도메인 카드 노출.
 
 ---
 
 ## 12. Step 11 — Cloudflare Pages 배포 (design-system CDN) [👤 수동]
 
 1. Cloudflare Dashboard → **Workers & Pages** → **Create application** → **Pages** → **Connect to Git**
-2. 같은 `musinsa-platform` repo 선택
+2. 같은 `pbo-design` repo 선택
 3. 빌드 설정:
-   - **Project name**: `musinsa-design-system`
+   - **Project name**: `pbo-design-system`
    - **Build command**: (빈 칸)
    - **Build output directory**: `design-system`
    - **Production branch**: `main`
 4. Save and Deploy
-5. URL 확인: `https://musinsa-design-system.pages.dev`
+5. URL 확인: `https://pbo-design-system.pages.dev`
 
 ### (선택) 커스텀 도메인 매핑
 
@@ -342,7 +342,7 @@ insert into user_domains (user_id, domain_id, role) values
 1. project → **Custom domains** → **Set up a custom domain**
 2. `ds.musinsa.com` 입력 → DNS 자동 설정 안내 따라 진행
 
-✅ **검증**: `https://musinsa-design-system.pages.dev/CLAUDE.md` 접속 시 파일 다운로드. `https://musinsa-design-system.pages.dev/layers/layer/tokens.css` 도 동일.
+✅ **검증**: `https://pbo-design-system.pages.dev/CLAUDE.md` 접속 시 파일 다운로드. `https://pbo-design-system.pages.dev/layers/layer/tokens.css` 도 동일.
 
 ---
 
@@ -353,7 +353,7 @@ insert into user_domains (user_id, domain_id, role) values
 ### 옵션 A — 통째 이전 (가장 빠름)
 
 ```bash
-cd ~/Documents/GitHub/musinsa-platform
+cd ~/Documents/GitHub/pbo-design
 
 # SCM-HUB-PD 의 design system 폴더 → core/components 로 복사
 cp -r ~/Documents/GitHub/SCM-HUB-PD/"design system"/components/* design-system/core/components/
@@ -369,13 +369,13 @@ git push
 
 > **추천**: 옵션 A 로 일단 통째 이전 + 일부 페이지 PoC 후, 점진적으로 토큰화 PR 누적.
 
-✅ **검증**: `https://musinsa-design-system.pages.dev/core/components/button/button.css` 접속 시 CSS 다운로드.
+✅ **검증**: `https://pbo-design-system.pages.dev/core/components/button/button.css` 접속 시 CSS 다운로드.
 
 ---
 
 ## 14. Step 13 — scm-hub 의 한 페이지 CDN PoC [👤]
 
-SCM-HUB-PD 의 한 페이지 (예: `sku-list.html`) 의 `<link>` / `<script>` 를 musinsa-design-system CDN 으로 교체.
+SCM-HUB-PD 의 한 페이지 (예: `sku-list.html`) 의 `<link>` / `<script>` 를 pbo-design-system CDN 으로 교체.
 
 Before:
 ```html
@@ -384,8 +384,8 @@ Before:
 
 After:
 ```html
-<link rel="stylesheet" href="https://musinsa-design-system.pages.dev/layers/layer/tokens.css" />
-<link rel="stylesheet" href="https://musinsa-design-system.pages.dev/core/components/button/button.css" />
+<link rel="stylesheet" href="https://pbo-design-system.pages.dev/layers/layer/tokens.css" />
+<link rel="stylesheet" href="https://pbo-design-system.pages.dev/core/components/button/button.css" />
 ```
 
 ✅ **검증**: 페이지가 외부 CDN 의 CSS 로 정상 렌더. 시각 회귀 없음.
@@ -448,8 +448,8 @@ After:
 
 너가 할 일만 시간 순:
 
-- [ ] 1. SCM-HUB-PD 의 `claude/musinsa-platform-skeleton` branch 에서 musinsa-platform 폴더 추출
-- [ ] 2. GitHub 에 빈 `musinsa-platform` repo 생성
+- [ ] 1. SCM-HUB-PD 의 `claude/pbo-design-skeleton` branch 에서 pbo-design 폴더 추출
+- [ ] 2. GitHub 에 빈 `pbo-design` repo 생성
 - [ ] 3. 추출한 폴더 → git init + push
 - [ ] 4. Supabase project 생성
 - [ ] 5. `0001_initial.sql` + `0002_seed_domains.sql` 실행
@@ -466,7 +466,7 @@ After:
 
 ## 부록 D — 자주 묻는 질문
 
-**Q. SCM-HUB-PD 와 musinsa-platform 의 사용자 데이터는 분리되나?**
+**Q. SCM-HUB-PD 와 pbo-design 의 사용자 데이터는 분리되나?**
 A. (b) 선택했으므로 별 repo + 별 Supabase project = 별 user pool. 미래에 통합하려면 user export/import 또는 SSO 도입.
 
 **Q. SCM-HUB-PD 의 현 Conductor (구 VOC) 데이터 (localStorage) 는 어떻게?**

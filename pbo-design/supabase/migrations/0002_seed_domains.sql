@@ -1,5 +1,5 @@
 -- ============================================================
--- musinsa-platform — seed 4 도메인
+-- pbo-design — seed 4 도메인
 -- ============================================================
 
 insert into public.domains (id, name, layer, status) values

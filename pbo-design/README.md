@@ -1,9 +1,9 @@
-# musinsa-platform — 4 도메인 디자인 시스템 + 데모 플랫폼
+# pbo-design — 4 도메인 디자인 시스템 + 데모 플랫폼
 
 Musinsa 사내 시스템 4 도메인의 데모/디자인 시스템 + 공통 인프라.
 
 ```
-musinsa-platform/
+pbo-design/
 ├── home/                            ← 전체 도메인 관리 (인덱스 + auth)
 ├── design-system/                  ← 공통 디자인 시스템 (별도 CDN 배포)
 │   ├── core/                       ← 마크업 + JS 행동 (모든 layer 공유)

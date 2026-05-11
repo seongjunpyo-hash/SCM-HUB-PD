@@ -1,4 +1,4 @@
-# musinsa-platform — 플랫폼 전역 아키텍처
+# pbo-design — 플랫폼 전역 아키텍처
 
 이 문서는 platform 전역 규칙. 도메인별 규칙은 `domains/<name>/CLAUDE.md` 참고.
 

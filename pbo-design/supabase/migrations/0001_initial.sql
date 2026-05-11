@@ -1,5 +1,5 @@
 -- ============================================================
--- musinsa-platform — initial schema (5 tables + RLS)
+-- pbo-design — initial schema (5 tables + RLS)
 -- ============================================================
 -- Apply via Supabase Studio SQL Editor OR `supabase db push`.
 
