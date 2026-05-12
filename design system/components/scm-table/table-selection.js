@@ -77,13 +77,17 @@
 
       e.preventDefault();
       var cur = cb.getAttribute('aria-checked');
-      var next = (cur === 'true') ? 'false' : 'true';
-
+      var next;
       if (cb.id === cbAllId) {
-        // 헤더 → 모든 row cb 토글
+        // 헤더 tri-state — Excel/Material 표준 패턴
+        //   unchecked → checked (all)
+        //   mixed     → unchecked (none)  ← 부분 선택 상태에서 누르면 "해제" 가 자연스러움
+        //   checked   → unchecked
+        next = (cur === 'true' || cur === 'mixed') ? 'false' : 'true';
         cb.setAttribute('aria-checked', next);
         getRowCbs().forEach(function (rcb) { rcb.setAttribute('aria-checked', next); });
       } else {
+        next = (cur === 'true') ? 'false' : 'true';
         // 본문 cb (td.cb-col 안) → 토글 + 헤더 mixed/all/none 동기 (refresh 가 처리)
         cb.setAttribute('aria-checked', next);
       }

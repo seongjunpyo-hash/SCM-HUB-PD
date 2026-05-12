@@ -185,30 +185,51 @@
     /* drawer 안 mp-table — base mp-table 스타일 활용. drawer 컨텍스트 보정만:
        - table-host 는 drawer body-wrap 안에서 flex 1 로 남은 공간 채움
        - mp-table-scroll 이 자체 가로/세로 스크롤 담당
-       - data-scm-no-sticky 로 thead clone 건너뛰고 원본 thead 에 sticky top:0 적용
+       - data-scm-skip-init 로 SCMTable 측정/이동 회피 → 원본 thead 그대로
        - frozen offset (--frozen-l1/2) drawer 로컬 override — No 48 / 입고번호 그 뒤 (left: 48)
        - 메인 페이지의 document-level --frozen-lN 과 충돌 없음 (drawer 스코프 안에서만 적용) */
     #pd-drawer .pd-drawer__table-host {
       flex: 1 1 auto; min-height: 0;
       display: flex; flex-direction: column;
       overflow: hidden;
+      /* frozen 누적 left — colgroup width 48 / 200 / 100 기준 (No / 입고번호 / 입고위치) */
       --frozen-l1: 0;
       --frozen-l2: 48px;
+      --frozen-l3: 248px;
     }
     #pd-drawer .pd-drawer__table-host .mp-table-scroll {
       flex: 1 1 auto; min-height: 0;
       overflow: auto;
+      /* base CSS 의 .mp-table-scroll > .mp-table > thead::before (1.5px 검정라인) 가
+         아래에서 비활성화되므로, 컨테이너 상단에 동일 두께/색 라인을 직접 그림. */
+      border-top: 1.5px solid #000;
     }
-    /* drawer 내부 sticky thead — mp-table-scroll 의 세로 스크롤 컨테이너 기준 top:0 */
+    /* colgroup 폭 강제 적용 */
+    #pd-drawer .pd-drawer__table-host .mp-table {
+      table-layout: fixed;
+    }
+    /* ⚠️ base scm-table.css 의 `.mp-table-scroll > .mp-table > thead { position: relative }` 가
+       thead 를 sticky 의 containing block 으로 만들어 자식 th 의 position:sticky 가
+       사실상 무효화되는 회귀를 차단. drawer 스코프 안에서만 thead 를 static 으로 되돌림. */
+    #pd-drawer .pd-drawer__table-host .mp-table-scroll > .mp-table > thead {
+      position: static;
+    }
+    /* base 의 thead::before 검정 라인 (position: absolute) 도 thead 가 static 이면
+       containing block 이 viewport 로 escape 하므로 무력화. 위 mp-table-scroll border-top 로 대체. */
+    #pd-drawer .pd-drawer__table-host .mp-table-scroll > .mp-table > thead::before {
+      display: none;
+    }
+    /* drawer 내부 sticky thead — mp-table-scroll 의 세로 스크롤 컨테이너 안에서 상단 고정. */
     #pd-drawer .pd-drawer__table-host .mp-table-scroll thead th {
       position: sticky;
       top: 0;
       z-index: 4;
       background: #fff;
     }
-    /* sticky x+y 교차 (No / 입고번호 의 thead) — z-index 가장 위 */
+    /* sticky x+y 교차 (No / 입고번호 / 입고위치 의 thead) — z-index 가장 위 */
     #pd-drawer .pd-drawer__table-host .mp-table-scroll thead th.col-frozen-1,
-    #pd-drawer .pd-drawer__table-host .mp-table-scroll thead th.col-frozen-2 {
+    #pd-drawer .pd-drawer__table-host .mp-table-scroll thead th.col-frozen-2,
+    #pd-drawer .pd-drawer__table-host .mp-table-scroll thead th.col-frozen-3 {
       z-index: 6;
     }
     #pd-drawer .pd-drawer__footer {
@@ -313,7 +334,8 @@
       /* figma 310 유지 */
       width: 310px; flex: 0 0 310px;
       border-left: 1px solid #EBEBEB;
-      display: flex; flex-direction: column; gap: 8px;
+      /* 성공/실패 두 덩어리 사이 간격 — 8 → 20 으로 확장 (덩어리 간 시각 분리 강화) */
+      display: flex; flex-direction: column; gap: 20px;
     }
     .iss-notify-cell--writer {
       flex: 1 1 auto; min-width: 0;
@@ -321,16 +343,17 @@
       white-space: nowrap;
     }
     /* 알림 아이템 — 한 행 안에 1개 또는 2개 (성공+실패 등) */
-    .iss-notify-item { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .iss-notify-item { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
     .iss-notify-item__title {
       color: #1A1A1A; font-size: 15px; font-weight: 600; line-height: 20.4px;
     }
     .iss-notify-item__title .iss-notify-success { color: #1A1A1A; }
     .iss-notify-item__title .iss-notify-fail    { color: #FF4D4F; }
-    /* inline-flex 대신 flex — 부모 flex-column 안에서는 일반 flex 가 안전 */
+    /* ref 텍스트와 확인하기 cta 를 세로 stack — cta 가 ref 다음 줄로 떨어지도록.
+       이전: row (수평) → ref 옆에 inline. 변경: column → ref 아래 cta. */
     .iss-notify-item__row {
-      display: flex; align-items: center; gap: 8px;
-      flex-wrap: wrap;
+      display: flex; flex-direction: column; align-items: flex-start;
+      gap: 2px;
     }
     .iss-notify-item__ref {
       color: #1A1A1A; font-size: 15px; font-weight: 400; line-height: 20.4px;
@@ -342,19 +365,21 @@
     .iss-notify-item__cta {
       display: inline-flex; align-items: center; justify-content: center;
       gap: 2px;
-      height: 36px; min-height: 36px; max-height: 36px;
-      padding: 8px 0;
+      /* height 36 → 20 으로 축소 — row 높이가 ref 텍스트 line-height(20.4) 와 맞아
+         title ↔ row 시각 간격이 cta 자체 padding 때문에 부풀던 회귀 차단. */
+      height: 20px; min-height: 20px; max-height: 20px;
+      padding: 0;
       background: transparent;
       border: 0; border-radius: 4px;
-      color: #000; font-size: 14px; font-weight: 500; line-height: 19.6px;
+      color: #245EFF; font-size: 14px; font-weight: 500; line-height: 19.6px;
       font-family: inherit;
       cursor: pointer;
       white-space: nowrap;
     }
-    .iss-notify-item__cta:hover { background: rgba(0, 0, 0, 0.04); }
+    .iss-notify-item__cta:hover { background: rgba(36, 94, 255, 0.06); }
     .iss-notify-item__cta svg {
       width: 16px; height: 16px; flex-shrink: 0;
-      color: #000;
+      color: #245EFF;
     }
     .iss-notify-modal__footer {
       padding: 24px 24px 16px;
@@ -387,11 +412,16 @@
     }
     .iss-cancel-modal[hidden] { display: none; }
     .iss-cancel-modal__title {
-      padding: 24px 24px 12px;
+      /* margin: 0 — h3 의 user-agent 기본 margin (1em top/bottom) 이 padding 위에 더해져
+         타이틀↔설명 간격이 부풀던 회귀 차단. padding-bottom 도 12 → 4 로 축소. */
+      margin: 0;
+      padding: 24px 24px 4px;
       color: rgba(0,0,0,0.88);
       font-size: 18px; font-weight: 600; line-height: 24.48px;
     }
     .iss-cancel-modal__desc {
+      /* margin: 0 — p 의 ua 기본 margin 차단 */
+      margin: 0;
       padding: 0 24px 16px;
       color: #1A1A1A;
       font-size: 15px; font-weight: 400; line-height: 20.4px;
@@ -561,7 +591,7 @@
           </div>
         </div>
         <div class="scm-stats-bar__mini-actions">
-          <button class="scm-mini-action" type="button" id="iss-cancel-btn" disabled>입고 취소</button>
+          <button class="scm-mini-action scm-mini-action--primary" type="button" id="iss-cancel-btn" disabled>입고 취소</button>
         </div>
       </div>
       <div class="scm-stats-bar__right">
@@ -708,11 +738,15 @@
         </div>
       </div>
       <!-- 메인 목록 (mp-table) 구조로 교체. frozen: No / 입고번호 / 입고위치 (3개).
-           SKU명 360px / 명시 colgroup 으로 컬럼 폭 보장. data-scm-no-sticky 로 page body 컨텍스트
-           오인 sticky thead 차단 — 원본 thead 가 mp-table-scroll 안에서 자체 sticky. -->
+           data-scm-skip-init 로 SCMTable.init 의 측정/clone/이벤트 부착을 통째로 차단.
+           이유: scm-table.js 의 setupStickyThead 가 origTable 의 thead 를 MOVE(이동) 해서
+           cloneTable 로 옮기는데, 그 후 rebuild 가 stickyInner.innerHTML='' 로 cloneTable
+           을 통째로 제거하면 thead 가 어디에도 없어지는 race 버그가 있음.
+           → drawer 테이블은 자체 thead + 자체 sticky CSS (아래) 로 자가 처리.
+           colgroup 으로 폭 명시 (SKU명 메인과 동일 320). -->
       <div class="mp-table-host pd-drawer__table-host">
         <div class="mp-table-scroll">
-          <table class="mp-table" id="pd-drawer-mp-table" data-scm-no-sticky="true">
+          <table class="mp-table" id="pd-drawer-mp-table" data-scm-skip-init="true">
             <colgroup>
               <col style="width:48px"/>     <!-- No -->
               <col style="width:200px"/>    <!-- 입고번호 -->
@@ -722,7 +756,7 @@
               <col style="width:80px"/>     <!-- 옵션 -->
               <col style="width:88px"/>     <!-- SKU번호 -->
               <col style="width:180px"/>    <!-- 바코드 -->
-              <col style="width:360px"/>    <!-- SKU명 -->
+              <col style="width:320px"/>    <!-- SKU명 -->
               <col style="width:88px"/>     <!-- 스타일넘버 -->
               <col style="width:120px"/>    <!-- 입고예정총수량 -->
               <col style="width:120px"/>    <!-- 입고확정총수량 -->
@@ -730,7 +764,6 @@
               <col style="width:128px"/>    <!-- 센터도착일시 -->
               <col style="width:128px"/>    <!-- 입고확정일 -->
               <col style="width:128px"/>    <!-- 신청일 -->
-              <col style="width:100%"/>     <!-- spacer -->
             </colgroup>
             <thead>
               <tr>
@@ -1096,6 +1129,23 @@
 
   document.getElementById('data-tbody').innerHTML = rowsToHtml(ROWS);
 
+  // 체크박스 토글 wiring — SCM.tableSelection.init 가 document click delegation 으로
+  //   1) 본문 cb 클릭 → aria-checked 토글
+  //   2) 헤더 cb-all 클릭 → 본문 일괄 토글 + mixed/all/none 동기
+  //   3) action-bar hidden / count 자동 갱신
+  // refreshActionBar (아래) 는 cancelBtn disabled 상태까지 함께 처리하기 위해 MutationObserver
+  // 로 aria-checked 변화를 별도 감지 — tableSelection 의 동작과 중복되지만 같은 상태를 쓰므로
+  // 충돌 없음.
+  if (window.SCM && SCM.tableSelection) {
+    SCM.tableSelection.init({
+      tableEl: document.getElementById('mp-table'),
+      cbAllId: 'mp-cb-all',
+      rowCbSelector: 'td.cb-col .scm-checkbox',
+      actionBarEl: document.getElementById('table-action-bar'),
+      countEl: document.getElementById('tab-count'),
+    });
+  }
+
   // stats-bar "전체 N" 을 실제 데이터 길이로 동기화
   (function syncTotalCount() {
     const numEl = document.querySelector('.scm-stats-bar__counts .scm-stat--all .scm-stat__num');
@@ -1114,50 +1164,38 @@
   }
 
   // 안전망: sticky stack 변수 (--scm-sticky-filter / --scm-sticky-stats) 동기화.
-  // 원래 scm-shell.js 의 ResizeObserver 가 담당하는데, file:// 환경에서 절대경로 `/scm-shell.js`
-  // 가 로딩 실패하면 변수가 0 으로 남아 thead 가 filter-bar 뒤로 숨음. 인라인 fallback 으로 보장.
+  // file:// 환경에서 scm-shell.js 절대경로 로딩 실패 대비 인라인 fallback.
   (function syncStickyVarsFallback() {
-    function update() {
-      const root = document.documentElement;
-      const fb = document.getElementById('filter-bar');
-      const sb = document.querySelector('.scm-stats-bar');
-      if (fb) root.style.setProperty('--scm-sticky-filter', fb.offsetHeight + 'px');
-      if (sb) root.style.setProperty('--scm-sticky-stats',  sb.offsetHeight + 'px');
-    }
-    update();
-    if (typeof ResizeObserver !== 'undefined') {
-      const ro = new ResizeObserver(update);
-      document.querySelectorAll('#filter-bar, .scm-stats-bar').forEach(el => ro.observe(el));
-    }
-    window.addEventListener('resize', update);
-    // 추가 안전망 — 페이지 layout 완료 후 한 번 더 (font load 등으로 height 변경 가능)
-    requestAnimationFrame(update);
-    setTimeout(update, 100);
-    setTimeout(update, 500);
+    const root = document.documentElement;
+    const fb = document.getElementById('filter-bar');
+    const sb = document.querySelector('.scm-stats-bar');
+    if (fb) root.style.setProperty('--scm-sticky-filter', fb.offsetHeight + 'px');
+    if (sb) root.style.setProperty('--scm-sticky-stats',  sb.offsetHeight + 'px');
   })();
 
   // ----- SCM Table interactions -----
-  // 첫 init 시 layout 측정 실패 (bodyScroll.width=0 등) 가능 — RAF + setTimeout 후 재시도로 sticky thead 보장.
-  if (window.SCMTable) {
-    try { window.SCMTable.init({ root: document, frozenCount: 6 }); } catch (e) { console.warn('SCMTable init failed:', e); }
-    // 재시도 — sticky thead clone 이 비어있으면 강제 rebuild
-    const retrySticky = () => {
-      try {
-        const tbl = document.querySelector('.mp-table');
-        const stickyClone = document.querySelector('.mp-thead-sticky .mp-thead-scroll thead');
-        if (tbl && !stickyClone) {
-          if (window.SCMTable.rebuild) window.SCMTable.rebuild(tbl, { frozenCount: 6 });
-          else window.SCMTable.init({ root: document, frozenCount: 6 });
-        }
-      } catch (e) {}
-    };
-    requestAnimationFrame(retrySticky);
-    setTimeout(retrySticky, 100);
-    setTimeout(retrySticky, 500);
+  // 폰트 (Pretendard) 로드 후 init 호출 — 시스템 폰트 기반 narrow widths 측정 회귀 차단.
+  //   ❌ 이전 회귀: init 직후 fonts.ready 에서 rebuild 호출하면 SCMTable.rebuild 의
+  //      stickyInner.innerHTML='' 가 setupStickyThead 가 이미 이동시킨 thead 를 통째로
+  //      제거하고, 뒤이은 initOneTable 의 setupStickyThead 는 origTable.thead === null
+  //      을 만나 early return → thead 가 DOM 어디에도 없게 되는 race 버그.
+  //   ✅ 해결: rebuild 경로 자체를 쓰지 않고, 폰트 로드 후에 init 1회만 호출. 초기 측정
+  //      시점부터 Pretendard 가 적용된 셀 폭을 잰다.
+  //   tableSort / columnMoreMenu / columnFilterPopover 는 init 결과 (sticky thead clone)
+  //   기반으로 동작하므로 함께 deferred — init 끝난 다음에 mount.
+  function _scmTableBoot() {
+    if (window.SCMTable) {
+      try { window.SCMTable.init({ root: document, frozenCount: 6 }); } catch (e) { console.warn('SCMTable init failed:', e); }
+    }
+    if (window.SCM && SCM.tableSort)           SCM.tableSort.mount({ tableSelector: '.mp-table-scroll .mp-table' });
+    if (window.SCM && SCM.columnMoreMenu)      SCM.columnMoreMenu.mount({ tableSelector: '.mp-table-scroll .mp-table' });
+    if (window.SCM && SCM.columnFilterPopover) SCM.columnFilterPopover.mount({ tableSelector: '.mp-table-scroll .mp-table' });
   }
-  if (window.SCM && SCM.tableSort)           SCM.tableSort.mount({ tableSelector: '.mp-table-scroll .mp-table' });
-  if (window.SCM && SCM.columnMoreMenu)      SCM.columnMoreMenu.mount({ tableSelector: '.mp-table-scroll .mp-table' });
-  if (window.SCM && SCM.columnFilterPopover) SCM.columnFilterPopover.mount({ tableSelector: '.mp-table-scroll .mp-table' });
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(_scmTableBoot);
+  } else {
+    _scmTableBoot();
+  }
 
   if (!window.SCM) return;
 
