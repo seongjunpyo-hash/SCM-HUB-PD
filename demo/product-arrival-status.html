@@ -104,6 +104,15 @@
     .scm-side-drawer svg,
     .iss-notify-btn svg { stroke-width: 1.4; }
 
+    /* page-head 타이틀 좌측 prefix 아이콘 — 24x24, 텍스트 baseline 과 중앙 정렬 */
+    .scm-page-head__title { display: inline-flex; align-items: center; gap: 8px; }
+    .iss-page-title-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; flex-shrink: 0;
+      color: #1A1A1A;
+    }
+    .iss-page-title-icon svg { width: 24px; height: 24px; }
+
     /* 신청번호 link — code-link 와 동일 underline 패턴 */
     .mp-table .iss-reqno-link {
       color: var(--functional-fg, #000);
@@ -486,9 +495,21 @@
   <nav class="scm-lnb" data-active="product-arrival-status" aria-label="주메뉴"></nav>
 
   <main>
-    <!-- Page head — title + 우측 알림함 버튼 -->
+    <!-- Page head — title + 우측 알림함 버튼.
+         타이틀 좌측 prefix 아이콘 — LNB 의 "발주 관리" L1 그룹과 동일한 클립보드+체크 SVG
+         (lnb.js CANONICAL_LNB_HTML 의 발주관리 L1 icon 와 동일 좌표). 사용자 요청으로
+         페이지 헤더에도 동일 아이콘 prefix. -->
     <div class="scm-page-head scm-page-head--list">
-      <h1 class="scm-page-head__title">위탁 상품 입고 현황</h1>
+      <h1 class="scm-page-head__title">
+        <span class="iss-page-title-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <rect x="5" y="5" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.4" fill="none"/>
+            <rect x="9" y="3" width="6" height="3" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
+            <path d="M9 13l2.2 2.2L15 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+        </span>
+        위탁 상품 입고 현황
+      </h1>
       <div class="scm-page-head__actions">
         <button class="iss-notify-btn" type="button" id="notify-btn" aria-label="알림함 - 진행중 2건">
           <svg class="iss-notify-btn__icon" viewBox="0 0 16 16" aria-hidden="true">
@@ -695,6 +716,11 @@
       <div class="scm-filter-bar pd-drawer__filter-bar" id="pd-filter-bar">
         <div class="scm-filter-overflow">
           <div class="scm-filter-overflow__track">
+            <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="inNo">
+              <span class="scm-filter-select__label">입고번호</span>
+              <span class="scm-filter-select__value">입고번호</span>
+              <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+            </button>
             <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="brand">
               <span class="scm-filter-select__label">브랜드</span>
               <span class="scm-filter-select__value">브랜드</span>
@@ -874,6 +900,23 @@
 <script>
 (function () {
   'use strict';
+
+  // LNB 활성 메뉴 강제 적용 — autoMount 가 data-active 를 읽어 setActive 를 호출하지만,
+  // file:// 환경 / VOC localStorage 간섭 등으로 누락되는 회귀가 있어 페이지에서 직접 한 번 더
+  // setActive 를 호출. 이미 적용돼 있으면 idempotent (clearActive → 다시 add).
+  function _forceLnbActive() {
+    if (!(window.SCM && SCM.lnb && SCM.lnb.setActive)) return;
+    var navEl = document.querySelector('.scm-lnb');
+    if (navEl) SCM.lnb.setActive(navEl, 'product-arrival-status');
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _forceLnbActive, { once: true });
+  } else {
+    _forceLnbActive();
+  }
+  // 안전망: autoMount 가 DOMContentLoaded 이후 별도 microtask 에 인젝션할 수도 있어
+  // requestAnimationFrame 직후 한 번 더 호출.
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(_forceLnbActive);
 
   // ----- Demo data — 위탁 상품 입고 현황 (20건 중 8건 데모) -----
   const ROWS = [
@@ -1322,6 +1365,7 @@
         if (!codeMatch(active.sku,         r.sku))     return false;
         if (!codeMatch(active.barcode,     r.barcode)) return false;
         if (!codeMatch(active.styleNumber, r.styleNo)) return false;
+        if (!codeMatch(active.inNo,        r.inNo))    return false;
         return true;
       });
       renderDrawerRows(filtered);
@@ -1354,6 +1398,11 @@
       _drawerFilterInstance = SCM.filterPopoverModes.init({
         rootEl: document.getElementById('pd-filter-popover-root'),
         filterBarEl: document.getElementById('pd-filter-bar'),
+        // 글로벌 REGISTRY 에 inNo (입고번호) 가 없어 페이지 고유 등록 — main 페이지의
+        // EXTRA_REGISTRY 와 동일 spec (codeinput, 줄바꿈 입력).
+        extraRegistry: {
+          inNo: { mode: 'codeinput' },
+        },
         onSearch: () => {
           const n = applyDrawerFilter();
           if (SCM.toast) SCM.toast.show({ variant: 'info', title: '검색 완료', desc: `${n}건 조회되었습니다.` });

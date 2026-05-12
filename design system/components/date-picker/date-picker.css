@@ -1,0 +1,215 @@
+/* ============================================================
+ * scm-date-picker — 디자인 시스템 데이터피커
+ * ------------------------------------------------------------
+ * Figma spec (480px wide: left preset 140px + right calendar)
+ *
+ * Layout
+ *   .scm-date-picker (480px, flex row)
+ *     .scm-date-picker__presets (140px, border-right)
+ *       .scm-date-picker__preset (오늘 / 최근 7일 / 최근 1개월 / 최근 3개월 / 최근 6개월)
+ *     .scm-date-picker__cal (flex 1, padding 10/16, gap 12)
+ *       .scm-date-picker__head (year + month + chev + prev/next nav)
+ *       .scm-date-picker__grid (day-of-week + 6 weeks)
+ *
+ * States (day cell)
+ *   .is-other        — 이전/다음 달 (gray, 클릭 시 해당 월로 이동)
+ *   .is-today        — 오늘 (#245EFF outline + color)
+ *   .is-selected     — range 의 양 끝점 (black bg, white text)
+ *   .is-in-range     — range 의 중간 (#F5F5F5 bg)
+ *   .is-range-start  — selected 시작점 (좌측 둥근 모서리)
+ *   .is-range-end    — selected 끝점 (우측 둥근 모서리)
+ *   .is-disabled     — 비활성
+ * ============================================================ */
+
+.scm-date-picker {
+  width: 480px;
+  display: flex; align-items: stretch;
+  background: #fff;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-family: inherit;
+  overflow: hidden;
+}
+
+/* ===== Left preset panel ===== */
+.scm-date-picker__presets {
+  width: 140px; flex-shrink: 0;
+  padding: 2px 4px;
+  border-right: 1px solid rgba(138, 138, 138, 0.10);
+  display: flex; flex-direction: column;
+  gap: 2px;
+  box-sizing: border-box;
+}
+.scm-date-picker__presets-inner {
+  display: flex; flex-direction: column;
+  gap: 2px;
+  padding: 6px 0;
+}
+.scm-date-picker__preset {
+  padding: 10px 6px;
+  border-radius: 2px;
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  font-size: 15px; font-weight: 400; line-height: 20.4px;
+  color: #000;
+  text-align: left;
+  cursor: pointer;
+  display: flex; align-items: center;
+}
+.scm-date-picker__preset:hover { background: #FAFAFA; }
+.scm-date-picker__preset.is-selected {
+  background: #F5F5F5;
+}
+
+/* ===== Right calendar ===== */
+.scm-date-picker__cal {
+  flex: 1 1 auto; min-width: 0;
+  padding: 10px 16px;
+  display: flex; flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+/* Head — year/month + nav buttons */
+.scm-date-picker__head {
+  display: flex; align-items: center;
+  gap: 0;
+}
+.scm-date-picker__title-group {
+  flex: 1 1 auto;
+  display: flex; align-items: center;
+}
+.scm-date-picker__year,
+.scm-date-picker__month {
+  padding: 2px 0;
+  font-size: 18px; font-weight: 600; line-height: 24.48px; color: #000;
+}
+.scm-date-picker__month-btn {
+  display: inline-flex; align-items: center; gap: 0;
+  background: transparent; border: 0; padding: 2px 0;
+  font-family: inherit; cursor: pointer;
+  font-size: 18px; font-weight: 600; line-height: 24.48px; color: #000;
+}
+.scm-date-picker__month-btn .scm-date-picker__chev {
+  width: 16px; height: 16px; flex-shrink: 0;
+  margin-left: 0;
+}
+.scm-date-picker__nav-btn {
+  width: 36px; height: 36px; padding: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; border: 0; border-radius: 4px;
+  cursor: pointer; color: #000;
+  font-family: inherit;
+}
+.scm-date-picker__nav-btn:hover { background: rgba(0,0,0,0.04); }
+.scm-date-picker__nav-btn:disabled,
+.scm-date-picker__nav-btn[disabled] {
+  color: rgba(0,0,0,0.20); cursor: not-allowed;
+  background: transparent;
+}
+.scm-date-picker__nav-btn svg { width: 20px; height: 20px; }
+
+/* Grid — day-of-week row + 6 weeks */
+.scm-date-picker__grid {
+  display: flex; flex-direction: column;
+  gap: 8px;
+}
+
+/* day-of-week row */
+.scm-date-picker__dow-row {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.scm-date-picker__dow {
+  width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 400; line-height: 19.6px;
+  color: #8A8A8A;
+}
+
+/* day row — 7 cells × 36px, equally spaced (justify-content: space-between) */
+.scm-date-picker__week {
+  display: flex; align-items: center;
+  /* sibling 사이 gap 은 in-range bg 가 채울 수 있도록 0 으로 두고, day cell 자체로 36px 잡음 */
+  gap: 0;
+}
+.scm-date-picker__day-wrap {
+  /* 각 day cell wrapper — in-range 시 배경이 cell 사이까지 이어지도록 36px 셀 + 사이 spacer */
+  width: 36px; height: 36px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.scm-date-picker__day-sep {
+  /* day cell 사이 공간 — in-range 일 때 #F5F5F5 채움 */
+  flex: 1 1 0; height: 36px;
+  background: transparent;
+}
+.scm-date-picker__day-sep.is-in-range {
+  background: #F5F5F5;
+}
+
+.scm-date-picker__day {
+  width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 500; line-height: 20.4px;
+  color: #000;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  box-sizing: border-box;
+  cursor: pointer;
+  user-select: none;
+  font-family: inherit;
+  padding: 0;
+}
+.scm-date-picker__day:hover:not(.is-disabled):not(.is-selected) {
+  background: #FAFAFA;
+}
+
+/* 이전/다음 달 — disabled gray */
+.scm-date-picker__day.is-other { color: rgba(0,0,0,0.20); }
+
+/* 오늘 — outline 1px #245EFF + color #245EFF */
+.scm-date-picker__day.is-today {
+  border-color: #245EFF;
+  color: #245EFF;
+}
+
+/* range 의 중간 셀 — 옅은 회색 (figma: #F5F5F5) — cell 자체에 적용 (모서리 radius 0) */
+.scm-date-picker__day.is-in-range {
+  background: #F5F5F5;
+  border-radius: 0;
+  color: #000;
+}
+
+/* range 의 양 끝점 (selected) — 검정 bg + 흰 text */
+.scm-date-picker__day.is-selected {
+  background: #000;
+  border-color: #000;
+  color: #fff;
+}
+.scm-date-picker__day.is-selected.is-today {
+  /* 오늘 셀이 selected 일 때는 검정 우선 (figma 에 명시 X — 일반 selected 와 동일 처리) */
+  color: #fff;
+}
+
+/* range start — 좌측만 둥글게 */
+.scm-date-picker__day.is-range-start.is-selected {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+/* range end — 우측만 둥글게 */
+.scm-date-picker__day.is-range-end.is-selected {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+/* 단일 일자 선택 (start==end) — 양쪽 모두 둥글게 (기본 radius 유지) */
+.scm-date-picker__day.is-range-start.is-range-end.is-selected {
+  border-radius: 4px;
+}
+
+.scm-date-picker__day.is-disabled {
+  color: rgba(0,0,0,0.20);
+  cursor: not-allowed;
+  background: transparent !important;
+  border-color: transparent !important;
+}
