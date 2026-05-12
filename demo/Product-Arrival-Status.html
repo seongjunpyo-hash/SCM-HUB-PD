@@ -30,6 +30,7 @@
   <link rel="stylesheet" href="../design%20system/components/filter-bar/filter-bar.css" />
   <link rel="stylesheet" href="../design%20system/components/filter-drawer/filter-drawer.css" />
   <link rel="stylesheet" href="../design%20system/components/filter-popover/filter-popover.css" />
+  <link rel="stylesheet" href="../design%20system/components/side-drawer/side-drawer.css" />
   <link rel="stylesheet" href="../design%20system/components/stat/stat.css" />
   <link rel="stylesheet" href="../design%20system/components/stats-bar/stats-bar.css" />
   <link rel="stylesheet" href="../design%20system/components/page-head/page-head.css" />
@@ -54,6 +55,75 @@
 
     /* 입고유형 태그 — yellow (매장 직납) — tag.css 미정의 컬러 보강 */
     .scm-tag--yellow { background: #FFF4E5; }
+
+    /* 신청번호 link — code-link 와 동일 underline 패턴 */
+    .mp-table .iss-reqno-link {
+      color: var(--functional-fg, #000);
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    .mp-table .iss-reqno-link:hover { color: var(--web-fg-accent, #245EFF); }
+
+    /* ========== 상품 상세 drawer (scm-side-drawer 기반) ========== */
+    #pd-drawer { width: min(1400px, 92vw); }
+    .pd-drawer__title {
+      padding: 24px 24px 4px;
+      color: var(--functional-fg, #000);
+      font-size: 18px; font-weight: 600; line-height: 24.48px;
+    }
+    .pd-drawer__body-wrap { padding: 20px 24px; }
+    .pd-drawer__stats {
+      height: 60px; padding: 12px 0;
+      display: flex; align-items: center; gap: 16px;
+    }
+    .pd-drawer__stat { display: flex; align-items: center; gap: 4px; }
+    .pd-drawer__stat-label { font-size: 15px; font-weight: 500; color: #000; }
+    .pd-drawer__stat-num   { font-size: 15px; font-weight: 600; color: #000; }
+    .pd-drawer__table-wrap { overflow-x: auto; }
+    .pd-drawer table {
+      width: 100%; border-collapse: collapse;
+      border-top: 2px solid #000;
+      font-family: inherit;
+    }
+    .pd-drawer thead th {
+      padding: 16px; text-align: left;
+      font-size: 15px; font-weight: 500; color: #000;
+      background: var(--functional-bg-inset, #fff);
+      border-bottom: 1px solid #EBEBEB;
+      border-right: 1px solid #EBEBEB;
+      white-space: nowrap;
+    }
+    .pd-drawer thead th:last-child { border-right: 0; }
+    .pd-drawer tbody td {
+      padding: 16px; vertical-align: top;
+      font-size: 15px; font-weight: 400; color: rgba(0,0,0,0.88);
+      border-bottom: 1px solid #EBEBEB;
+      border-right: 1px solid #EBEBEB;
+      white-space: nowrap;
+    }
+    .pd-drawer tbody td:last-child { border-right: 0; }
+    .pd-drawer td.pd-num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+    .pd-drawer td.pd-num--accent { color: var(--web-fg-accent, #245EFF); }
+    .pd-drawer .pd-underline { text-decoration: underline; }
+    .pd-drawer .pd-name-cell {
+      display: inline-flex; gap: 12px; align-items: flex-start;
+      max-width: 360px;
+    }
+    .pd-drawer .pd-thumb {
+      width: 60px; height: 72px; flex: 0 0 60px;
+      border-radius: 4px; background: rgba(0,0,0,0.05);
+    }
+    .pd-drawer__footer {
+      padding: 24px; display: flex; justify-content: flex-end; gap: 8px;
+      border-top: 1px solid #EBEBEB;
+    }
+    .pd-drawer__close-btn {
+      min-width: 56px; height: 44px; padding: 12px;
+      background: #fff; border: 1px solid #E0E0E0; border-radius: 4px;
+      font-family: inherit; font-size: 15px; font-weight: 500; color: #000;
+      cursor: pointer;
+    }
+    .pd-drawer__close-btn:hover { background: var(--ld-bg-low, #FAFBFC); }
 
     /* 우측 상단 — 알림함 버튼 (page-head action 영역) */
     .iss-notify-btn {
@@ -129,9 +199,14 @@
             <span class="scm-filter-select__value">신청일 · 25.03.01~25.04.07</span>
             <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
           </button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="platform">
+            <span class="scm-filter-select__label">플랫폼</span>
+            <span class="scm-filter-select__value">플랫폼</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
           <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="brand">
-            <span class="scm-filter-select__label">브랜드 조회</span>
-            <span class="scm-filter-select__value">무신사 · 브랜드</span>
+            <span class="scm-filter-select__label">브랜드</span>
+            <span class="scm-filter-select__value">브랜드</span>
             <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
           </button>
           <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="inboundType">
@@ -280,6 +355,56 @@
 <!-- Filter popover root -->
 <div class="scm-filter-popover-root" id="filter-popover-root" role="dialog" aria-hidden="true"></div>
 
+<!-- ============== 상품 상세 drawer (신청번호 클릭 시) — scm-side-drawer 기반 ============== -->
+<div class="scm-side-drawer-backdrop" id="pd-backdrop" hidden></div>
+<aside class="scm-side-drawer" id="pd-drawer" hidden role="dialog" aria-label="상품 상세">
+  <header class="scm-side-drawer__head">
+    <span class="scm-side-drawer__head-meta" id="pd-reqno-label">A000008101</span>
+    <button class="scm-side-drawer__close" type="button" aria-label="닫기">
+      <svg viewBox="0 0 20 20"><use href="#ic-close"/></svg>
+    </button>
+  </header>
+  <div class="scm-side-drawer__body">
+    <div class="pd-drawer__title">상품 상세</div>
+    <div class="pd-drawer__body-wrap">
+      <div class="pd-drawer__stats">
+        <div class="pd-drawer__stat">
+          <span class="pd-drawer__stat-label">전체</span>
+          <span class="pd-drawer__stat-num" id="pd-cnt">0</span>
+        </div>
+      </div>
+      <div class="pd-drawer__table-wrap">
+        <table class="pd-drawer-table">
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>신청번호</th>
+              <th>입고번호</th>
+              <th>브랜드</th>
+              <th>UID</th>
+              <th>옵션</th>
+              <th>SKU번호</th>
+              <th>바코드</th>
+              <th>SKU명</th>
+              <th>스타일넘버</th>
+              <th>입고 예정 수량</th>
+              <th>입고 확정 수량</th>
+              <th>입고예정일</th>
+              <th>센터 도착일시</th>
+              <th>입고확정일</th>
+              <th>신청일</th>
+            </tr>
+          </thead>
+          <tbody id="pd-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <footer class="pd-drawer__footer">
+    <button class="pd-drawer__close-btn" type="button" id="pd-close-btn">닫기</button>
+  </footer>
+</aside>
+
 <!-- Sticky bottom action bar -->
 <div class="scm-table-action-bar" id="table-action-bar" hidden>
   <div class="scm-table-action-bar__inner">
@@ -320,6 +445,7 @@
 <script src="../design%20system/components/confirm-modal/confirm-modal.js"></script>
 <script src="../design%20system/components/filter-bar/filter-bar.js"></script>
 <script src="../design%20system/components/filter-drawer/filter-drawer.js"></script>
+<script src="../design%20system/components/side-drawer/side-drawer.js"></script>
 <script src="../design%20system/components/filter-popover/filter-popover.js"></script>
 <script src="../design%20system/components/filter-popover/filter-popover-modes.js"></script>
 <script src="../design%20system/components/scm-table/scm-table.js"></script>
@@ -391,7 +517,7 @@
       <tr>
         <td class="cb-col col-frozen-1"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="선택"></span></td>
         <td class="col-auto col-frozen-2">${idx + 1}</td>
-        <td class="col-auto col-frozen-3">${fmtText(r.reqNo)}</td>
+        <td class="col-auto col-frozen-3">${isEmpty(r.reqNo) ? NA : `<a class="iss-reqno-link" data-reqno="${escapeHtml(r.reqNo)}">${escapeHtml(r.reqNo)}</a>`}</td>
         <td class="col-auto col-frozen-4">${inboundChip}</td>
         <td class="col-auto">${statusChip}</td>
         <td class="col-auto">${fmtText(r.inNo)}</td>
@@ -457,6 +583,74 @@
   })();
 
   // ============================================================
+  // 상품 상세 drawer — 신청번호(.iss-reqno-link) 클릭 시 열림.
+  // scm-side-drawer 모듈로 mount → 본 페이지의 ROWS 에서 reqNo 매칭 행들을
+  // drawer 안 테이블로 render. 무탠 화면 (demo/index.html) 의 사이즈 개별
+  // 설정 drawer 와 동일 패턴.
+  // ============================================================
+  (function initProductDetailDrawer() {
+    const drawer  = document.getElementById('pd-drawer');
+    const backdrop = document.getElementById('pd-backdrop');
+    const tbody   = document.getElementById('pd-tbody');
+    const cntEl   = document.getElementById('pd-cnt');
+    const labelEl = document.getElementById('pd-reqno-label');
+    const closeBtn = document.getElementById('pd-close-btn');
+    if (!drawer || !SCM.sideDrawer) return;
+
+    const dr = SCM.sideDrawer.mount(drawer, { backdrop: backdrop });
+    if (closeBtn) closeBtn.addEventListener('click', () => dr.close());
+
+    function rowToDetailHtml(r, idx) {
+      const confirmedColor = r.confirmedQty ? 'pd-num--accent' : '';
+      return `
+        <tr>
+          <td>${idx + 1}</td>
+          <td>${escapeHtml(r.reqNo)}</td>
+          <td>${escapeHtml(r.inNo)}</td>
+          <td>${escapeHtml(r.brand)}${r.brandExtra ? ` 외 ${r.brandExtra}` : ''}</td>
+          <td><span class="pd-underline">${escapeHtml(r.uid)}</span></td>
+          <td>${escapeHtml(r.opt)}${r.optExtra ? ` 외 ${r.optExtra}` : ''}</td>
+          <td><span class="pd-underline">${escapeHtml(r.sku)}</span></td>
+          <td>${escapeHtml(r.barcode)}</td>
+          <td>
+            <span class="pd-name-cell">
+              <span class="pd-thumb"></span>
+              <span>${escapeHtml(r.name)}</span>
+            </span>
+          </td>
+          <td>${escapeHtml(r.styleNo)}</td>
+          <td class="pd-num">${fmtNum(r.expectedQty)}</td>
+          <td class="pd-num ${confirmedColor}">${fmtNum(r.confirmedQty)}</td>
+          <td>${escapeHtml(r.expectedDate)}</td>
+          <td>${escapeHtml(r.arrivalDate)}</td>
+          <td>${escapeHtml(r.confirmDate)}</td>
+          <td>${escapeHtml(r.requestDate)}</td>
+        </tr>
+      `;
+    }
+
+    function openForReqNo(reqNo) {
+      // 같은 신청번호 행이 여러 개일 수 있음 — 모두 모음.
+      // 데모에서는 보통 1건이라 일치 row 1건이지만, 같은 reqNo 있으면 함께 표시.
+      const matching = ROWS.filter(r => r.reqNo === reqNo);
+      const rows = matching.length ? matching : ROWS.slice(0, 1);
+      if (labelEl) labelEl.textContent = reqNo;
+      if (cntEl)   cntEl.textContent = String(rows.length);
+      tbody.innerHTML = rows.map(rowToDetailHtml).join('');
+      dr.open();
+    }
+
+    // tbody 의 신청번호 link 클릭 → drawer 열기
+    document.getElementById('data-tbody').addEventListener('click', (e) => {
+      const link = e.target.closest('.iss-reqno-link');
+      if (!link) return;
+      e.preventDefault();
+      const reqNo = link.dataset.reqno || link.textContent.trim();
+      if (reqNo) openForReqNo(reqNo);
+    });
+  })();
+
+  // ============================================================
   // Filter popover (REGISTRY + 페이지 고유 extraRegistry)
   //   - period / inboundType / reqNo / inNo 는 페이지 고유
   //   - status 는 글로벌 옵션을 페이지 옵션 (입고대기/센터도착/부분입고/입고완료) 으로 override
@@ -489,6 +683,7 @@
   };
 
   function matchesFilters(r, active) {
+    // platform (single) — 데이터에 platform 컬럼이 없어 데모용으로 무시 (UI 상 동작만)
     // brand (multi)
     if (active.brand && !active.brand.includes(r.brand)) return false;
     // inboundType (multi — 라벨이 row 와 1:1 일치)
