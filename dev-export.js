@@ -1403,7 +1403,11 @@ ${jsxBody}
     // resolve to the same page — append `index` to trailing-slash paths
     // so both forms collapse to `/demo/index`.
     if (n.endsWith('/')) n = n + 'index';
-    return n;
+    // 케이스 정규화 — 페이지 path 가 PascalCase 로 한 번이라도 등록됐다가
+    // lowercase 로 rename 되면, 둘이 다른 키로 인식돼 voc 가 저장한
+    // version/applied 데이터를 데모가 못 찾는 회귀가 생긴다. 정규화 키를
+    // 항상 lowercase 로 통일해 case 불일치 매칭 실패를 차단.
+    return n.toLowerCase();
   }
   function _verEntryFor(versions, path) {
     if (!versions || !path) return null;

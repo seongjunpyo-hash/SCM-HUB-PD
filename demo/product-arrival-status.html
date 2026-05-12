@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=1440" />
-  <title>SCM-Hub · 위탁 상품 입고현황</title>
+  <title>SCM-Hub · 위탁 상품 입고 현황</title>
   <script src="/auth-gate.js"></script>
   <script src="/scm-shell.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
@@ -186,7 +186,7 @@
   <main>
     <!-- Page head — title + 우측 알림함 버튼 -->
     <div class="scm-page-head scm-page-head--list">
-      <h1 class="scm-page-head__title">위탁 상품 입고현황</h1>
+      <h1 class="scm-page-head__title">위탁 상품 입고 현황</h1>
       <div class="scm-page-head__actions">
         <button class="iss-notify-btn" type="button" id="notify-btn" aria-label="알림함 - 진행중 2건">
           <svg class="iss-notify-btn__icon" viewBox="0 0 16 16" aria-hidden="true">
@@ -476,7 +476,7 @@
 (function () {
   'use strict';
 
-  // ----- Demo data — 위탁 상품 입고현황 (20건 중 8건 데모) -----
+  // ----- Demo data — 위탁 상품 입고 현황 (20건 중 8건 데모) -----
   const ROWS = [
     { reqNo:'A000008101', inboundType:'MFS 입고',         status:'입고대기', statusExtra:3, inNo:'OFFLINE_250531_1234',         loc:'여주 4센터', brand:'아디다스',     brandExtra:4, uid:'65342', uidExtra:4, opt:'XXL', optExtra:10, sku:'123451', skuExtra:10, barcode:'880K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65341', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.14', arrivalDate:'-',                confirmDate:'-',                requestDate:'25.03.15 11:30' },
     { reqNo:'A000001104', inboundType:'MFS 입고',         status:'입고대기', statusExtra:3, inNo:'OFFLINE_250531_1237',         loc:'여주 4센터', brand:'아디다스',     brandExtra:4, uid:'65342', uidExtra:4, opt:'M',   optExtra:10, sku:'123454', skuExtra:10, barcode:'883K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65341', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.14', arrivalDate:'25.03.15 11:30',   confirmDate:'25.03.15 11:30',   requestDate:'25.03.15 11:30' },

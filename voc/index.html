@@ -2584,7 +2584,11 @@
       // the same page — collapse trailing-slash paths to `/demo/index`
       // so both forms produce the same key.
       if (n.endsWith('/')) n = n + 'index';
-      return n;
+      // 케이스 정규화 — voc / dev-export 양쪽이 동일한 lowercase 키로 통일.
+      // 페이지 path rename (PascalCase → lowercase) 후 voc 저장 데이터가
+      // 데모에 적용 안 되던 회귀 차단. (dev-export.js 의 _normalizePageKey
+      // 와 일치.)
+      return n.toLowerCase();
     }
     function _verEntryFor(map, path) {
       if (!map || !path) return null;
