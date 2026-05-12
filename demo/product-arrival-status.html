@@ -74,66 +74,74 @@
     }
     .mp-table .iss-reqno-link:hover { color: var(--web-fg-accent, #245EFF); }
 
-    /* ========== 상품 상세 drawer (scm-side-drawer 기반) ========== */
-    #pd-drawer { width: min(1400px, 92vw); }
-    .pd-drawer__title {
+    /* ========== 상품 상세 drawer (scm-side-drawer 기반) ==========
+       이전 회귀: 셀렉터를 `.pd-drawer` 로 잡았는데 drawer 마크업은 `#pd-drawer`
+       만 가지고 있어서 매칭 0건 → 스타일이 통째로 안 먹던 문제. id 기반으로
+       통일. */
+    #pd-drawer { width: min(1600px, 95vw); max-width: none; }
+    #pd-drawer .scm-side-drawer__body { padding: 0; }
+    #pd-drawer .pd-drawer__title {
       padding: 24px 24px 4px;
-      color: var(--functional-fg, #000);
+      color: rgba(0, 0, 0, 0.88);
       font-size: 18px; font-weight: 600; line-height: 24.48px;
     }
-    .pd-drawer__body-wrap { padding: 20px 24px; }
-    .pd-drawer__stats {
+    #pd-drawer .pd-drawer__body-wrap { padding: 20px 24px; }
+    #pd-drawer .pd-drawer__stats {
       height: 60px; padding: 12px 0;
       display: flex; align-items: center; gap: 16px;
     }
-    .pd-drawer__stat { display: flex; align-items: center; gap: 4px; }
-    .pd-drawer__stat-label { font-size: 15px; font-weight: 500; color: #000; }
-    .pd-drawer__stat-num   { font-size: 15px; font-weight: 600; color: #000; }
-    .pd-drawer__table-wrap { overflow-x: auto; }
-    .pd-drawer table {
-      width: 100%; border-collapse: collapse;
+    #pd-drawer .pd-drawer__stat { display: flex; align-items: center; gap: 4px; }
+    #pd-drawer .pd-drawer__stat-label { font-size: 15px; font-weight: 500; color: #000; }
+    #pd-drawer .pd-drawer__stat-num   { font-size: 15px; font-weight: 600; color: #000; }
+    #pd-drawer .pd-drawer__table-wrap { overflow-x: auto; }
+    #pd-drawer table.pd-drawer-table {
+      width: max-content; min-width: 100%;
+      border-collapse: collapse;
       border-top: 2px solid #000;
       font-family: inherit;
     }
-    .pd-drawer thead th {
+    #pd-drawer .pd-drawer-table thead th {
       padding: 16px; text-align: left;
       font-size: 15px; font-weight: 500; color: #000;
-      background: var(--functional-bg-inset, #fff);
+      background: #fff;
       border-bottom: 1px solid #EBEBEB;
       border-right: 1px solid #EBEBEB;
       white-space: nowrap;
+      vertical-align: middle;
     }
-    .pd-drawer thead th:last-child { border-right: 0; }
-    .pd-drawer tbody td {
+    #pd-drawer .pd-drawer-table thead th:last-child { border-right: 0; }
+    #pd-drawer .pd-drawer-table tbody td {
       padding: 16px; vertical-align: top;
       font-size: 15px; font-weight: 400; color: rgba(0,0,0,0.88);
       border-bottom: 1px solid #EBEBEB;
       border-right: 1px solid #EBEBEB;
       white-space: nowrap;
     }
-    .pd-drawer tbody td:last-child { border-right: 0; }
-    .pd-drawer td.pd-num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
-    .pd-drawer td.pd-num--accent { color: var(--web-fg-accent, #245EFF); }
-    .pd-drawer .pd-underline { text-decoration: underline; }
-    .pd-drawer .pd-name-cell {
+    #pd-drawer .pd-drawer-table tbody td:last-child { border-right: 0; }
+    #pd-drawer .pd-drawer-table td.pd-num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+    #pd-drawer .pd-drawer-table td.pd-num--accent { color: #245EFF; }
+    #pd-drawer .pd-underline { text-decoration: underline; }
+    #pd-drawer .pd-name-cell {
       display: inline-flex; gap: 12px; align-items: flex-start;
-      max-width: 360px;
+      max-width: 360px; white-space: normal;
     }
-    .pd-drawer .pd-thumb {
+    #pd-drawer .pd-thumb {
       width: 60px; height: 72px; flex: 0 0 60px;
       border-radius: 4px; background: rgba(0,0,0,0.05);
     }
-    .pd-drawer__footer {
+    #pd-drawer .pd-name-cell__text { line-height: 20.4px; }
+    #pd-drawer .pd-drawer__footer {
       padding: 24px; display: flex; justify-content: flex-end; gap: 8px;
       border-top: 1px solid #EBEBEB;
+      background: #fff;
     }
-    .pd-drawer__close-btn {
+    #pd-drawer .pd-drawer__close-btn {
       min-width: 56px; height: 44px; padding: 12px;
       background: #fff; border: 1px solid #E0E0E0; border-radius: 4px;
       font-family: inherit; font-size: 15px; font-weight: 500; color: #000;
       cursor: pointer;
     }
-    .pd-drawer__close-btn:hover { background: var(--ld-bg-low, #FAFBFC); }
+    #pd-drawer .pd-drawer__close-btn:hover { background: #FAFBFC; }
 
     /* 우측 상단 — 알림함 버튼 (page-head action 영역) */
     .iss-notify-btn {
@@ -823,14 +831,25 @@
   }
 
   // tbody 통합 클릭 핸들러
-  //   - .scm-checkbox / .iss-reqno-link / .scm-code-link 클릭: 각자 처리 (또는 다른 핸들러 위임)
-  //   - 그 외 영역 클릭: 행 전체 클릭으로 간주 → drawer 열기 (무탠 상세 패턴)
+  //   - 신청번호 셀(col-frozen-3) 또는 그 안의 link 클릭 → drawer 열기
+  //   - 체크박스/체크박스 셀 → 자체 토글 (drawer 안 열림)
+  //   - 코드 link (sku/uid/barcode/styleNo) → SKU 페이지 이동 또는 popover
+  //   - 그 외 영역(다른 셀, 빈 공간) → 아무 동작 안 함
   document.getElementById('data-tbody').addEventListener('click', (e) => {
-    // 1) 체크박스 — 자체 모듈이 토글 처리. 우리는 통과시키되 drawer 열지 않음.
+    // 1) 체크박스 — 자체 모듈이 토글 처리. drawer 열지 않음.
     if (e.target.closest('.scm-checkbox') || e.target.closest('td.cb-col')) return;
 
-    // 2) 신청번호 underline link — 별도 핸들러에서 drawer 열기
-    if (e.target.closest('.iss-reqno-link')) return;
+    // 2) 신청번호 셀 — link 텍스트 위든 셀 빈 공간이든 클릭하면 drawer
+    const reqCell = e.target.closest('td.col-frozen-3');
+    if (reqCell) {
+      e.preventDefault();
+      const link  = reqCell.querySelector('.iss-reqno-link');
+      const reqNo = link ? (link.dataset.reqno || link.textContent.trim()) : reqCell.textContent.trim();
+      if (reqNo && typeof window.__openProductDrawer === 'function') {
+        window.__openProductDrawer(reqNo);
+      }
+      return;
+    }
 
     // 3) 코드 link (sku/uid/barcode/styleNo)
     const link = e.target.closest('.scm-code-link');
@@ -863,22 +882,17 @@
       return;
     }
 
-    // 4) 그 외 영역 (셀 비기, 텍스트 등) — 행 클릭으로 drawer 열기
-    const tr = e.target.closest('tr');
-    if (!tr) return;
-    const reqLink = tr.querySelector('.iss-reqno-link');
-    const reqNo = reqLink ? (reqLink.dataset.reqno || reqLink.textContent.trim()) : null;
-    if (reqNo && typeof window.__openProductDrawer === 'function') {
-      window.__openProductDrawer(reqNo);
-    }
+    // 4) 그 외 영역 — 아무 동작 안 함 (drawer 안 열림)
   });
-  // row 클릭 시 텍스트 선택 방지 + hover 시각 피드백
-  (function styleRowClickable() {
+  // 신청번호 셀에만 cursor:pointer + hover 시각 피드백 (행 전체 X)
+  (function styleReqCellClickable() {
     const tbody = document.getElementById('data-tbody');
     if (!tbody) return;
-    tbody.style.cursor = 'pointer';
+    tbody.style.cursor = '';
     const css = document.createElement('style');
-    css.textContent = '#data-tbody tr:hover { background: var(--ld-bg-low, #FAFBFC); }';
+    css.textContent =
+      '#data-tbody td.col-frozen-3 { cursor: pointer; }' +
+      '#data-tbody td.col-frozen-3:hover { background: var(--ld-bg-low, #FAFBFC); }';
     document.head.appendChild(css);
   })();
 
