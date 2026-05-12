@@ -66,6 +66,23 @@ export async function onRequest(context) {
   const { request, next, env } = context;
   const url = new URL(request.url);
 
+  // ─── case-insensitive alias ───
+  // PascalCase / 혼합 케이스 URL 로 들어왔는데 lowercase 버전이 화이트리스트에
+  // 있다면, lowercase 로 301 redirect. (`_redirects` 파일이 모종의 이유로 적용 안
+  // 되는 케이스 대비 — Pages Functions 가 _redirects 보다 우선 평가되는 환경도
+  // 있고, 신규 데모 파일 rename 직후 캐시 영향도 받을 수 있어 functions 에서도
+  // 안전망으로 직접 처리.)
+  const slug = url.pathname.replace(/^\/demo\//, '').replace(/\/$/, '');
+  if (slug && slug !== slug.toLowerCase()) {
+    const lower = slug.toLowerCase();
+    const lowerInList = KNOWN.has(lower) || (!lower.includes('.') && KNOWN.has(lower + '.html'));
+    if (lowerInList) {
+      const lowerPath = '/demo/' + lower;
+      const newUrl = new URL(lowerPath + url.search, url.origin);
+      return Response.redirect(newUrl.toString(), 301);
+    }
+  }
+
   // 캐노니컬 자산 → Pages 가 그대로 서빙. _blank.html 자체 요청도 여기로 들어옴.
   if (isKnownAsset(url.pathname)) {
     return passThroughNoStore(next);
