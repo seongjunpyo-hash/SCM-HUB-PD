@@ -797,9 +797,9 @@
       const confirmedColor = r.confirmedQty ? 'pd-num--accent' : '';
       return `
         <tr>
-          <td>${idx + 1}</td>
+          <td class="pd-td-no">${idx + 1}</td>
           <td>${escapeHtml(r.reqNo)}</td>
-          <td>${escapeHtml(r.inNo)}</td>
+          <td class="pd-td-frozen-border">${escapeHtml(r.inNo)}</td>
           <td>${escapeHtml(r.brand)}${r.brandExtra ? ` 외 ${r.brandExtra}` : ''}</td>
           <td><span class="pd-underline">${escapeHtml(r.uid)}</span></td>
           <td>${escapeHtml(r.opt)}${r.optExtra ? ` 외 ${r.optExtra}` : ''}</td>
