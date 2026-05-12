@@ -1,0 +1,7 @@
+# Cloudflare Pages _redirects
+# 데모 페이지 rename 시 구 URL → 신 URL 으로 301 redirect.
+# (cloudflare pages 의 path matching 은 case-sensitive 이므로 명시적 룰 필요.)
+
+# 위탁 상품 입고현황 — PascalCase → lowercase 통일 (다른 데모 페이지와 일관성).
+/demo/Product-Arrival-Status        /demo/product-arrival-status        301
+/demo/Product-Arrival-Status.html   /demo/product-arrival-status.html   301

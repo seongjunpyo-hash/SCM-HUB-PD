@@ -5,13 +5,13 @@
 // `_` 로 시작하는 파일은 Cloudflare Pages Functions 라우팅에서 제외돼
 // 일반 import 로만 쓰임.
 export const KNOWN_DEMO_ASSETS = [
-  'Product-Arrival-Status.html',
   '_blank.html',
   'dashboard.html',
   'editshop-restock-request.html',
   'editshop-restock-status.html',
   'index.html',
   'otb-budget.html',
+  'product-arrival-status.html',
   'sku-detail.html',
   'sku-management.html',
   'sku-register.html',

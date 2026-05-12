@@ -107,7 +107,7 @@
     </button>
     <div class="scm-lnb-l2-list">
       <a class="scm-lnb-l2" href="otb-budget.html" data-key="otb-budget"><span class="scm-lnb-l2-text">OTB 예산 관리</span></a>
-      <a class="scm-lnb-l2" href="Product-Arrival-Status.html" data-key="product-arrival-status"><span class="scm-lnb-l2-text">위탁 상품 입고현황</span></a>
+      <a class="scm-lnb-l2" href="product-arrival-status.html" data-key="product-arrival-status"><span class="scm-lnb-l2-text">위탁 상품 입고현황</span></a>
     </div>
   </div>
 

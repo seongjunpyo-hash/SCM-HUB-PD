@@ -56,6 +56,16 @@
     /* 입고유형 태그 — yellow (매장 직납) — tag.css 미정의 컬러 보강 */
     .scm-tag--yellow { background: #FFF4E5; }
 
+    /* ic-* sprite 심볼 중 stroke-width 가 누락된 경우 (ic-close 등) 가 있어
+       전체 stroke 기반 아이콘에 두께 강제. presentation attribute 보다 CSS
+       가 우선 적용되므로 1.4 미만으로 흐릿하게 그려지던 회귀 차단. */
+    .scm-filter-bar svg,
+    .scm-stats-bar svg,
+    .scm-pager svg,
+    .scm-mini-action svg,
+    .scm-side-drawer svg,
+    .iss-notify-btn svg { stroke-width: 1.4; }
+
     /* 신청번호 link — code-link 와 동일 underline 패턴 */
     .mp-table .iss-reqno-link {
       color: var(--functional-fg, #000);
