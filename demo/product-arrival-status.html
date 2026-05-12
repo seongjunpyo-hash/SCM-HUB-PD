@@ -139,24 +139,42 @@
       border-collapse: collapse;
       border-top: 2px solid #000;
       font-family: inherit;
+      table-layout: fixed;
     }
+    /* 헤더 — figma 의 height 54 / 셀 padding 16 / font 15·500 */
     #pd-drawer .pd-drawer-table thead th {
-      padding: 16px; text-align: left;
-      font-size: 15px; font-weight: 500; color: #000;
+      height: 54px; padding: 16px; text-align: left;
+      font-size: 15px; font-weight: 500; line-height: 20.4px; color: #000;
       background: #fff;
       border-bottom: 1px solid #EBEBEB;
       border-right: 1px solid #EBEBEB;
       white-space: nowrap;
       vertical-align: middle;
+      box-sizing: border-box;
     }
+    #pd-drawer .pd-drawer-table thead th:first-child { border-right: 1px solid #EBEBEB; }
     #pd-drawer .pd-drawer-table thead th:last-child { border-right: 0; }
+    /* No 컬럼: 살짝 짧은 좌우 padding (figma spec 12·12·8·8) */
+    #pd-drawer .pd-drawer-table thead th.pd-th-no { padding: 8px 12px; }
+    #pd-drawer .pd-drawer-table tbody td.pd-td-no { padding: 15px 16px; }
+    /* 신청번호 ↔ 입고번호 frozen 구분 — 굵은 좌측 border 2px (figma spec) */
+    #pd-drawer .pd-drawer-table thead th.pd-th-frozen-border,
+    #pd-drawer .pd-drawer-table tbody td.pd-td-frozen-border {
+      border-left: 2px solid #EBEBEB;
+    }
+    /* 수량 컬럼 — 우측 정렬 */
+    #pd-drawer .pd-drawer-table thead th.pd-th-num { text-align: right; }
+    /* body 셀 — figma 의 padding 16 / font 15·400 */
     #pd-drawer .pd-drawer-table tbody td {
       padding: 16px; vertical-align: top;
-      font-size: 15px; font-weight: 400; color: rgba(0,0,0,0.88);
-      border-bottom: 1px solid #EBEBEB;
+      font-size: 15px; font-weight: 400; line-height: 20.4px;
+      color: rgba(0,0,0,0.88);
+      border-top: 1px solid #EBEBEB;
       border-right: 1px solid #EBEBEB;
       white-space: nowrap;
+      box-sizing: border-box;
     }
+    #pd-drawer .pd-drawer-table tbody td:first-child { border-right: 1px solid #EBEBEB; }
     #pd-drawer .pd-drawer-table tbody td:last-child { border-right: 0; }
     #pd-drawer .pd-drawer-table td.pd-num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
     #pd-drawer .pd-drawer-table td.pd-num--accent { color: #245EFF; }
