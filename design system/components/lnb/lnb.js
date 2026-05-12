@@ -88,7 +88,7 @@
     </div>
   </div>
 
-  <!-- 발주 관리 -->
+  <!-- 발주/입고 관리 -->
   <div class="scm-lnb-item is-open" data-key="order">
     <button class="scm-lnb-row" type="button" data-nav-toggle>
       <span class="scm-lnb-icon">
@@ -98,7 +98,7 @@
           <path d="M9 13l2.2 2.2L15 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
         </svg>
       </span>
-      <span class="scm-lnb-label">발주 관리</span>
+      <span class="scm-lnb-label">발주/입고 관리</span>
       <span class="scm-lnb-chev">
         <svg viewBox="0 0 16 16" aria-hidden="true">
           <path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>

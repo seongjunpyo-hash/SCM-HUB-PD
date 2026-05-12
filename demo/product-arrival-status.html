@@ -30,6 +30,7 @@
   <link rel="stylesheet" href="../design%20system/components/filter-bar/filter-bar.css" />
   <link rel="stylesheet" href="../design%20system/components/filter-drawer/filter-drawer.css" />
   <link rel="stylesheet" href="../design%20system/components/filter-popover/filter-popover.css" />
+  <link rel="stylesheet" href="../design%20system/components/date-picker/date-picker.css" />
   <link rel="stylesheet" href="../design%20system/components/side-drawer/side-drawer.css" />
   <link rel="stylesheet" href="../design%20system/components/stat/stat.css" />
   <link rel="stylesheet" href="../design%20system/components/stats-bar/stats-bar.css" />
@@ -103,15 +104,6 @@
     .scm-mini-action svg,
     .scm-side-drawer svg,
     .iss-notify-btn svg { stroke-width: 1.4; }
-
-    /* page-head 타이틀 좌측 prefix 아이콘 — 24x24, 텍스트 baseline 과 중앙 정렬 */
-    .scm-page-head__title { display: inline-flex; align-items: center; gap: 8px; }
-    .iss-page-title-icon {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 24px; height: 24px; flex-shrink: 0;
-      color: #1A1A1A;
-    }
-    .iss-page-title-icon svg { width: 24px; height: 24px; }
 
     /* 신청번호 link — code-link 와 동일 underline 패턴 */
     .mp-table .iss-reqno-link {
@@ -235,11 +227,32 @@
       z-index: 4;
       background: #fff;
     }
-    /* sticky x+y 교차 (No / 입고번호 / 입고위치 의 thead) — z-index 가장 위 */
-    #pd-drawer .pd-drawer__table-host .mp-table-scroll thead th.col-frozen-1,
-    #pd-drawer .pd-drawer__table-host .mp-table-scroll thead th.col-frozen-2,
+    /* sticky x+y 교차 (No / 입고번호 / 입고위치 의 thead) — base CSS 의 col-frozen 룰이
+       `position: sticky !important; left: var(--frozen-l-N)` 만 설정해서, top: 0 을 같은
+       cascade scope 에서 명시하지 않으면 일부 브라우저에서 top sticky 가 무시되는 회귀 발생.
+       → 같은 룰 안에 top + left + z-index 를 한 번에 박아 양방향 sticky 확정. !important 로
+       base 의 !important 와 동급 우선순위 확보.
+       z-index: 6 — 본문 frozen 셀(z=5) 위에 떠야 가로 스크롤 시 헤더가 보임. */
+    #pd-drawer .pd-drawer__table-host .mp-table-scroll thead th.col-frozen-1 {
+      position: sticky !important;
+      top: 0 !important;
+      left: var(--frozen-l1, 0) !important;
+      z-index: 6 !important;
+      background: #fff !important;
+    }
+    #pd-drawer .pd-drawer__table-host .mp-table-scroll thead th.col-frozen-2 {
+      position: sticky !important;
+      top: 0 !important;
+      left: var(--frozen-l2, 0) !important;
+      z-index: 6 !important;
+      background: #fff !important;
+    }
     #pd-drawer .pd-drawer__table-host .mp-table-scroll thead th.col-frozen-3 {
-      z-index: 6;
+      position: sticky !important;
+      top: 0 !important;
+      left: var(--frozen-l3, 0) !important;
+      z-index: 6 !important;
+      background: #fff !important;
     }
     #pd-drawer .pd-drawer__footer {
       padding: 24px; display: flex; justify-content: flex-end; gap: 8px;
@@ -468,18 +481,19 @@
     .iss-notify-btn__status { display: inline-flex; align-items: center; gap: 2px; color: #245EFF; }
     .iss-notify-btn__status-num { font-weight: 600; }
 
-    /* Sticky bottom action bar */
-    .scm-table-action-bar {
-      position: fixed; left: var(--scm-lnb-width, 56px); right: 0; bottom: 0;
-      background: #fff; border-top: 1px solid #E0E0E0; box-shadow: 0 -2px 8px rgba(0,0,0,.06);
-      z-index: 18; padding: 12px 28px;
-      transition: left .2s ease;
+    /* (removed: scm-table-action-bar — 하단 고정 액션 바는 사용자 요청으로 제거) */
+
+    /* stats-bar 의 "전체 N" → "선택됨 X / N" morph. selected 상태일 때 .scm-stat--all 의
+       자식 구성이 다음으로 교체됨:
+         <span class="scm-stat__label scm-stat__label--selected">선택됨</span>
+         <span class="scm-stat__num scm-stat__num--selected">N</span>     ← #245EFF
+         <span class="scm-stat__num-total">/ N</span>                       ← #8A8A8A
+       (이때만 추가되는 두 클래스에 대해서만 스타일 정의 — placeholder 상태는 기존 스타일 그대로) */
+    .scm-stat__num--selected { color: #245EFF; }
+    .scm-stat__num-total {
+      color: #8A8A8A; font-weight: 400;
+      margin-left: 2px;
     }
-    .scm-table-action-bar[hidden] { display: none; }
-    .scm-table-action-bar__inner { display: flex; align-items: center; justify-content: space-between; }
-    .scm-table-action-bar__count { font-size: 14px; font-weight: 500; }
-    .scm-table-action-bar__count strong { color: #245EFF; font-weight: 700; margin-right: 4px; }
-    .scm-table-action-bar__actions { display: flex; gap: 8px; }
   </style>
 </head>
 <body>
@@ -495,21 +509,9 @@
   <nav class="scm-lnb" data-active="product-arrival-status" aria-label="주메뉴"></nav>
 
   <main>
-    <!-- Page head — title + 우측 알림함 버튼.
-         타이틀 좌측 prefix 아이콘 — LNB 의 "발주 관리" L1 그룹과 동일한 클립보드+체크 SVG
-         (lnb.js CANONICAL_LNB_HTML 의 발주관리 L1 icon 와 동일 좌표). 사용자 요청으로
-         페이지 헤더에도 동일 아이콘 prefix. -->
+    <!-- Page head — title + 우측 알림함 버튼 -->
     <div class="scm-page-head scm-page-head--list">
-      <h1 class="scm-page-head__title">
-        <span class="iss-page-title-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24">
-            <rect x="5" y="5" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.4" fill="none"/>
-            <rect x="9" y="3" width="6" height="3" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
-            <path d="M9 13l2.2 2.2L15 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-          </svg>
-        </span>
-        위탁 상품 입고 현황
-      </h1>
+      <h1 class="scm-page-head__title">위탁 상품 입고 현황</h1>
       <div class="scm-page-head__actions">
         <button class="iss-notify-btn" type="button" id="notify-btn" aria-label="알림함 - 진행중 2건">
           <svg class="iss-notify-btn__icon" viewBox="0 0 16 16" aria-hidden="true">
@@ -535,9 +537,11 @@
       </button>
       <div class="scm-filter-overflow">
         <div class="scm-filter-overflow__track">
-          <button class="scm-filter-select" type="button" data-state="active" data-mp-filter="period">
+          <!-- 조회기간 — datepicker 모드. filterPopoverModes 가 EXTRA_REGISTRY 의 selectedPresetId
+               (기본 '최근 30일') 라벨로 chip 을 자동 채움. data-state 는 init 시 동기화됨. -->
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="period">
             <span class="scm-filter-select__label">조회기간</span>
-            <span class="scm-filter-select__value">신청일 · 25.03.01~25.04.07</span>
+            <span class="scm-filter-select__value">조회기간</span>
             <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
           </button>
           <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="platform">
@@ -823,18 +827,8 @@
   </footer>
 </aside>
 
-<!-- Sticky bottom action bar -->
-<div class="scm-table-action-bar" id="table-action-bar" hidden>
-  <div class="scm-table-action-bar__inner">
-    <div class="scm-table-action-bar__count">
-      <strong id="tab-count">0</strong>개 선택됨
-    </div>
-    <div class="scm-table-action-bar__actions">
-      <button class="scm-button scm-button--md" type="button" id="tab-clear">선택 해제</button>
-      <button class="scm-button scm-button--md scm-button--primary" type="button" id="tab-bulk">입고 취소</button>
-    </div>
-  </div>
-</div>
+<!-- 하단 고정 액션 바 — 사용자 요청으로 제거. 선택 개수 표시는 stats-bar 의
+     scm-stat--all 이 "전체 N" → "선택됨 X / N" 으로 morph 하는 방식으로 대체. -->
 
 <!-- Confirm modal (legacy SCM.confirmModal — 현재 데모에서는 사용 안 함, 호환용 유지) -->
 <div class="scm-confirm-modal-backdrop" id="confirm-backdrop"></div>
@@ -890,6 +884,7 @@
 <script src="../design%20system/components/filter-drawer/filter-drawer.js"></script>
 <script src="../design%20system/components/side-drawer/side-drawer.js"></script>
 <script src="../design%20system/components/filter-popover/filter-popover.js"></script>
+<script src="../design%20system/components/date-picker/date-picker.js"></script>
 <script src="../design%20system/components/filter-popover/filter-popover-modes.js"></script>
 <script src="../design%20system/components/scm-table/scm-table.js"></script>
 <script src="../design%20system/components/scm-table/table-sort.js"></script>
@@ -1184,8 +1179,8 @@
       tableEl: document.getElementById('mp-table'),
       cbAllId: 'mp-cb-all',
       rowCbSelector: 'td.cb-col .scm-checkbox',
-      actionBarEl: document.getElementById('table-action-bar'),
-      countEl: document.getElementById('tab-count'),
+      // 하단 액션바 제거 — actionBarEl / countEl 미지정. 선택 상태는 stats-bar 의
+      // scm-stat--all "전체 N" → "선택됨 X / N" morph (MutationObserver + refreshActionBar) 로 표현.
     });
   }
 
@@ -1439,13 +1434,10 @@
   // ============================================================
   let filterModeInstance = null;
   const EXTRA_REGISTRY = {
-    period: { mode: 'single', options: [
-      { id:'today', label:'오늘',         selected:false },
-      { id:'w1',    label:'최근 7일',      selected:false },
-      { id:'m1',    label:'최근 30일',     selected:true  },
-      { id:'m3',    label:'최근 90일',     selected:false },
-      { id:'y1',    label:'최근 1년',      selected:false },
-    ]},
+    // 조회기간 — datepicker 모드 (좌측 프리셋 + 우측 캘린더, range 선택).
+    //   SCM.datePicker.DEFAULT_PRESETS 가 [오늘 / 최근 7일 / 최근 1개월 / 최근 3개월 / 최근 6개월] 제공
+    //   selectedPresetId 가 chip 초기 라벨이자 reset 기준점.
+    period: { mode: 'datepicker', selectedPresetId: 'm1', dpMode: 'range' },
     inboundType: { mode: 'multi', options: [
       { id:'all', label:'전체',             selected:true  },
       { id:'i1',  label:'MFS 입고',         selected:false },
@@ -1501,9 +1493,10 @@
       tr.style.display = visible ? '' : 'none';
       if (visible) visibleCount++;
     });
-    // stats-bar "전체 N" 숫자 갱신
-    const numEl = document.querySelector('.scm-stats-bar__counts .scm-stat--all .scm-stat__num');
-    if (numEl) numEl.textContent = String(visibleCount);
+    // stats-bar 의 전체/선택됨 N 갱신 — refreshActionBar 가 통합 처리 (선택 상태에 따라 morph).
+    //   filter 변경 시 total 도 변하므로 window.__issTotalCount 를 동기화하고 refresh.
+    window.__issTotalCount = visibleCount;
+    if (typeof refreshActionBar === 'function') refreshActionBar();
     return visibleCount;
   }
 
@@ -1780,14 +1773,26 @@
   //   (이전: document click listener 만 — SCMTable 가 이벤트 stopPropagation
   //    하거나 file:// 환경에서 selection 모듈이 부분 실패하면 호출 누락.)
   // ============================================================
-  const tab = document.getElementById('table-action-bar');
-  const tabCount = document.getElementById('tab-count');
+  // stats-bar 의 scm-stat--all 을 selection 상태에 맞춰 두 가지 형태로 morph:
+  //   0개 선택        → "전체 [N]"
+  //   1개 이상 선택   → "선택됨 [X] / N"  (X 는 #245EFF, "/ N" 은 #8A8A8A)
+  // 별도 하단 액션바는 없으므로 stats-bar 가 선택 컨텍스트 표시 + iss-cancel-btn 활성 처리.
+  const statAllEl = document.querySelector('.scm-stats-bar__counts .scm-stat--all');
   function refreshActionBar() {
     const checked = document.querySelectorAll('#data-tbody .scm-checkbox[aria-checked="true"]').length;
-    if (tab) {
-      if (checked > 0) tab.hidden = false; else tab.hidden = true;
+    const total = (window.__issTotalCount != null) ? window.__issTotalCount : ROWS.length;
+    if (statAllEl) {
+      if (checked > 0) {
+        statAllEl.innerHTML =
+          '<span class="scm-stat__label">선택됨</span> ' +
+          '<span class="scm-stat__num scm-stat__num--selected">' + checked + '</span>' +
+          '<span class="scm-stat__num-total">/ ' + total + '</span>';
+      } else {
+        statAllEl.innerHTML =
+          '<span class="scm-stat__label">전체</span> ' +
+          '<span class="scm-stat__num">' + total + '</span>';
+      }
     }
-    if (tabCount) tabCount.textContent = String(checked);
     if (cancelBtn) {
       if (checked > 0) {
         cancelBtn.disabled = false;
@@ -1814,29 +1819,11 @@
       setTimeout(refreshActionBar, 0);
     }
   }, true);
-  // 3) 초기 1회 호출 — 기본 상태 (disabled) 명시
+  // 3) 초기 1회 호출 — 기본 상태 (전체 N 표시) 명시
   refreshActionBar();
-  const tabClear = document.getElementById('tab-clear');
-  if (tabClear) {
-    tabClear.addEventListener('click', () => {
-      document.querySelectorAll('#data-tbody .scm-checkbox[aria-checked="true"]').forEach(cb => {
-        cb.setAttribute('aria-checked', 'false');
-      });
-      const all = document.getElementById('mp-cb-all');
-      if (all) all.setAttribute('aria-checked', 'false');
-      refreshActionBar();
-    });
-  }
-  const tabBulk = document.getElementById('tab-bulk');
-  if (tabBulk) {
-    tabBulk.addEventListener('click', () => {
-      const checked = document.querySelectorAll('#data-tbody .scm-checkbox[aria-checked="true"]').length;
-      openCancelModal(() => {
-        if (SCM.toast) SCM.toast.show({ variant: 'success', title: '입고 취소 요청', desc: `${checked}건의 입고 취소 요청이 접수되었습니다.` });
-        if (tabClear) tabClear.click();
-      });
-    });
-  }
+  // tab-clear / tab-bulk 버튼은 하단 액션바와 함께 제거됨. 입고 취소 진입점은 iss-cancel-btn
+  // (mini-action --primary) 하나로 통합. iss-cancel-btn 의 click 핸들러는 이 IIFE 위쪽 (~1750 line)
+  // 에서 openCancelModal 호출까지 wiring 완료.
 })();
 </script>
 

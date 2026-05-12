@@ -162,6 +162,7 @@
     var singleKeys = [];
     var codeinputKeys = [];
     var codeinputTabs = {};
+    var datepickerKeys = {};   // { key: { presets, selectedPresetId, mode('range'|'single') } }
     var options = {};
     Object.keys(registry).forEach(function (k) {
       var def = registry[k];
@@ -169,6 +170,13 @@
       else if (def.mode === 'multi') { options[k] = JSON.parse(JSON.stringify(def.options || [])); }
       else if (def.mode === 'codeinput') { codeinputKeys.push(k); }
       else if (def.mode === 'codeinput-tabs') { codeinputTabs[k] = def.tabs || []; }
+      else if (def.mode === 'datepicker') {
+        datepickerKeys[k] = {
+          presets: def.presets,                          // optional — undefined 이면 SCM.datePicker.DEFAULT_PRESETS
+          selectedPresetId: def.selectedPresetId || null,
+          dpMode: def.dpMode === 'single' ? 'single' : 'range',
+        };
+      }
     });
 
     var onApply = typeof config.onApply === 'function' ? config.onApply : null;
@@ -219,10 +227,24 @@
     var codeValues = {};                                   // { key: 'a\nb\nc' }
     var codeTabSel = {};                                   // { key: tabId } — codeinput-tabs 모드의 현재 탭
     var listValues = JSON.parse(JSON.stringify(options));
+    var dateValues = {};                                   // { key: { start, end, presetId } }
+    // datepicker 의 디폴트 값 (selectedPresetId) 으로 chip 초기 라벨 채움
+    Object.keys(datepickerKeys).forEach(function (k) {
+      var cfg = datepickerKeys[k];
+      if (cfg.selectedPresetId) {
+        // 디폴트 프리셋의 라벨을 그대로 사용 (예: '최근 30일')
+        var pset = (cfg.presets || (root.SCM && root.SCM.datePicker && root.SCM.datePicker.DEFAULT_PRESETS) || []);
+        var p = pset.find(function (it) { return it.id === cfg.selectedPresetId; });
+        if (p) {
+          dateValues[k] = { start: '', end: '', presetId: cfg.selectedPresetId, label: p.label };
+          defaultFilters[k] = p.label;   // 디폴트 라벨로 등록 → '사용자 필터' 카운트 제외
+        }
+      }
+    });
 
     // ----- 검색/초기화 dirty tracking -----
     function snapshot() {
-      return JSON.stringify({ list: listValues, code: codeValues });
+      return JSON.stringify({ list: listValues, code: codeValues, date: dateValues });
     }
     var appliedSnap = snapshot();   // 마지막 검색 적용 시점의 상태
 
@@ -301,10 +323,20 @@
     if (resetBtn) {
       resetBtn.addEventListener('click', function () {
         if (resetBtn.hasAttribute('disabled')) return;
-        // 모든 filled chip 을 placeholder 로 + listValues / codeValues 초기화
+        // 모든 filled chip 을 placeholder 로 + listValues / codeValues / dateValues 초기화
         listValues = JSON.parse(JSON.stringify(options));
         codeValues = {};
         codeTabSel = {};
+        // datepicker — 디폴트 selectedPresetId 가 있으면 그 라벨로 복원, 없으면 비움
+        dateValues = {};
+        Object.keys(datepickerKeys).forEach(function (k) {
+          var cfg = datepickerKeys[k];
+          if (cfg.selectedPresetId) {
+            var pset = cfg.presets || (root.SCM && root.SCM.datePicker && root.SCM.datePicker.DEFAULT_PRESETS) || [];
+            var p = pset.find(function (it) { return it.id === cfg.selectedPresetId; });
+            if (p) dateValues[k] = { start: '', end: '', presetId: cfg.selectedPresetId, label: p.label };
+          }
+        });
         filterBarEl.querySelectorAll('.scm-filter-select').forEach(function (b) {
           var k = b.getAttribute('data-mp-filter');
           if (k) setFilterValueDirect(k, '');
@@ -672,6 +704,44 @@
       });
     }
 
+    // ----- datepicker mode — 좌측 프리셋 + 우측 캘린더. SCM.datePicker 컴포넌트 마운트 -----
+    function renderDatepicker(key) {
+      if (!(root.SCM && root.SCM.datePicker)) {
+        console.warn('[filter-popover-modes] SCM.datePicker not loaded');
+        return;
+      }
+      var cfg = datepickerKeys[key] || {};
+      var cur = dateValues[key] || {};
+      // popover root 안에 mount target div 생성
+      rootEl.innerHTML = '<div class="scm-filter-popover scm-filter-popover--datepicker"><div data-dp-host></div></div>';
+      var host = rootEl.querySelector('[data-dp-host]');
+      if (!host) return;
+      var dp = root.SCM.datePicker.mount(host, {
+        mode: cfg.dpMode || 'range',
+        presets: cfg.presets,
+        selectedPresetId: cur.presetId || cfg.selectedPresetId,
+        value: (cur.start || cur.end) ? { start: cur.start, end: cur.end } : null,
+        onChange: function (v) {
+          // 프리셋 선택 시 → 라벨 (예: '최근 7일') 그대로 chip 에 표시.
+          // 수동 날짜 선택 시 → start ~ end 형태로 표시 (start==end 면 단일 일자 1개만).
+          var label = '';
+          if (v.presetId) {
+            var presets = cfg.presets || (root.SCM.datePicker.DEFAULT_PRESETS || []);
+            var p = presets.find(function (it) { return it.id === v.presetId; });
+            if (p) label = p.label;
+          } else if (v.start && v.end) {
+            label = v.start === v.end ? v.start : (v.start + ' ~ ' + v.end);
+          } else if (v.start) {
+            label = v.start;
+          }
+          dateValues[key] = { start: v.start, end: v.end, presetId: v.presetId, label: label };
+          setFilterValue(key, label);
+        },
+      });
+      // popover 안 dp host 폭 자동 — 본 컴포넌트 width 480
+      return dp;
+    }
+
     function openPopover(key, anchorBtn) {
       if (openFor === key) { fp.close(); return; }
       openFor = key;
@@ -690,6 +760,10 @@
       } else if (override === 'multi') {
         renderMulti(key, '');
         fp.openAt(anchorBtn, 'list');
+      } else if (datepickerKeys[key]) {
+        renderDatepicker(key);
+        // datepicker 자체가 480px 고정 폭 — 'single' variant 로 openAt (배경 / 위치만 사용)
+        fp.openAt(anchorBtn, 'datepicker');
       } else if (codeinputTabs[key]) {
         renderCodeInputTabs(key);
         fp.openAt(anchorBtn, 'code');
@@ -1233,6 +1307,14 @@
           } else {
             active[k] = lines;
           }
+        });
+        // datepicker — dateValues. presetId 또는 start/end 둘 다 노출.
+        //   active[key] = { start, end, presetId, label }
+        Object.keys(dateValues).forEach(function (k) {
+          var v = dateValues[k];
+          if (!v) return;
+          if (!v.start && !v.end && !v.presetId) return;
+          active[k] = { start: v.start, end: v.end, presetId: v.presetId, label: v.label };
         });
         return active;
       }

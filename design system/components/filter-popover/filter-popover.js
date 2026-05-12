@@ -22,14 +22,18 @@
     function reposition() {
       if (!currentAnchor) return;
       var rect = currentAnchor.getBoundingClientRect();
-      rootEl.style.top = (rect.bottom + 4) + 'px';
+      // sub-pixel rounding — anchor chip 의 rect.left 가 fractional 이면 border-box align 이
+      // 1px 어긋나 보임. Math.round 로 정수 픽셀에 강제.
+      var anchorLeft = Math.round(rect.left);
+      var anchorBottom = Math.round(rect.bottom);
+      rootEl.style.top = (anchorBottom + 4) + 'px';
       var pop = rootEl.querySelector('.scm-filter-popover');
       var w = pop ? pop.getBoundingClientRect().width : 280;
       // 우측 넘침 보정 — 넘치면 우측 8px 여백 두고 정렬
-      if (rect.left + w > window.innerWidth - 8) {
+      if (anchorLeft + w > window.innerWidth - 8) {
         rootEl.style.left = (window.innerWidth - w - 8) + 'px';
       } else {
-        rootEl.style.left = rect.left + 'px';
+        rootEl.style.left = anchorLeft + 'px';
       }
     }
 
