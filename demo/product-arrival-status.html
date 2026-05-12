@@ -480,6 +480,66 @@
     { reqNo:'A000001108', inboundType:'매장 직납',         status:'입고완료',                  inNo:'OFFLINE_250531_1233',         loc:'성수 대림창고', brand:'아디다스', brandExtra:4, uid:'65342', uidExtra:4, opt:'XL',  optExtra:10, sku:'123458', skuExtra:10, barcode:'887K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65342', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.14', arrivalDate:'-',                 confirmDate:'25.03.15 11:30',   requestDate:'25.03.15 11:30' },
   ];
 
+  // ----- 데모용 추가 50건 — base 8건 패턴을 ID/옵션/수량 변형해서 반복 -----
+  (function expandDemoRows() {
+    const INBOUND_TYPES = ['MFS 입고', '물류센터 일괄입고', '매장 직납'];
+    const STATUSES      = ['입고대기', '센터도착', '부분입고', '입고완료'];
+    const BRANDS        = ['아디다스', '나이키', 'MUSINSA STANDARD', '아크테릭스', '시티스케이프'];
+    const LOCATIONS     = ['여주 4센터', '여주 1센터', '성수 대림창고', '인천 1센터'];
+    const OPTS          = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'FREE'];
+    const NAMES         = [
+      '스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿',
+      '런닝화 울트라 부스트 - 블랙',
+      '옥스포드 셔츠 화이트',
+      '슬랙스 테이퍼드 차콜',
+      '후디 베이직 그레이',
+      '스니커즈 코어 화이트',
+      '볼캡 로고 블랙',
+      '토트백 캔버스 블랙',
+    ];
+    const BASE_LEN = ROWS.length;
+    for (let i = 0; i < 50; i++) {
+      const base    = ROWS[i % BASE_LEN];
+      const seq     = i + 1;
+      const inbound = INBOUND_TYPES[i % INBOUND_TYPES.length];
+      const status  = STATUSES[i % STATUSES.length];
+      const brand   = BRANDS[i % BRANDS.length];
+      const loc     = LOCATIONS[i % LOCATIONS.length];
+      const opt     = OPTS[i % OPTS.length];
+      const name    = NAMES[i % NAMES.length];
+      const qty     = (200 + (i * 37) % 1500);
+      const confirmed = status === '입고대기' ? 0
+                       : status === '센터도착' ? qty
+                       : status === '부분입고' ? Math.floor(qty * 0.4)
+                       : qty;
+      ROWS.push({
+        reqNo:       'A' + String(2000000 + seq * 13).padStart(9, '0'),
+        inboundType: inbound,
+        status:      status,
+        statusExtra: i % 5 === 0 ? (i % 4) + 1 : 0,
+        inNo:        'OFFLINE_250601_' + String(1000 + seq).padStart(4, '0'),
+        loc:         loc,
+        brand:       brand,
+        brandExtra:  (i % 3 === 0) ? (i % 4) : 0,
+        uid:         String(65000 + seq),
+        uidExtra:    (i % 4 === 0) ? 3 : 0,
+        opt:         opt,
+        optExtra:    (i % 2 === 0) ? 10 : 0,
+        sku:         String(124000 + seq * 7),
+        skuExtra:    (i % 3 === 0) ? 10 : 0,
+        barcode:     (900 + (i % 100)) + 'K/13029/EFGH' + ((i % 2 === 0) ? ' 외 10' : ''),
+        name:        name + ((i % 3 === 0) ? ' 외 10' : ''),
+        styleNo:     String(65340 + (i % 8)),
+        expectedQty: qty,
+        confirmedQty: confirmed,
+        expectedDate: '25.03.' + String(10 + (i % 20)).padStart(2, '0'),
+        arrivalDate:  status === '입고대기' ? '-' : '25.03.' + String(12 + (i % 18)).padStart(2, '0') + ' 11:30',
+        confirmDate:  (status === '입고완료' || status === '센터도착') ? '25.03.' + String(14 + (i % 16)).padStart(2, '0') + ' 11:30' : '-',
+        requestDate:  '25.03.' + String(8 + (i % 22)).padStart(2, '0') + ' 11:30',
+      });
+    }
+  })();
+
   const NA = '-';
   const isEmpty = v => v === null || v === undefined || v === '';
   const escapeHtml = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -551,6 +611,14 @@
   }
 
   document.getElementById('data-tbody').innerHTML = ROWS.map(rowHtml).join('');
+
+  // stats-bar "전체 N" 을 실제 데이터 길이로 동기화
+  (function syncTotalCount() {
+    const numEl = document.querySelector('.scm-stats-bar__counts .scm-stat--all .scm-stat__num');
+    if (numEl) numEl.textContent = String(ROWS.length);
+    // 엑셀 다운로드 토스트 desc 도 동적 N 사용 위해 전역 보관
+    window.__issTotalCount = ROWS.length;
+  })();
 
   // ----- SCM Table interactions -----
   if (window.SCMTable) {
@@ -643,14 +711,17 @@
       // 같은 신청번호 행이 여러 개일 수 있음 — 모두 모음.
       // 데모에서는 보통 1건이라 일치 row 1건이지만, 같은 reqNo 있으면 함께 표시.
       const matching = ROWS.filter(r => r.reqNo === reqNo);
-      const rows = matching.length ? matching : ROWS.slice(0, 1);
+      // 데모: 매칭 1건이어도 같은 신청 그룹의 다른 상품 8건 함께 표시 — figma 패턴.
+      const rows = matching.length >= 8 ? matching : matching.concat(ROWS.slice(0, 8 - matching.length));
       if (labelEl) labelEl.textContent = reqNo;
       if (cntEl)   cntEl.textContent = String(rows.length);
       tbody.innerHTML = rows.map(rowToDetailHtml).join('');
       dr.open();
     }
+    // 통합 tbody 핸들러 (위쪽) 에서 호출 가능하도록 전역 노출
+    window.__openProductDrawer = openForReqNo;
 
-    // tbody 의 신청번호 link 클릭 → drawer 열기
+    // tbody 의 신청번호 link 클릭 → drawer 열기 (행 클릭과 별개 직접 핸들러)
     document.getElementById('data-tbody').addEventListener('click', (e) => {
       const link = e.target.closest('.iss-reqno-link');
       if (!link) return;
@@ -751,36 +822,65 @@
     });
   }
 
-  // 코드 link → SKU 는 상세 페이지, 나머지는 popover
+  // tbody 통합 클릭 핸들러
+  //   - .scm-checkbox / .iss-reqno-link / .scm-code-link 클릭: 각자 처리 (또는 다른 핸들러 위임)
+  //   - 그 외 영역 클릭: 행 전체 클릭으로 간주 → drawer 열기 (무탠 상세 패턴)
   document.getElementById('data-tbody').addEventListener('click', (e) => {
+    // 1) 체크박스 — 자체 모듈이 토글 처리. 우리는 통과시키되 drawer 열지 않음.
+    if (e.target.closest('.scm-checkbox') || e.target.closest('td.cb-col')) return;
+
+    // 2) 신청번호 underline link — 별도 핸들러에서 drawer 열기
+    if (e.target.closest('.iss-reqno-link')) return;
+
+    // 3) 코드 link (sku/uid/barcode/styleNo)
     const link = e.target.closest('.scm-code-link');
-    if (!link) return;
-    const type = link.getAttribute('data-code-type') || 'sku';
-    if (type === 'sku') {
-      const txt = (link.textContent || '').trim().split(' ')[0];
-      if (txt) {
+    if (link) {
+      const type = link.getAttribute('data-code-type') || 'sku';
+      if (type === 'sku') {
+        const txt = (link.textContent || '').trim().split(' ')[0];
+        if (txt) {
+          e.preventDefault();
+          window.location.href = 'sku-detail.html?sku=' + encodeURIComponent(txt);
+        }
+        return;
+      }
+      if (SCM.codePopover) {
         e.preventDefault();
-        window.location.href = 'sku-detail.html?sku=' + encodeURIComponent(txt);
+        const TITLE = { uid:'연결된 UID번호 확인', barcode:'바코드 확인', styleNo:'스타일넘버 확인' };
+        const COPY  = { uid:'UID 복사', barcode:'바코드 복사', styleNo:'스타일넘버 복사' };
+        const txt = (link.textContent || '').trim();
+        SCM.codePopover.open({
+          title: TITLE[type] || '코드 확인',
+          items: [txt],
+          copyLabel: COPY[type] || '복사',
+          anchorEl: link,
+          onCopy: () => {
+            if (navigator.clipboard) navigator.clipboard.writeText(txt);
+            if (SCM.toast) SCM.toast.show({ variant: 'success', title: `${(COPY[type]||'코드').replace(' 복사','')} 복사 완료`, desc: `${txt} 복사되었습니다.` });
+          },
+        });
       }
       return;
     }
-    if (SCM.codePopover) {
-      e.preventDefault();
-      const TITLE = { uid:'연결된 UID번호 확인', barcode:'바코드 확인', styleNo:'스타일넘버 확인' };
-      const COPY  = { uid:'UID 복사', barcode:'바코드 복사', styleNo:'스타일넘버 복사' };
-      const txt = (link.textContent || '').trim();
-      SCM.codePopover.open({
-        title: TITLE[type] || '코드 확인',
-        items: [txt],
-        copyLabel: COPY[type] || '복사',
-        anchorEl: link,
-        onCopy: () => {
-          if (navigator.clipboard) navigator.clipboard.writeText(txt);
-          if (SCM.toast) SCM.toast.show({ variant: 'success', title: `${(COPY[type]||'코드').replace(' 복사','')} 복사 완료`, desc: `${txt} 복사되었습니다.` });
-        },
-      });
+
+    // 4) 그 외 영역 (셀 비기, 텍스트 등) — 행 클릭으로 drawer 열기
+    const tr = e.target.closest('tr');
+    if (!tr) return;
+    const reqLink = tr.querySelector('.iss-reqno-link');
+    const reqNo = reqLink ? (reqLink.dataset.reqno || reqLink.textContent.trim()) : null;
+    if (reqNo && typeof window.__openProductDrawer === 'function') {
+      window.__openProductDrawer(reqNo);
     }
   });
+  // row 클릭 시 텍스트 선택 방지 + hover 시각 피드백
+  (function styleRowClickable() {
+    const tbody = document.getElementById('data-tbody');
+    if (!tbody) return;
+    tbody.style.cursor = 'pointer';
+    const css = document.createElement('style');
+    css.textContent = '#data-tbody tr:hover { background: var(--ld-bg-low, #FAFBFC); }';
+    document.head.appendChild(css);
+  })();
 
   // 알림함 버튼 — 데모용 토스트
   const notifyBtn = document.getElementById('notify-btn');
@@ -790,11 +890,25 @@
     });
   }
 
-  // 입고 취소 (mini-action) — 데모용 토스트
+  // 입고 취소 (mini-action) — 활성 상태에서만 confirm modal
   const cancelBtn = document.getElementById('iss-cancel-btn');
   if (cancelBtn) {
     cancelBtn.addEventListener('click', () => {
-      if (SCM.toast) SCM.toast.show({ variant: 'warning', title: '입고 취소', desc: '취소할 항목을 먼저 선택해주세요.' });
+      if (cancelBtn.disabled) return;
+      const checked = document.querySelectorAll('#data-tbody .scm-checkbox[aria-checked="true"]').length;
+      if (SCM.confirmModal) {
+        SCM.confirmModal.open({
+          title: '입고 취소 확인',
+          desc: `선택하신 ${checked}건의 입고를 취소합니다.\n계속 진행하시겠습니까?`,
+          confirmLabel: '확인',
+          cancelLabel: '취소',
+          onConfirm: () => {
+            if (SCM.toast) SCM.toast.show({ variant: 'success', title: '입고 취소 완료', desc: `${checked}건이 취소되었습니다.` });
+          },
+        });
+      } else if (SCM.toast) {
+        SCM.toast.show({ variant: 'warning', title: '입고 취소', desc: `${checked}건의 입고를 취소합니다.` });
+      }
     });
   }
 
@@ -802,31 +916,53 @@
   const dlBtn = document.getElementById('excel-download-btn');
   if (dlBtn) {
     dlBtn.addEventListener('click', () => {
-      if (SCM.toast) SCM.toast.show({ variant: 'success', title: '엑셀 다운로드', desc: '전체 20건이 다운로드됩니다.' });
+      if (SCM.toast) SCM.toast.show({ variant: 'success', title: '엑셀 다운로드', desc: `전체 ${ROWS.length}건이 다운로드됩니다.` });
     });
   }
 
-  // 체크박스 선택 → 하단 액션 바
+  // ============================================================
+  // 체크박스 선택 → 입고 취소 버튼 활성 + 하단 액션 바.
+  //   SCMTable selection 모듈이 어떤 방식으로 토글하든 aria-checked 변경을
+  //   MutationObserver 로 감지해 우리 상태(refreshActionBar) 갱신.
+  //   (이전: document click listener 만 — SCMTable 가 이벤트 stopPropagation
+  //    하거나 file:// 환경에서 selection 모듈이 부분 실패하면 호출 누락.)
+  // ============================================================
   const tab = document.getElementById('table-action-bar');
   const tabCount = document.getElementById('tab-count');
   function refreshActionBar() {
-    if (!tab) return;
     const checked = document.querySelectorAll('#data-tbody .scm-checkbox[aria-checked="true"]').length;
-    if (checked > 0) {
-      tab.hidden = false;
-      if (tabCount) tabCount.textContent = String(checked);
-      if (cancelBtn) cancelBtn.disabled = false;
-    } else {
-      tab.hidden = true;
-      if (cancelBtn) cancelBtn.disabled = true;
+    if (tab) {
+      if (checked > 0) tab.hidden = false; else tab.hidden = true;
+    }
+    if (tabCount) tabCount.textContent = String(checked);
+    if (cancelBtn) {
+      if (checked > 0) {
+        cancelBtn.disabled = false;
+        cancelBtn.removeAttribute('disabled');
+      } else {
+        cancelBtn.disabled = true;
+        cancelBtn.setAttribute('disabled', '');
+      }
     }
   }
+  // 1) attribute mutation observer — aria-checked 변경 직접 감지
+  (function observeSelection() {
+    const tbodyEl = document.getElementById('data-tbody');
+    if (!tbodyEl || typeof MutationObserver === 'undefined') return;
+    const mo = new MutationObserver(() => refreshActionBar());
+    mo.observe(tbodyEl, { attributes: true, attributeFilter: ['aria-checked'], subtree: true });
+    // 헤더 전체 선택 체크박스도 관찰
+    const headerCb = document.getElementById('mp-cb-all');
+    if (headerCb) mo.observe(headerCb, { attributes: true, attributeFilter: ['aria-checked'] });
+  })();
+  // 2) capture phase click — selection 모듈이 stopPropagation 해도 우리 핸들러 도달
   document.addEventListener('click', (e) => {
-    if (e.target.closest('.scm-checkbox')) {
-      // checkbox 모듈이 aria-checked 토글한 직후 실행되도록 다음 tick 으로 미룸
+    if (e.target.closest('.scm-checkbox') || e.target.closest('td.cb-col')) {
       setTimeout(refreshActionBar, 0);
     }
-  });
+  }, true);
+  // 3) 초기 1회 호출 — 기본 상태 (disabled) 명시
+  refreshActionBar();
   const tabClear = document.getElementById('tab-clear');
   if (tabClear) {
     tabClear.addEventListener('click', () => {
