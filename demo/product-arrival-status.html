@@ -50,6 +50,32 @@
     .scm-filter-bar { top: var(--scm-sticky-gnb); }
     .scm-stats-bar--sticky { top: calc(var(--scm-sticky-gnb) + var(--scm-sticky-filter)); }
 
+    /* frozenCount=8 — base scm-table.css 는 col-frozen-6 까지만 정의. 7/8 추가. */
+    .mp-table .col-frozen-7 { position: sticky !important; left: var(--frozen-l7, 0); z-index: 5; }
+    .mp-table .col-frozen-8 { position: sticky !important; left: var(--frozen-l8, 0); z-index: 5; }
+
+    /* cb-col 의 border-left 복원 — base scm-table.css 는 체크박스가 leftmost(col 1)인 페이지를
+       전제로 .cb-col { border-left: 0 } 처리. 이 페이지는 CB 를 col 5 로 이동했으므로
+       다른 셀과 동일하게 좌측 세로 divider (1px #EBEBEB) 가 필요. 헤더 / 본문 둘 다 복원. */
+    .mp-table thead th.cb-col {
+      border-left: 1px solid #EBEBEB;
+    }
+    .mp-table tbody td.cb-col {
+      border-left: 1px solid #EBEBEB;
+    }
+    /* leftmost (No) 의 좌측 라인 제거 — base 는 .cb-col 가 leftmost 라 가정해 cb-col 에만
+       border-left:0 적용. 이 페이지는 No 가 leftmost 이므로 th:first-child 에도 적용 필요.
+       tbody 는 base 가 td:first-child { border-left: 0 } 으로 이미 처리. */
+    .mp-table thead tr:not(.group-row) th:first-child {
+      border-left: 0;
+    }
+    .mp-table thead th.col-frozen-7,
+    .mp-table thead th.col-frozen-8 { background: #fff; }
+    .mp-table tbody td.col-frozen-7,
+    .mp-table tbody td.col-frozen-8 { background: #fff; }
+    .mp-table tbody tr:hover td.col-frozen-7,
+    .mp-table tbody tr:hover td.col-frozen-8 { background: var(--ld-bg-low, #FAFBFC); }
+
     .mp-table-host { margin-top: 0; }
     .mp-table .cell-numeric { font-variant-numeric: tabular-nums; text-align: right; }
 
@@ -151,10 +177,43 @@
     /* No 컬럼: 살짝 짧은 좌우 padding (figma spec 12·12·8·8) */
     #pd-drawer .pd-drawer-table thead th.pd-th-no { padding: 8px 12px; }
     #pd-drawer .pd-drawer-table tbody td.pd-td-no { padding: 15px 16px; }
-    /* 신청번호 ↔ 입고번호 frozen 구분 — 굵은 좌측 border 2px (figma spec) */
+    /* (legacy) pd-th-frozen-border — 입고번호까지 frozen 으로 변경되면서 boundary 는
+       frozen 마지막 셀(입고번호)의 border-right 로 그림. 이 룰은 비워둠 (호환용). */
     #pd-drawer .pd-drawer-table thead th.pd-th-frozen-border,
     #pd-drawer .pd-drawer-table tbody td.pd-td-frozen-border {
-      border-left: 2px solid #EBEBEB;
+      border-left: 0;
+    }
+    /* Frozen 컬럼 sticky 처리 — No / 신청번호 / 입고번호 (colgroup width 48 / 115 / 217).
+       cumulative left: 0 / 48 / 163. table-wrap 가로 스크롤 시 좌측 3 컬럼 고정.
+       border-collapse: collapse + sticky 조합에서 인접 셀 보더가 공유되며 sticky 가
+       위로 올라갈 때 라인이 사라지거나 잘리는 회귀 차단:
+         1) sticky 셀 사이의 column divider 는 box-shadow inset 으로 cell 안쪽 우측에 그림
+            (border-collapse 영향 안 받고, 항상 cell content 위에 표시)
+         2) sticky cell 의 border-right 는 0 으로 (이중 라인 방지). */
+    #pd-drawer .pd-drawer-table thead th.pd-th-frozen-1,
+    #pd-drawer .pd-drawer-table tbody td.pd-td-frozen-1 {
+      position: sticky; left: 0; z-index: 3; background: #fff;
+      border-right: 0;
+      box-shadow: inset -1px 0 0 #EBEBEB;
+    }
+    #pd-drawer .pd-drawer-table thead th.pd-th-frozen-2,
+    #pd-drawer .pd-drawer-table tbody td.pd-td-frozen-2 {
+      position: sticky; left: 48px; z-index: 3; background: #fff;
+      border-right: 0;
+      box-shadow: inset -1px 0 0 #EBEBEB;
+    }
+    /* 마지막 frozen 셀 (입고번호) — 우측에 굵은 2px 경계선 (boundary).
+       gradient/추가 inset shadow 도 box-shadow 하나로 결합. */
+    #pd-drawer .pd-drawer-table thead th.pd-th-frozen-3,
+    #pd-drawer .pd-drawer-table tbody td.pd-td-frozen-3 {
+      position: sticky; left: 163px; z-index: 3; background: #fff;
+      border-right: 0;
+      box-shadow: inset -2px 0 0 #EBEBEB;
+    }
+    /* pd-th-frozen-last 자체 룰은 비워둠 (frozen-3 이 boundary 책임) */
+    #pd-drawer .pd-drawer-table thead th.pd-th-frozen-last,
+    #pd-drawer .pd-drawer-table tbody td.pd-td-frozen-last {
+      border-right: 0;
     }
     /* 수량 컬럼 — 우측 정렬 */
     #pd-drawer .pd-drawer-table thead th.pd-th-num { text-align: right; }
@@ -232,12 +291,16 @@
       border-top: 1.5px solid #000;
       border-bottom: 1px solid #EBEBEB;
       overflow-y: auto;
+      min-height: 0;
     }
-    /* 한 행 — date / content / writer 의 flex row */
+    /* 한 행 — date / content / writer 의 flex row.
+       flex-shrink: 0 — 부모 flex-column + overflow-y:auto 컨텍스트에서 row 가 content 보다
+       작게 압축돼서 다음 row 영역으로 넘쳐 보이던 회귀 차단. */
     .iss-notify-row {
       display: flex; align-items: stretch;
       border-top: 1px solid #EBEBEB;
       min-height: 52px;
+      flex-shrink: 0;
     }
     .iss-notify-row:first-child { border-top: 0; }
     .iss-notify-cell {
@@ -246,45 +309,82 @@
       color: #000;
       box-sizing: border-box;
     }
+    /* 헤더 row — 날짜 / 내용 / 작성자.
+       sticky 처리 — .iss-notify-table 가 overflow-y:auto 의 스크롤 컨테이너이므로
+       그 안에서 top: 0 sticky 가 동작. 셀 마다 흰 배경 + z-index 로 스크롤 시 content 가
+       비치는 것 차단. */
+    .iss-notify-row--head {
+      background: #fff;
+      border-top: 0;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    .iss-notify-row--head .iss-notify-cell {
+      font-weight: 500;
+      color: #000;
+      background: #fff;       /* 각 셀에도 배경 — 셀 사이 border-left 부근 비치는 거 방지 */
+      padding-top: 14px; padding-bottom: 14px;
+    }
+    /* sticky head 의 하단 divider — sticky 상태에서도 1px 라인이 항상 보이도록
+       head 자체에 ::after 로 그림 (다음 row 의 border-top 만 의존하면 sticky 영역
+       바닥에 라인 누락 가능). position: sticky 가 absolute child 의 anchor 역할. */
+    .iss-notify-row--head::after {
+      content: '';
+      position: absolute; left: 0; right: 0; bottom: -1px;
+      height: 1px; background: #EBEBEB;
+    }
     .iss-notify-cell--date {
-      width: 88px; flex: 0 0 88px;
+      /* "25.03.14 12:00" 가 한 줄에 들어가도록 폭 확보 (이전 88 → 152) */
+      width: 152px; flex: 0 0 152px;
       white-space: nowrap;
     }
     .iss-notify-cell--content {
+      /* figma 310 유지 */
       width: 310px; flex: 0 0 310px;
       border-left: 1px solid #EBEBEB;
       display: flex; flex-direction: column; gap: 8px;
     }
     .iss-notify-cell--writer {
-      flex: 1 1 auto;
+      flex: 1 1 auto; min-width: 0;
       border-left: 1px solid #EBEBEB;
       white-space: nowrap;
     }
     /* 알림 아이템 — 한 행 안에 1개 또는 2개 (성공+실패 등) */
-    .iss-notify-item { display: flex; flex-direction: column; gap: 4px; }
+    .iss-notify-item { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
     .iss-notify-item__title {
       color: #1A1A1A; font-size: 15px; font-weight: 600; line-height: 20.4px;
     }
     .iss-notify-item__title .iss-notify-success { color: #1A1A1A; }
     .iss-notify-item__title .iss-notify-fail    { color: #FF4D4F; }
+    /* inline-flex 대신 flex — 부모 flex-column 안에서는 일반 flex 가 안전 */
     .iss-notify-item__row {
-      display: inline-flex; align-items: center; gap: 8px;
+      display: flex; align-items: center; gap: 8px;
       flex-wrap: wrap;
     }
     .iss-notify-item__ref {
       color: #1A1A1A; font-size: 15px; font-weight: 400; line-height: 20.4px;
     }
-    /* "확인하기" — text-button (figma: 12px / 500 / #245EFF + arrow) */
+    /* "확인하기" — Ghost button small.
+       원래 figma spec 은 min-width 64 + padding 8/8/8/12 인데 content cell 폭 310 안에
+       ref 텍스트("OFFLINE_250531_1234 외 5" ~190px) 와 같이 inline 으로 들어가야 해서
+       좌우 padding + min-width 제거 (사용자 요청). 클릭 영역은 세로 8 + 텍스트/아이콘 으로 충분. */
     .iss-notify-item__cta {
-      display: inline-flex; align-items: center; gap: 0;
-      color: #245EFF; font-size: 12px; font-weight: 500; line-height: 20px;
-      background: none; border: 0; padding: 0; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 2px;
+      height: 36px; min-height: 36px; max-height: 36px;
+      padding: 8px 0;
+      background: transparent;
+      border: 0; border-radius: 4px;
+      color: #000; font-size: 14px; font-weight: 500; line-height: 19.6px;
       font-family: inherit;
+      cursor: pointer;
+      white-space: nowrap;
     }
-    .iss-notify-item__cta:hover { text-decoration: underline; }
+    .iss-notify-item__cta:hover { background: rgba(0, 0, 0, 0.04); }
     .iss-notify-item__cta svg {
-      width: 16px; height: 16px;
-      stroke-width: 1; color: #245EFF;
+      width: 16px; height: 16px; flex-shrink: 0;
+      color: #000;
     }
     .iss-notify-modal__footer {
       padding: 24px 24px 16px;
@@ -523,14 +623,14 @@
         <table class="mp-table is-cell-selectable" id="mp-table">
           <thead>
             <tr>
-              <th class="cb-col col-frozen-1" title="전체 선택"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" id="mp-cb-all" aria-label="전체 선택"></span></th>
-              <th class="col-auto col-frozen-2">No</th>
-              <th class="col-auto col-frozen-3">신청번호</th>
-              <th class="col-auto col-frozen-4">입고유형</th>
-              <th class="col-auto">상태 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
-              <th class="col-auto">입고번호</th>
-              <th class="col-auto">입고위치</th>
-              <th class="col-auto">브랜드</th>
+              <th class="col-auto col-frozen-1">No</th>
+              <th class="col-auto col-frozen-2">신청번호</th>
+              <th class="col-auto col-frozen-3">입고유형</th>
+              <th class="col-auto col-frozen-4">상태 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="cb-col col-frozen-5" title="전체 선택"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" id="mp-cb-all" aria-label="전체 선택"></span></th>
+              <th class="col-auto col-frozen-6">입고번호</th>
+              <th class="col-auto col-frozen-7">입고위치</th>
+              <th class="col-auto col-frozen-8">브랜드</th>
               <th class="col-auto">UID</th>
               <th class="col-auto">옵션</th>
               <th class="col-auto">SKU번호</th>
@@ -572,8 +672,13 @@
   </footer>
 </aside>
 
-<!-- Filter popover root -->
+<!-- Filter popover root — 본 페이지 filter-bar 용 -->
 <div class="scm-filter-popover-root" id="filter-popover-root" role="dialog" aria-hidden="true"></div>
+<!-- Filter popover root — drawer 전용. drawer 자체가 transform 을 써서
+     fixed positioning 의 containing block 이 되므로, drawer 안에 두면
+     popover 좌표가 drawer 기준으로 잘못 계산됨. body 직속으로 둬서
+     window viewport 기준으로 계산되게 한다. -->
+<div class="scm-filter-popover-root" id="pd-filter-popover-root" role="dialog" aria-hidden="true"></div>
 
 <!-- ============== 상품 상세 drawer (신청번호 클릭 시) — scm-side-drawer 기반 ============== -->
 <div class="scm-side-drawer-backdrop" id="pd-backdrop" hidden></div>
@@ -632,8 +737,6 @@
           <span class="pd-drawer__stat-num" id="pd-cnt">0</span>
         </div>
       </div>
-      <!-- Filter popover root (drawer 전용 — 본 페이지 #filter-popover-root 와 분리) -->
-      <div class="scm-filter-popover-root" id="pd-filter-popover-root" role="dialog" aria-hidden="true"></div>
       <div class="pd-drawer__table-wrap">
         <table class="pd-drawer-table">
           <!-- figma 의 각 컬럼 폭 명시 — 균일한 sizing 보장 -->
@@ -657,10 +760,10 @@
           </colgroup>
           <thead>
             <tr>
-              <th class="pd-th-no">No</th>
-              <th>신청번호</th>
-              <th class="pd-th-frozen-border">입고번호</th>
-              <th>브랜드</th>
+              <th class="pd-th-no pd-th-frozen-1">No</th>
+              <th class="pd-th-frozen-2">신청번호</th>
+              <th class="pd-th-frozen-3 pd-th-frozen-last">입고번호</th>
+              <th class="pd-th-frozen-border">브랜드</th>
               <th>UID</th>
               <th>옵션</th>
               <th>SKU번호</th>
@@ -857,6 +960,10 @@
     '취소':    'cancel',
   };
 
+  // 메인 목록 (위탁 상품 입고 현황) — 신청번호 단위 집계 뷰라
+  // 입고번호 / 브랜드 / 옵션 / 바코드 / SKU명 컬럼 셀에는 "외 N" 표기 유지.
+  // (drawer 는 개별 row 라 stripExtra 로 제거.)
+  // UID / SKU번호 / 상태 등은 사용자 요청대로 "외 N" 표시 안 함.
   function rowHtml(r, idx) {
     const inboundColor = INBOUND_TAG[r.inboundType] || 'gray';
     const inboundChip  = isEmpty(r.inboundType)
@@ -864,8 +971,7 @@
       : `<span class="scm-tag scm-tag--${inboundColor}">${escapeHtml(r.inboundType)}</span>`;
 
     const statusVar   = STATUS_CLS[r.status] || 'waiting';
-    const statusExtra = r.statusExtra ? ` <span style="font-size:13px;color:#666;">외 ${r.statusExtra}</span>` : '';
-    const statusChip  = isEmpty(r.status) ? NA : `<span class="scm-status-chip scm-status-chip--${statusVar}">${escapeHtml(r.status)}</span>${statusExtra}`;
+    const statusChip  = isEmpty(r.status) ? NA : `<span class="scm-status-chip scm-status-chip--${statusVar}">${escapeHtml(r.status)}</span>`;
 
     const optChip = isEmpty(r.opt)
       ? NA
@@ -880,17 +986,17 @@
 
     return `
       <tr>
-        <td class="cb-col col-frozen-1"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="선택"></span></td>
-        <td class="col-auto col-frozen-2">${idx + 1}</td>
-        <td class="col-auto col-frozen-3">${isEmpty(r.reqNo) ? NA : `<a class="iss-reqno-link" data-reqno="${escapeHtml(r.reqNo)}">${escapeHtml(r.reqNo)}</a>`}</td>
-        <td class="col-auto col-frozen-4">${inboundChip}</td>
-        <td class="col-auto">${statusChip}</td>
-        <td class="col-auto">${fmtText(r.inNo)}</td>
-        <td class="col-auto">${fmtText(r.loc)}</td>
-        <td class="col-auto">${withExtra(r.brand, r.brandExtra)}</td>
-        <td class="col-auto">${isEmpty(r.uid) ? NA : `<a class="scm-code-link" data-code-type="uid">${escapeHtml(r.uid)}${r.uidExtra ? ` 외 ${r.uidExtra}` : ''}</a>`}</td>
+        <td class="col-auto col-frozen-1">${idx + 1}</td>
+        <td class="col-auto col-frozen-2">${isEmpty(r.reqNo) ? NA : `<a class="iss-reqno-link" data-reqno="${escapeHtml(r.reqNo)}">${escapeHtml(r.reqNo)}</a>`}</td>
+        <td class="col-auto col-frozen-3">${inboundChip}</td>
+        <td class="col-auto col-frozen-4">${statusChip}</td>
+        <td class="cb-col col-frozen-5"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="선택"></span></td>
+        <td class="col-auto col-frozen-6">${fmtText(r.inNo)}</td>
+        <td class="col-auto col-frozen-7">${fmtText(r.loc)}</td>
+        <td class="col-auto col-frozen-8">${isEmpty(r.brand) ? NA : `${escapeHtml(r.brand)}${r.brandExtra ? ` 외 ${r.brandExtra}` : ''}`}</td>
+        <td class="col-auto">${isEmpty(r.uid) ? NA : `<a class="scm-code-link" data-code-type="uid">${escapeHtml(r.uid)}</a>`}</td>
         <td class="col-auto">${optChip}</td>
-        <td class="col-auto">${isEmpty(r.sku) ? NA : `<a class="scm-code-link" data-code-type="sku">${escapeHtml(r.sku)}${r.skuExtra ? ` 외 ${r.skuExtra}` : ''}</a>`}</td>
+        <td class="col-auto">${isEmpty(r.sku) ? NA : `<a class="scm-code-link" data-code-type="sku">${escapeHtml(r.sku)}</a>`}</td>
         <td class="col-auto">${isEmpty(r.barcode) ? NA : `<a class="scm-code-link" data-code-type="barcode">${escapeHtml(r.barcode)}</a>`}</td>
         <td class="col-large">${nameCell}</td>
         <td class="col-auto">${isEmpty(r.styleNo) ? NA : `<a class="scm-code-link" data-code-type="styleNo">${escapeHtml(r.styleNo)}</a>`}</td>
@@ -917,7 +1023,7 @@
 
   // ----- SCM Table interactions -----
   if (window.SCMTable) {
-    try { window.SCMTable.init({ root: document, frozenCount: 4 }); } catch (e) { console.warn('SCMTable init failed:', e); }
+    try { window.SCMTable.init({ root: document, frozenCount: 8 }); } catch (e) { console.warn('SCMTable init failed:', e); }
   }
   if (window.SCM && SCM.tableSort)           SCM.tableSort.mount({ tableSelector: '.mp-table-scroll .mp-table' });
   if (window.SCM && SCM.columnMoreMenu)      SCM.columnMoreMenu.mount({ tableSelector: '.mp-table-scroll .mp-table' });
@@ -980,22 +1086,27 @@
     let _drawerRows = [];
     let _drawerFilterInstance = null;
 
+    // drawer 안 모든 셀에서 "외 N" suffix 제거 — 개별 row 단위라 집계 표기가 의미 없음.
+    function stripExtra(s) {
+      if (s == null) return '';
+      return String(s).replace(/\s*외\s*\d+\s*$/, '');
+    }
     function rowToDetailHtml(r, idx) {
       const confirmedColor = r.confirmedQty ? 'pd-num--accent' : '';
       return `
         <tr>
-          <td class="pd-td-no">${idx + 1}</td>
-          <td>${escapeHtml(r.reqNo)}</td>
-          <td class="pd-td-frozen-border">${escapeHtml(r.inNo)}</td>
-          <td>${escapeHtml(r.brand)}${r.brandExtra ? ` 외 ${r.brandExtra}` : ''}</td>
+          <td class="pd-td-no pd-td-frozen-1">${idx + 1}</td>
+          <td class="pd-td-frozen-2">${escapeHtml(r.reqNo)}</td>
+          <td class="pd-td-frozen-3 pd-td-frozen-last">${escapeHtml(stripExtra(r.inNo))}</td>
+          <td class="pd-td-frozen-border">${escapeHtml(r.brand)}</td>
           <td><span class="pd-underline">${escapeHtml(r.uid)}</span></td>
-          <td>${escapeHtml(r.opt)}${r.optExtra ? ` 외 ${r.optExtra}` : ''}</td>
+          <td>${escapeHtml(r.opt)}</td>
           <td><span class="pd-underline">${escapeHtml(r.sku)}</span></td>
-          <td>${escapeHtml(r.barcode)}</td>
+          <td>${escapeHtml(stripExtra(r.barcode))}</td>
           <td>
             <span class="pd-name-cell">
               <span class="pd-thumb"></span>
-              <span>${escapeHtml(r.name)}</span>
+              <span>${escapeHtml(stripExtra(r.name))}</span>
             </span>
           </td>
           <td>${escapeHtml(r.styleNo)}</td>
@@ -1037,8 +1148,8 @@
       // 같은 신청번호 행이 여러 개일 수 있음 — 모두 모음.
       // 데모에서는 보통 1건이라 일치 row 1건이지만, 같은 reqNo 있으면 함께 표시.
       const matching = ROWS.filter(r => r.reqNo === reqNo);
-      // 데모: 매칭 1건이어도 같은 신청 그룹의 다른 상품 8건 함께 표시 — figma 패턴.
-      _drawerRows = matching.length >= 8 ? matching : matching.concat(ROWS.slice(0, 8 - matching.length));
+      // 데모: drawer 안에 입고 상품 30개를 채워 표시 (매칭 row + filler).
+      _drawerRows = matching.length >= 30 ? matching : matching.concat(ROWS.slice(0, 30 - matching.length));
       if (titleEl) titleEl.textContent = reqNo;
       // 필터 초기화 (있다면) 후 전체 row render
       if (_drawerFilterInstance && typeof _drawerFilterInstance.reset === 'function') {
@@ -1188,7 +1299,8 @@
     if (e.target.closest('.scm-checkbox') || e.target.closest('td.cb-col')) return;
 
     // 2) 신청번호 셀 — link 텍스트 위든 셀 빈 공간이든 클릭하면 drawer
-    const reqCell = e.target.closest('td.col-frozen-3');
+    //    (reorder: 체크박스가 col-frozen-3 → col-frozen-2 로 이동)
+    const reqCell = e.target.closest('td.col-frozen-2');
     if (reqCell) {
       e.preventDefault();
       const link  = reqCell.querySelector('.iss-reqno-link');
@@ -1239,63 +1351,118 @@
     tbody.style.cursor = '';
     const css = document.createElement('style');
     css.textContent =
-      '#data-tbody td.col-frozen-3 { cursor: pointer; }' +
-      '#data-tbody td.col-frozen-3:hover { background: var(--ld-bg-low, #FAFBFC); }';
+      '#data-tbody td.col-frozen-2 { cursor: pointer; }' +
+      '#data-tbody td.col-frozen-2:hover { background: var(--ld-bg-low, #FAFBFC); }';
     document.head.appendChild(css);
   })();
 
   // ============================================================
-  // 알림함 모달 — 진행/완료 결과 리스트 (figma spec: 640px)
+  // 알림함 모달 — 진행/완료 결과 리스트 (figma spec: 640px, flex 레이아웃)
+  //   한 row 안에 items[] (1~2개) — 같은 날짜의 성공/실패가 한 행에 모임.
   // ============================================================
-  const NOTIFY_ITEMS = [
-    { date:'25.03.15', kind:'success', count:9,  reqNo:'A000008101', writer:'WMS' },
-    { date:'25.03.15', kind:'fail',    count:1,  reqNo:'A000008101', writer:'WMS' },
-    { date:'25.03.14', kind:'success', count:12, reqNo:'A000008099', writer:'WMS' },
-    { date:'25.03.14', kind:'fail',    count:3,  reqNo:'A000008099', writer:'WMS' },
-    { date:'25.03.13', kind:'success', count:20, reqNo:'A000008097', writer:'WMS' },
-    { date:'25.03.12', kind:'success', count:5,  reqNo:'A000008095', writer:'WMS' },
-    { date:'25.03.12', kind:'fail',    count:2,  reqNo:'A000008095', writer:'WMS' },
-  ];
-  function renderNotifyList() {
-    const tbody = document.getElementById('iss-notify-tbody');
-    if (!tbody) return;
-    tbody.innerHTML = NOTIFY_ITEMS.map(it => {
-      const tone = it.kind === 'success' ? 'iss-notify-success' : 'iss-notify-fail';
-      const word = it.kind === 'success' ? '성공' : '실패';
-      return (
-        '<tr>' +
-          '<td class="iss-notify-date">' + it.date + '</td>' +
-          '<td class="iss-notify-content">' +
-            '<div class="iss-notify-item">' +
-              '<div class="iss-notify-item__title">' +
-                '<span class="' + tone + '">' + it.count + '건 입고 취소 ' + word + '</span>' +
-              '</div>' +
-              '<div class="iss-notify-item__row">' +
-                '<span>' + it.reqNo + '</span>' +
-                '<button type="button" class="iss-notify-item__cta" data-req="' + it.reqNo + '">' +
-                  '확인하기' +
-                  '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
-                '</button>' +
-              '</div>' +
-            '</div>' +
-          '</td>' +
-          '<td class="iss-notify-writer">' + it.writer + '</td>' +
-        '</tr>'
-      );
-    }).join('');
+  const NOTIFY_ROWS = (function buildNotifyRows() {
+    const base = [
+      { date:'25.03.14 12:00', writer:'홍길동', items: [
+        { kind:'success', count:9,  ref:'OFFLINE_250531_1234 외 5' },
+      ]},
+      { date:'25.03.14 12:00', writer:'홍길동', items: [
+        { kind:'success', count:9,  ref:'OFFLINE_250531_1234 외 5' },
+        { kind:'fail',    count:1,  ref:'OFFLINE_250531_1234 외 5' },
+      ]},
+      { date:'25.03.14 12:00', writer:'홍길동', items: [
+        { kind:'success', count:12, ref:'OFFLINE_250531_1234 외 5' },
+      ]},
+      { date:'25.03.14 12:00', writer:'홍길동', items: [
+        { kind:'success', count:20, ref:'OFFLINE_250531_1234 외 5' },
+        { kind:'fail',    count:2,  ref:'OFFLINE_250531_1234 외 5' },
+      ]},
+      { date:'25.03.13 12:00', writer:'홍길동', items: [
+        { kind:'success', count:5,  ref:'OFFLINE_250531_1234 외 5' },
+      ]},
+    ];
+    // 30개 추가 — base 패턴을 날짜/카운트/케이스 살짝씩 바꿔 반복
+    const WRITERS = ['홍길동', '김무신', '이무탠', '박오피', '최물류'];
+    const REFS = ['OFFLINE_250531_1234 외 5', 'OFFLINE_250531_1240 외 3', 'OFFLINE_250531_1257 외 2', 'OFFLINE_250531_1289'];
+    const extra = [];
+    for (let i = 0; i < 30; i++) {
+      const day = 13 - (i % 8);                  // 25.03.05 ~ 25.03.13
+      const hh  = 9 + (i % 9);                   // 09:00 ~ 17:00
+      const mm  = (i * 7) % 60;
+      const dateStr = `25.03.${String(day).padStart(2,'0')} ${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+      const writer = WRITERS[i % WRITERS.length];
+      const refA = REFS[i % REFS.length];
+      const items = [];
+      const successCount = 1 + ((i * 3) % 25);
+      items.push({ kind:'success', count: successCount, ref: refA });
+      if (i % 3 === 0) {
+        const refB = REFS[(i + 1) % REFS.length];
+        items.push({ kind:'fail', count: 1 + (i % 4), ref: refB });
+      }
+      extra.push({ date: dateStr, writer, items });
+    }
+    return base.concat(extra);
+  })();
+  function _itemHtml(it) {
+    const word = it.kind === 'success' ? '성공' : '실패';
+    const toneCls = it.kind === 'success' ? 'iss-notify-success' : 'iss-notify-fail';
+    return (
+      '<div class="iss-notify-item">' +
+        '<div class="iss-notify-item__title">' +
+          '<span>' + it.count + '건 입고 취소 </span>' +
+          '<span class="' + toneCls + '">' + word + '</span>' +
+        '</div>' +
+        '<div class="iss-notify-item__row">' +
+          '<span class="iss-notify-item__ref">' + it.ref + '</span>' +
+          '<button type="button" class="iss-notify-item__cta" data-ref="' + it.ref + '">' +
+            '<span>확인하기</span>' +
+            // figma: arrowRight regular (1.4 stroke), bounds 4.8x9.6 within 16x16 viewBox
+            '<svg viewBox="0 0 16 16" aria-hidden="true">' +
+              '<path d="M6 3.2L10.8 8L6 12.8" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' +
+            '</svg>' +
+          '</button>' +
+        '</div>' +
+      '</div>'
+    );
   }
+  function renderNotifyList() {
+    const root = document.getElementById('iss-notify-tbody');
+    if (!root) return;
+    const headHtml = (
+      '<div class="iss-notify-row iss-notify-row--head">' +
+        '<div class="iss-notify-cell iss-notify-cell--date">처리일시</div>' +
+        '<div class="iss-notify-cell iss-notify-cell--content">내용</div>' +
+        '<div class="iss-notify-cell iss-notify-cell--writer">처리자</div>' +
+      '</div>'
+    );
+    root.innerHTML = headHtml + NOTIFY_ROWS.map(r => (
+      '<div class="iss-notify-row">' +
+        '<div class="iss-notify-cell iss-notify-cell--date">' + r.date + '</div>' +
+        '<div class="iss-notify-cell iss-notify-cell--content">' +
+          r.items.map(_itemHtml).join('') +
+        '</div>' +
+        '<div class="iss-notify-cell iss-notify-cell--writer">' + r.writer + '</div>' +
+      '</div>'
+    )).join('');
+  }
+  // 모달 열림/닫힘 시 body scroll lock — SCM.scrollLock 직접 호출 (자체 counter 보유,
+  // 자체 wrapper 두면 drawer 등 다른 모듈 lock 과 sync 어긋남). open 마다 lock, close 마다 unlock
+  // 페어로 정확히 호출하면 SCM.scrollLock 가 모든 모달/드로어 lock 총합을 안전하게 관리.
   function openNotifyModal() {
-    renderNotifyList();
     const bd = document.getElementById('iss-notify-backdrop');
+    if (!bd || !bd.hidden) return;  // 이미 열려있으면 중복 lock 방지
+    renderNotifyList();
     const md = document.getElementById('iss-notify-modal');
-    if (bd) bd.hidden = false;
+    bd.hidden = false;
     if (md) md.hidden = false;
+    if (window.SCM && SCM.scrollLock) SCM.scrollLock.lock();
   }
   function closeNotifyModal() {
     const bd = document.getElementById('iss-notify-backdrop');
+    if (!bd || bd.hidden) return;  // 이미 닫힌 상태면 unlock 중복 호출 방지
     const md = document.getElementById('iss-notify-modal');
-    if (bd) bd.hidden = true;
+    bd.hidden = true;
     if (md) md.hidden = true;
+    if (window.SCM && SCM.scrollLock) SCM.scrollLock.unlock();
   }
   const notifyBtn = document.getElementById('notify-btn');
   if (notifyBtn) notifyBtn.addEventListener('click', openNotifyModal);
@@ -1305,14 +1472,14 @@
   if (notifyCloseBtn) notifyCloseBtn.addEventListener('click', closeNotifyModal);
   // 알림 row 내 "확인하기" → 데모용 토스트
   (function wireNotifyCta() {
-    const tbody = document.getElementById('iss-notify-tbody');
-    if (!tbody) return;
-    tbody.addEventListener('click', (e) => {
+    const root = document.getElementById('iss-notify-tbody');
+    if (!root) return;
+    root.addEventListener('click', (e) => {
       const btn = e.target.closest('.iss-notify-item__cta');
       if (!btn) return;
-      const req = btn.getAttribute('data-req') || '';
+      const ref = btn.getAttribute('data-ref') || '';
       closeNotifyModal();
-      if (SCM.toast) SCM.toast.show({ variant: 'info', title: '확인하기', desc: req + ' 건 상세로 이동합니다.' });
+      if (SCM.toast) SCM.toast.show({ variant: 'info', title: '확인하기', desc: ref + ' 상세로 이동합니다.' });
     });
   })();
 
@@ -1323,18 +1490,22 @@
   // ============================================================
   let _cancelOnConfirm = null;
   function openCancelModal(onConfirm) {
-    _cancelOnConfirm = typeof onConfirm === 'function' ? onConfirm : null;
     const bd = document.getElementById('iss-cancel-backdrop');
+    if (!bd || !bd.hidden) return;  // 이미 열려있으면 중복 lock 방지
+    _cancelOnConfirm = typeof onConfirm === 'function' ? onConfirm : null;
     const md = document.getElementById('iss-cancel-modal');
-    if (bd) bd.hidden = false;
+    bd.hidden = false;
     if (md) md.hidden = false;
+    if (window.SCM && SCM.scrollLock) SCM.scrollLock.lock();
   }
   function closeCancelModal() {
-    _cancelOnConfirm = null;
     const bd = document.getElementById('iss-cancel-backdrop');
+    if (!bd || bd.hidden) return;
     const md = document.getElementById('iss-cancel-modal');
-    if (bd) bd.hidden = true;
+    _cancelOnConfirm = null;
+    bd.hidden = true;
     if (md) md.hidden = true;
+    if (window.SCM && SCM.scrollLock) SCM.scrollLock.unlock();
   }
   const cancelModalBackdrop = document.getElementById('iss-cancel-backdrop');
   if (cancelModalBackdrop) cancelModalBackdrop.addEventListener('click', closeCancelModal);
