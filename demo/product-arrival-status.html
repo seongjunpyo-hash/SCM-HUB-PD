@@ -79,60 +79,54 @@
        만 가지고 있어서 매칭 0건 → 스타일이 통째로 안 먹던 문제. id 기반으로
        통일. */
     #pd-drawer { width: min(1600px, 95vw); max-width: none; }
+    /* 기본 head 제거 — 빈 56px 공백 차지하던 영역 숨김. */
+    #pd-drawer .scm-side-drawer__head { display: none; }
     #pd-drawer .scm-side-drawer__body { padding: 0; }
+    /* 닫기 버튼 — title 영역 우측 상단에 absolute. */
+    #pd-drawer .pd-drawer__close-x {
+      position: absolute; top: 16px; right: 16px;
+      width: 32px; height: 32px; padding: 6px;
+      background: transparent; border: 0; border-radius: 4px;
+      color: #000; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      z-index: 5;
+    }
+    #pd-drawer .pd-drawer__close-x:hover { background: rgba(0,0,0,0.04); }
+    #pd-drawer .pd-drawer__close-x svg { width: 20px; height: 20px; }
     #pd-drawer .pd-drawer__title {
-      padding: 24px 24px 4px;
+      /* figma: padding 24 24 0 24 (gap은 다음 형제 wrap 의 padding-top 으로 결정) */
+      padding: 24px 24px 0;
       color: rgba(0, 0, 0, 0.88);
       font-size: 18px; font-weight: 600; line-height: 24.48px;
     }
     #pd-drawer .pd-drawer__body-wrap {
-      padding: 20px 24px;
+      /* figma: padding 20 24 0 24 — 위는 헤더와 거리, 아래는 footer 가 자체 24 으로 처리. */
+      padding: 20px 24px 0;
       display: flex; flex-direction: column;
-      /* 검색 영역 ↔ 액션바 사이 16px. 액션바 ↔ 테이블 사이는 0
-         (액션바 자체 padding 12 으로 자연스러운 여백). */
       gap: 0;
     }
-    /* 검색 영역 — figma 패턴: 필터 chip 들 + 검색 disabled 버튼 */
-    #pd-drawer .pd-drawer__search-row {
-      display: flex; align-items: center; gap: 8px;
-      margin-bottom: 16px;
+    /* drawer 안 filter-bar — sticky off, padding 0, 본 페이지 layer-desktop sticky 룰 무력화 */
+    #pd-drawer .pd-drawer__filter-bar {
+      position: static; top: auto;
+      padding: 0; margin: 0 0 16px;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      min-height: auto;
     }
-    #pd-drawer .pd-drawer__filters {
-      display: flex; flex-wrap: wrap; gap: 8px;
-      flex: 1 1 auto; min-width: 0;
-    }
-    #pd-drawer .pd-drawer__filter-chip {
-      display: inline-flex; align-items: center; gap: 8px;
-      min-width: 120px; height: 44px; padding: 12px 16px;
-      background: #fff;
-      border: 1px solid #E0E0E0; border-radius: 4px;
-      color: #8A8A8A;
-      font-family: inherit; font-size: 15px; font-weight: 500; line-height: 20.4px;
-      cursor: not-allowed;
-      white-space: nowrap;
-    }
-    #pd-drawer .pd-drawer__filter-chip svg {
-      width: 16px; height: 16px; flex-shrink: 0;
-      color: #000;
-    }
-    #pd-drawer .pd-drawer__filter-chip > span { flex: 1 1 auto; text-align: left; }
-    #pd-drawer .pd-drawer__search-btn {
-      min-width: 80px; height: 44px; padding: 12px 16px;
-      background: rgba(138, 138, 138, 0.10);
-      border: 1px solid #EBEBEB; border-radius: 4px;
-      color: rgba(0, 0, 0, 0.20);
-      font-family: inherit; font-size: 15px; font-weight: 500; line-height: 20.4px;
-      cursor: not-allowed;
-      flex-shrink: 0;
-    }
-    /* 액션바 — "전체 N" (figma 의 60px 액션바 spec) */
+    /* filter-bar 안 검색 / 초기화 액션은 우측 끝 정렬 유지 */
+    #pd-drawer .pd-drawer__filter-bar .scm-filter-actions { flex-shrink: 0; }
+    /* 액션바 — figma spec: height 60 / padding 12 0 / gap 28 */
     #pd-drawer .pd-drawer__stats {
-      height: 60px; padding: 12px 0;
-      display: flex; align-items: center; gap: 16px;
+      height: 60px; min-height: 60px;
+      padding: 12px 0;
+      display: flex; align-items: center; gap: 28px;
+      box-sizing: border-box;
+      background: #fff;
     }
     #pd-drawer .pd-drawer__stat { display: flex; align-items: center; gap: 4px; }
-    #pd-drawer .pd-drawer__stat-label { font-size: 15px; font-weight: 500; color: #000; }
-    #pd-drawer .pd-drawer__stat-num   { font-size: 15px; font-weight: 600; color: #000; }
+    #pd-drawer .pd-drawer__stat-label { font-size: 15px; font-weight: 500; line-height: 20.4px; color: #000; }
+    #pd-drawer .pd-drawer__stat-num   { font-size: 15px; font-weight: 600; line-height: 20.4px; color: #000; }
     #pd-drawer .pd-drawer__table-wrap { overflow-x: auto; }
     #pd-drawer table.pd-drawer-table {
       width: max-content; min-width: 100%;
@@ -200,6 +194,156 @@
       cursor: pointer;
     }
     #pd-drawer .pd-drawer__close-btn:hover { background: #FAFBFC; }
+
+    /* ========== 알림함 모달 (figma spec: 640px, flex 레이아웃) ========== */
+    .iss-notify-modal-backdrop {
+      position: fixed; inset: 0; z-index: 1099;
+      background: rgba(0, 0, 0, 0.45);
+    }
+    .iss-notify-modal-backdrop[hidden] { display: none; }
+    .iss-notify-modal {
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 640px; max-width: 640px;
+      background: #fff; border-radius: 8px;
+      box-shadow: 0 10px 15px 8px rgba(0,0,0,0.05);
+      display: flex; flex-direction: column;
+      max-height: calc(100vh - 80px); overflow: hidden;
+      z-index: 1100;
+      font-family: inherit;
+    }
+    .iss-notify-modal[hidden] { display: none; }
+    .iss-notify-modal__head { padding: 24px 24px 0; }
+    .iss-notify-modal__title {
+      margin: 0; color: #000;
+      font-size: 18px; font-weight: 600; line-height: 24.48px;
+    }
+    /* body — figma: padding-top 20 / L·R 24 / height 628 / overflow hidden */
+    .iss-notify-modal__body {
+      flex: 1 1 auto;
+      padding: 20px 24px 0;
+      max-height: 628px;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    /* 테이블 영역 — flex 컬럼. 상단 두꺼운 블랙 라인 1.5px (figma 기존 2 → 1.5 로 변경) */
+    .iss-notify-table {
+      display: flex; flex-direction: column;
+      border-top: 1.5px solid #000;
+      border-bottom: 1px solid #EBEBEB;
+      overflow-y: auto;
+    }
+    /* 한 행 — date / content / writer 의 flex row */
+    .iss-notify-row {
+      display: flex; align-items: stretch;
+      border-top: 1px solid #EBEBEB;
+      min-height: 52px;
+    }
+    .iss-notify-row:first-child { border-top: 0; }
+    .iss-notify-cell {
+      padding: 16px;
+      font-size: 15px; font-weight: 400; line-height: 20.4px;
+      color: #000;
+      box-sizing: border-box;
+    }
+    .iss-notify-cell--date {
+      width: 88px; flex: 0 0 88px;
+      white-space: nowrap;
+    }
+    .iss-notify-cell--content {
+      width: 310px; flex: 0 0 310px;
+      border-left: 1px solid #EBEBEB;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .iss-notify-cell--writer {
+      flex: 1 1 auto;
+      border-left: 1px solid #EBEBEB;
+      white-space: nowrap;
+    }
+    /* 알림 아이템 — 한 행 안에 1개 또는 2개 (성공+실패 등) */
+    .iss-notify-item { display: flex; flex-direction: column; gap: 4px; }
+    .iss-notify-item__title {
+      color: #1A1A1A; font-size: 15px; font-weight: 600; line-height: 20.4px;
+    }
+    .iss-notify-item__title .iss-notify-success { color: #1A1A1A; }
+    .iss-notify-item__title .iss-notify-fail    { color: #FF4D4F; }
+    .iss-notify-item__row {
+      display: inline-flex; align-items: center; gap: 8px;
+      flex-wrap: wrap;
+    }
+    .iss-notify-item__ref {
+      color: #1A1A1A; font-size: 15px; font-weight: 400; line-height: 20.4px;
+    }
+    /* "확인하기" — text-button (figma: 12px / 500 / #245EFF + arrow) */
+    .iss-notify-item__cta {
+      display: inline-flex; align-items: center; gap: 0;
+      color: #245EFF; font-size: 12px; font-weight: 500; line-height: 20px;
+      background: none; border: 0; padding: 0; cursor: pointer;
+      font-family: inherit;
+    }
+    .iss-notify-item__cta:hover { text-decoration: underline; }
+    .iss-notify-item__cta svg {
+      width: 16px; height: 16px;
+      stroke-width: 1; color: #245EFF;
+    }
+    .iss-notify-modal__footer {
+      padding: 24px 24px 16px;
+      display: flex; justify-content: flex-end; gap: 8px;
+      border-top: 0;
+    }
+    .iss-notify-modal__close-btn {
+      min-width: 56px; height: 44px; padding: 12px;
+      background: #fff; border: 1px solid #E0E0E0; border-radius: 4px;
+      font-family: inherit; font-size: 15px; font-weight: 500; color: #000;
+      cursor: pointer;
+    }
+    .iss-notify-modal__close-btn:hover { background: #FAFBFC; }
+
+    /* ========== 입고 취소 확인 모달 (figma spec: 360px) ========== */
+    .iss-cancel-modal-backdrop {
+      position: fixed; inset: 0; z-index: 1099;
+      background: rgba(0, 0, 0, 0.45);
+    }
+    .iss-cancel-modal-backdrop[hidden] { display: none; }
+    .iss-cancel-modal {
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 360px; background: #fff;
+      box-shadow: 0 10px 15px 8px rgba(0,0,0,0.05);
+      border-radius: 6px;
+      display: flex; flex-direction: column;
+      z-index: 1100;
+      font-family: inherit;
+    }
+    .iss-cancel-modal[hidden] { display: none; }
+    .iss-cancel-modal__title {
+      padding: 24px 24px 12px;
+      color: rgba(0,0,0,0.88);
+      font-size: 18px; font-weight: 600; line-height: 24.48px;
+    }
+    .iss-cancel-modal__desc {
+      padding: 0 24px 16px;
+      color: #1A1A1A;
+      font-size: 15px; font-weight: 400; line-height: 20.4px;
+    }
+    .iss-cancel-modal__footer {
+      padding: 12px 24px 24px;
+      display: flex; justify-content: flex-end; align-items: center; gap: 8px;
+    }
+    .iss-cancel-modal__btn-cancel {
+      min-width: 56px; height: 40px; padding: 10px;
+      background: #fff; border: 1px solid #E0E0E0; border-radius: 4px;
+      font-family: inherit; font-size: 14px; font-weight: 500; line-height: 19.6px; color: #000;
+      cursor: pointer;
+    }
+    .iss-cancel-modal__btn-cancel:hover { background: #FAFBFC; }
+    .iss-cancel-modal__btn-confirm {
+      min-width: 56px; height: 40px; padding: 10px 16px;
+      background: #000; border: 0; border-radius: 4px;
+      font-family: inherit; font-size: 14px; font-weight: 500; line-height: 19.6px; color: #fff;
+      cursor: pointer;
+    }
+    .iss-cancel-modal__btn-confirm:hover { background: #1a1a1a; }
 
     /* 우측 상단 — 알림함 버튼 (page-head action 영역) */
     .iss-notify-btn {
@@ -434,42 +578,52 @@
 <!-- ============== 상품 상세 drawer (신청번호 클릭 시) — scm-side-drawer 기반 ============== -->
 <div class="scm-side-drawer-backdrop" id="pd-backdrop" hidden></div>
 <aside class="scm-side-drawer" id="pd-drawer" hidden role="dialog" aria-label="상품 상세">
-  <header class="scm-side-drawer__head">
-    <!-- 작은 신청번호 라벨은 제거 — body 의 큰 타이틀(#pd-reqno-title) 한 곳에서만 표시 -->
-    <span class="scm-side-drawer__head-meta"></span>
-    <button class="scm-side-drawer__close" type="button" aria-label="닫기">
-      <svg viewBox="0 0 20 20"><use href="#ic-close"/></svg>
-    </button>
-  </header>
+  <!-- 기본 head 는 빈 56px 공백만 차지하므로 제거. 닫기 버튼은 우측 상단에 absolute 로 배치 (#pd-drawer-close) -->
+  <button class="pd-drawer__close-x" type="button" id="pd-drawer-close" aria-label="닫기">
+    <svg viewBox="0 0 20 20"><use href="#ic-close"/></svg>
+  </button>
   <div class="scm-side-drawer__body">
     <!-- body 상단 타이틀: 신청번호 코드 (figma 패턴) — JS 가 동적 갱신 -->
     <div class="pd-drawer__title" id="pd-reqno-title">A000008101</div>
     <div class="pd-drawer__body-wrap">
-      <!-- 검색 영역 (figma 패턴 — 필터 chip + 검색 disabled 버튼) -->
-      <div class="pd-drawer__search-row">
-        <div class="pd-drawer__filters">
-          <button class="pd-drawer__filter-chip" type="button" disabled>
-            <span>브랜드</span>
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
-          </button>
-          <button class="pd-drawer__filter-chip" type="button" disabled>
-            <span>UID</span>
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
-          </button>
-          <button class="pd-drawer__filter-chip" type="button" disabled>
-            <span>SKU번호</span>
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
-          </button>
-          <button class="pd-drawer__filter-chip" type="button" disabled>
-            <span>바코드</span>
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
-          </button>
-          <button class="pd-drawer__filter-chip" type="button" disabled>
-            <span>스타일넘버</span>
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+      <!-- 검색 영역 — 본 페이지 상단 filter-bar 와 동일한 scm-filter-select chips. -->
+      <div class="scm-filter-bar pd-drawer__filter-bar" id="pd-filter-bar">
+        <div class="scm-filter-overflow">
+          <div class="scm-filter-overflow__track">
+            <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="brand">
+              <span class="scm-filter-select__label">브랜드</span>
+              <span class="scm-filter-select__value">브랜드</span>
+              <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+            </button>
+            <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="uid">
+              <span class="scm-filter-select__label">UID</span>
+              <span class="scm-filter-select__value">UID</span>
+              <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+            </button>
+            <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="sku">
+              <span class="scm-filter-select__label">SKU번호</span>
+              <span class="scm-filter-select__value">SKU번호</span>
+              <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+            </button>
+            <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="barcode">
+              <span class="scm-filter-select__label">바코드</span>
+              <span class="scm-filter-select__value">바코드</span>
+              <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+            </button>
+            <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="styleNumber">
+              <span class="scm-filter-select__label">스타일넘버</span>
+              <span class="scm-filter-select__value">스타일넘버</span>
+              <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="scm-filter-actions">
+          <button class="scm-search-btn" type="button">검색</button>
+          <button class="scm-filter-reset-btn" type="button">
+            <svg viewBox="0 0 20 20"><use href="#ic-refresh"/></svg>
+            <span>초기화</span>
           </button>
         </div>
-        <button class="pd-drawer__search-btn" type="button" disabled>검색</button>
       </div>
       <!-- 액션바 — "전체 N" (figma: 입고 취소 버튼 제외) -->
       <div class="pd-drawer__stats">
@@ -478,6 +632,8 @@
           <span class="pd-drawer__stat-num" id="pd-cnt">0</span>
         </div>
       </div>
+      <!-- Filter popover root (drawer 전용 — 본 페이지 #filter-popover-root 와 분리) -->
+      <div class="scm-filter-popover-root" id="pd-filter-popover-root" role="dialog" aria-hidden="true"></div>
       <div class="pd-drawer__table-wrap">
         <table class="pd-drawer-table">
           <!-- figma 의 각 컬럼 폭 명시 — 균일한 sizing 보장 -->
@@ -542,7 +698,7 @@
   </div>
 </div>
 
-<!-- Confirm modal -->
+<!-- Confirm modal (legacy SCM.confirmModal — 현재 데모에서는 사용 안 함, 호환용 유지) -->
 <div class="scm-confirm-modal-backdrop" id="confirm-backdrop"></div>
 <div class="scm-confirm-modal" id="confirm-modal" role="dialog" aria-labelledby="cm-title">
   <h3 class="scm-confirm-modal__title" id="cm-title">입고 취소 확인</h3>
@@ -553,6 +709,31 @@
   <div class="scm-confirm-modal__actions">
     <button type="button" class="scm-confirm-modal__cancel">취소</button>
     <button type="button" class="scm-confirm-modal__confirm primary">변경</button>
+  </div>
+</div>
+
+<!-- ============== 알림함 모달 (figma spec: 640px, flex 레이아웃) ============== -->
+<div class="iss-notify-modal-backdrop" id="iss-notify-backdrop" hidden></div>
+<div class="iss-notify-modal" id="iss-notify-modal" hidden role="dialog" aria-labelledby="iss-notify-title">
+  <header class="iss-notify-modal__head">
+    <h2 class="iss-notify-modal__title" id="iss-notify-title">알림함</h2>
+  </header>
+  <div class="iss-notify-modal__body">
+    <div class="iss-notify-table" id="iss-notify-tbody"></div>
+  </div>
+  <footer class="iss-notify-modal__footer">
+    <button class="iss-notify-modal__close-btn" type="button" id="iss-notify-close-btn">닫기</button>
+  </footer>
+</div>
+
+<!-- ============== 입고 취소 확인 모달 (figma spec: 360px) ============== -->
+<div class="iss-cancel-modal-backdrop" id="iss-cancel-backdrop" hidden></div>
+<div class="iss-cancel-modal" id="iss-cancel-modal" hidden role="dialog" aria-labelledby="iss-cancel-title">
+  <h3 class="iss-cancel-modal__title" id="iss-cancel-title">입고 취소를 진행하시겠습니까?</h3>
+  <p class="iss-cancel-modal__desc">입고 취소는 즉시 반영되지 않고 순차적으로 처리됩니다. 처리 완료 시 좌측 메뉴 알림으로 결과를 안내해 드립니다.</p>
+  <div class="iss-cancel-modal__footer">
+    <button type="button" class="iss-cancel-modal__btn-cancel" id="iss-cancel-modal-cancel">취소</button>
+    <button type="button" class="iss-cancel-modal__btn-confirm" id="iss-cancel-modal-confirm">확인</button>
   </div>
 </div>
 
@@ -788,10 +969,16 @@
     const labelEl = document.getElementById('pd-reqno-label');
     const titleEl = document.getElementById('pd-reqno-title');
     const closeBtn = document.getElementById('pd-close-btn');
+    const closeXBtn = document.getElementById('pd-drawer-close');
     if (!drawer || !SCM.sideDrawer) return;
 
     const dr = SCM.sideDrawer.mount(drawer, { backdrop: backdrop });
     if (closeBtn) closeBtn.addEventListener('click', () => dr.close());
+    if (closeXBtn) closeXBtn.addEventListener('click', () => dr.close());
+
+    // 현재 drawer 에 로드된 row pool — drawer 필터 적용 시 이 pool 을 다시 거름.
+    let _drawerRows = [];
+    let _drawerFilterInstance = null;
 
     function rowToDetailHtml(r, idx) {
       const confirmedColor = r.confirmedQty ? 'pd-num--accent' : '';
@@ -822,20 +1009,73 @@
       `;
     }
 
+    function renderDrawerRows(rows) {
+      tbody.innerHTML = rows.map(rowToDetailHtml).join('');
+      if (cntEl) cntEl.textContent = String(rows.length);
+    }
+    function applyDrawerFilter() {
+      const active = _drawerFilterInstance ? (_drawerFilterInstance.getActiveFilters() || {}) : {};
+      const codeMatch = (vals, target) => {
+        if (!vals || !vals.length) return true;
+        if (!target) return false;
+        const t = String(target).toLowerCase();
+        return vals.some(v => t.includes(String(v).toLowerCase()));
+      };
+      const filtered = _drawerRows.filter((r) => {
+        if (active.brand && !active.brand.includes(r.brand)) return false;
+        if (!codeMatch(active.uid,         r.uid))     return false;
+        if (!codeMatch(active.sku,         r.sku))     return false;
+        if (!codeMatch(active.barcode,     r.barcode)) return false;
+        if (!codeMatch(active.styleNumber, r.styleNo)) return false;
+        return true;
+      });
+      renderDrawerRows(filtered);
+      return filtered.length;
+    }
+
     function openForReqNo(reqNo) {
       // 같은 신청번호 행이 여러 개일 수 있음 — 모두 모음.
       // 데모에서는 보통 1건이라 일치 row 1건이지만, 같은 reqNo 있으면 함께 표시.
       const matching = ROWS.filter(r => r.reqNo === reqNo);
       // 데모: 매칭 1건이어도 같은 신청 그룹의 다른 상품 8건 함께 표시 — figma 패턴.
-      const rows = matching.length >= 8 ? matching : matching.concat(ROWS.slice(0, 8 - matching.length));
-      // labelEl (작은 head-meta) 는 의도적으로 비워둠 — title 한 곳만 표시
+      _drawerRows = matching.length >= 8 ? matching : matching.concat(ROWS.slice(0, 8 - matching.length));
       if (titleEl) titleEl.textContent = reqNo;
-      if (cntEl)   cntEl.textContent = String(rows.length);
-      tbody.innerHTML = rows.map(rowToDetailHtml).join('');
+      // 필터 초기화 (있다면) 후 전체 row render
+      if (_drawerFilterInstance && typeof _drawerFilterInstance.reset === 'function') {
+        _drawerFilterInstance.reset();
+      }
+      renderDrawerRows(_drawerRows);
       dr.open();
     }
     // 통합 tbody 핸들러 (위쪽) 에서 호출 가능하도록 전역 노출
     window.__openProductDrawer = openForReqNo;
+
+    // ============================================================
+    // Drawer 안 filter-bar — 본 페이지 상단 filter-bar 와 동일한 컴포넌트 사용.
+    //   별도 popover root (#pd-filter-popover-root) 로 본 페이지 popover 와 분리.
+    //   브랜드 (multi) / UID·SKU·바코드·스타일넘버 (codeinput) — 모두 글로벌 REGISTRY 사용.
+    // ============================================================
+    if (SCM.filterPopoverModes) {
+      _drawerFilterInstance = SCM.filterPopoverModes.init({
+        rootEl: document.getElementById('pd-filter-popover-root'),
+        filterBarEl: document.getElementById('pd-filter-bar'),
+        onSearch: () => {
+          const n = applyDrawerFilter();
+          if (SCM.toast) SCM.toast.show({ variant: 'info', title: '검색 완료', desc: `${n}건 조회되었습니다.` });
+        },
+        onReset: () => {
+          applyDrawerFilter();
+        },
+      });
+    }
+    // Drawer 안 filter-bar overflow 화살표
+    if (SCM.filterBar) {
+      const fbEl = document.getElementById('pd-filter-bar');
+      if (fbEl && fbEl.dataset.scmFilterBarMounted !== '1') {
+        fbEl.dataset.scmFilterBarMounted = '1';
+        SCM.filterBar.mount(fbEl);
+      }
+    }
 
     // tbody 의 신청번호 link 클릭 → drawer 열기 (행 클릭과 별개 직접 핸들러)
     document.getElementById('data-tbody').addEventListener('click', (e) => {
@@ -1004,33 +1244,120 @@
     document.head.appendChild(css);
   })();
 
-  // 알림함 버튼 — 데모용 토스트
+  // ============================================================
+  // 알림함 모달 — 진행/완료 결과 리스트 (figma spec: 640px)
+  // ============================================================
+  const NOTIFY_ITEMS = [
+    { date:'25.03.15', kind:'success', count:9,  reqNo:'A000008101', writer:'WMS' },
+    { date:'25.03.15', kind:'fail',    count:1,  reqNo:'A000008101', writer:'WMS' },
+    { date:'25.03.14', kind:'success', count:12, reqNo:'A000008099', writer:'WMS' },
+    { date:'25.03.14', kind:'fail',    count:3,  reqNo:'A000008099', writer:'WMS' },
+    { date:'25.03.13', kind:'success', count:20, reqNo:'A000008097', writer:'WMS' },
+    { date:'25.03.12', kind:'success', count:5,  reqNo:'A000008095', writer:'WMS' },
+    { date:'25.03.12', kind:'fail',    count:2,  reqNo:'A000008095', writer:'WMS' },
+  ];
+  function renderNotifyList() {
+    const tbody = document.getElementById('iss-notify-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = NOTIFY_ITEMS.map(it => {
+      const tone = it.kind === 'success' ? 'iss-notify-success' : 'iss-notify-fail';
+      const word = it.kind === 'success' ? '성공' : '실패';
+      return (
+        '<tr>' +
+          '<td class="iss-notify-date">' + it.date + '</td>' +
+          '<td class="iss-notify-content">' +
+            '<div class="iss-notify-item">' +
+              '<div class="iss-notify-item__title">' +
+                '<span class="' + tone + '">' + it.count + '건 입고 취소 ' + word + '</span>' +
+              '</div>' +
+              '<div class="iss-notify-item__row">' +
+                '<span>' + it.reqNo + '</span>' +
+                '<button type="button" class="iss-notify-item__cta" data-req="' + it.reqNo + '">' +
+                  '확인하기' +
+                  '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+                '</button>' +
+              '</div>' +
+            '</div>' +
+          '</td>' +
+          '<td class="iss-notify-writer">' + it.writer + '</td>' +
+        '</tr>'
+      );
+    }).join('');
+  }
+  function openNotifyModal() {
+    renderNotifyList();
+    const bd = document.getElementById('iss-notify-backdrop');
+    const md = document.getElementById('iss-notify-modal');
+    if (bd) bd.hidden = false;
+    if (md) md.hidden = false;
+  }
+  function closeNotifyModal() {
+    const bd = document.getElementById('iss-notify-backdrop');
+    const md = document.getElementById('iss-notify-modal');
+    if (bd) bd.hidden = true;
+    if (md) md.hidden = true;
+  }
   const notifyBtn = document.getElementById('notify-btn');
-  if (notifyBtn) {
-    notifyBtn.addEventListener('click', () => {
-      if (SCM.toast) SCM.toast.show({ variant: 'info', title: '알림함', desc: '진행중인 입고 건이 2건 있습니다.' });
+  if (notifyBtn) notifyBtn.addEventListener('click', openNotifyModal);
+  const notifyBackdrop = document.getElementById('iss-notify-backdrop');
+  if (notifyBackdrop) notifyBackdrop.addEventListener('click', closeNotifyModal);
+  const notifyCloseBtn = document.getElementById('iss-notify-close-btn');
+  if (notifyCloseBtn) notifyCloseBtn.addEventListener('click', closeNotifyModal);
+  // 알림 row 내 "확인하기" → 데모용 토스트
+  (function wireNotifyCta() {
+    const tbody = document.getElementById('iss-notify-tbody');
+    if (!tbody) return;
+    tbody.addEventListener('click', (e) => {
+      const btn = e.target.closest('.iss-notify-item__cta');
+      if (!btn) return;
+      const req = btn.getAttribute('data-req') || '';
+      closeNotifyModal();
+      if (SCM.toast) SCM.toast.show({ variant: 'info', title: '확인하기', desc: req + ' 건 상세로 이동합니다.' });
+    });
+  })();
+
+  // ============================================================
+  // 입고 취소 확인 모달 — figma spec (360px)
+  //   stats-bar 의 입고 취소 버튼, 하단 액션바의 입고 취소 버튼 둘 다 같은
+  //   모달을 띄움. onConfirm 콜백을 매번 다르게 주입.
+  // ============================================================
+  let _cancelOnConfirm = null;
+  function openCancelModal(onConfirm) {
+    _cancelOnConfirm = typeof onConfirm === 'function' ? onConfirm : null;
+    const bd = document.getElementById('iss-cancel-backdrop');
+    const md = document.getElementById('iss-cancel-modal');
+    if (bd) bd.hidden = false;
+    if (md) md.hidden = false;
+  }
+  function closeCancelModal() {
+    _cancelOnConfirm = null;
+    const bd = document.getElementById('iss-cancel-backdrop');
+    const md = document.getElementById('iss-cancel-modal');
+    if (bd) bd.hidden = true;
+    if (md) md.hidden = true;
+  }
+  const cancelModalBackdrop = document.getElementById('iss-cancel-backdrop');
+  if (cancelModalBackdrop) cancelModalBackdrop.addEventListener('click', closeCancelModal);
+  const cancelModalCancel = document.getElementById('iss-cancel-modal-cancel');
+  if (cancelModalCancel) cancelModalCancel.addEventListener('click', closeCancelModal);
+  const cancelModalConfirm = document.getElementById('iss-cancel-modal-confirm');
+  if (cancelModalConfirm) {
+    cancelModalConfirm.addEventListener('click', () => {
+      const cb = _cancelOnConfirm;
+      closeCancelModal();
+      if (cb) cb();
     });
   }
 
-  // 입고 취소 (mini-action) — 활성 상태에서만 confirm modal
+  // 입고 취소 (mini-action) — 활성 상태에서만 새 cancel modal
   const cancelBtn = document.getElementById('iss-cancel-btn');
   if (cancelBtn) {
     cancelBtn.addEventListener('click', () => {
       if (cancelBtn.disabled) return;
       const checked = document.querySelectorAll('#data-tbody .scm-checkbox[aria-checked="true"]').length;
-      if (SCM.confirmModal) {
-        SCM.confirmModal.open({
-          title: '입고 취소 확인',
-          desc: `선택하신 ${checked}건의 입고를 취소합니다.\n계속 진행하시겠습니까?`,
-          confirmLabel: '확인',
-          cancelLabel: '취소',
-          onConfirm: () => {
-            if (SCM.toast) SCM.toast.show({ variant: 'success', title: '입고 취소 완료', desc: `${checked}건이 취소되었습니다.` });
-          },
-        });
-      } else if (SCM.toast) {
-        SCM.toast.show({ variant: 'warning', title: '입고 취소', desc: `${checked}건의 입고를 취소합니다.` });
-      }
+      openCancelModal(() => {
+        if (SCM.toast) SCM.toast.show({ variant: 'success', title: '입고 취소 요청', desc: `${checked}건의 입고 취소 요청이 접수되었습니다.` });
+      });
     });
   }
 
@@ -1099,18 +1426,11 @@
   const tabBulk = document.getElementById('tab-bulk');
   if (tabBulk) {
     tabBulk.addEventListener('click', () => {
-      if (SCM.confirmModal) {
-        SCM.confirmModal.open({
-          title: '입고 취소 확인',
-          desc: '선택하신 항목의 입고를 취소합니다.\n계속 진행하시겠습니까?',
-          confirmLabel: '확인',
-          cancelLabel: '취소',
-          onConfirm: () => {
-            if (SCM.toast) SCM.toast.show({ variant: 'success', title: '입고 취소 완료', desc: '선택한 항목이 취소되었습니다.' });
-            if (tabClear) tabClear.click();
-          },
-        });
-      }
+      const checked = document.querySelectorAll('#data-tbody .scm-checkbox[aria-checked="true"]').length;
+      openCancelModal(() => {
+        if (SCM.toast) SCM.toast.show({ variant: 'success', title: '입고 취소 요청', desc: `${checked}건의 입고 취소 요청이 접수되었습니다.` });
+        if (tabClear) tabClear.click();
+      });
     });
   }
 })();
