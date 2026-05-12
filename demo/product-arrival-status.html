@@ -50,6 +50,18 @@
     .scm-filter-bar { top: var(--scm-sticky-gnb); }
     .scm-stats-bar--sticky { top: calc(var(--scm-sticky-gnb) + var(--scm-sticky-filter)); }
 
+    /* ===== Row grouping (메인 목록 — 같은 신청번호 연속 row 시각 merge) =====
+       outer-merge 셀 (No / 신청번호 / 입고유형) — rowspan 으로 진짜 cell merge.
+       vertical-align: middle 로 content 를 outer group 전체 높이 가운데 정렬. */
+    #data-tbody td.iss-rowspan-merge {
+      vertical-align: middle;
+    }
+    /* (legacy) iss-merged-cell — sub row 의 inner-merge 컬럼 빈셀 처리 (현재 사용 거의 안 함). */
+    #data-tbody td.iss-merged-cell {
+      border-top: 0;
+      background: #fff;
+    }
+
     /* frozenCount=8 — base scm-table.css 는 col-frozen-6 까지만 정의. 7/8 추가. */
     .mp-table .col-frozen-7 { position: sticky !important; left: var(--frozen-l7, 0); z-index: 5; }
     .mp-table .col-frozen-8 { position: sticky !important; left: var(--frozen-l8, 0); z-index: 5; }
@@ -107,7 +119,14 @@
     #pd-drawer { width: min(1600px, 95vw); max-width: none; }
     /* 기본 head 제거 — 빈 56px 공백 차지하던 영역 숨김. */
     #pd-drawer .scm-side-drawer__head { display: none; }
-    #pd-drawer .scm-side-drawer__body { padding: 0; }
+    /* drawer body — 자체 스크롤 X (overflow: hidden). 내부 table-wrap 이 스크롤 담당.
+       이렇게 해야 filter / title 은 정적 위치 유지되고 thead 가 table-wrap 안에서 sticky 동작. */
+    #pd-drawer .scm-side-drawer__body {
+      padding: 0;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      min-height: 0;
+    }
     /* 닫기 버튼 — title 영역 우측 상단에 absolute. */
     #pd-drawer .pd-drawer__close-x {
       position: absolute; top: 16px; right: 16px;
@@ -130,6 +149,10 @@
       padding: 20px 24px 0;
       display: flex; flex-direction: column;
       gap: 0;
+      /* drawer body 가 overflow:hidden 이므로, body-wrap 이 flex 1 + overflow:hidden 으로
+         남은 높이 차지 → 자식 table-wrap 이 그 안에서 자체 스크롤. */
+      flex: 1 1 auto; min-height: 0;
+      overflow: hidden;
     }
     /* drawer 안 filter-bar — sticky off, padding 0, 본 페이지 layer-desktop sticky 룰 무력화 */
     #pd-drawer .pd-drawer__filter-bar {
@@ -153,94 +176,41 @@
     #pd-drawer .pd-drawer__stat { display: flex; align-items: center; gap: 4px; }
     #pd-drawer .pd-drawer__stat-label { font-size: 15px; font-weight: 500; line-height: 20.4px; color: #000; }
     #pd-drawer .pd-drawer__stat-num   { font-size: 15px; font-weight: 600; line-height: 20.4px; color: #000; }
-    #pd-drawer .pd-drawer__table-wrap { overflow-x: auto; }
-    #pd-drawer table.pd-drawer-table {
-      width: max-content; min-width: 100%;
-      border-collapse: collapse;
-      border-top: 2px solid #000;
-      font-family: inherit;
-      table-layout: fixed;
+    /* table-wrap — drawer 의 실제 세로 스크롤 컨테이너.
+       overflow: auto (가로+세로). flex 1 로 body-wrap 의 남은 공간 채움. */
+    #pd-drawer .pd-drawer__table-wrap {
+      flex: 1 1 auto; min-height: 0;
+      overflow: auto;
     }
-    /* 헤더 — figma 의 height 54 / 셀 padding 16 / font 15·500 */
-    #pd-drawer .pd-drawer-table thead th {
-      height: 54px; padding: 16px; text-align: left;
-      font-size: 15px; font-weight: 500; line-height: 20.4px; color: #000;
+    /* drawer 안 mp-table — base mp-table 스타일 활용. drawer 컨텍스트 보정만:
+       - table-host 는 drawer body-wrap 안에서 flex 1 로 남은 공간 채움
+       - mp-table-scroll 이 자체 가로/세로 스크롤 담당
+       - data-scm-no-sticky 로 thead clone 건너뛰고 원본 thead 에 sticky top:0 적용
+       - frozen offset (--frozen-l1/2) drawer 로컬 override — No 48 / 입고번호 그 뒤 (left: 48)
+       - 메인 페이지의 document-level --frozen-lN 과 충돌 없음 (drawer 스코프 안에서만 적용) */
+    #pd-drawer .pd-drawer__table-host {
+      flex: 1 1 auto; min-height: 0;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      --frozen-l1: 0;
+      --frozen-l2: 48px;
+    }
+    #pd-drawer .pd-drawer__table-host .mp-table-scroll {
+      flex: 1 1 auto; min-height: 0;
+      overflow: auto;
+    }
+    /* drawer 내부 sticky thead — mp-table-scroll 의 세로 스크롤 컨테이너 기준 top:0 */
+    #pd-drawer .pd-drawer__table-host .mp-table-scroll thead th {
+      position: sticky;
+      top: 0;
+      z-index: 4;
       background: #fff;
-      border-bottom: 1px solid #EBEBEB;
-      border-right: 1px solid #EBEBEB;
-      white-space: nowrap;
-      vertical-align: middle;
-      box-sizing: border-box;
     }
-    #pd-drawer .pd-drawer-table thead th:first-child { border-right: 1px solid #EBEBEB; }
-    #pd-drawer .pd-drawer-table thead th:last-child { border-right: 0; }
-    /* No 컬럼: 살짝 짧은 좌우 padding (figma spec 12·12·8·8) */
-    #pd-drawer .pd-drawer-table thead th.pd-th-no { padding: 8px 12px; }
-    #pd-drawer .pd-drawer-table tbody td.pd-td-no { padding: 15px 16px; }
-    /* (legacy) pd-th-frozen-border — 입고번호까지 frozen 으로 변경되면서 boundary 는
-       frozen 마지막 셀(입고번호)의 border-right 로 그림. 이 룰은 비워둠 (호환용). */
-    #pd-drawer .pd-drawer-table thead th.pd-th-frozen-border,
-    #pd-drawer .pd-drawer-table tbody td.pd-td-frozen-border {
-      border-left: 0;
+    /* sticky x+y 교차 (No / 입고번호 의 thead) — z-index 가장 위 */
+    #pd-drawer .pd-drawer__table-host .mp-table-scroll thead th.col-frozen-1,
+    #pd-drawer .pd-drawer__table-host .mp-table-scroll thead th.col-frozen-2 {
+      z-index: 6;
     }
-    /* Frozen 컬럼 sticky 처리 — No / 신청번호 / 입고번호 (colgroup width 48 / 115 / 217).
-       cumulative left: 0 / 48 / 163. table-wrap 가로 스크롤 시 좌측 3 컬럼 고정.
-       border-collapse: collapse + sticky 조합에서 인접 셀 보더가 공유되며 sticky 가
-       위로 올라갈 때 라인이 사라지거나 잘리는 회귀 차단:
-         1) sticky 셀 사이의 column divider 는 box-shadow inset 으로 cell 안쪽 우측에 그림
-            (border-collapse 영향 안 받고, 항상 cell content 위에 표시)
-         2) sticky cell 의 border-right 는 0 으로 (이중 라인 방지). */
-    #pd-drawer .pd-drawer-table thead th.pd-th-frozen-1,
-    #pd-drawer .pd-drawer-table tbody td.pd-td-frozen-1 {
-      position: sticky; left: 0; z-index: 3; background: #fff;
-      border-right: 0;
-      box-shadow: inset -1px 0 0 #EBEBEB;
-    }
-    #pd-drawer .pd-drawer-table thead th.pd-th-frozen-2,
-    #pd-drawer .pd-drawer-table tbody td.pd-td-frozen-2 {
-      position: sticky; left: 48px; z-index: 3; background: #fff;
-      border-right: 0;
-      box-shadow: inset -1px 0 0 #EBEBEB;
-    }
-    /* 마지막 frozen 셀 (입고번호) — 우측에 굵은 2px 경계선 (boundary).
-       gradient/추가 inset shadow 도 box-shadow 하나로 결합. */
-    #pd-drawer .pd-drawer-table thead th.pd-th-frozen-3,
-    #pd-drawer .pd-drawer-table tbody td.pd-td-frozen-3 {
-      position: sticky; left: 163px; z-index: 3; background: #fff;
-      border-right: 0;
-      box-shadow: inset -2px 0 0 #EBEBEB;
-    }
-    /* pd-th-frozen-last 자체 룰은 비워둠 (frozen-3 이 boundary 책임) */
-    #pd-drawer .pd-drawer-table thead th.pd-th-frozen-last,
-    #pd-drawer .pd-drawer-table tbody td.pd-td-frozen-last {
-      border-right: 0;
-    }
-    /* 수량 컬럼 — 우측 정렬 */
-    #pd-drawer .pd-drawer-table thead th.pd-th-num { text-align: right; }
-    /* body 셀 — figma 의 padding 16 / font 15·400 */
-    #pd-drawer .pd-drawer-table tbody td {
-      padding: 16px; vertical-align: top;
-      font-size: 15px; font-weight: 400; line-height: 20.4px;
-      color: rgba(0,0,0,0.88);
-      border-top: 1px solid #EBEBEB;
-      border-right: 1px solid #EBEBEB;
-      white-space: nowrap;
-      box-sizing: border-box;
-    }
-    #pd-drawer .pd-drawer-table tbody td:first-child { border-right: 1px solid #EBEBEB; }
-    #pd-drawer .pd-drawer-table tbody td:last-child { border-right: 0; }
-    #pd-drawer .pd-drawer-table td.pd-num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
-    #pd-drawer .pd-drawer-table td.pd-num--accent { color: #245EFF; }
-    #pd-drawer .pd-underline { text-decoration: underline; }
-    #pd-drawer .pd-name-cell {
-      display: inline-flex; gap: 12px; align-items: flex-start;
-      max-width: 360px; white-space: normal;
-    }
-    #pd-drawer .pd-thumb {
-      width: 60px; height: 72px; flex: 0 0 60px;
-      border-radius: 4px; background: rgba(0,0,0,0.05);
-    }
-    #pd-drawer .pd-name-cell__text { line-height: 20.4px; }
     #pd-drawer .pd-drawer__footer {
       padding: 24px; display: flex; justify-content: flex-end; gap: 8px;
       border-top: 1px solid #EBEBEB;
@@ -629,8 +599,8 @@
               <th class="col-auto col-frozen-4">상태 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
               <th class="cb-col col-frozen-5" title="전체 선택"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" id="mp-cb-all" aria-label="전체 선택"></span></th>
               <th class="col-auto col-frozen-6">입고번호</th>
-              <th class="col-auto col-frozen-7">입고위치</th>
-              <th class="col-auto col-frozen-8">브랜드</th>
+              <th class="col-auto">입고위치</th>
+              <th class="col-auto">브랜드</th>
               <th class="col-auto">UID</th>
               <th class="col-auto">옵션</th>
               <th class="col-auto">SKU번호</th>
@@ -737,49 +707,55 @@
           <span class="pd-drawer__stat-num" id="pd-cnt">0</span>
         </div>
       </div>
-      <div class="pd-drawer__table-wrap">
-        <table class="pd-drawer-table">
-          <!-- figma 의 각 컬럼 폭 명시 — 균일한 sizing 보장 -->
-          <colgroup>
-            <col style="width:48px"/>
-            <col style="width:115px"/>
-            <col style="width:217px"/>
-            <col style="width:114px"/>
-            <col style="width:112px"/>
-            <col style="width:115px"/>
-            <col style="width:118px"/>
-            <col style="width:162px"/>
-            <col style="width:360px"/>
-            <col style="width:97px"/>
-            <col style="width:120px"/>
-            <col style="width:120px"/>
-            <col style="width:97px"/>
-            <col style="width:128px"/>
-            <col style="width:134px"/>
-            <col style="width:130px"/>
-          </colgroup>
-          <thead>
-            <tr>
-              <th class="pd-th-no pd-th-frozen-1">No</th>
-              <th class="pd-th-frozen-2">신청번호</th>
-              <th class="pd-th-frozen-3 pd-th-frozen-last">입고번호</th>
-              <th class="pd-th-frozen-border">브랜드</th>
-              <th>UID</th>
-              <th>옵션</th>
-              <th>SKU번호</th>
-              <th>바코드</th>
-              <th>SKU명</th>
-              <th>스타일넘버</th>
-              <th class="pd-th-num">입고 예정 수량</th>
-              <th class="pd-th-num">입고 확정 수량</th>
-              <th>입고예정일</th>
-              <th>센터 도착일시</th>
-              <th>입고확정일</th>
-              <th>신청일</th>
-            </tr>
-          </thead>
-          <tbody id="pd-tbody"></tbody>
-        </table>
+      <!-- 메인 목록 (mp-table) 구조로 교체. frozen: No / 입고번호 / 입고위치 (3개).
+           SKU명 360px / 명시 colgroup 으로 컬럼 폭 보장. data-scm-no-sticky 로 page body 컨텍스트
+           오인 sticky thead 차단 — 원본 thead 가 mp-table-scroll 안에서 자체 sticky. -->
+      <div class="mp-table-host pd-drawer__table-host">
+        <div class="mp-table-scroll">
+          <table class="mp-table" id="pd-drawer-mp-table" data-scm-no-sticky="true">
+            <colgroup>
+              <col style="width:48px"/>     <!-- No -->
+              <col style="width:200px"/>    <!-- 입고번호 -->
+              <col style="width:100px"/>    <!-- 입고위치 -->
+              <col style="width:100px"/>    <!-- 브랜드 -->
+              <col style="width:80px"/>     <!-- UID -->
+              <col style="width:80px"/>     <!-- 옵션 -->
+              <col style="width:88px"/>     <!-- SKU번호 -->
+              <col style="width:180px"/>    <!-- 바코드 -->
+              <col style="width:360px"/>    <!-- SKU명 -->
+              <col style="width:88px"/>     <!-- 스타일넘버 -->
+              <col style="width:120px"/>    <!-- 입고예정총수량 -->
+              <col style="width:120px"/>    <!-- 입고확정총수량 -->
+              <col style="width:96px"/>     <!-- 입고예정일 -->
+              <col style="width:128px"/>    <!-- 센터도착일시 -->
+              <col style="width:128px"/>    <!-- 입고확정일 -->
+              <col style="width:128px"/>    <!-- 신청일 -->
+              <col style="width:100%"/>     <!-- spacer -->
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="col-auto col-frozen-1">No</th>
+                <th class="col-auto col-frozen-2">입고번호</th>
+                <th class="col-auto col-frozen-3">입고위치</th>
+                <th class="col-auto">브랜드</th>
+                <th class="col-auto">UID</th>
+                <th class="col-auto">옵션</th>
+                <th class="col-auto">SKU번호</th>
+                <th class="col-auto">바코드</th>
+                <th class="col-large" data-pad="full"><div class="cell-clamp">SKU명</div></th>
+                <th class="col-auto">스타일넘버</th>
+                <th class="col-auto cell-numeric">입고 예정 총수량</th>
+                <th class="col-auto cell-numeric">입고 확정 총수량</th>
+                <th class="col-auto">입고예정일</th>
+                <th class="col-auto">센터 도착일시</th>
+                <th class="col-auto">입고확정일</th>
+                <th class="col-auto">신청일</th>
+                <th class="col-spacer" aria-hidden="true"></th>
+              </tr>
+            </thead>
+            <tbody id="pd-tbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -868,17 +844,24 @@
 
   // ----- Demo data — 위탁 상품 입고 현황 (20건 중 8건 데모) -----
   const ROWS = [
-    { reqNo:'A000008101', inboundType:'MFS 입고',         status:'입고대기', statusExtra:3, inNo:'OFFLINE_250531_1234',         loc:'여주 4센터', brand:'아디다스',     brandExtra:4, uid:'65342', uidExtra:4, opt:'XXL', optExtra:10, sku:'123451', skuExtra:10, barcode:'880K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65341', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.14', arrivalDate:'-',                confirmDate:'-',                requestDate:'25.03.15 11:30' },
-    { reqNo:'A000001104', inboundType:'MFS 입고',         status:'입고대기', statusExtra:3, inNo:'OFFLINE_250531_1237',         loc:'여주 4센터', brand:'아디다스',     brandExtra:4, uid:'65342', uidExtra:4, opt:'M',   optExtra:10, sku:'123454', skuExtra:10, barcode:'883K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65341', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.14', arrivalDate:'25.03.15 11:30',   confirmDate:'25.03.15 11:30',   requestDate:'25.03.15 11:30' },
-    { reqNo:'A000001102', inboundType:'MFS 입고',         status:'센터도착', statusExtra:3, inNo:'OFFLINE_250531_1235 외 3',   loc:'여주 4센터', brand:'아디다스',     brandExtra:4, uid:'65342', uidExtra:4, opt:'XL',  optExtra:10, sku:'123452', skuExtra:10, barcode:'881K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65341', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.14', arrivalDate:'25.03.15 11:30',   confirmDate:'-',                requestDate:'25.03.15 11:30' },
-    { reqNo:'A000001103', inboundType:'MFS 입고',         status:'부분입고', statusExtra:3, inNo:'OFFLINE_250531_1236',         loc:'여주 4센터', brand:'아디다스',     brandExtra:4, uid:'65342', uidExtra:4, opt:'L',   optExtra:10, sku:'123453', skuExtra:10, barcode:'882K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65341', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.14', arrivalDate:'25.03.15 11:30',   confirmDate:'-',                requestDate:'25.03.15 11:30' },
-    { reqNo:'A000001109', inboundType:'MFS 입고',         status:'입고완료',                  inNo:'OFFLINE_250531_1238',         loc:'여주 4센터', brand:'아디다스',     brandExtra:4, uid:'65342', uidExtra:4, opt:'S',   optExtra:10, sku:'123455', skuExtra:10, barcode:'884K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65341', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.14', arrivalDate:'25.03.15 11:30',   confirmDate:'25.03.15 11:30',   requestDate:'25.03.15 11:30' },
-    { reqNo:'A000001105', inboundType:'물류센터 일괄입고', status:'입고완료',                  inNo:'OFFLINE_250531_1239 외 3',   loc:'여주 4센터', brand:'아디다스',     brandExtra:4, uid:'65342', uidExtra:4, opt:'XS',  optExtra:10, sku:'123456', skuExtra:10, barcode:'885K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65341', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.14', arrivalDate:'25.03.15 11:30',   confirmDate:'25.03.15 11:30',   requestDate:'25.03.15 11:30' },
-    { reqNo:'A000001107', inboundType:'매장 직납',         status:'입고완료',                  inNo:'OFFLINE_250531_1232',         loc:'성수 대림창고', brand:'아디다스', brandExtra:4, uid:'65342', uidExtra:4, opt:'XL',  optExtra:10, sku:'123457', skuExtra:10, barcode:'886K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65342', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.14', arrivalDate:'-',                 confirmDate:'25.03.15 11:30',   requestDate:'25.03.15 11:30' },
-    { reqNo:'A000001108', inboundType:'매장 직납',         status:'입고완료',                  inNo:'OFFLINE_250531_1233',         loc:'성수 대림창고', brand:'아디다스', brandExtra:4, uid:'65342', uidExtra:4, opt:'XL',  optExtra:10, sku:'123458', skuExtra:10, barcode:'887K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65342', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.14', arrivalDate:'-',                 confirmDate:'25.03.15 11:30',   requestDate:'25.03.15 11:30' },
+    // 첫 5건 — 동일 신청번호 'A000008101' 그룹. 2단 grouping:
+    //   outer (1-5): 신청번호 / 입고유형 만 머지
+    //   inner A (1-3, _ig='A'): 상태~신청일 (No 제외) 머지 — 첫 row 값으로 통합
+    //   inner B (4-5, _ig='B'): 상태~신청일 머지 — 4번째 row 값으로 통합
+    { reqNo:'A000008101', _ig:'A', inboundType:'MFS 입고',         status:'입고대기', statusExtra:3, inNo:'OFFLINE_250531_1234 외 3',   loc:'여주 4센터', brand:'아디다스',     brandExtra:4, uid:'65342', uidExtra:3, opt:'XXL', optExtra:10, sku:'123451', skuExtra:10, barcode:'880K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65341', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.14', arrivalDate:'-',                confirmDate:'-',                requestDate:'25.03.15 11:30' },
+    { reqNo:'A000008101', _ig:'A', inboundType:'MFS 입고',         status:'입고대기', statusExtra:3, inNo:'OFFLINE_250531_1237',         loc:'여주 4센터', brand:'아디다스',     brandExtra:4, uid:'65342', uidExtra:4, opt:'M',   optExtra:10, sku:'123454', skuExtra:10, barcode:'883K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65341', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.15', arrivalDate:'25.03.15 11:30',   confirmDate:'25.03.15 11:30',   requestDate:'25.03.15 11:30' },
+    { reqNo:'A000008101', _ig:'A', inboundType:'MFS 입고',         status:'센터도착', statusExtra:3, inNo:'OFFLINE_250531_1235 외 3',   loc:'여주 4센터', brand:'아디다스',     brandExtra:4, uid:'65342', uidExtra:4, opt:'XL',  optExtra:10, sku:'123452', skuExtra:10, barcode:'881K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65341', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.16', arrivalDate:'25.03.15 11:30',   confirmDate:'-',                requestDate:'25.03.15 11:30' },
+    { reqNo:'A000008101', _ig:'B', inboundType:'MFS 입고',         status:'부분입고', statusExtra:3, inNo:'OFFLINE_250531_1236',         loc:'여주 4센터', brand:'아디다스',     brandExtra:4, uid:'65342', uidExtra:4, opt:'L',   optExtra:10, sku:'123453', skuExtra:10, barcode:'882K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65341', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.17', arrivalDate:'25.03.15 11:30',   confirmDate:'-',                requestDate:'25.03.15 11:30' },
+    { reqNo:'A000008101', _ig:'B', inboundType:'MFS 입고',         status:'입고완료',                  inNo:'OFFLINE_250531_1238',         loc:'여주 4센터', brand:'아디다스',     brandExtra:4, uid:'65342', uidExtra:4, opt:'S',   optExtra:10, sku:'123455', skuExtra:10, barcode:'884K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65341', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.18', arrivalDate:'25.03.15 11:30',   confirmDate:'25.03.15 11:30',   requestDate:'25.03.15 11:30' },
+    // 두 번째 outer 그룹 'A000001105' — 3 rows, inner C (1) + inner D (2)
+    { reqNo:'A000001105', _ig:'C', inboundType:'물류센터 일괄입고', status:'입고완료',          inNo:'OFFLINE_250531_1239 외 3',   loc:'여주 4센터', brand:'아디다스',     brandExtra:4, uid:'65342', uidExtra:4, opt:'XS',  optExtra:10, sku:'123456', skuExtra:10, barcode:'885K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65341', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.14', arrivalDate:'25.03.15 11:30',   confirmDate:'25.03.15 11:30',   requestDate:'25.03.15 11:30' },
+    { reqNo:'A000001105', _ig:'D', inboundType:'물류센터 일괄입고', status:'센터도착',          inNo:'OFFLINE_250531_1240',         loc:'성수 대림창고', brand:'아디다스', brandExtra:4, uid:'65342', uidExtra:4, opt:'XL',  optExtra:10, sku:'123457', skuExtra:10, barcode:'886K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65342', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.14', arrivalDate:'-',                 confirmDate:'25.03.15 11:30',   requestDate:'25.03.15 11:30' },
+    { reqNo:'A000001105', _ig:'D', inboundType:'물류센터 일괄입고', status:'센터도착',          inNo:'OFFLINE_250531_1241',         loc:'성수 대림창고', brand:'아디다스', brandExtra:4, uid:'65342', uidExtra:4, opt:'XL',  optExtra:10, sku:'123458', skuExtra:10, barcode:'887K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65342', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.14', arrivalDate:'-',                 confirmDate:'25.03.15 11:30',   requestDate:'25.03.15 11:30' },
   ];
 
-  // ----- 데모용 추가 50건 — base 8건 패턴을 ID/옵션/수량 변형해서 반복 -----
+  // ----- 데모용 추가 dummies — outer/inner grouping 패턴 따라 생성 -----
+  //   reqNo 가 outer key, _ig 가 inner key. 일부는 multi-row 그룹, 일부는 single row.
+  //   group 구조 예시 (반복): outer A (3 rows: inner X 2 + inner Y 1) / single / single / outer B (2 rows: inner Z) / single ...
   (function expandDemoRows() {
     const INBOUND_TYPES = ['MFS 입고', '물류센터 일괄입고', '매장 직납'];
     const STATUSES      = ['입고대기', '센터도착', '부분입고', '입고완료'];
@@ -895,46 +878,66 @@
       '볼캡 로고 블랙',
       '토트백 캔버스 블랙',
     ];
-    const BASE_LEN = ROWS.length;
-    for (let i = 0; i < 50; i++) {
-      const base    = ROWS[i % BASE_LEN];
-      const seq     = i + 1;
-      const inbound = INBOUND_TYPES[i % INBOUND_TYPES.length];
-      const status  = STATUSES[i % STATUSES.length];
-      const brand   = BRANDS[i % BRANDS.length];
-      const loc     = LOCATIONS[i % LOCATIONS.length];
-      const opt     = OPTS[i % OPTS.length];
-      const name    = NAMES[i % NAMES.length];
-      const qty     = (200 + (i * 37) % 1500);
-      const confirmed = status === '입고대기' ? 0
-                       : status === '센터도착' ? qty
-                       : status === '부분입고' ? Math.floor(qty * 0.4)
-                       : qty;
-      ROWS.push({
-        reqNo:       'A' + String(2000000 + seq * 13).padStart(9, '0'),
-        inboundType: inbound,
-        status:      status,
-        statusExtra: i % 5 === 0 ? (i % 4) + 1 : 0,
-        inNo:        'OFFLINE_250601_' + String(1000 + seq).padStart(4, '0'),
-        loc:         loc,
-        brand:       brand,
-        brandExtra:  (i % 3 === 0) ? (i % 4) : 0,
-        uid:         String(65000 + seq),
-        uidExtra:    (i % 4 === 0) ? 3 : 0,
-        opt:         opt,
-        optExtra:    (i % 2 === 0) ? 10 : 0,
-        sku:         String(124000 + seq * 7),
-        skuExtra:    (i % 3 === 0) ? 10 : 0,
-        barcode:     (900 + (i % 100)) + 'K/13029/EFGH' + ((i % 2 === 0) ? ' 외 10' : ''),
-        name:        name + ((i % 3 === 0) ? ' 외 10' : ''),
-        styleNo:     String(65340 + (i % 8)),
-        expectedQty: qty,
-        confirmedQty: confirmed,
-        expectedDate: '25.03.' + String(10 + (i % 20)).padStart(2, '0'),
-        arrivalDate:  status === '입고대기' ? '-' : '25.03.' + String(12 + (i % 18)).padStart(2, '0') + ' 11:30',
-        confirmDate:  (status === '입고완료' || status === '센터도착') ? '25.03.' + String(14 + (i % 16)).padStart(2, '0') + ' 11:30' : '-',
-        requestDate:  '25.03.' + String(8 + (i % 22)).padStart(2, '0') + ' 11:30',
-      });
+
+    // 그룹 패턴 — 한 사이클: [outer 3 rows (inner 2+1), single, outer 2 rows (inner 2), single, single]
+    // 총 8 row 가 한 사이클. ~50 dummies → 6 사이클 정도.
+    const PATTERN = [
+      { outerSize: 3, innerPlan: ['A', 'A', 'B'] },  // outer 3 rows: inner A(2)+B(1)
+      { outerSize: 1, innerPlan: [null] },            // single
+      { outerSize: 2, innerPlan: ['A', 'A'] },        // outer 2 rows: inner A(2)
+      { outerSize: 1, innerPlan: [null] },            // single
+      { outerSize: 1, innerPlan: [null] },            // single
+    ];
+
+    let pIdx = 0;       // pattern step index
+    let groupCounter = 0; // 외부 group seq (reqNo 생성용)
+    let i = 0;
+    while (i < 50) {
+      const plan = PATTERN[pIdx % PATTERN.length];
+      pIdx++;
+      groupCounter++;
+      const reqNo = 'A' + String(2000000 + groupCounter * 13).padStart(9, '0');
+      for (let s = 0; s < plan.outerSize && i < 50; s++, i++) {
+        const seq     = i + 1;
+        const inbound = INBOUND_TYPES[i % INBOUND_TYPES.length];
+        const status  = STATUSES[i % STATUSES.length];
+        const brand   = BRANDS[i % BRANDS.length];
+        const loc     = LOCATIONS[i % LOCATIONS.length];
+        const opt     = OPTS[i % OPTS.length];
+        const name    = NAMES[i % NAMES.length];
+        const qty     = (200 + (i * 37) % 1500);
+        const confirmed = status === '입고대기' ? 0
+                         : status === '센터도착' ? qty
+                         : status === '부분입고' ? Math.floor(qty * 0.4)
+                         : qty;
+        const row = {
+          reqNo,
+          inboundType: inbound,
+          status:      status,
+          statusExtra: i % 5 === 0 ? (i % 4) + 1 : 0,
+          inNo:        'OFFLINE_250601_' + String(1000 + seq).padStart(4, '0'),
+          loc:         loc,
+          brand:       brand,
+          brandExtra:  (i % 3 === 0) ? (i % 4) : 0,
+          uid:         String(65000 + seq),
+          uidExtra:    (i % 4 === 0) ? 3 : 0,
+          opt:         opt,
+          optExtra:    (i % 2 === 0) ? 10 : 0,
+          sku:         String(124000 + seq * 7),
+          skuExtra:    (i % 3 === 0) ? 10 : 0,
+          barcode:     (900 + (i % 100)) + 'K/13029/EFGH' + ((i % 2 === 0) ? ' 외 10' : ''),
+          name:        name + ((i % 3 === 0) ? ' 외 10' : ''),
+          styleNo:     String(65340 + (i % 8)),
+          expectedQty: qty,
+          confirmedQty: confirmed,
+          expectedDate: '25.03.' + String(10 + (i % 20)).padStart(2, '0'),
+          arrivalDate:  status === '입고대기' ? '-' : '25.03.' + String(12 + (i % 18)).padStart(2, '0') + ' 11:30',
+          confirmDate:  (status === '입고완료' || status === '센터도착') ? '25.03.' + String(14 + (i % 16)).padStart(2, '0') + ' 11:30' : '-',
+          requestDate:  '25.03.' + String(8 + (i % 22)).padStart(2, '0') + ' 11:30',
+        };
+        if (plan.innerPlan[s] != null) row._ig = plan.innerPlan[s];
+        ROWS.push(row);
+      }
     }
   })();
 
@@ -964,7 +967,13 @@
   // 입고번호 / 브랜드 / 옵션 / 바코드 / SKU명 컬럼 셀에는 "외 N" 표기 유지.
   // (drawer 는 개별 row 라 stripExtra 로 제거.)
   // UID / SKU번호 / 상태 등은 사용자 요청대로 "외 N" 표시 안 함.
-  function rowHtml(r, idx) {
+  //
+  // Row grouping — outer (동일 reqNo) 에서 No / 신청번호 / 입고유형 을 rowspan 으로 진짜 merge.
+  //   outer 첫 row 에 rowspan=N 으로 합쳐서 vertical center 표시.
+  //   sub row 들은 해당 3 cell 을 아예 안 렌더 (rowspan 으로 cover 됨).
+  //   다른 컬럼 (상태, 입고번호, 등) 은 row 별 개별 표시.
+  // groupCtx: { isOuterSub, isOuterFirst, outerSize, outerNo } — null 이면 단독 row.
+  function rowHtml(r, idx, groupCtx) {
     const inboundColor = INBOUND_TAG[r.inboundType] || 'gray';
     const inboundChip  = isEmpty(r.inboundType)
       ? NA
@@ -984,34 +993,108 @@
     const confirmedColor = r.confirmedQty ? '#245EFF' : '#000';
     const confirmedWeight = r.confirmedQty ? 600 : 400;
 
+    // ctx (group context): { isOuterSub, isInnerSub }
+    //   outer-merge (sub 일 때 빈 content): 신청번호 / 입고유형
+    //   inner-merge (sub 일 때 빈 content): 상태 / 체크박스 / 입고번호 / 입고위치 / 브랜드 /
+    //     UID / 옵션 / SKU번호 / 바코드 / SKU명 / 스타일넘버 / 입고예정총수량 / 입고확정총수량 /
+    //     입고예정일 / 센터 도착일시 / 입고확정일 / 신청일
+    //   non-merge: No (항상 row 별 표시)
+    const isOuterSub = !!(groupCtx && groupCtx.isOuterSub);
+    const isInnerSub = !!(groupCtx && groupCtx.isInnerSub);
+    const oCls = isOuterSub ? ' iss-merged-cell' : '';
+    const iCls = isInnerSub ? ' iss-merged-cell' : '';
+
+    // outer merge content
+    const reqCnt = isOuterSub ? '' : (isEmpty(r.reqNo) ? NA : `<a class="iss-reqno-link" data-reqno="${escapeHtml(r.reqNo)}">${escapeHtml(r.reqNo)}</a>`);
+    const inbCnt = isOuterSub ? '' : inboundChip;
+
+    // inner merge content (sub 일 때 비우기)
+    const empty       = '';
+    const statusCnt   = isInnerSub ? empty : statusChip;
+    const cbCnt       = isInnerSub ? empty : `<span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="선택"></span>`;
+    const inNoCnt     = isInnerSub ? empty : fmtText(r.inNo);
+    const locCnt      = isInnerSub ? empty : fmtText(r.loc);
+    const brandCnt    = isInnerSub ? empty : (isEmpty(r.brand) ? NA : `${escapeHtml(r.brand)}${r.brandExtra ? ` 외 ${r.brandExtra}` : ''}`);
+    const uidCnt      = isInnerSub ? empty : (isEmpty(r.uid)   ? NA : `<a class="scm-code-link" data-code-type="uid">${escapeHtml(r.uid)}${r.uidExtra ? ` 외 ${r.uidExtra}` : ''}</a>`);
+    const optCnt      = isInnerSub ? empty : optChip;
+    const skuCnt      = isInnerSub ? empty : (isEmpty(r.sku) ? NA : `<a class="scm-code-link" data-code-type="sku">${escapeHtml(r.sku)}</a>`);
+    const barcodeCnt  = isInnerSub ? empty : (isEmpty(r.barcode) ? NA : `<a class="scm-code-link" data-code-type="barcode">${escapeHtml(r.barcode)}</a>`);
+    const nameCnt     = isInnerSub ? empty : nameCell;
+    const styleNoCnt  = isInnerSub ? empty : (isEmpty(r.styleNo) ? NA : `<a class="scm-code-link" data-code-type="styleNo">${escapeHtml(r.styleNo)}</a>`);
+    const expQtyCnt   = isInnerSub ? empty : fmtNum(r.expectedQty);
+    const cnfQtyCnt   = isInnerSub ? empty : fmtNum(r.confirmedQty);
+    const expDateCnt  = isInnerSub ? empty : fmtText(r.expectedDate);
+    const arrDateCnt  = isInnerSub ? empty : fmtText(r.arrivalDate);
+    const cnfDateCnt  = isInnerSub ? empty : fmtText(r.confirmDate);
+    const reqDateCnt  = isInnerSub ? empty : fmtText(r.requestDate);
+
+    // No (col 1) — outer group (신청번호) 기준 번호. outer 첫 row 에만 표시 → outer-merge.
+    //   user 요청: "no는 신청번호 기준으로 하고 머지해야겠다" → 같은 신청번호 row 들은
+    //   같은 No (=outer index) 를 공유, outer 첫 row 에만 표시 (신청번호/입고유형 과 동일 패턴).
+    const noCnt = isOuterSub ? '' : (groupCtx && groupCtx.outerNo != null ? groupCtx.outerNo : (idx + 1));
+
     return `
-      <tr>
-        <td class="col-auto col-frozen-1">${idx + 1}</td>
-        <td class="col-auto col-frozen-2">${isEmpty(r.reqNo) ? NA : `<a class="iss-reqno-link" data-reqno="${escapeHtml(r.reqNo)}">${escapeHtml(r.reqNo)}</a>`}</td>
-        <td class="col-auto col-frozen-3">${inboundChip}</td>
-        <td class="col-auto col-frozen-4">${statusChip}</td>
-        <td class="cb-col col-frozen-5"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="선택"></span></td>
-        <td class="col-auto col-frozen-6">${fmtText(r.inNo)}</td>
-        <td class="col-auto col-frozen-7">${fmtText(r.loc)}</td>
-        <td class="col-auto col-frozen-8">${isEmpty(r.brand) ? NA : `${escapeHtml(r.brand)}${r.brandExtra ? ` 외 ${r.brandExtra}` : ''}`}</td>
-        <td class="col-auto">${isEmpty(r.uid) ? NA : `<a class="scm-code-link" data-code-type="uid">${escapeHtml(r.uid)}</a>`}</td>
-        <td class="col-auto">${optChip}</td>
-        <td class="col-auto">${isEmpty(r.sku) ? NA : `<a class="scm-code-link" data-code-type="sku">${escapeHtml(r.sku)}</a>`}</td>
-        <td class="col-auto">${isEmpty(r.barcode) ? NA : `<a class="scm-code-link" data-code-type="barcode">${escapeHtml(r.barcode)}</a>`}</td>
-        <td class="col-large">${nameCell}</td>
-        <td class="col-auto">${isEmpty(r.styleNo) ? NA : `<a class="scm-code-link" data-code-type="styleNo">${escapeHtml(r.styleNo)}</a>`}</td>
-        <td class="col-auto cell-numeric">${fmtNum(r.expectedQty)}</td>
-        <td class="col-auto cell-numeric" style="color:${confirmedColor};font-weight:${confirmedWeight};">${fmtNum(r.confirmedQty)}</td>
-        <td class="col-auto">${fmtText(r.expectedDate)}</td>
-        <td class="col-auto">${fmtText(r.arrivalDate)}</td>
-        <td class="col-auto">${fmtText(r.confirmDate)}</td>
-        <td class="col-auto">${fmtText(r.requestDate)}</td>
+      <tr data-row-idx="${idx}">
+        <td class="col-auto col-frozen-1${oCls}">${noCnt}</td>
+        <td class="col-auto col-frozen-2${oCls}">${reqCnt}</td>
+        <td class="col-auto col-frozen-3${oCls}">${inbCnt}</td>
+        <td class="col-auto col-frozen-4${iCls}">${statusCnt}</td>
+        <td class="cb-col col-frozen-5${iCls}">${cbCnt}</td>
+        <td class="col-auto col-frozen-6${iCls}">${inNoCnt}</td>
+        <td class="col-auto${iCls}">${locCnt}</td>
+        <td class="col-auto${iCls}">${brandCnt}</td>
+        <td class="col-auto${iCls}">${uidCnt}</td>
+        <td class="col-auto${iCls}">${optCnt}</td>
+        <td class="col-auto${iCls}">${skuCnt}</td>
+        <td class="col-auto${iCls}">${barcodeCnt}</td>
+        <td class="col-large${iCls}">${nameCnt}</td>
+        <td class="col-auto${iCls}">${styleNoCnt}</td>
+        <td class="col-auto cell-numeric${iCls}">${expQtyCnt}</td>
+        <td class="col-auto cell-numeric${iCls}" style="${isInnerSub ? '' : `color:${confirmedColor};font-weight:${confirmedWeight};`}">${cnfQtyCnt}</td>
+        <td class="col-auto${iCls}">${expDateCnt}</td>
+        <td class="col-auto${iCls}">${arrDateCnt}</td>
+        <td class="col-auto${iCls}">${cnfDateCnt}</td>
+        <td class="col-auto${iCls}">${reqDateCnt}</td>
         <td class="col-spacer" aria-hidden="true"></td>
       </tr>
     `;
   }
 
-  document.getElementById('data-tbody').innerHTML = ROWS.map(rowHtml).join('');
+  // 2단 grouping — outer (reqNo) + inner (_ig).
+  function rowsToHtml(rows) {
+    let html = '';
+    let outerNo = 0;
+    let i = 0;
+    while (i < rows.length) {
+      const oStart = i;
+      let oEnd = i;
+      while (oEnd + 1 < rows.length && rows[oEnd + 1].reqNo === rows[oStart].reqNo) oEnd++;
+      outerNo++;
+
+      let isFirstInOuter = true;
+      let j = oStart;
+      while (j <= oEnd) {
+        const iStart = j;
+        let iEnd = j;
+        const ikey = rows[j]._ig != null ? rows[j]._ig : `__solo_${j}`;
+        while (iEnd + 1 <= oEnd) {
+          const nextKey = rows[iEnd + 1]._ig != null ? rows[iEnd + 1]._ig : `__solo_${iEnd + 1}`;
+          if (nextKey !== ikey) break;
+          iEnd++;
+        }
+        html += rowHtml(rows[iStart], iStart, {
+          isOuterSub: !isFirstInOuter,
+          outerNo: isFirstInOuter ? outerNo : null,
+        });
+        isFirstInOuter = false;
+        j = iEnd + 1;
+      }
+      i = oEnd + 1;
+    }
+    return html;
+  }
+
+  document.getElementById('data-tbody').innerHTML = rowsToHtml(ROWS);
 
   // stats-bar "전체 N" 을 실제 데이터 길이로 동기화
   (function syncTotalCount() {
@@ -1021,9 +1104,56 @@
     window.__issTotalCount = ROWS.length;
   })();
 
+  // 안전망: 잔여 scroll lock 해제 — modal open/close 카운터 mismatch 등으로 body 가 overflow:hidden
+  // 으로 stuck 상태이면 페이지 자체가 스크롤 안 되고 sticky thead 도 동작 안 함.
+  if (window.SCM && SCM.scrollLock && SCM.scrollLock.reset) {
+    try { SCM.scrollLock.reset(); } catch (e) {}
+  } else {
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+  }
+
+  // 안전망: sticky stack 변수 (--scm-sticky-filter / --scm-sticky-stats) 동기화.
+  // 원래 scm-shell.js 의 ResizeObserver 가 담당하는데, file:// 환경에서 절대경로 `/scm-shell.js`
+  // 가 로딩 실패하면 변수가 0 으로 남아 thead 가 filter-bar 뒤로 숨음. 인라인 fallback 으로 보장.
+  (function syncStickyVarsFallback() {
+    function update() {
+      const root = document.documentElement;
+      const fb = document.getElementById('filter-bar');
+      const sb = document.querySelector('.scm-stats-bar');
+      if (fb) root.style.setProperty('--scm-sticky-filter', fb.offsetHeight + 'px');
+      if (sb) root.style.setProperty('--scm-sticky-stats',  sb.offsetHeight + 'px');
+    }
+    update();
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(update);
+      document.querySelectorAll('#filter-bar, .scm-stats-bar').forEach(el => ro.observe(el));
+    }
+    window.addEventListener('resize', update);
+    // 추가 안전망 — 페이지 layout 완료 후 한 번 더 (font load 등으로 height 변경 가능)
+    requestAnimationFrame(update);
+    setTimeout(update, 100);
+    setTimeout(update, 500);
+  })();
+
   // ----- SCM Table interactions -----
+  // 첫 init 시 layout 측정 실패 (bodyScroll.width=0 등) 가능 — RAF + setTimeout 후 재시도로 sticky thead 보장.
   if (window.SCMTable) {
-    try { window.SCMTable.init({ root: document, frozenCount: 8 }); } catch (e) { console.warn('SCMTable init failed:', e); }
+    try { window.SCMTable.init({ root: document, frozenCount: 6 }); } catch (e) { console.warn('SCMTable init failed:', e); }
+    // 재시도 — sticky thead clone 이 비어있으면 강제 rebuild
+    const retrySticky = () => {
+      try {
+        const tbl = document.querySelector('.mp-table');
+        const stickyClone = document.querySelector('.mp-thead-sticky .mp-thead-scroll thead');
+        if (tbl && !stickyClone) {
+          if (window.SCMTable.rebuild) window.SCMTable.rebuild(tbl, { frozenCount: 6 });
+          else window.SCMTable.init({ root: document, frozenCount: 6 });
+        }
+      } catch (e) {}
+    };
+    requestAnimationFrame(retrySticky);
+    setTimeout(retrySticky, 100);
+    setTimeout(retrySticky, 500);
   }
   if (window.SCM && SCM.tableSort)           SCM.tableSort.mount({ tableSelector: '.mp-table-scroll .mp-table' });
   if (window.SCM && SCM.columnMoreMenu)      SCM.columnMoreMenu.mount({ tableSelector: '.mp-table-scroll .mp-table' });
@@ -1078,7 +1208,20 @@
     const closeXBtn = document.getElementById('pd-drawer-close');
     if (!drawer || !SCM.sideDrawer) return;
 
-    const dr = SCM.sideDrawer.mount(drawer, { backdrop: backdrop });
+    // side-drawer.js 의 onClose 콜백 — drawer close 완료 (250ms 애니메이션 후) 시점에 호출.
+    //   다른 modal (알림함 / 취소확인) 이 열려있지 않으면 scrollLock 강제 reset →
+    //   side-drawer 의 open/close 카운터 race 로 body overflow 가 stuck 되는 회귀 차단.
+    const dr = SCM.sideDrawer.mount(drawer, {
+      backdrop: backdrop,
+      onClose: () => {
+        const notifyBd = document.getElementById('iss-notify-backdrop');
+        const cancelBd = document.getElementById('iss-cancel-backdrop');
+        const otherOpen = (notifyBd && !notifyBd.hidden) || (cancelBd && !cancelBd.hidden);
+        if (!otherOpen && window.SCM && SCM.scrollLock && SCM.scrollLock.reset) {
+          SCM.scrollLock.reset();
+        }
+      },
+    });
     if (closeBtn) closeBtn.addEventListener('click', () => dr.close());
     if (closeXBtn) closeXBtn.addEventListener('click', () => dr.close());
 
@@ -1092,30 +1235,33 @@
       return String(s).replace(/\s*외\s*\d+\s*$/, '');
     }
     function rowToDetailHtml(r, idx) {
-      const confirmedColor = r.confirmedQty ? 'pd-num--accent' : '';
+      // mp-table 셀 구조 — 메인 목록과 동일한 셀 렌더링 (scm-code-link / scm-product-name 등).
+      //   신청번호 / 입고유형 / 상태 / 체크박스 컬럼은 drawer 에서 제외 (사용자 요청).
+      //   drawer 안 개별 row 라 "외 N" suffix 는 stripExtra 로 제거.
+      const confirmedColor = r.confirmedQty ? '#245EFF' : '#000';
+      const confirmedWeight = r.confirmedQty ? 600 : 400;
+      const nameCell = isEmpty(r.name)
+        ? NA
+        : `<div class="cell-clamp"><span class="scm-product-name"><span class="scm-product-name__thumb"></span><span class="scm-product-name__text">${escapeHtml(stripExtra(r.name))}</span></span></div>`;
       return `
         <tr>
-          <td class="pd-td-no pd-td-frozen-1">${idx + 1}</td>
-          <td class="pd-td-frozen-2">${escapeHtml(r.reqNo)}</td>
-          <td class="pd-td-frozen-3 pd-td-frozen-last">${escapeHtml(stripExtra(r.inNo))}</td>
-          <td class="pd-td-frozen-border">${escapeHtml(r.brand)}</td>
-          <td><span class="pd-underline">${escapeHtml(r.uid)}</span></td>
-          <td>${escapeHtml(r.opt)}</td>
-          <td><span class="pd-underline">${escapeHtml(r.sku)}</span></td>
-          <td>${escapeHtml(stripExtra(r.barcode))}</td>
-          <td>
-            <span class="pd-name-cell">
-              <span class="pd-thumb"></span>
-              <span>${escapeHtml(stripExtra(r.name))}</span>
-            </span>
-          </td>
-          <td>${escapeHtml(r.styleNo)}</td>
-          <td class="pd-num">${fmtNum(r.expectedQty)}</td>
-          <td class="pd-num ${confirmedColor}">${fmtNum(r.confirmedQty)}</td>
-          <td>${escapeHtml(r.expectedDate)}</td>
-          <td>${escapeHtml(r.arrivalDate)}</td>
-          <td>${escapeHtml(r.confirmDate)}</td>
-          <td>${escapeHtml(r.requestDate)}</td>
+          <td class="col-auto col-frozen-1">${idx + 1}</td>
+          <td class="col-auto col-frozen-2">${escapeHtml(stripExtra(r.inNo))}</td>
+          <td class="col-auto col-frozen-3">${escapeHtml(r.loc)}</td>
+          <td class="col-auto">${escapeHtml(r.brand)}</td>
+          <td class="col-auto"><a class="scm-code-link" data-code-type="uid">${escapeHtml(r.uid)}</a></td>
+          <td class="col-auto">${escapeHtml(r.opt)}</td>
+          <td class="col-auto"><a class="scm-code-link" data-code-type="sku">${escapeHtml(r.sku)}</a></td>
+          <td class="col-auto"><a class="scm-code-link" data-code-type="barcode">${escapeHtml(stripExtra(r.barcode))}</a></td>
+          <td class="col-large">${nameCell}</td>
+          <td class="col-auto"><a class="scm-code-link" data-code-type="styleNo">${escapeHtml(r.styleNo)}</a></td>
+          <td class="col-auto cell-numeric">${fmtNum(r.expectedQty)}</td>
+          <td class="col-auto cell-numeric" style="color:${confirmedColor};font-weight:${confirmedWeight};">${fmtNum(r.confirmedQty)}</td>
+          <td class="col-auto">${escapeHtml(r.expectedDate)}</td>
+          <td class="col-auto">${escapeHtml(r.arrivalDate)}</td>
+          <td class="col-auto">${escapeHtml(r.confirmDate)}</td>
+          <td class="col-auto">${escapeHtml(r.requestDate)}</td>
+          <td class="col-spacer" aria-hidden="true"></td>
         </tr>
       `;
     }
@@ -1260,8 +1406,9 @@
     const tbody = document.getElementById('data-tbody');
     if (!tbody) return 0;
     let visibleCount = 0;
-    Array.from(tbody.children).forEach((tr, i) => {
-      const r = ROWS[i];
+    Array.from(tbody.children).forEach((tr) => {
+      const rIdx = parseInt(tr.getAttribute('data-row-idx'), 10);
+      const r = ROWS[rIdx];
       if (!r) return;
       const visible = matchesFilters(r, active);
       tr.style.display = visible ? '' : 'none';
@@ -1348,7 +1495,6 @@
   (function styleReqCellClickable() {
     const tbody = document.getElementById('data-tbody');
     if (!tbody) return;
-    tbody.style.cursor = '';
     const css = document.createElement('style');
     css.textContent =
       '#data-tbody td.col-frozen-2 { cursor: pointer; }' +
