@@ -1,0 +1,180 @@
+import { Meta, Story, Canvas, ArgTypes } from '@storybook/blocks';
+import * as TextfieldStories from './Textfield.stories';
+
+<Meta of={TextfieldStories} />
+
+# Textfield
+
+## Anatomy
+
+- `Textfield` (기본 형태를 사용할 경우 `Textfield`를 사용해주세요. - 간소화된 형태로 제공)
+- `Textfield.Box`
+- `Textfield.Input`
+- `Textfield.Slot (React.Fragment)`
+- `Textfield.Count`
+
+## Example
+
+```tsx
+function TextfieldComposition() {
+  const [value, setValue] = useState('');
+  const [value2, setValue2] = useState('');
+
+  return (
+    <Column width="300px">
+      {/* 기본 형태 */}
+      <Textfield value={value} onValueChange={setValue} placeholder="Placeholder" />
+
+      {/* 커스텀이 필요한 경우 */}
+      <Textfield.Box>
+        <Icon name="ic-search" />
+        <Textfield.Input value={value2} onValueChange={setValue2} placeholder="Placeholder" maxLength={10} />
+        <Textfield.Count />
+      </Textfield.Box>
+    </Column>
+  );
+}
+```
+
+<Canvas of={TextfieldStories.Default} />
+
+## Case
+
+type prop을 통해 타입을 지정할 수 있습니다.
+
+```tsx
+function TypeCase() {
+  const [value, setValue] = useState('');
+  const [value2, setValue2] = useState('');
+  const [value3, setValue3] = useState('');
+
+  return (
+    <Column width="300px">
+      <Textfield type="text" value={value} onValueChange={setValue} placeholder="Placeholder" />
+      <Textfield type="password" value={value2} onValueChange={setValue2} placeholder="Placeholder" />
+      <Textfield type="number" value={value3} onValueChange={setValue3} placeholder="Placeholder" />
+    </Column>
+  );
+}
+```
+
+<Canvas of={TextfieldStories.TypeProp} />
+
+validationState prop을 통해 유효성 상태를 지정할 수 있습니다.
+
+```tsx
+function ValidationStateCase() {
+  return (
+    <Column>
+      <Flex>
+        <Textfield placeholder="text none" />
+        <Textfield placeholder="text error" validationState="error" />
+      </Flex>
+      <Flex>
+        <Textfield type="password" placeholder="password none" />
+        <Textfield type="password" placeholder="password error" validationState="error" />
+      </Flex>
+      <Flex>
+        <Textfield type="number" placeholder="number none" />
+        <Textfield type="number" placeholder="number error" validationState="error" />
+      </Flex>
+    </Column>
+  );
+}
+```
+
+<Canvas of={TextfieldStories.ValidationStateProp} />
+
+disabled / readOnly 상태를 지정할 수 있습니다.
+
+```tsx
+function DisabledReadOnlyCase() {
+  return (
+    <Column>
+      <Flex>
+        <Textfield placeholder="disabled" disabled />
+        <Textfield placeholder="readOnly" readOnly value="readOnly" />
+      </Flex>
+      <Flex>
+        <Textfield type="password" placeholder="password disabled" disabled />
+        <Textfield type="password" placeholder="password readOnly" readOnly value="readOnly" />
+      </Flex>
+      <Flex>
+        <Textfield type="number" placeholder="number disabled" disabled />
+        <Textfield type="number" placeholder="number readOnly" readOnly value="readOnly" />
+      </Flex>
+    </Column>
+  );
+}
+```
+
+<Canvas of={TextfieldStories.DisabledReadOnlyProp} />
+
+커스텀이 필요한 경우 내부요소를 추가할 수 있습니다. (Slot === React.Fragment)
+
+```tsx
+function SlotCase() {
+  return (
+    <Column width="300px">
+      <Textfield.Box>
+        <Icon name="ic-search" />
+        <Textfield.Input placeholder="Placeholder" />
+      </Textfield.Box>
+
+      <Textfield.Box>
+        <Textfield.Slot>검색어 : </Textfield.Slot>
+        <Textfield.Input placeholder="Placeholder" />
+      </Textfield.Box>
+
+      <Textfield.Box>
+        <Textfield.Input placeholder="Placeholder" />
+        <Textfield.Slot>개</Textfield.Slot>
+      </Textfield.Box>
+    </Column>
+  );
+}
+```
+
+<Canvas of={TextfieldStories.SlotProp} />
+
+`Textfield.Count`를 통해 입력 가능한 최대 글자수를 표시할 수 있습니다.
+
+- Input에 maxLength prop을 전달해주어야 합니다.
+- onChange에서 early return 처리가 필요합니다. (추가 로직이 있을 수 있기에 직접처리를 원칙으로합니다.)
+
+```tsx
+function CountCase() {
+  const [value, setValue] = useState('');
+
+  return (
+    <Column width="300px">
+      <Textfield.Box>
+        <Textfield.Input placeholder="Placeholder" value={value} onValueChange={setValue} maxLength={10} />
+        <Textfield.Count />
+      </Textfield.Box>
+    </Column>
+  );
+}
+```
+
+<Canvas of={TextfieldStories.CountProp} />
+
+`onClear` prop을 전달하여 clear 버튼을 추가할 수 있습니다.
+
+```tsx
+function ClearCase() {
+  const [value, setValue] = useState('value');
+
+  return (
+    <Column width="300px">
+      <Textfield value={value} onValueChange={setValue} placeholder="Placeholder" onClear={() => setValue('')} />
+    </Column>
+  );
+}
+```
+
+<Canvas of={TextfieldStories.ClearProp} />
+
+## Props
+
+<ArgTypes of={TextfieldStories} />

@@ -1,0 +1,1452 @@
+{
+  "button": {
+    "primary": {
+      "bg": {
+        "value": "{bg-contrast}",
+        "type": "color"
+      },
+      "bg-hover": {
+        "value": "{primitive.color.gray.alpha900.80}",
+        "type": "color"
+      },
+      "bg-pressed": {
+        "value": "{primitive.color.gray.alpha900.80}",
+        "type": "color"
+      },
+      "bg-disabled": {
+        "value": "{bg-disabled}",
+        "type": "color"
+      },
+      "bgAccent-hover": {
+        "value": "{primitive.color.blue.alpha500.90}",
+        "type": "color"
+      },
+      "bgAccent-pressed": {
+        "value": "{primitive.color.blue.alpha500.90}",
+        "type": "color"
+      },
+      "bgAccent-disabled": {
+        "value": "{bg-disabled}",
+        "type": "color"
+      },
+      "bgOutlined": {
+        "value": "{bg}",
+        "type": "color"
+      },
+      "bgOutlined-hover": {
+        "value": "{primitive.color.gray.alpha500.10}",
+        "type": "color"
+      },
+      "bgOutlined-pressed": {
+        "value": "{primitive.color.gray.alpha500.10}",
+        "type": "color"
+      },
+      "bgOutlined-disabled": {
+        "value": "{bg-disabled}",
+        "type": "color"
+      },
+      "bgAccentOutlined": {
+        "value": "{bg}",
+        "type": "color"
+      },
+      "bgAccentOutlined-hover": {
+        "value": "{primitive.color.blue.alpha500.10}",
+        "type": "color"
+      },
+      "bgAccentOutlined-pressed": {
+        "value": "{primitive.color.blue.alpha500.10}",
+        "type": "color"
+      },
+      "bgAccentOutlined-disabled": {
+        "value": "{bg-disabled}",
+        "type": "color"
+      },
+      "bgGhost-hover": {
+        "value": "{primitive.color.gray.alpha500.10}",
+        "type": "color"
+      },
+      "bgGhost-pressed": {
+        "value": "{primitive.color.gray.alpha500.10}",
+        "type": "color"
+      },
+      "bgAccentGhost-hover": {
+        "value": "{primitive.color.blue.alpha500.10}",
+        "type": "color"
+      },
+      "bgAccentGhost-pressed": {
+        "value": "{primitive.color.blue.alpha500.10}",
+        "type": "color"
+      },
+      "fg": {
+        "value": "{fg}",
+        "type": "color"
+      },
+      "fg-contrast": {
+        "value": "{fg-onContrast}",
+        "type": "color"
+      },
+      "fg-disabled": {
+        "value": "{fg-disabled}",
+        "type": "color"
+      },
+      "border": {
+        "value": "{stroke.border-strong}",
+        "type": "color"
+      },
+      "border-disabled": {
+        "value": "{stroke.border-disabled}",
+        "type": "color"
+      }
+    },
+    "secondary": {
+      "bg": {
+        "value": "{bg-low}",
+        "type": "color"
+      },
+      "bg-hover": {
+        "value": "{primitive.color.gray.200}",
+        "type": "color"
+      },
+      "bg-pressed": {
+        "value": "{primitive.color.gray.200}",
+        "type": "color"
+      },
+      "bg-disabled": {
+        "value": "{bg-disabled}",
+        "type": "color"
+      },
+      "bgOutlined": {
+        "value": "{bg}",
+        "type": "color"
+      },
+      "bgOutlined-hover": {
+        "value": "{primitive.color.gray.alpha500.10}",
+        "type": "color"
+      },
+      "bgOutlined-pressed": {
+        "value": "{primitive.color.gray.alpha500.10}",
+        "type": "color"
+      },
+      "bgOutlined-disabled": {
+        "value": "{bg-disabled}",
+        "type": "color"
+      },
+      "bgGhost-hover": {
+        "value": "{primitive.color.gray.alpha500.10}",
+        "type": "color"
+      },
+      "bgGhost-pressed": {
+        "value": "{primitive.color.gray.alpha500.10}",
+        "type": "color"
+      },
+      "fg": {
+        "value": "{fg}",
+        "type": "color"
+      },
+      "fg-low": {
+        "value": "{fg-low}",
+        "type": "color"
+      },
+      "fg-disabled": {
+        "value": "{fg-disabled}",
+        "type": "color"
+      },
+      "border": {
+        "value": "{stroke.border}",
+        "type": "color"
+      },
+      "border-disabled": {
+        "value": "{stroke.border-disabled}",
+        "type": "color"
+      }
+    },
+    "minWidth": {
+      "s": {
+        "value": "{primitive.dimension}*15",
+        "description": "small 버튼의 최소 너비",
+        "type": "dimension"
+      },
+      "m": {
+        "value": "{primitive.dimension}*20",
+        "description": "medium 버튼의 최소 너비",
+        "type": "dimension"
+      },
+      "l": {
+        "value": "{primitive.dimension}*21",
+        "description": "large, xlarge 버튼의 최소 너비",
+        "type": "dimension"
+      }
+    },
+    "negative": {
+      "bg": {
+        "value": "{bg-critical}",
+        "type": "color"
+      },
+      "bg-hover": {
+        "value": "{primitive.color.red.alpha500.90}",
+        "type": "color"
+      },
+      "bg-pressed": {
+        "value": "{primitive.color.red.alpha500.90}",
+        "type": "color"
+      },
+      "bg-disabled": {
+        "value": "{bg-disabled}",
+        "type": "color"
+      },
+      "bgOutlined": {
+        "value": "{bg}",
+        "type": "color"
+      },
+      "bgOutlined-hover": {
+        "value": "{primitive.color.red.alpha500.10}",
+        "type": "color"
+      },
+      "bgOutlined-pressed": {
+        "value": "{primitive.color.red.alpha500.10}",
+        "type": "color"
+      },
+      "bgOutlined-disabled": {
+        "value": "{bg-disabled}",
+        "type": "color"
+      },
+      "bgGhost-hover": {
+        "value": "{primitive.color.red.alpha500.10}",
+        "type": "color"
+      },
+      "bgGhost-pressed": {
+        "value": "{primitive.color.red.alpha500.10}",
+        "type": "color"
+      },
+      "bgGhost-disabled": {
+        "value": "{bg-disabled}",
+        "type": "color"
+      },
+      "fg": {
+        "value": "{bg-critical}",
+        "type": "color"
+      },
+      "fg-contrast": {
+        "value": "{fg-onContrast}",
+        "type": "color"
+      },
+      "fg-disabled": {
+        "value": "{fg-disabled}",
+        "type": "color"
+      },
+      "border": {
+        "value": "{stroke.border-critical}",
+        "type": "color"
+      },
+      "border-disabled": {
+        "value": "{stroke.border-disabled}",
+        "type": "color"
+      }
+    },
+    "iconSize": {
+      "xs": {
+        "value": "{primitive.size.icon.125}",
+        "type": "sizing"
+      },
+      "s": {
+        "value": "{primitive.size.icon.125}",
+        "type": "sizing"
+      },
+      "m": {
+        "value": "{primitive.size.icon.125}",
+        "type": "sizing"
+      },
+      "l": {
+        "value": "{primitive.size.icon.125}",
+        "type": "sizing"
+      },
+      "xl": {
+        "value": "{primitive.size.icon.125}",
+        "type": "sizing"
+      }
+    },
+    "tertiary": {
+      "fg": {
+        "value": "{fg-lower}",
+        "type": "color"
+      },
+      "fg-hover": {
+        "value": "{fg-low}",
+        "type": "color"
+      },
+      "fg-pressed": {
+        "value": "{fg-low}",
+        "type": "color"
+      },
+      "fg-disabled": {
+        "value": "{fg-disabled}",
+        "type": "color"
+      }
+    },
+    "maxWidth": {
+      "s": {
+        "value": "{primitive.dimension}*20",
+        "description": "small 버튼의 최대 너비",
+        "type": "dimension"
+      },
+      "m": {
+        "value": "{primitive.dimension}*20",
+        "description": "medium 버튼의 최대 너비",
+        "type": "dimension"
+      },
+      "l": {
+        "value": "{primitive.dimension}*21",
+        "description": "large, xlarge 버튼의 최대 너비",
+        "type": "dimension"
+      }
+    }
+  },
+  "textButton": {
+    "primary": {
+      "fg": {
+        "value": "{fg}",
+        "type": "color"
+      },
+      "fg-hover": {
+        "value": "{fg-low}",
+        "type": "color"
+      },
+      "fg-pressed": {
+        "value": "{fg-low}",
+        "type": "color"
+      },
+      "fg-disabled": {
+        "value": "{fg-disabled}",
+        "type": "color"
+      },
+      "fg-onContrast": {
+        "value": "{fg-onContrast}",
+        "type": "color"
+      },
+      "fg-onContrast-pressed": {
+        "value": "{primitive.color.gray.alpha.60}",
+        "type": "color"
+      },
+      "fg-onContrast-disabled": {
+        "value": "{primitive.color.gray.alpha.20}",
+        "type": "color"
+      }
+    },
+    "negative": {
+      "fg": {
+        "value": "{fg-critical}",
+        "type": "color"
+      },
+      "fg-hover": {
+        "value": "{primitive.color.red.alpha500.90}",
+        "type": "color"
+      },
+      "fg-pressed": {
+        "value": "{primitive.color.red.alpha500.90}",
+        "type": "color"
+      },
+      "fg-disabled": {
+        "value": "{fg-disabled}",
+        "type": "color"
+      }
+    },
+    "secondary": {
+      "fg": {
+        "value": "{fg-low}",
+        "type": "color"
+      },
+      "fg-hover": {
+        "value": "{fg-lower}",
+        "type": "color"
+      },
+      "fg-pressed": {
+        "value": "{fg-lower}",
+        "type": "color"
+      },
+      "fg-disabled": {
+        "value": "{fg-disabled}",
+        "type": "color"
+      }
+    },
+    "accent": {
+      "fg-hover": {
+        "value": "{primitive.color.blue.alpha500.90}",
+        "type": "color"
+      },
+      "fg-pressed": {
+        "value": "{primitive.color.blue.alpha500.90}",
+        "type": "color"
+      },
+      "fg-disabled": {
+        "value": "{fg-disabled}",
+        "type": "color"
+      },
+      "fg-onContrast": {
+        "value": "{primitive.color.blue.200}",
+        "type": "color"
+      },
+      "fg-onContrast-disabled": {
+        "value": "{primitive.color.gray.alpha.20}",
+        "type": "color"
+      },
+      "bg-onContrast-hover": {
+        "value": "{primitive.color.blue.alpha500.20}",
+        "type": "color"
+      },
+      "bg-onContrast-pressed": {
+        "value": "{primitive.color.blue.alpha500.20}",
+        "type": "color"
+      }
+    },
+    "iconSize": {
+      "s": {
+        "value": "{primitive.size.icon.100}",
+        "type": "sizing"
+      },
+      "m": {
+        "value": "{primitive.size.icon.100}",
+        "type": "sizing"
+      },
+      "l": {
+        "value": "{primitive.size.icon.125}",
+        "type": "sizing"
+      },
+      "xl": {
+        "value": "{primitive.size.icon.125}",
+        "type": "sizing"
+      }
+    }
+  },
+  "iconButton": {
+    "iconSize": {
+      "xxs": {
+        "value": "{primitive.size.icon.125}",
+        "type": "sizing"
+      },
+      "xs": {
+        "value": "{primitive.size.icon.125}",
+        "type": "sizing"
+      },
+      "s": {
+        "value": "{primitive.size.icon.125}",
+        "type": "sizing"
+      },
+      "m": {
+        "value": "{primitive.size.icon.150}",
+        "type": "sizing"
+      },
+      "l": {
+        "value": "{primitive.size.icon.150}",
+        "type": "sizing"
+      },
+      "xl": {
+        "value": "{primitive.size.icon.150}",
+        "type": "sizing"
+      }
+    }
+  },
+  "control": {
+    "iconSize": {
+      "s": {
+        "value": "{primitive.dimension}*3.5",
+        "type": "sizing"
+      },
+      "m": {
+        "value": "{primitive.size.icon.125}",
+        "type": "sizing"
+      }
+    },
+    "bg": {
+      "value": "{bg}",
+      "type": "color"
+    },
+    "bg-hover": {
+      "value": "{primitive.color.gray.alpha500.10}",
+      "type": "color"
+    },
+    "bg-pressed": {
+      "value": "{primitive.color.gray.alpha500.10}",
+      "type": "color"
+    },
+    "bg-disabled": {
+      "value": "{primitive.color.gray.100}",
+      "type": "color"
+    },
+    "bg-checked": {
+      "value": "{bg-contrast}",
+      "description": "체크된 상태에서 컨트롤 전체의 배경색",
+      "type": "color"
+    },
+    "bg-checkedHover": {
+      "value": "{primitive.color.gray.700}",
+      "type": "color"
+    },
+    "bg-checkedPressed": {
+      "value": "{primitive.color.gray.700}",
+      "type": "color"
+    },
+    "bg-checkedDisabled": {
+      "value": "{primitive.color.gray.400}",
+      "type": "color"
+    },
+    "border": {
+      "value": "{stroke.border}",
+      "type": "color"
+    },
+    "border-disabled": {
+      "value": "{stroke.border-disabled}",
+      "type": "color"
+    },
+    "indicator": {
+      "bg-checked": {
+        "value": "{primitive.color.gray.0}",
+        "description": "체크된 상태에서 indicator(체크박스, 라디오 버튼)의 배경색",
+        "type": "color"
+      },
+      "bg-checkedDisabled": {
+        "value": "{primitive.color.gray.200}",
+        "description": "체크된 상태이면서 비활성화된 indicator(체크박스, 라디오 버튼 내부 원)의 배경색",
+        "type": "color"
+      }
+    },
+    "minWidth": {
+      "s": {
+        "value": "{primitive.dimension}*15",
+        "description": "small 컨트롤(체크박스·라디오버튼) 최소 너비",
+        "type": "dimension"
+      },
+      "m": {
+        "value": "{primitive.dimension}*20",
+        "description": "medium 컨트롤(체크박스·라디오버튼) 최소 너비",
+        "type": "dimension"
+      }
+    }
+  },
+  "tab": {
+    "text": {
+      "minHeight": {
+        "s": {
+          "value": "{primitive.dimension}*5",
+          "description": "small tabText 최소 높이",
+          "type": "dimension"
+        }
+      },
+      "bg-hover": {
+        "value": "{primitive.color.gray.alpha500.10}",
+        "type": "color"
+      },
+      "bg-pressed": {
+        "value": "{primitive.color.gray.alpha500.10}",
+        "type": "color"
+      },
+      "bg-selected": {
+        "value": "{bg}",
+        "type": "color"
+      },
+      "fg": {
+        "value": "{fg-lower}",
+        "type": "color"
+      },
+      "fg-selected": {
+        "value": "{actionCard.fg}",
+        "type": "color"
+      }
+    },
+    "line": {
+      "bg-hover": {
+        "value": "{primitive.color.gray.alpha500.10}",
+        "type": "color"
+      },
+      "bg-pressed": {
+        "value": "{primitive.color.gray.alpha500.10}",
+        "type": "color"
+      },
+      "border-disabled": {
+        "value": "{stroke.border-disabled}",
+        "type": "color"
+      }
+    },
+    "box": {
+      "bg": {
+        "value": "{bg}",
+        "type": "color"
+      },
+      "bg-hover": {
+        "value": "{primitive.color.gray.alpha500.10}",
+        "type": "color"
+      },
+      "bg-pressed": {
+        "value": "{primitive.color.gray.alpha500.10}",
+        "type": "color"
+      },
+      "bg-disabled": {
+        "value": "{bg-disabled}",
+        "type": "color"
+      },
+      "border": {
+        "value": "{stroke.border}",
+        "type": "color"
+      },
+      "border-disabled": {
+        "value": "{stroke.border-disabled}",
+        "type": "color"
+      },
+      "border-selected": {
+        "value": "{stroke.border-strong}",
+        "type": "color"
+      }
+    },
+    "iconSize": {
+      "s": {
+        "value": "{primitive.size.icon.100}",
+        "type": "sizing"
+      },
+      "m": {
+        "value": "{primitive.size.icon.125}",
+        "type": "sizing"
+      },
+      "l": {
+        "value": "{primitive.size.icon.125}",
+        "type": "sizing"
+      }
+    },
+    "bg": {
+      "value": "{bg-neutral-low}",
+      "type": "color"
+    }
+  },
+  "switch": {
+    "track": {
+      "value": "{primitive.color.gray.400}",
+      "description": "unchecked 상태일 때 switch 전체 배경색(track)",
+      "type": "color"
+    },
+    "track-checked": {
+      "value": "{bg-contrast}",
+      "description": "checked 상태일 때 switch 전체 배경색(track)",
+      "type": "color"
+    },
+    "track-hover": {
+      "value": "{primitive.color.gray.300}",
+      "description": "unchecked 상태일 때 switch 전체 hover 배경색(track)",
+      "type": "color"
+    },
+    "track-checkedHover": {
+      "value": "{primitive.color.gray.700}",
+      "description": "checked 상태일 때 switch 전체 hover 배경색(track)",
+      "type": "color"
+    },
+    "track-disabled": {
+      "value": "{primitive.color.gray.200}",
+      "description": "비활성화(disabled) 상태일 때 switch 전체 배경색(track)",
+      "type": "color"
+    },
+    "track-checkedDisabled": {
+      "value": "{primitive.color.gray.400}",
+      "type": "color"
+    },
+    "thumb": {
+      "value": "{fg-onContrast}",
+      "description": "switch의 thumb(핸들)의 배경색",
+      "type": "color"
+    },
+    "thumb-disabled": {
+      "value": "{primitive.color.gray.100}",
+      "description": "비활성화(disabled) 상태일 때 switch의 thumb(핸들) 배경색",
+      "type": "color"
+    },
+    "thumb-checkedDisabled": {
+      "value": "{primitive.color.gray.200}",
+      "description": "비활성화(disabled) 상태일 때 switch의 checked thumb(핸들) 배경색",
+      "type": "color"
+    }
+  },
+  "focus": {
+    "focus-bg": {
+      "value": "{primitive.color.blue.alpha500.20}",
+      "type": "color"
+    }
+  },
+  "tag": {
+    "filter": {
+      "bg": {
+        "value": "{bg}",
+        "type": "color"
+      },
+      "bg-hover": {
+        "value": "{primitive.color.gray.alpha500.10}",
+        "type": "color"
+      },
+      "bg-pressed": {
+        "value": "{primitive.color.gray.alpha500.10}",
+        "type": "color"
+      },
+      "bg-disalbed": {
+        "value": "{bg-disabled}",
+        "type": "color"
+      },
+      "border": {
+        "value": "{stroke.border}",
+        "type": "color"
+      },
+      "border-selected": {
+        "value": "{stroke.border-strong}",
+        "type": "color"
+      },
+      "border-disabled": {
+        "value": "{stroke.border-disabled}",
+        "type": "color"
+      }
+    },
+    "removable": {
+      "bgFilled": {
+        "value": "{bg-low}",
+        "type": "color"
+      },
+      "bgFilled-hover": {
+        "value": "{primitive.color.gray.alpha500.30}",
+        "type": "color"
+      },
+      "bgFilled-pressed": {
+        "value": "{primitive.color.gray.alpha500.30}",
+        "type": "color"
+      },
+      "bgFilled-disabled": {
+        "value": "{bg-disabled}",
+        "type": "color"
+      },
+      "removeFilled": {
+        "value": "{fg-lower}",
+        "type": "color"
+      },
+      "removeFilled-hover": {
+        "value": "{fg-low}",
+        "type": "color"
+      },
+      "removeFilled-pressed": {
+        "value": "{fg-low}",
+        "type": "color"
+      },
+      "removeFilled-disabled": {
+        "value": "{fg-disabled}",
+        "type": "color"
+      },
+      "bgOutlined": {
+        "value": "{bg}",
+        "type": "color"
+      },
+      "bgOutlined-hover": {
+        "value": "{primitive.color.gray.alpha500.10}",
+        "type": "color"
+      },
+      "bgOutlined-pressed": {
+        "value": "{primitive.color.gray.alpha500.10}",
+        "type": "color"
+      },
+      "bgOutlined-disabled": {
+        "value": "{bg-disabled}",
+        "type": "color"
+      },
+      "border": {
+        "value": "{stroke.border}",
+        "type": "color"
+      },
+      "border-disabled": {
+        "value": "{stroke.border-disabled}",
+        "type": "color"
+      },
+      "removeOutlined": {
+        "value": "{fg-lower}",
+        "type": "color"
+      },
+      "removeOutlined-hover": {
+        "value": "{fg-lower}",
+        "type": "color"
+      },
+      "removeOutlined-pressed": {
+        "value": "{fg-lower}",
+        "type": "color"
+      },
+      "removeOutlined-disabled": {
+        "value": "{fg-disabled}",
+        "type": "color"
+      }
+    },
+    "iconSize": {
+      "s": {
+        "value": "{primitive.size.icon.100}",
+        "type": "sizing"
+      },
+      "m": {
+        "value": "{primitive.size.icon.125}",
+        "type": "sizing"
+      },
+      "l": {
+        "value": "{primitive.size.icon.125}",
+        "type": "sizing"
+      }
+    }
+  },
+  "labelTag": {
+    "bg-gray": {
+      "value": "{primitive.color.gray.0}",
+      "type": "color"
+    },
+    "bg-blue": {
+      "value": "{primitive.color.blue.0}",
+      "type": "color"
+    },
+    "bg-green": {
+      "value": "{primitive.color.green.0}",
+      "type": "color"
+    },
+    "bg-yellow": {
+      "value": "{primitive.color.yellow.0}",
+      "type": "color"
+    },
+    "bg-red": {
+      "value": "{primitive.color.red.0}",
+      "type": "color"
+    },
+    "bg-tinted": {
+      "value": "{primitive.color.gray.alpha900.5}",
+      "type": "color",
+      "description": "labelTag 태그의 전체 톤을 맞추기 위해 투명 배경"
+    },
+    "fg": {
+      "value": "{fg}",
+      "type": "color"
+    },
+    "fg-count": {
+      "value": "{fg}",
+      "type": "color"
+    },
+    "height": {
+      "xs": {
+        "value": "{primitive.dimension}*5",
+        "type": "dimension"
+      },
+      "s": {
+        "value": "{primitive.dimension}*6",
+        "type": "dimension"
+      },
+      "m": {
+        "value": "{primitive.dimension}*7",
+        "type": "dimension"
+      }
+    },
+    "label-m": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.medium-500}",
+        "fontSize": "{primitive.fontSize.125}",
+        "lineHeight": "{primitive.lineHeight.4}",
+        "letterSpacing": "{primitive.letterSpacing.0}"
+      },
+      "type": "typography"
+    },
+    "label-s": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.medium-500}",
+        "fontSize": "{primitive.fontSize.100}",
+        "lineHeight": "{primitive.lineHeight.5}",
+        "letterSpacing": "{primitive.letterSpacing.0}"
+      },
+      "type": "typography"
+    },
+    "label-xs": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.medium-500}",
+        "fontSize": "{primitive.fontSize.75}",
+        "lineHeight": "{primitive.lineHeight.5}",
+        "letterSpacing": "{primitive.letterSpacing.0}"
+      },
+      "type": "typography"
+    },
+    "count-m": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.semibold-600}",
+        "fontSize": "{primitive.fontSize.125}",
+        "lineHeight": "{primitive.lineHeight.4}",
+        "letterSpacing": "{primitive.letterSpacing.0}"
+      },
+      "type": "typography"
+    },
+    "count-s": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.semibold-600}",
+        "fontSize": "{primitive.fontSize.100}",
+        "lineHeight": "{primitive.lineHeight.5}",
+        "letterSpacing": "{primitive.letterSpacing.0}"
+      },
+      "type": "typography"
+    },
+    "count-xs": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.semibold-600}",
+        "fontSize": "{primitive.fontSize.75}",
+        "lineHeight": "{primitive.lineHeight.5}",
+        "letterSpacing": "{primitive.letterSpacing.0}"
+      },
+      "type": "typography"
+    }
+  },
+  "statusTag": {
+    "default": {
+      "bg": {
+        "value": "{primitive.color.gray.0}",
+        "type": "color"
+      },
+      "fg": {
+        "value": "{fg-low}",
+        "type": "color"
+      }
+    },
+    "fg-subtle": {
+      "value": "{fg}",
+      "type": "color"
+    },
+    "bg-tinted": {
+      "value": "{primitive.color.gray.alpha900.5}",
+      "type": "color",
+      "description": "statusTag 태그의 전체 톤을 맞추기 위해 투명 배경"
+    },
+    "progress": {
+      "bg-primary": {
+        "value": "{primitive.color.blue.0}",
+        "type": "color"
+      },
+      "bg-secondary": {
+        "value": "{primitive.color.cyan.0}",
+        "type": "color"
+      },
+      "bg-tertiary": {
+        "value": "{primitive.color.purple.0}",
+        "type": "color"
+      },
+      "fg-primary": {
+        "value": "{primitive.color.blue.500}",
+        "type": "color"
+      },
+      "fg-secondary": {
+        "value": "{primitive.color.cyan.600}",
+        "type": "color"
+      },
+      "fg-tertiary": {
+        "value": "{primitive.color.purple.500}",
+        "type": "color"
+      }
+    },
+    "success": {
+      "bg": {
+        "value": "{primitive.color.green.0}",
+        "type": "color"
+      },
+      "fg": {
+        "value": "{primitive.color.green.500}",
+        "type": "color"
+      }
+    },
+    "warning": {
+      "bg": {
+        "value": "{primitive.color.yellow.0}",
+        "type": "color"
+      },
+      "fg": {
+        "value": "{primitive.color.yellow.600}",
+        "type": "color"
+      }
+    },
+    "critical": {
+      "bg": {
+        "value": "{primitive.color.red.0}",
+        "type": "color"
+      },
+      "fg": {
+        "value": "{primitive.color.red.600}",
+        "type": "color"
+      }
+    },
+    "height": {
+      "xs": {
+        "value": "{primitive.dimension}*5",
+        "type": "dimension"
+      },
+      "s": {
+        "value": "{primitive.dimension}*6",
+        "type": "dimension"
+      },
+      "m": {
+        "value": "{primitive.dimension}*7",
+        "type": "dimension"
+      }
+    },
+    "label-m": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.medium-500}",
+        "fontSize": "{primitive.fontSize.125}",
+        "lineHeight": "{primitive.lineHeight.4}",
+        "letterSpacing": "{primitive.letterSpacing.0}"
+      },
+      "type": "typography"
+    },
+    "label-m-subtle": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.regular-400}",
+        "fontSize": "{primitive.fontSize.125}",
+        "lineHeight": "{primitive.lineHeight.4}",
+        "letterSpacing": "{primitive.letterSpacing.0}"
+      },
+      "type": "typography"
+    },
+    "label-s": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.medium-500}",
+        "fontSize": "{primitive.fontSize.100}",
+        "lineHeight": "{primitive.lineHeight.5}",
+        "letterSpacing": "{primitive.letterSpacing.0}"
+      },
+      "type": "typography"
+    },
+    "label-s-subtle": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.regular-400}",
+        "fontSize": "{primitive.fontSize.100}",
+        "lineHeight": "{primitive.lineHeight.5}",
+        "letterSpacing": "{primitive.letterSpacing.0}"
+      },
+      "type": "typography"
+    },
+    "label-xs": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.medium-500}",
+        "fontSize": "{primitive.fontSize.75}",
+        "lineHeight": "{primitive.lineHeight.5}",
+        "letterSpacing": "{primitive.letterSpacing.0}"
+      },
+      "type": "typography"
+    },
+    "label-xs-subtle": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.regular-400}",
+        "fontSize": "{primitive.fontSize.75}",
+        "lineHeight": "{primitive.lineHeight.5}",
+        "letterSpacing": "{primitive.letterSpacing.0}"
+      },
+      "type": "typography"
+    },
+    "count-m": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.semibold-600}",
+        "fontSize": "{primitive.fontSize.125}",
+        "lineHeight": "{primitive.lineHeight.4}",
+        "letterSpacing": "{primitive.letterSpacing.0}"
+      },
+      "type": "typography"
+    },
+    "count-s": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.semibold-600}",
+        "fontSize": "{primitive.fontSize.100}",
+        "lineHeight": "{primitive.lineHeight.5}",
+        "letterSpacing": "{primitive.letterSpacing.0}"
+      },
+      "type": "typography"
+    },
+    "count-xs": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.semibold-600}",
+        "fontSize": "{primitive.fontSize.75}",
+        "lineHeight": "{primitive.lineHeight.5}",
+        "letterSpacing": "{primitive.letterSpacing.0}"
+      },
+      "type": "typography"
+    },
+    "fg-count": {
+      "value": "{fg}",
+      "type": "color"
+    }
+  },
+  "textField": {
+    "bg": {
+      "value": "{bg-inset}",
+      "type": "color"
+    },
+    "bg-disabled": {
+      "value": "{bg-disabled}",
+      "type": "color"
+    },
+    "border": {
+      "value": "{stroke.border}",
+      "type": "color"
+    },
+    "border-hover": {
+      "value": "{stroke.border-strong}",
+      "type": "color"
+    },
+    "border-active": {
+      "value": "{stroke.border-strong}",
+      "type": "color"
+    },
+    "border-disabled": {
+      "value": "{stroke.border-disabled}",
+      "type": "color"
+    }
+  },
+  "textArea": {
+    "bg": {
+      "value": "{bg-inset}",
+      "type": "color"
+    },
+    "bg-disabled": {
+      "value": "{bg-disabled}",
+      "type": "color"
+    },
+    "border": {
+      "value": "{stroke.border}",
+      "type": "color"
+    },
+    "border-hover": {
+      "value": "{stroke.border-strong}",
+      "type": "color"
+    },
+    "border-active": {
+      "value": "{stroke.border-strong}",
+      "type": "color"
+    },
+    "border-disabled": {
+      "value": "{stroke.border-disabled}",
+      "type": "color"
+    }
+  },
+  "select": {
+    "bg": {
+      "value": "{bg-inset}",
+      "type": "color"
+    },
+    "bg-disabled": {
+      "value": "{bg-disabled}",
+      "type": "color"
+    },
+    "bgCount": {
+      "value": "{bg-neutral-low}",
+      "type": "color"
+    },
+    "bgCount-disabled": {
+      "value": "{bg-neutral-low}",
+      "type": "color"
+    },
+    "border": {
+      "value": "{stroke.border}",
+      "type": "color"
+    },
+    "border-hover": {
+      "value": "{stroke.border-strong}",
+      "type": "color"
+    },
+    "border-active": {
+      "value": "{stroke.border-strong}",
+      "type": "color"
+    },
+    "border-disabled": {
+      "value": "{stroke.border-disabled}",
+      "type": "color"
+    }
+  },
+  "optionList": {
+    "bg": {
+      "value": "{bg}",
+      "type": "color"
+    },
+    "bg-optionItemHover": {
+      "value": "{bg-low}",
+      "type": "color"
+    },
+    "bg-optionItemPressed": {
+      "value": "{bg-low}",
+      "type": "color"
+    },
+    "bg-optionItemSelected": {
+      "value": "{bg-low}",
+      "type": "color"
+    },
+    "bg-optionItemSelectedHover": {
+      "value": "{bg-low}",
+      "type": "color"
+    },
+    "bg-optionItemSelectedPressed": {
+      "value": "{bg-low}",
+      "type": "color"
+    },
+    "bg-optionItemSelectedDisabled": {
+      "value": "{bg-disabled}",
+      "type": "color"
+    },
+    "bg-optionSearchField": {
+      "value": "{bg-inset}",
+      "type": "color"
+    },
+    "border": {
+      "value": "{stroke.border-low}",
+      "type": "color"
+    },
+    "divide": {
+      "value": "{stroke.divider-low}",
+      "type": "color"
+    }
+  },
+  "banner": {
+    "fg-accent": {
+      "value": "{primitive.color.yellow.400}",
+      "description": "아이콘(ic-infoCircle) 컬러",
+      "type": "color"
+    }
+  },
+  "tooltip": {
+    "black": {
+      "bg": {
+        "value": "{bg-neutral}",
+        "description": "black 툴팁 배경 컬러",
+        "type": "color"
+      }
+    },
+    "white": {
+      "bg": {
+        "value": "{primitive.color.gray.0}",
+        "description": "white 툴팁 배경 컬러",
+        "type": "color"
+      }
+    }
+  },
+  "actionCard": {
+    "bg": {
+      "value": "{primitive.color.gray.100}",
+      "type": "color"
+    },
+    "bg-pressed": {
+      "value": "{primitive.color.gray.200}",
+      "type": "color"
+    },
+    "bg-emphasis": {
+      "value": "{primitive.color.gray.900}",
+      "type": "color"
+    },
+    "bg-emphasis-pressed": {
+      "value": "{primitive.color.gray.800}",
+      "type": "color"
+    },
+    "fg": {
+      "value": "{fg}",
+      "type": "color"
+    },
+    "fg-description": {
+      "value": "{fg-low}",
+      "type": "color"
+    },
+    "fg-emphasis": {
+      "value": "{fg-onContrast}",
+      "type": "color"
+    },
+    "fg-emphasis-description": {
+      "value": "{fg-onContrast}",
+      "type": "color"
+    }
+  },
+  "selectableCard": {
+    "bg": {
+      "value": "{bg}",
+      "type": "color"
+    },
+    "bg-low": {
+      "value": "{bg-low}",
+      "type": "color"
+    },
+    "fg": {
+      "value": "{fg}",
+      "type": "color"
+    },
+    "fg-meta": {
+      "value": "{fg-lower}",
+      "type": "color"
+    },
+    "fg-disabled": {
+      "value": "{fg-disabled}",
+      "type": "color"
+    },
+    "border": {
+      "value": "{stroke.border}",
+      "type": "color"
+    },
+    "border-active": {
+      "value": "{stroke.border-strong}",
+      "type": "color"
+    },
+    "border-disabled": {
+      "value": "{stroke.border-disabled}",
+      "type": "color"
+    }
+  },
+  "dialog": {
+    "width": {
+      "s": {
+        "value": "{primitive.dimension}*117",
+        "type": "sizing"
+      },
+      "m": {
+        "value": "{primitive.dimension}*199",
+        "type": "sizing"
+      }
+    },
+    "bg": {
+      "value": "{bg}",
+      "type": "color"
+    },
+    "fg": {
+      "value": "{fg}",
+      "type": "color"
+    },
+    "fg-description": {
+      "value": "{fg-low}",
+      "type": "color"
+    },
+    "closeButton": {
+      "fg": {
+        "value": "{fg-lower}",
+        "description": "Dialog 닫기(ic-close) 버튼 아이콘 색상",
+        "type": "color"
+      }
+    },
+    "overlay": {
+      "bg": {
+        "value": "{bg-transparent}",
+        "type": "color"
+      }
+    }
+  },
+  "stepper": {
+    "bg": {
+      "value": "{bg}",
+      "type": "color"
+    },
+    "bg-disalbed": {
+      "value": "{bg-disabled}",
+      "type": "color"
+    },
+    "fg": {
+      "value": "{fg}",
+      "type": "color"
+    },
+    "fg-disabled": {
+      "value": "{fg-disabled}",
+      "type": "color"
+    },
+    "iconSize": {
+      "m": {
+        "value": "{primitive.size.icon.175}",
+        "type": "sizing"
+      }
+    },
+    "border": {
+      "value": "{stroke.border}",
+      "type": "color"
+    }
+  },
+  "productCard": {
+    "highlight": {
+      "bg": {
+        "value": "{primitive.color.gray.100}",
+        "description": "POS 환경에서 상품 스캔 시 최근 productCard에 일시적으로 적용되는 하이라이트 배경색",
+        "type": "color"
+      }
+    },
+    "priceOriginal": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.regular-400}",
+        "fontSize": "{primitive.fontSize.125}",
+        "lineHeight": "{primitive.lineHeight.4}",
+        "textDecoration": "{primitive.textDecoration.strike}",
+        "letterSpacing": "{primitive.letterSpacing.0}"
+      },
+      "description": "productCard 할인 전 상품 금액",
+      "type": "typography"
+    },
+    "bg": {
+      "value": "{bg}",
+      "type": "color"
+    },
+    "fg": {
+      "value": "{fg}",
+      "type": "color"
+    },
+    "fg-lower": {
+      "value": "{fg-lower}",
+      "type": "color"
+    },
+    "border": {
+      "value": "{stroke.border}",
+      "type": "color"
+    }
+  },
+  "actionBar": {
+    "bg": {
+      "value": "{bg}",
+      "description": "actionBar 기본 배경 색상",
+      "type": "color"
+    },
+    "fg": {
+      "value": "{fg-low}",
+      "description": "actionBar 보조 설명 텍스트",
+      "type": "color"
+    },
+    "shadow": {
+      "value": {
+        "x": "0",
+        "y": "-2",
+        "blur": "4",
+        "spread": "0",
+        "color": "rgba(0,0,0,0.05)",
+        "type": "dropShadow"
+      },
+      "description": "actionBar 상단 그림자(경계 역할)",
+      "type": "boxShadow"
+    }
+  },
+  "snackbar": {
+    "bg": {
+      "value": "{primitive.color.gray.alpha900.80}",
+      "type": "color"
+    }
+  },
+  "assistIcon": {
+    "iconSize": {
+      "s": {
+        "value": "{size.icon.s}",
+        "type": "sizing"
+      },
+      "m": {
+        "value": "{size.icon.m}",
+        "type": "sizing"
+      }
+    },
+    "fg": {
+      "value": "{fg-low}",
+      "type": "color",
+      "description": "assistIcon 기본 아이콘 색상"
+    }
+  }
+}

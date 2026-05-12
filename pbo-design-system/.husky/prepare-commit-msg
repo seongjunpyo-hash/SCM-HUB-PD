@@ -1,0 +1,37 @@
+#!/bin/sh
+
+COMMIT_MSG_FILE="$1"
+COMMIT_SOURCE="$2"
+CO_AUTHOR_LINE="Co-authored-by: Cursor <noreply@cursor.sh>"
+
+# 커밋 메시지 파일이 없으면 종료
+if [ -z "$COMMIT_MSG_FILE" ]; then
+  exit 0
+fi
+
+# merge 커밋은 제외 (merge 커밋의 경우 COMMIT_SOURCE가 "merge"로 설정됨)
+if [ "$COMMIT_SOURCE" = "merge" ]; then
+  exit 0
+fi
+
+# 이미 Co-authored-by 라인이 있으면 종료
+if grep -Fq "$CO_AUTHOR_LINE" "$COMMIT_MSG_FILE" 2>/dev/null; then
+  exit 0
+fi
+
+# 커밋 메시지 끝에 Co-authored-by 추가 (한 줄 띄고)
+# 파일이 비어있지 않으면 빈 줄 추가
+if [ -s "$COMMIT_MSG_FILE" ]; then
+  # 마지막 바이트를 확인
+  LAST_BYTE=$(tail -c 1 "$COMMIT_MSG_FILE" | od -An -tx1 | tr -d ' ')
+  # 마지막 문자가 개행(\n, 0a)이 아니면 개행 추가
+  if [ "$LAST_BYTE" != "0a" ]; then
+    printf '\n' >> "$COMMIT_MSG_FILE"
+  fi
+  # 빈 줄 추가 (Co-authored-by 앞에 한 줄 띄기)
+  printf '\n' >> "$COMMIT_MSG_FILE"
+fi
+
+printf '%s\n' "$CO_AUTHOR_LINE" >> "$COMMIT_MSG_FILE"
+
+

@@ -1,0 +1,113 @@
+name: Release Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: '배포할 패키지를 선택하세요'
+        required: true
+        type: choice
+        options:
+          - '@musinsa/layer-tokens'
+          - '@musinsa/layer-components-desktop'
+          - '@musinsa/layer-components-pda'
+          - '@musinsa/pbo-assets'
+          - '@musinsa/phase-tokens'
+      version_type:
+        description: '버전 타입을 선택하세요'
+        required: true
+        type: choice
+        options:
+          - 'patch'
+          - 'minor'
+          - 'major'
+      summary:
+        description: 'Summary를 입력하세요'
+        required: true
+        type: string
+        default: ''
+
+run-name: Release ${{ github.event.inputs.package }} (${{ github.event.inputs.version_type }}) by ${{ github.actor }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: |
+          pnpm install --no-frozen-lockfile
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build selected package
+        run: |
+          echo "Building ${{ github.event.inputs.package }}..."
+          pnpm --filter ${{ github.event.inputs.package }} run build
+
+      - name: Create changeset
+        run: |
+          mkdir -p .changeset
+
+          TIMESTAMP=$(date +%s)
+          CHANGESET_FILE=".changeset/manual-release-$TIMESTAMP.md"
+
+          cat > "$CHANGESET_FILE" << EOF
+          ---
+          "${{ github.event.inputs.package }}": ${{ github.event.inputs.version_type }}
+          ---
+
+          ${{ github.event.inputs.summary }}
+          EOF
+
+          echo "Created changeset file: $CHANGESET_FILE"
+
+      - name: Version packages
+        run: pnpm changeset:version --filter ${{ github.event.inputs.package }}
+
+      - name: Commit and push version changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "[AUTO commit] bump version for ${{ github.event.inputs.package }}"
+          git push
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: deploy package
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_PUBLISH_TOKEN }}" > ~/.npmrc
+          pnpm --filter ${{ github.event.inputs.package }} publish --no-git-checks --registry=https://npm.pkg.github.com
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
+
+      - name: Create and push tag
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          APP_NAME=$(echo ${{ github.event.inputs.package }} | sed 's/@musinsa\///')
+          VERSION=$(node -p "require('./packages/$APP_NAME/package.json').version")
+          TAG_NAME="${APP_NAME}_v${VERSION}"
+          git tag -a "$TAG_NAME" -m "Release $TAG_NAME"
+          git push origin "$TAG_NAME"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

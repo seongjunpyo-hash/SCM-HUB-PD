@@ -1,0 +1,130 @@
+# main branch의 pbo-assets 의 fima-asset 폴더가 변경되면 자동으로 assets를 빌드하고 PR을 생성합니다.
+# 해당 브랜치는 디자인팀에서 svg 업로드 용도로만 사용됩니다.
+name: PBO Assets Auto Pull Request
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/pbo-assets/src/figma-asset/**'
+
+jobs:
+  create-asset-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      pull-requests: write
+    env:
+      BRANCH_NAME: pbo-assets
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: |
+          pnpm install --no-frozen-lockfile
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: PBO Assets Build
+        run: pnpm pbo-assets build
+
+      - name: Check if figma-asset branch exists
+        id: check_branch
+        run: |
+          if git ls-remote --heads origin ${{ env.BRANCH_NAME }} | grep -q ${{ env.BRANCH_NAME }}; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create or checkout figma-asset branch
+        run: |
+          if [ "${{ steps.check_branch.outputs.exists }}" == "false" ]; then
+            git checkout -b ${{ env.BRANCH_NAME }}
+          else
+            git checkout ${{ env.BRANCH_NAME }}
+            git pull origin ${{ env.BRANCH_NAME }}
+          fi
+
+      - name: Commit and push generated files
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git diff --cached --quiet || git commit -m "[AUTO commit] Figma Asset 자동 업데이트"
+          git push origin ${{ env.BRANCH_NAME }}
+
+      - name: Check if PR exists
+        id: check_pr
+        run: |
+          gh pr list --head ${{ env.BRANCH_NAME }} --state open --json number | grep -q 'number' && echo "exists=true" >> $GITHUB_OUTPUT || echo "exists=false" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create PR if not exists
+        id: create_pr
+        if: steps.check_pr.outputs.exists == 'false'
+        run: |
+          pr_url=$(gh pr create --base main --head ${{ env.BRANCH_NAME }} --title "[AUTO PR]: Figma Asset 업데이트" --body "Figma Asset이 변경되어 자동 생성된 PR입니다.")
+          echo "pr_url=$pr_url" >> $GITHUB_OUTPUT
+          echo "Created new PR: $pr_url"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get existing PR URL
+        id: get_existing_pr
+        if: steps.check_pr.outputs.exists == 'true'
+        run: |
+          pr_url=$(gh pr list --head ${{ env.BRANCH_NAME }} --state open --json url --jq '.[0].url')
+          echo "pr_url=$pr_url" >> $GITHUB_OUTPUT
+          echo "Found existing PR: $pr_url"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get final PR URL
+        id: final_pr
+        run: |
+          if [ "${{ steps.check_pr.outputs.exists }}" == "false" ]; then
+            pr_url="${{ steps.create_pr.outputs.pr_url }}"
+          else
+            pr_url="${{ steps.get_existing_pr.outputs.pr_url }}"
+          fi
+          echo "pr_url=$pr_url" >> $GITHUB_OUTPUT
+          echo "Final PR URL: $pr_url"
+
+      - name: Slack Notification
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          channel-id: C087PQDPBAA
+          payload: |
+            {
+              "text": "auto-pr-text",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "PBO Asset이 업데이트 되어 자동으로 PR이 생성되었습니다.\n • <${{ steps.final_pr.outputs.pr_url }}|PR 바로가기>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_PBO_LAYER_BOT_TOKEN }}

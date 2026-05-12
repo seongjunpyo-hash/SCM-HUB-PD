@@ -1,0 +1,76 @@
+{
+  "name": "@musinsa/layer-tokens",
+  "description": "MUSINSA PBO design system layer tokens",
+  "version": "1.2.2",
+  "type": "module",
+  "license": "MIT",
+  "author": "MUSINSA-PBO-FE",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/musinsa/pbo-design-system.git"
+  },
+  "exports": {
+    "./desktop": {
+      "require": "./src/desktop.ts",
+      "import": "./src/desktop.ts"
+    },
+    "./pda": {
+      "require": "./src/pda.ts",
+      "import": "./src/pda.ts"
+    },
+    "./pos": {
+      "require": "./src/pos.ts",
+      "import": "./src/pos.ts"
+    },
+    "./desktop-fonts.css": "./src/output/fonts/desktop.css",
+    "./pda-fonts.css": "./src/output/fonts/pda.css",
+    "./pos-fonts.css": "./src/output/fonts/pos.css",
+    "./stylesheet.css": "./src/output/stylesheet/index.css",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "exports": {
+      "./desktop": {
+        "require": "./dist/desktop/index.cjs",
+        "import": "./dist/desktop/index.js",
+        "types": "./dist/desktop/index.d.cts"
+      },
+      "./pda": {
+        "require": "./dist/pda/index.cjs",
+        "import": "./dist/pda/index.js",
+        "types": "./dist/pda/index.d.cts"
+      },
+      "./pos": {
+        "require": "./dist/pos/index.cjs",
+        "import": "./dist/pos/index.js",
+        "types": "./dist/pos/index.d.cts"
+      },
+      "./desktop-fonts.css": "./dist/fonts/desktop.css",
+      "./pda-fonts.css": "./dist/fonts/pda.css",
+      "./pos-fonts.css": "./dist/fonts/pos.css",
+      "./stylesheet.css": "./dist/stylesheet/index.css",
+      "./desktop-stylesheet.css": "./dist/stylesheet/desktop.css",
+      "./pda-stylesheet.css": "./dist/stylesheet/pda.css",
+      "./pos-stylesheet.css": "./dist/stylesheet/pos.css",
+      "./package.json": "./package.json"
+    },
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.cts"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "figma-json:build": "tsx src/scripts/generate.ts",
+    "build": "tsx src/scripts/generate.ts && tsup && cp -r src/output/stylesheet dist && cp -r src/output/fonts dist"
+  },
+  "devDependencies": {
+    "style-dictionary": "^5.0.0",
+    "tsx": "^4.20.3"
+  },
+  "dependencies": {
+    "tsup": "^8.5.0"
+  }
+}

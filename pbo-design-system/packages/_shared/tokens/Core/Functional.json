@@ -1,0 +1,358 @@
+{
+  "fg": {
+    "value": "{primitive.color.gray.900}",
+    "description": "기본 텍스트 및 아이콘 색상",
+    "type": "color"
+  },
+  "fg-low": {
+    "value": "{primitive.color.gray.600}",
+    "description": "보조 정보나 덜 중요한 콘텐츠의 텍스트 및 아이콘 색상",
+    "type": "color"
+  },
+  "fg-lower": {
+    "value": "{primitive.color.gray.500}",
+    "description": "가장 낮은 위계의 정보나 콘텐츠의 텍스트 및 아이콘 색상",
+    "type": "color"
+  },
+  "fg-lowest": {
+    "value": "{primitive.color.gray.400}",
+    "type": "color"
+  },
+  "fg-disabled": {
+    "value": "{primitive.color.gray.alpha900.20}",
+    "description": "비활성 상태의 텍스트 및 아이콘 색상",
+    "type": "color"
+  },
+  "fg-onContrast": {
+    "value": "{primitive.color.gray.0}",
+    "description": "bg-contrast 배경과 대비되는 텍스트 및 아이콘 색상\n(Theme에 따라 색상 자동 변경)",
+    "type": "color"
+  },
+  "fg-on": {
+    "value": "{primitive.color.gray.900}",
+    "description": "배경 위에 가독성을 높일 수 있는 기본 텍스트 및 아이콘 색상\n(Theme에 관계없이 항상 고정된 색상을 유지)",
+    "type": "color"
+  },
+  "fg-inverse": {
+    "value": "{primitive.color.gray.0}",
+    "description": "배경 위에 가독성을 높일 수 있는 기본 텍스트 및 색상\n(theme에 상관없이 고정된 색상)",
+    "type": "color"
+  },
+  "fg-onInverse": {
+    "value": "{primitive.color.gray.900}",
+    "description": "더 명확한 대비를 위해 현재 배경 위에 가독성을 높일 수 있는 기본 텍스트 및 색상\n(Theme에 관계없이 항상 고정된 색상을 유지)",
+    "type": "color"
+  },
+  "bg": {
+    "value": "{primitive.color.gray.0}",
+    "description": "기본 배경 색상 (페이지, 카드 등)",
+    "type": "color"
+  },
+  "bg-low": {
+    "value": "{primitive.color.gray.100}",
+    "description": "보조 배경 색상 (구분 영역, 보조 정보 등)",
+    "type": "color"
+  },
+  "bg-inset": {
+    "value": "{primitive.color.gray.0}",
+    "description": "컴포넌트 내부 배경 색상 (텍스트필드 등)",
+    "type": "color"
+  },
+  "bg-disabled": {
+    "value": "{primitive.color.gray.alpha500.10}",
+    "description": "비활성 상태 배경 (버튼, 입력 필드 등)",
+    "type": "color"
+  },
+  "bg-transparent": {
+    "value": "{primitive.color.gray.alpha900.60}",
+    "description": "투명 배경 (overlay 등)",
+    "type": "color"
+  },
+  "bg-contrast": {
+    "value": "{primitive.color.gray.900}",
+    "description": "기본 배경과의 상대적 대비(Contrast)를 제공하는 배경으로 fg-contrast와 함께 사용  (Theme에 따라 색상 자동 변경)",
+    "type": "color"
+  },
+  "stroke": {
+    "border": {
+      "value": "{primitive.color.gray.300}",
+      "description": "기본 외곽선 색상 (버튼, 카드, 텍스트필드 등)",
+      "type": "color"
+    },
+    "border-low": {
+      "value": "{primitive.color.gray.200}",
+      "description": "보조 외곽선 색상 (콘텐츠 구분, 테이블 셀 등)",
+      "type": "color"
+    },
+    "border-strong": {
+      "value": "{primitive.color.gray.900}",
+      "description": "중요하거나 활성화된 상태의 진한 외곽선 색상",
+      "type": "color"
+    },
+    "border-disabled": {
+      "value": "{primitive.color.gray.200}",
+      "description": "비활성 상태의 외곽선 색상 (비활성 버튼, 텍스트필드, 체크박스 등)",
+      "type": "color"
+    },
+    "divider": {
+      "value": "{primitive.color.gray.200}",
+      "type": "color",
+      "description": "기본 구분선 색상"
+    },
+    "divider-low": {
+      "value": "{primitive.color.gray.alpha500.10}",
+      "type": "color",
+      "description": "보조 구분선 색상으로 부드러운 콘텐츠 분리에 사용"
+    },
+    "border-neutral": {
+      "value": "{primitive.color.gray.800}",
+      "type": "color"
+    },
+    "border-neutral-low": {
+      "value": "{primitive.color.gray.200}",
+      "type": "color"
+    },
+    "border-success": {
+      "value": "{primitive.color.green.500}",
+      "type": "color"
+    },
+    "border-success-low": {
+      "value": "{primitive.color.green.400}",
+      "type": "color"
+    },
+    "border-warning": {
+      "value": "{primitive.color.yellow.500}",
+      "type": "color"
+    },
+    "border-warning-low": {
+      "value": "{primitive.color.yellow.400}",
+      "type": "color"
+    },
+    "border-critical": {
+      "value": "{primitive.color.red.500}",
+      "type": "color"
+    },
+    "border-critical-low": {
+      "value": "{primitive.color.red.400}",
+      "type": "color"
+    }
+  },
+  "fg-neutral": {
+    "value": "{primitive.color.gray.800}",
+    "type": "color"
+  },
+  "bg-neutral": {
+    "value": "{primitive.color.gray.800}",
+    "type": "color"
+  },
+  "bg-neutral-low": {
+    "value": "{primitive.color.gray.200}",
+    "type": "color"
+  },
+  "fg-success": {
+    "value": "{primitive.color.green.500}",
+    "type": "color"
+  },
+  "bg-success": {
+    "value": "{primitive.color.green.500}",
+    "type": "color"
+  },
+  "bg-success-low": {
+    "value": "{primitive.color.green.alpha500.10}",
+    "type": "color"
+  },
+  "fg-warning": {
+    "value": "{primitive.color.yellow.500}",
+    "type": "color"
+  },
+  "bg-warning": {
+    "value": "{primitive.color.yellow.500}",
+    "type": "color"
+  },
+  "bg-warning-low": {
+    "value": "{primitive.color.yellow.alpha100.10}",
+    "type": "color"
+  },
+  "fg-critical": {
+    "value": "{primitive.color.red.500}",
+    "type": "color"
+  },
+  "bg-critical": {
+    "value": "{primitive.color.red.500}",
+    "type": "color"
+  },
+  "bg-critical-low": {
+    "value": "{primitive.color.red.alpha500.10}",
+    "type": "color"
+  },
+  "size": {
+    "icon": {
+      "s": {
+        "value": "{primitive.size.icon.100}",
+        "type": "sizing"
+      },
+      "m": {
+        "value": "{primitive.size.icon.125}",
+        "type": "sizing"
+      },
+      "l": {
+        "value": "{primitive.size.icon.150}",
+        "type": "sizing"
+      },
+      "xl": {
+        "value": "{primitive.size.icon.175}",
+        "type": "sizing"
+      }
+    },
+    "thumbnail": {
+      "xxs": {
+        "width": {
+          "value": "{primitive.size.image.100}",
+          "type": "sizing"
+        },
+        "height": {
+          "value": "{primitive.size.image.150}",
+          "type": "sizing"
+        }
+      },
+      "xs": {
+        "width": {
+          "value": "{primitive.size.image.200}",
+          "type": "sizing"
+        },
+        "height": {
+          "value": "{primitive.size.image.250}",
+          "type": "sizing"
+        }
+      },
+      "s": {
+        "width": {
+          "value": "{primitive.size.image.250}",
+          "type": "sizing"
+        },
+        "height": {
+          "value": "{primitive.size.image.300}",
+          "type": "sizing"
+        }
+      },
+      "m": {
+        "width": {
+          "value": "{primitive.size.image.400}",
+          "type": "sizing"
+        },
+        "height": {
+          "value": "{primitive.size.image.600}",
+          "type": "sizing"
+        }
+      },
+      "l": {
+        "width": {
+          "value": "{primitive.size.image.500}",
+          "type": "sizing"
+        },
+        "height": {
+          "value": "{primitive.size.image.700}",
+          "type": "sizing"
+        }
+      },
+      "xl": {
+        "width": {
+          "value": "{primitive.size.image.750}",
+          "type": "sizing"
+        },
+        "height": {
+          "value": "{primitive.size.image.800}",
+          "type": "sizing"
+        }
+      },
+      "xxl": {
+        "width": {
+          "value": "{primitive.size.image.1000}",
+          "type": "sizing"
+        },
+        "height": {
+          "value": "{primitive.size.image.1100}",
+          "type": "sizing"
+        }
+      },
+      "3xl": {
+        "width": {
+          "value": "{primitive.size.image.1200}",
+          "type": "sizing"
+        },
+        "height": {
+          "value": "{primitive.size.image.1300}",
+          "type": "sizing"
+        }
+      }
+    }
+  },
+  "rounded": {
+    "none": {
+      "value": "{primitive.rounded.0}",
+      "description": "라운드를 제거하는 것이 “의도된 선택”일 때만 사용하며, 원래 곡률이 없는 컴포넌트에는 별도로 정의하지 않습니다",
+      "type": "borderRadius"
+    },
+    "xxs": {
+      "value": "{primitive.rounded.100}",
+      "type": "borderRadius"
+    },
+    "xs": {
+      "value": "{primitive.rounded.200}",
+      "type": "borderRadius"
+    },
+    "s": {
+      "value": "{primitive.rounded.300}",
+      "type": "borderRadius"
+    },
+    "m": {
+      "value": "{primitive.rounded.400}",
+      "type": "borderRadius"
+    },
+    "l": {
+      "value": "{primitive.rounded.500}",
+      "type": "borderRadius"
+    },
+    "xl": {
+      "value": "{primitive.rounded.600}",
+      "type": "borderRadius"
+    },
+    "xxl": {
+      "value": "{primitive.rounded.700}",
+      "type": "borderRadius"
+    },
+    "full": {
+      "value": "{primitive.rounded.full}",
+      "description": "완전한 곡률(9999px)을 의미하며, pill / circle 형태를 만들 때 사용합니다",
+      "type": "borderRadius"
+    }
+  },
+  "border": {
+    "width": {
+      "value": "{primitive.borderWidth.100}",
+      "description": "UI 요소의 기본 경계선 (1px)",
+      "type": "borderWidth"
+    },
+    "bold": {
+      "width": {
+        "value": "{primitive.borderWidth.200}",
+        "description": "UI 요소의 강조 경계선 (2px)",
+        "type": "borderWidth"
+      }
+    }
+  },
+  "divider": {
+    "width": {
+      "value": "{primitive.borderWidth.100}",
+      "description": "컨텐츠 간 기본 구획선 (1px)",
+      "type": "borderWidth"
+    },
+    "bold": {
+      "width": {
+        "value": "{primitive.borderWidth.200}",
+        "description": "컨텐츠 간 강조 구획선 (2px)",
+        "type": "borderWidth"
+      }
+    }
+  }
+}

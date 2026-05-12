@@ -1,0 +1,58 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable no-unused-vars */
+import { forwardRef } from 'react';
+
+import type { BasicSvgProps } from '@/types/types';
+import type { ForwardedRef } from 'react';
+
+const _IcDownloadAll = (
+  { size = 24, filled = false, strokeWidth = 1.4, color, ...props }: BasicSvgProps,
+  ref: ForwardedRef<SVGSVGElement>,
+) => {
+  if (filled) {
+    return (
+      <svg
+        ref={ref}
+        {...props}
+        width={size}
+        height={size}
+        viewBox="0 0 20 20"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M13.7002 3.7998C14.2523 3.79991 14.7001 4.24767 14.7002 4.7998V17.2002C14.7001 17.7523 14.2523 18.2001 13.7002 18.2002H4.2998C3.74768 18.2001 3.29991 17.7523 3.2998 17.2002V4.7998C3.29991 4.24768 3.74767 3.79991 4.2998 3.7998H13.7002ZM8.2998 11.3887L7.22754 10.3887L6.27246 11.4121L9 13.958L11.7275 11.4121L10.7725 10.3887L9.7002 11.3887V8H8.2998V11.3887Z"
+          fill={color}
+        />
+        <path
+          d="M16.2002 1.2998C16.7523 1.29991 17.2001 1.74767 17.2002 2.2998V15H15.7998V2.7002H6.5V1.2998H16.2002Z"
+          fill={color}
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <svg
+      ref={ref}
+      {...props}
+      width={size}
+      height={size}
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        vectorEffect="non-scaling-stroke"
+        d="M9 13L9 8M9 13L6.75 10.9M9 13L11.25 10.9M6.5 2H16.2C16.3657 2 16.5 2.13431 16.5 2.3V15M4.3 17.5H13.7C13.8657 17.5 14 17.3657 14 17.2V4.8C14 4.63431 13.8657 4.5 13.7 4.5H4.3C4.13431 4.5 4 4.63431 4 4.8V17.2C4 17.3657 4.13431 17.5 4.3 17.5Z"
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeMiterlimit="10"
+      />
+    </svg>
+  );
+};
+
+export const IcDownloadAll = forwardRef(_IcDownloadAll);

@@ -1,0 +1,71 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable no-unused-vars */
+import { forwardRef } from 'react';
+
+import type { BasicSvgProps } from '@/types/types';
+import type { ForwardedRef } from 'react';
+
+const _IcPicking = (
+  { size = 24, filled = false, strokeWidth = 1.4, color, ...props }: BasicSvgProps,
+  ref: ForwardedRef<SVGSVGElement>,
+) => {
+  if (filled) {
+    return (
+      <svg
+        ref={ref}
+        {...props}
+        width={size}
+        height={size}
+        viewBox="0 0 20 20"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M5.72269 15.2872C6.52289 15.0728 7.34539 15.5477 7.5598 16.3479C7.77422 17.1481 7.29934 17.9706 6.49914 18.185C5.69894 18.3994 4.87644 17.9246 4.66203 17.1244C4.44761 16.3242 4.92249 15.5017 5.72269 15.2872Z"
+          fill={color}
+        />
+        <path d="M18.4438 14.4668L8.78455 17.055L8.26691 15.1232L17.9262 12.535L18.4438 14.4668Z" fill={color} />
+        <path d="M6.42979 14.0625L4.49794 14.5801L1.90975 4.92088L3.8416 4.40325L6.42979 14.0625Z" fill={color} />
+        <path
+          d="M9.86781 6.92963L10.8104 5.29704L12.443 6.23962L11.4077 2.37591L14.9497 1.42683L17.5379 11.0861L7.87868 13.6743L5.29049 4.01502L8.83253 3.06593L9.86781 6.92963Z"
+          fill={color}
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <svg
+      ref={ref}
+      {...props}
+      width={size}
+      height={size}
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        vectorEffect="non-scaling-stroke"
+        d="M5.72269 15.2872C6.52289 15.0728 7.34539 15.5477 7.5598 16.3479C7.77422 17.1481 7.29934 17.9706 6.49914 18.185C5.69894 18.3994 4.87644 17.9246 4.66203 17.1244C4.44761 16.3242 4.92249 15.5017 5.72269 15.2872Z"
+        fill={color}
+      />
+      <path
+        vectorEffect="non-scaling-stroke"
+        d="M18.4438 14.4668L8.78455 17.055L8.26691 15.1232L17.9262 12.535L18.4438 14.4668Z"
+        fill={color}
+      />
+      <path
+        vectorEffect="non-scaling-stroke"
+        d="M6.42979 14.0625L4.49794 14.5801L1.90975 4.92088L3.8416 4.40325L6.42979 14.0625Z"
+        fill={color}
+      />
+      <path
+        vectorEffect="non-scaling-stroke"
+        d="M9.86781 6.92963L10.8104 5.29704L12.443 6.23962L11.4077 2.37591L14.9497 1.42683L17.5379 11.0861L7.87868 13.6743L5.29049 4.01502L8.83253 3.06593L9.86781 6.92963Z"
+        fill={color}
+      />
+    </svg>
+  );
+};
+
+export const IcPicking = forwardRef(_IcPicking);

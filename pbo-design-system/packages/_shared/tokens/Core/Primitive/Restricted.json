@@ -1,0 +1,864 @@
+{
+  "primitive": {
+    "color": {
+      "gray": {
+        "0": {
+          "value": "#ffffff",
+          "type": "color"
+        },
+        "100": {
+          "value": "#f5f5f5",
+          "type": "color"
+        },
+        "200": {
+          "value": "#ebebeb",
+          "type": "color"
+        },
+        "300": {
+          "value": "#e0e0e0",
+          "type": "color"
+        },
+        "400": {
+          "value": "#cccccc",
+          "type": "color"
+        },
+        "500": {
+          "value": "#8a8a8a",
+          "type": "color"
+        },
+        "600": {
+          "value": "#666666",
+          "type": "color"
+        },
+        "700": {
+          "value": "#2a2a2a",
+          "type": "color"
+        },
+        "800": {
+          "value": "#1a1a1a",
+          "type": "color"
+        },
+        "900": {
+          "value": "#000000",
+          "type": "color"
+        },
+        "alpha": {
+          "10": {
+            "value": "rgba(255,255,255,0.10)",
+            "type": "color"
+          },
+          "15": {
+            "value": "rgba(255,255,255,0.15)",
+            "type": "color"
+          },
+          "20": {
+            "value": "rgba(255,255,255,0.2)",
+            "type": "color"
+          },
+          "40": {
+            "value": "rgba(255,255,255,0.4)",
+            "type": "color"
+          },
+          "60": {
+            "value": "rgba(255,255,255,0.6)",
+            "type": "color"
+          },
+          "80": {
+            "value": "rgba(255,255,255,0.8)",
+            "type": "color"
+          }
+        },
+        "alpha900": {
+          "5": {
+            "value": "rgba(0,0,0,0.05)",
+            "type": "color"
+          },
+          "20": {
+            "value": "rgba(0,0,0,0.2)",
+            "type": "color"
+          },
+          "40": {
+            "value": "rgba(0,0,0,0.4)",
+            "type": "color"
+          },
+          "60": {
+            "value": "rgba(0,0,0,0.6)",
+            "type": "color"
+          },
+          "70": {
+            "value": "rgba(0,0,0,0.7)",
+            "type": "color"
+          },
+          "80": {
+            "value": "rgba(0,0,0,0.8)",
+            "type": "color"
+          }
+        },
+        "alpha500": {
+          "10": {
+            "value": "rgba(138,138,138,0.1)",
+            "type": "color"
+          },
+          "15": {
+            "value": "rgba(138,138,138,0.15)",
+            "type": "color"
+          },
+          "20": {
+            "value": "rgba(138,138,138,0.2)",
+            "type": "color"
+          },
+          "30": {
+            "value": "rgba(138,138,138,0.3)",
+            "type": "color"
+          }
+        }
+      },
+      "blue": {
+        "0": {
+          "value": "#E2F1FF",
+          "type": "color"
+        },
+        "100": {
+          "value": "#B8D4FF",
+          "type": "color"
+        },
+        "200": {
+          "value": "#8EB8FF",
+          "type": "color"
+        },
+        "300": {
+          "value": "#649CFF",
+          "type": "color"
+        },
+        "400": {
+          "value": "#417EFF",
+          "type": "color"
+        },
+        "500": {
+          "value": "#245EFF",
+          "type": "color"
+        },
+        "600": {
+          "value": "#1F53E6",
+          "type": "color"
+        },
+        "700": {
+          "value": "#1A47CC",
+          "type": "color"
+        },
+        "800": {
+          "value": "#173BB3",
+          "type": "color"
+        },
+        "900": {
+          "value": "#0F2F99",
+          "type": "color"
+        },
+        "alpha500": {
+          "5": {
+            "value": "rgba(36,94,255,0.05)",
+            "type": "color"
+          },
+          "10": {
+            "value": "rgba(36,94,255,0.1)",
+            "type": "color"
+          },
+          "20": {
+            "value": "rgba(36,94,255,0.2)",
+            "type": "color"
+          },
+          "80": {
+            "value": "rgba(36,94,255,0.8)",
+            "type": "color"
+          },
+          "90": {
+            "value": "rgba(36,94,255,0.9)",
+            "type": "color"
+          }
+        }
+      },
+      "red": {
+        "0": {
+          "value": "#FFECEC",
+          "type": "color"
+        },
+        "100": {
+          "value": "#FFCDC9",
+          "type": "color"
+        },
+        "200": {
+          "value": "#FFABA5",
+          "type": "color"
+        },
+        "300": {
+          "value": "#FF8981",
+          "type": "color"
+        },
+        "400": {
+          "value": "#FF5E56",
+          "type": "color"
+        },
+        "500": {
+          "value": "#F31110",
+          "type": "color"
+        },
+        "600": {
+          "value": "#D50F0E",
+          "type": "color"
+        },
+        "700": {
+          "value": "#B30C0C",
+          "type": "color"
+        },
+        "800": {
+          "value": "#930A0A",
+          "type": "color"
+        },
+        "900": {
+          "value": "#750808",
+          "type": "color"
+        },
+        "alpha500": {
+          "10": {
+            "value": "rgba(243,17,16,0.1)",
+            "type": "color"
+          },
+          "90": {
+            "value": "rgba(243,17,16,0.9)",
+            "type": "color"
+          }
+        },
+        "alpha100": {
+          "90": {
+            "value": "rgba(255,205,201,0.9)",
+            "type": "color"
+          }
+        }
+      },
+      "yellow": {
+        "0": {
+          "value": "#FFF4E5",
+          "type": "color"
+        },
+        "100": {
+          "value": "#FFE1B8",
+          "type": "color"
+        },
+        "200": {
+          "value": "#FFCB85",
+          "type": "color"
+        },
+        "300": {
+          "value": "#FFB653",
+          "type": "color"
+        },
+        "400": {
+          "value": "#FFA12A",
+          "type": "color"
+        },
+        "500": {
+          "value": "#FA9200",
+          "type": "color"
+        },
+        "600": {
+          "value": "#DB7F00",
+          "type": "color"
+        },
+        "700": {
+          "value": "#B36800",
+          "type": "color"
+        },
+        "800": {
+          "value": "#8C5200",
+          "type": "color"
+        },
+        "900": {
+          "value": "#663D00",
+          "type": "color"
+        },
+        "alpha100": {
+          "10": {
+            "value": "rgba(250,146,0,0.1)",
+            "type": "color"
+          },
+          "15": {
+            "value": "rgba(250,146,0,0.15)",
+            "type": "color"
+          }
+        }
+      },
+      "green": {
+        "0": {
+          "value": "#ECFFEC",
+          "type": "color"
+        },
+        "100": {
+          "value": "#BFF8BA",
+          "type": "color"
+        },
+        "200": {
+          "value": "#8CF184",
+          "type": "color"
+        },
+        "300": {
+          "value": "#51E147",
+          "type": "color"
+        },
+        "400": {
+          "value": "#27BA1D",
+          "type": "color"
+        },
+        "500": {
+          "value": "#1EA514",
+          "type": "color"
+        },
+        "600": {
+          "value": "#198213",
+          "type": "color"
+        },
+        "700": {
+          "value": "#196615",
+          "type": "color"
+        },
+        "800": {
+          "value": "#155413",
+          "type": "color"
+        },
+        "900": {
+          "value": "#052F04",
+          "type": "color"
+        },
+        "alpha500": {
+          "10": {
+            "value": "rgba(30,165,20,0.1)",
+            "type": "color"
+          },
+          "15": {
+            "value": "rgba(30,165,20,0.15)",
+            "type": "color"
+          },
+          "90": {
+            "value": "rgba(30,165,20,0.9)",
+            "type": "color"
+          }
+        },
+        "alpha100": {
+          "90": {
+            "value": "rgba(191,248,186,0.9)",
+            "type": "color"
+          }
+        }
+      },
+      "purple": {
+        "0": {
+          "value": "#f9f0ff",
+          "type": "color"
+        },
+        "100": {
+          "value": "#efdbff",
+          "type": "color"
+        },
+        "200": {
+          "value": "#d3adf7",
+          "type": "color"
+        },
+        "300": {
+          "value": "#b37feb",
+          "type": "color"
+        },
+        "400": {
+          "value": "#9254DE",
+          "type": "color"
+        },
+        "500": {
+          "value": "#722ED1",
+          "type": "color"
+        },
+        "600": {
+          "value": "#531DAB",
+          "type": "color"
+        },
+        "700": {
+          "value": "#391085",
+          "type": "color"
+        },
+        "800": {
+          "value": "#22075e",
+          "type": "color"
+        },
+        "900": {
+          "value": "#120338",
+          "type": "color"
+        }
+      },
+      "bluegray": {
+        "0": {
+          "value": "#F8F9FC",
+          "type": "color"
+        },
+        "100": {
+          "value": "#EBECF1",
+          "type": "color"
+        },
+        "200": {
+          "value": "#D8DAE0",
+          "type": "color"
+        },
+        "300": {
+          "value": "#CCCDD2",
+          "type": "color"
+        },
+        "400": {
+          "value": "#ABACB2",
+          "type": "color"
+        }
+      },
+      "cyan": {
+        "0": {
+          "value": "#E6FFFB",
+          "type": "color"
+        },
+        "400": {
+          "value": "#36CFC9",
+          "type": "color"
+        },
+        "500": {
+          "value": "#13C2C2",
+          "type": "color"
+        },
+        "600": {
+          "value": "#08979C",
+          "type": "color"
+        }
+      }
+    },
+    "dimension": {
+      "value": "4px",
+      "type": "dimension"
+    },
+    "fontFamily": {
+      "base": {
+        "value": "Pretendard",
+        "description": "Layer의 기본 폰트로 일반적인 텍스트 및 UI에 사용합니다",
+        "type": "fontFamilies"
+      },
+      "mono": {
+        "value": "IBM Plex Mono",
+        "description": "코드나 데이터와 관련된 텍스트에서 사용됩니다",
+        "type": "fontFamilies"
+      }
+    },
+    "fontWeight": {
+      "regular-400": {
+        "value": "400",
+        "type": "fontWeights"
+      },
+      "medium-500": {
+        "value": "500",
+        "type": "fontWeights"
+      },
+      "semibold-600": {
+        "value": "600",
+        "type": "fontWeights"
+      },
+      "bold-700": {
+        "value": "700",
+        "type": "fontWeights"
+      }
+    },
+    "lineHeight": {
+      "1": {
+        "value": "100%",
+        "type": "lineHeights"
+      },
+      "2": {
+        "value": "120%",
+        "type": "lineHeights"
+      },
+      "3": {
+        "value": "136%",
+        "type": "lineHeights"
+      },
+      "4": {
+        "value": "140%",
+        "type": "lineHeights"
+      },
+      "5": {
+        "value": "150%",
+        "type": "lineHeights"
+      },
+      "6": {
+        "value": "160%",
+        "type": "lineHeights"
+      }
+    },
+    "fontSize": {
+      "25": {
+        "value": "10",
+        "type": "fontSizes"
+      },
+      "50": {
+        "value": "11",
+        "type": "fontSizes"
+      },
+      "75": {
+        "value": "12",
+        "type": "fontSizes"
+      },
+      "100": {
+        "value": "13",
+        "type": "fontSizes"
+      },
+      "125": {
+        "value": "14",
+        "type": "fontSizes"
+      },
+      "150": {
+        "value": "15",
+        "type": "fontSizes"
+      },
+      "200": {
+        "value": "16",
+        "type": "fontSizes"
+      },
+      "250": {
+        "value": "18",
+        "type": "fontSizes"
+      },
+      "300": {
+        "value": "20",
+        "type": "fontSizes"
+      },
+      "350": {
+        "value": "22",
+        "type": "fontSizes"
+      },
+      "400": {
+        "value": "24",
+        "type": "fontSizes"
+      },
+      "450": {
+        "value": "26",
+        "type": "fontSizes"
+      },
+      "500": {
+        "value": "28",
+        "type": "fontSizes"
+      },
+      "550": {
+        "value": "30",
+        "type": "fontSizes"
+      },
+      "600": {
+        "value": "32",
+        "type": "fontSizes"
+      },
+      "650": {
+        "value": "36",
+        "type": "fontSizes"
+      },
+      "675": {
+        "value": "38",
+        "type": "fontSizes"
+      },
+      "700": {
+        "value": "40",
+        "type": "fontSizes"
+      },
+      "1000": {
+        "value": "48",
+        "type": "fontSizes"
+      },
+      "1300": {
+        "value": "60",
+        "type": "fontSizes"
+      },
+      "1400": {
+        "value": "64",
+        "type": "fontSizes"
+      },
+      "1500": {
+        "value": "68",
+        "type": "fontSizes"
+      },
+      "1600": {
+        "value": "72",
+        "type": "fontSizes"
+      }
+    },
+    "letterSpacing": {
+      "0": {
+        "value": "0",
+        "type": "letterSpacing"
+      },
+      "n3": {
+        "value": "-3",
+        "type": "letterSpacing"
+      },
+      "n2": {
+        "value": "-2",
+        "type": "letterSpacing"
+      },
+      "n1": {
+        "value": "-1",
+        "type": "letterSpacing"
+      },
+      "p1": {
+        "value": "1",
+        "type": "letterSpacing"
+      }
+    },
+    "textDecoration": {
+      "underline": {
+        "value": "underline",
+        "type": "textDecoration"
+      },
+      "strike": {
+        "value": "line-through",
+        "type": "textDecoration"
+      }
+    },
+    "size": {
+      "indicator": {
+        "25": {
+          "value": "{primitive.dimension}",
+          "description": "상태나 존재 여부를 시각적으로 표시하는 요소의 크기 (예. Dot badge, Required dot 등)",
+          "type": "sizing"
+        },
+        "50": {
+          "value": "{primitive.dimension}*1.5",
+          "description": "상태나 존재 여부를 시각적으로 표시하는 요소의 크기 (예. Dot badge, Required dot 등)",
+          "type": "sizing"
+        },
+        "75": {
+          "value": "{primitive.dimension}*2",
+          "description": "상태나 존재 여부를 시각적으로 표시하는 요소의 크기 (예. Dot badge, Required dot 등)",
+          "type": "sizing"
+        }
+      },
+      "icon": {
+        "75": {
+          "value": "{primitive.dimension}*3",
+          "type": "sizing",
+          "description": "UI(시스템) 아이콘과 일러스트 아이콘을 모두 포함하는 시각적 심볼의 크기"
+        },
+        "100": {
+          "value": "{primitive.dimension}*4",
+          "description": "UI(시스템) 아이콘과 일러스트 아이콘을 모두 포함하는 시각적 심볼의 크기",
+          "type": "sizing"
+        },
+        "125": {
+          "value": "{primitive.dimension}*5",
+          "description": "UI(시스템) 아이콘과 일러스트 아이콘을 모두 포함하는 시각적 심볼의 크기",
+          "type": "sizing"
+        },
+        "150": {
+          "value": "{primitive.dimension}*6",
+          "description": "UI(시스템) 아이콘과 일러스트 아이콘을 모두 포함하는 시각적 심볼의 크기",
+          "type": "sizing"
+        },
+        "175": {
+          "value": "{primitive.dimension}*7",
+          "description": "UI(시스템) 아이콘과 일러스트 아이콘을 모두 포함하는 시각적 심볼의 크기",
+          "type": "sizing"
+        },
+        "200": {
+          "value": "{primitive.dimension}*8",
+          "description": "UI(시스템) 아이콘과 일러스트 아이콘을 모두 포함하는 시각적 심볼의 크기",
+          "type": "sizing"
+        },
+        "250": {
+          "value": "{primitive.dimension}*10",
+          "description": "UI(시스템) 아이콘과 일러스트 아이콘을 모두 포함하는 시각적 심볼의 크기",
+          "type": "sizing"
+        },
+        "300": {
+          "value": "{primitive.dimension}*12",
+          "description": "UI(시스템) 아이콘과 일러스트 아이콘을 모두 포함하는 시각적 심볼의 크기",
+          "type": "sizing"
+        },
+        "350": {
+          "value": "{primitive.dimension}*15",
+          "description": "UI(시스템) 아이콘과 일러스트 아이콘을 모두 포함하는 시각적 심볼의 크기",
+          "type": "sizing"
+        },
+        "400": {
+          "value": "{primitive.dimension}*18",
+          "description": "UI(시스템) 아이콘과 일러스트 아이콘을 모두 포함하는 시각적 심볼의 크기",
+          "type": "sizing"
+        },
+        "500": {
+          "value": "{primitive.dimension}*24",
+          "description": "UI(시스템) 아이콘과 일러스트 아이콘을 모두 포함하는 시각적 심볼의 크기",
+          "type": "sizing"
+        },
+        "900": {
+          "value": "{primitive.dimension}*40",
+          "description": "UI(시스템) 아이콘과 일러스트 아이콘을 모두 포함하는 시각적 심볼의 크기",
+          "type": "sizing"
+        }
+      },
+      "image": {
+        "100": {
+          "value": "{primitive.dimension}*8",
+          "description": "이미지 기반 시각 요소에 사용되는 기본 크기 (예. avatar, media, product thumbnail)",
+          "type": "sizing"
+        },
+        "150": {
+          "value": "{primitive.dimension}*9.5",
+          "description": "이미지 기반 시각 요소에 사용되는 기본 크기 (예. avatar, media, product thumbnail)",
+          "type": "sizing"
+        },
+        "200": {
+          "value": "{primitive.dimension}*10",
+          "description": "이미지 기반 시각 요소에 사용되는 기본 크기 (예. avatar, media, product thumbnail)",
+          "type": "sizing"
+        },
+        "250": {
+          "value": "{primitive.dimension}*12",
+          "description": "이미지나 미디어 컨텐츠 등 시각 요소의 크기 (예. avatar, media, product thumbnail)",
+          "type": "sizing"
+        },
+        "300": {
+          "value": "{primitive.dimension}*14.5",
+          "description": "이미지 기반 시각 요소에 사용되는 기본 크기 (예. avatar, media, product thumbnail)",
+          "type": "sizing"
+        },
+        "400": {
+          "value": "{primitive.dimension}*18",
+          "description": "이미지 기반 시각 요소에 사용되는 기본 크기 (예. avatar, media, product thumbnail)",
+          "type": "sizing"
+        },
+        "500": {
+          "value": "{primitive.dimension}*20",
+          "description": "이미지 기반 시각 요소에 사용되는 기본 크기 (예. avatar, media, product thumbnail)",
+          "type": "sizing"
+        },
+        "600": {
+          "value": "{primitive.dimension}*21.5",
+          "description": "이미지 기반 시각 요소에 사용되는 기본 크기 (예. avatar, media, product thumbnail)",
+          "type": "sizing"
+        },
+        "700": {
+          "value": "{primitive.dimension}*24",
+          "description": "이미지 기반 시각 요소에 사용되는 기본 크기 (예. avatar, media, product thumbnail)",
+          "type": "sizing"
+        },
+        "750": {
+          "value": "{primitive.dimension}*26",
+          "description": "이미지 기반 시각 요소에 사용되는 기본 크기 (예. avatar, media, product thumbnail)",
+          "type": "sizing"
+        },
+        "800": {
+          "value": "{primitive.dimension}*31",
+          "description": "이미지 기반 시각 요소에 사용되는 기본 크기 (예. avatar, media, product thumbnail)",
+          "type": "sizing"
+        },
+        "900": {
+          "value": "{primitive.dimension}*40",
+          "description": "이미지 기반 시각 요소에 사용되는 기본 크기 (예. avatar, media, product thumbnail)",
+          "type": "sizing"
+        },
+        "1000": {
+          "value": "{primitive.dimension}*47",
+          "description": "이미지 기반 시각 요소에 사용되는 기본 크기 (예. avatar, media, product thumbnail)",
+          "type": "sizing"
+        },
+        "1050": {
+          "value": "{primitive.dimension}*50",
+          "description": "이미지 기반 시각 요소에 사용되는 기본 크기 (예. avatar, media, product thumbnail)",
+          "type": "sizing"
+        },
+        "1100": {
+          "value": "{primitive.dimension}*56.5",
+          "description": "이미지 기반 시각 요소에 사용되는 기본 크기 (예. avatar, media, product thumbnail)",
+          "type": "sizing"
+        },
+        "1200": {
+          "value": "{primitive.dimension}*62.5",
+          "description": "이미지 기반 시각 요소에 사용되는 기본 크기 (예. avatar, media, product thumbnail)",
+          "type": "sizing"
+        },
+        "1300": {
+          "value": "{primitive.dimension}*75",
+          "description": "이미지 기반 시각 요소에 사용되는 기본 크기 (예. avatar, media, product thumbnail)",
+          "type": "sizing"
+        },
+        "1350": {
+          "value": "{primitive.dimension}*80",
+          "description": "이미지 기반 시각 요소에 사용되는 기본 크기 (예. avatar, media, product thumbnail)",
+          "type": "sizing"
+        },
+        "1400": {
+          "value": "{primitive.dimension}*93.75",
+          "description": "이미지 기반 시각 요소에 사용되는 기본 크기 (예. avatar, media, product thumbnail)",
+          "type": "sizing"
+        },
+        "1500": {
+          "value": "{primitive.dimension}*112.5",
+          "description": "이미지 기반 시각 요소에 사용되는 기본 크기 (예. avatar, media, product thumbnail)",
+          "type": "sizing"
+        }
+      }
+    },
+    "rounded": {
+      "0": {
+        "value": "0",
+        "description": "UI 요소의 모서리 반경(Radius)으로, dimension 배수를 사용하지 않고 px 값 스케일을 제공",
+        "type": "borderRadius"
+      },
+      "100": {
+        "value": "2",
+        "description": "UI 요소의 모서리 반경(Radius)으로, dimension 배수를 사용하지 않고 px 값 스케일을 제공",
+        "type": "borderRadius"
+      },
+      "200": {
+        "value": "4",
+        "description": "UI 요소의 모서리 반경(Radius)으로, dimension 배수를 사용하지 않고 px 값 스케일을 제공",
+        "type": "borderRadius"
+      },
+      "300": {
+        "value": "6",
+        "description": "UI 요소의 모서리 반경(Radius)으로, dimension 배수를 사용하지 않고 px 값 스케일을 제공",
+        "type": "borderRadius"
+      },
+      "400": {
+        "value": "8",
+        "description": "UI 요소의 모서리 반경(Radius)으로, dimension 배수를 사용하지 않고 px 값 스케일을 제공",
+        "type": "borderRadius"
+      },
+      "500": {
+        "value": "12",
+        "description": "UI 요소의 모서리 반경(Radius)으로, dimension 배수를 사용하지 않고 px 값 스케일을 제공",
+        "type": "borderRadius"
+      },
+      "600": {
+        "value": "16",
+        "description": "UI 요소의 모서리 반경(Radius)으로, dimension 배수를 사용하지 않고 px 값 스케일을 제공",
+        "type": "borderRadius"
+      },
+      "700": {
+        "value": "20",
+        "description": "UI 요소의 모서리 반경(Radius)으로, dimension 배수를 사용하지 않고 px 값 스케일을 제공",
+        "type": "borderRadius"
+      },
+      "full": {
+        "value": "9999",
+        "description": "UI 요소의 모서리 반경(Radius)으로, dimension 배수를 사용하지 않고 px 값 스케일을 제공",
+        "type": "borderRadius"
+      }
+    },
+    "borderWidth": {
+      "100": {
+        "value": "1",
+        "description": "border(테두리)와 divider(구분선) 모두를 포함하는 선 두께",
+        "type": "borderWidth"
+      },
+      "200": {
+        "value": "2",
+        "description": "border(테두리)와 divider(구분선) 모두를 포함하는 선 두께",
+        "type": "borderWidth"
+      }
+    }
+  }
+}

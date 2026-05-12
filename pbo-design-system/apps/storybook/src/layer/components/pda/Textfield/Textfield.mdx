@@ -1,0 +1,107 @@
+import { Meta, Story, Canvas, ArgTypes } from '@storybook/blocks';
+import * as TextfieldStories from './Textfield.stories';
+
+<Meta of={TextfieldStories} />
+
+# Textfield
+
+## Anatomy
+
+- `Textfield.Root`
+- `Textfield.Input` (단독으로 사용할 경우 `Textfield`를 사용해주세요.)
+- `Textfield.SearchInput` (단독으로 사용할 경우 `SearchTextfield`를 사용해주세요.)
+- `Textfield.CountInput` (단독으로 사용할 경우 `CountTextfield`를 사용해주세요.)
+- `Textfield.HelpText`
+
+## Example
+
+```tsx
+function TextfieldComposition() {
+  const [value, setValue] = useState('');
+
+  return (
+    <Div width="300px">
+      <Textfield.Root>
+        <Textfield.Input placeholder="Placeholder" value={value} onValueChange={setValue} />
+        <Textfield.HelpText>Help text</Textfield.HelpText>
+      </Textfield.Root>
+    </Div>
+  );
+}
+```
+
+<Canvas of={TextfieldStories.Default} />
+
+---
+
+```tsx
+function SearchTextfieldComposition() {
+  const [value, setValue] = useState('');
+
+  return (
+    <Div width="300px">
+      <Textfield.Root>
+        <Textfield.SearchInput placeholder="Placeholder" value={value} onValueChange={setValue} />
+        <Textfield.HelpText>Help text</Textfield.HelpText>
+      </Textfield.Root>
+    </Div>
+  );
+}
+```
+
+<Canvas of={TextfieldStories.SearchInput} />
+
+---
+
+```tsx
+function CountTextfieldComposition() {
+  const [value, setValue] = useState(0);
+
+  return (
+    <Column gap={24} width="300px">
+      {/* default */}
+      <Textfield.Root>
+        <Textfield.CountInput count={value} totalCount={10} onCountChange={setValue} />
+        <Textfield.HelpText>Help text</Textfield.HelpText>
+      </Textfield.Root>
+
+      {/* countTotalSmall */}
+      <Textfield.Root>
+        <Textfield.CountInput countTotalSmall count={value} totalCount={10} onCountChange={setValue} />
+        <Textfield.HelpText>Help text</Textfield.HelpText>
+      </Textfield.Root>
+    </Column>
+  );
+}
+```
+
+<Canvas of={TextfieldStories.CountInput} />
+
+## Case
+
+```tsx
+function Case() {
+  return (
+    <Column width="300px">
+      {/* error */}
+      <Textfield placeholder="Placeholder" validationState="error" />
+      <Textfield.SearchInput placeholder="Placeholder" validationState="error" />
+      <CountTextfield validationState="error" maxCount={10} />
+      {/* disabled */}
+      <Textfield value="disabled" disabled />
+      <SearchTextfield value="disabled" disabled />
+      <CountTextfield disabled maxCount={10} />
+      {/* readOnly */}
+      <Textfield value="readOnly" readOnly />
+      <SearchTextfield value="readOnly" readOnly />
+      <CountTextfield readOnly maxCount={10} />
+    </Column>
+  );
+}
+```
+
+<Canvas of={TextfieldStories.Case} />
+
+## Props
+
+<ArgTypes of={TextfieldStories} />

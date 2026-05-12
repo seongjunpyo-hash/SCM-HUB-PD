@@ -1,0 +1,57 @@
+{
+  "name": "@musinsa/phase-tokens",
+  "description": "MUSINSA PBO design system phase tokens",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "author": "MUSINSA-PBO-FE",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/musinsa/pbo-design-system.git"
+  },
+  "exports": {
+    "./desktop": {
+      "require": "./src/desktop.ts",
+      "import": "./src/desktop.ts"
+    },
+    "./mobile": {
+      "require": "./src/mobile.ts",
+      "import": "./src/mobile.ts"
+    },
+    "./package.json": "./package.json",
+    "./stylesheet.css": "./src/output/stylesheet/index.css"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "exports": {
+      "./desktop": {
+        "require": "./dist/desktop/index.cjs",
+        "import": "./dist/desktop/index.js",
+        "types": "./dist/desktop/index.d.cts"
+      },
+      "./mobile": {
+        "require": "./dist/mobile/index.cjs",
+        "import": "./dist/mobile/index.js",
+        "types": "./dist/mobile/index.d.cts"
+      },
+      "./package.json": "./package.json",
+      "./stylesheet.css": "./dist/stylesheet/index.css",
+      "./desktop-stylesheet.css": "./dist/stylesheet/desktop.css",
+      "./mobile-stylesheet.css": "./dist/stylesheet/mobile.css"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "figma-json:build": "tsx src/scripts/generate.ts",
+    "build": "tsx src/scripts/generate.ts && tsup && cp -r src/output/stylesheet dist"
+  },
+  "devDependencies": {
+    "style-dictionary": "^5.0.0",
+    "tsx": "^4.20.3"
+  },
+  "dependencies": {
+    "tsup": "^8.5.0"
+  }
+}

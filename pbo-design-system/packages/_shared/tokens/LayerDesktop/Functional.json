@@ -1,0 +1,310 @@
+{
+  "layerDesktop": {
+    "base": {
+      "title-xl": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.regular-400}",
+          "fontSize": "{primitive.fontSize.550}",
+          "lineHeight": "{primitive.lineHeight.4}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography",
+        "description": "타이틀 스타일은 사용자가 알아야할 정보와 개념을 강조하고 페이지나 섹션을 명확하게 설명해야 합니다"
+      },
+      "title-xl-medium": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.medium-500}",
+          "fontSize": "{primitive.fontSize.550}",
+          "lineHeight": "{primitive.lineHeight.4}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography",
+        "description": "타이틀 스타일은 사용자가 알아야할 정보와 개념을 강조하고 페이지나 섹션을 명확하게 설명해야 합니다"
+      },
+      "title-xl-semibold": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.semibold-600}",
+          "fontSize": "{primitive.fontSize.550}",
+          "lineHeight": "{primitive.lineHeight.4}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography",
+        "description": "타이틀 스타일은 사용자가 알아야할 정보와 개념을 강조하고 페이지나 섹션을 명확하게 설명해야 합니다"
+      },
+      "title-l-medium": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.medium-500}",
+          "fontSize": "{primitive.fontSize.450}",
+          "lineHeight": "{primitive.lineHeight.4}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography",
+        "description": "타이틀 스타일은 사용자가 알아야할 정보와 개념을 강조하고 페이지나 섹션을 명확하게 설명해야 합니다"
+      },
+      "title-l-semibold": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.semibold-600}",
+          "fontSize": "{primitive.fontSize.450}",
+          "lineHeight": "{primitive.lineHeight.4}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography",
+        "description": "타이틀 스타일은 사용자가 알아야할 정보와 개념을 강조하고 페이지나 섹션을 명확하게 설명해야 합니다"
+      },
+      "title-m-medium": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.medium-500}",
+          "fontSize": "{primitive.fontSize.350}",
+          "lineHeight": "{primitive.lineHeight.3}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography",
+        "description": "타이틀 스타일은 사용자가 알아야할 정보와 개념을 강조하고 페이지나 섹션을 명확하게 설명해야 합니다"
+      },
+      "title-m-semibold": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.semibold-600}",
+          "fontSize": "{primitive.fontSize.350}",
+          "lineHeight": "{primitive.lineHeight.3}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography",
+        "description": "타이틀 스타일은 사용자가 알아야할 정보와 개념을 강조하고 페이지나 섹션을 명확하게 설명해야 합니다"
+      },
+      "title-s-medium": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.medium-500}",
+          "fontSize": "{primitive.fontSize.250}",
+          "lineHeight": "{primitive.lineHeight.3}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography",
+        "description": "타이틀 스타일은 사용자가 알아야할 정보와 개념을 강조하고 페이지나 섹션을 명확하게 설명해야 합니다"
+      },
+      "title-s-semibold": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.semibold-600}",
+          "fontSize": "{primitive.fontSize.250}",
+          "lineHeight": "{primitive.lineHeight.3}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography",
+        "description": "타이틀 스타일은 사용자가 알아야할 정보와 개념을 강조하고 페이지나 섹션을 명확하게 설명해야 합니다"
+      },
+      "text-xl": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.regular-400}",
+          "fontSize": "{primitive.fontSize.200}",
+          "lineHeight": "{primitive.lineHeight.3}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography",
+        "description": "텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+      },
+      "text-xl-medium": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.medium-500}",
+          "fontSize": "{primitive.fontSize.200}",
+          "lineHeight": "{primitive.lineHeight.3}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography",
+        "description": "텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+      },
+      "text-xl-semibold": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.semibold-600}",
+          "fontSize": "{primitive.fontSize.200}",
+          "lineHeight": "{primitive.lineHeight.3}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography",
+        "description": "텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+      },
+      "text-l": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.regular-400}",
+          "fontSize": "{primitive.fontSize.150}",
+          "lineHeight": "{primitive.lineHeight.1}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography",
+        "description": "텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+      },
+      "text-l-medium": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.medium-500}",
+          "fontSize": "{primitive.fontSize.150}",
+          "lineHeight": "{primitive.lineHeight.3}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography",
+        "description": "텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+      },
+      "text-l-semibold": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.semibold-600}",
+          "fontSize": "{primitive.fontSize.150}",
+          "lineHeight": "{primitive.lineHeight.3}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography",
+        "description": "텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+      },
+      "text-m": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.regular-400}",
+          "fontSize": "{primitive.fontSize.125}",
+          "lineHeight": "{primitive.lineHeight.4}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography",
+        "description": "텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+      },
+      "text-m-medium": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.medium-500}",
+          "fontSize": "{primitive.fontSize.125}",
+          "lineHeight": "{primitive.lineHeight.4}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography",
+        "description": "텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+      },
+      "text-m-semibold": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.semibold-600}",
+          "fontSize": "{primitive.fontSize.125}",
+          "lineHeight": "{primitive.lineHeight.4}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography",
+        "description": "텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+      },
+      "text-s": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.regular-400}",
+          "fontSize": "{primitive.fontSize.100}",
+          "lineHeight": "{primitive.lineHeight.5}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography",
+        "description": "주요 정보에는 14이하로 작은 폰트의 사용을 권장하지 않습니다!\n텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+      },
+      "text-s-medium": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.medium-500}",
+          "fontSize": "{primitive.fontSize.100}",
+          "lineHeight": "{primitive.lineHeight.5}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography",
+        "description": "주요 정보에는 14이하로 작은 폰트의 사용을 권장하지 않습니다!\n텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+      },
+      "text-s-semibold": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.semibold-600}",
+          "fontSize": "{primitive.fontSize.100}",
+          "lineHeight": "{primitive.lineHeight.5}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography",
+        "description": "주요 정보에는 14이하로 작은 폰트의 사용을 권장하지 않습니다!\n텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+      },
+      "text-xs": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.regular-400}",
+          "fontSize": "{primitive.fontSize.75}",
+          "lineHeight": "{primitive.lineHeight.5}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography",
+        "description": "주요 정보에는 14이하로 작은 폰트의 사용을 권장하지 않습니다!\n텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+      },
+      "text-xs-medium": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.medium-500}",
+          "fontSize": "{primitive.fontSize.75}",
+          "lineHeight": "{primitive.lineHeight.5}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography",
+        "description": "주요 정보에는 14이하로 작은 폰트의 사용을 권장하지 않습니다!\n텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+      },
+      "text-xs-semibold": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.semibold-600}",
+          "fontSize": "{primitive.fontSize.75}",
+          "lineHeight": "{primitive.lineHeight.5}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "type": "typography",
+        "description": "주요 정보에는 14이하로 작은 폰트의 사용을 권장하지 않습니다!\n텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+      }
+    },
+    "helperText": {
+      "s": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.regular-400}",
+          "fontSize": "{primitive.fontSize.100}",
+          "lineHeight": "{primitive.lineHeight.2}"
+        },
+        "type": "typography"
+      },
+      "m": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.regular-400}",
+          "fontSize": "{primitive.fontSize.125}",
+          "lineHeight": "{primitive.lineHeight.4}"
+        },
+        "type": "typography"
+      }
+    },
+    "fg-accent": {
+      "value": "{primitive.color.blue.500}",
+      "type": "color"
+    },
+    "bg-accent": {
+      "value": "{primitive.color.blue.500}",
+      "type": "color"
+    },
+    "bg-accent-low": {
+      "value": "{primitive.color.blue.alpha500.10}",
+      "type": "color"
+    },
+    "border-accent": {
+      "value": "{primitive.color.blue.500}",
+      "type": "color"
+    },
+    "border-accent-low": {
+      "value": "{primitive.color.blue.400}",
+      "type": "color"
+    }
+  }
+}

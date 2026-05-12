@@ -1,0 +1,60 @@
+import { Meta, Story, Canvas, ArgTypes } from '@storybook/blocks';
+import * as CheckboxStories from './Checkbox.stories';
+
+<Meta of={CheckboxStories} />
+
+# Checkbox
+
+## Anatomy
+
+- `Checkbox.Input`
+- `Checkbox.Label`
+
+## Example
+
+```tsx
+function CheckboxComposition() {
+  const [checked, setChecked] = useState(false);
+
+  return (
+    <Flex>
+      <Checkbox.Input checked={checked} onCheckedChange={setChecked} id="box" />
+      <Checkbox.Label htmlFor="box">Checkbox</Checkbox.Label>
+    </Flex>
+  );
+}
+```
+
+<Canvas of={CheckboxStories.Default} />
+
+## Case
+
+```tsx
+function CheckboxComposition() {
+  return (
+    <Column>
+      <Flex>
+        {/* disabled */}
+        <Checkbox.Input disabled id="disabled" />
+        <Checkbox.Label htmlFor="disabled">Disabled</Checkbox.Label>
+      </Flex>
+      <Flex>
+        {/* checked */}
+        <Checkbox.Input checked id="checked" />
+        <Checkbox.Label htmlFor="checked">Checked</Checkbox.Label>
+      </Flex>
+      <Flex>
+        {/* checked disabled */}
+        <Checkbox.Input checked disabled id="checked-disabled" />
+        <Checkbox.Label htmlFor="checked-disabled">Checked Disabled</Checkbox.Label>
+      </Flex>
+    </Column>
+  );
+}
+```
+
+<Canvas of={CheckboxStories.Case} />
+
+## Props
+
+<ArgTypes of={CheckboxStories} />

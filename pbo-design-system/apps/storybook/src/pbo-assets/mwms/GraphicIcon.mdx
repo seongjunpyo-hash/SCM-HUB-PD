@@ -1,0 +1,23 @@
+import { Meta, IconGallery, IconItem } from '@storybook/addon-docs/blocks';
+
+import { GraphicIcon, GraphicIconMap } from '@musinsa/pbo-assets/mwms';
+
+<Meta title="pbo-assets/icons/mwms/GraphicIcon" />
+
+# GraphicIcon
+
+Graphic 아이콘은 콘텐츠나 상태를 표현할 때 사용됩니다.
+
+```tsx
+import { GraphicIcon } from '@musinsa/pbo-assets/mwms';
+
+<GraphicIcon name="ic-inbound" />;
+```
+
+<IconGallery>
+  {Object.keys(GraphicIconMap).map((iconName) => (
+    <IconItem name={iconName}>
+      <GraphicIcon name={iconName} />
+    </IconItem>
+  ))}
+</IconGallery>

@@ -1,0 +1,36 @@
+{
+  "name": "@musinsa/layer-storybook",
+  "private": true,
+  "version": "1.0.8",
+  "type": "module",
+  "scripts": {
+    "start": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "ds:up": "pnpm update @musinsa/*"
+  },
+  "dependencies": {
+    "@musinsa/layer-components-desktop": "workspace:*",
+    "@musinsa/layer-components-pda": "workspace:*",
+    "@musinsa/layer-tokens": "workspace:*",
+    "@musinsa/pbo-assets": "workspace:*",
+    "@musinsa/phase-tokens": "workspace:*",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@chromatic-com/storybook": "^4.1.1",
+    "@storybook/addon-a11y": "^9.1.6",
+    "@storybook/addon-docs": "^9.1.6",
+    "@storybook/addon-onboarding": "^9.1.6",
+    "@storybook/addon-vitest": "^9.1.6",
+    "@storybook/blocks": "^8.6.14",
+    "@storybook/react": "^9.1.6",
+    "@storybook/react-vite": "^9.1.8",
+    "@types/react": "18.3.1",
+    "@types/react-dom": "18.3.1",
+    "@vanilla-extract/vite-plugin": "^5.1.4",
+    "globals": "^16.4.0",
+    "storybook": "^9.1.6",
+    "vite-tsconfig-paths": "^6.1.1"
+  }
+}

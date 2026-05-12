@@ -1,0 +1,118 @@
+import { Meta, Story, Canvas, ArgTypes } from '@storybook/blocks';
+import * as DialogStories from './Dialog.stories';
+
+<Meta of={DialogStories} />
+
+# Dialog
+
+## Anatomy
+
+- `Dialog`
+- `Dialog.Title`
+- `Dialog.SubTitle`
+- `Dialog.Content`
+- `Dialog.Action`
+
+## Example
+
+```tsx
+function DialogComposition() {
+  return (
+    <Dialog open={true}>
+      <Dialog.Title>Title</Dialog.Title>
+      <Dialog.SubTitle>Sub Title</Dialog.SubTitle>
+      <Dialog.Content>Content</Dialog.Content>
+      <Dialog.Action>
+        <ButtonGroup>
+          <Button variant="secondary" label="Cancel" />
+          <Button variant="primary" label="Confirm" />
+        </ButtonGroup>
+      </Dialog.Action>
+    </Dialog>
+  );
+}
+```
+
+<Canvas of={DialogStories.Default} />
+
+## Case
+
+`type="failFeedback"` 을 사용하여 에러 상태의 Dialog를 나타낼 수 있습니다.
+
+```tsx
+function DialogFailFeedback() {
+  return (
+    <Dialog open={true} type="failFeedback">
+      <Dialog.Title>Title</Dialog.Title>
+      <Dialog.SubTitle>Sub Title</Dialog.SubTitle>
+      <Dialog.Content>Content</Dialog.Content>
+      <Dialog.Action>
+        <ButtonGroup>
+          <Button variant="secondary" label="Cancel" />
+          <Button variant="primary" label="Confirm" />
+        </ButtonGroup>
+      </Dialog.Action>
+    </Dialog>
+  );
+}
+```
+
+<Canvas of={DialogStories.FailFeedback} />
+
+## Composition
+
+Anatomy를 조합하여 다양한 Dialog를 구성할 수 있습니다.
+
+```tsx
+function LoadingDialog() {
+  return (
+    <Dialog open={true}>
+      <Dialog.Title>Title</Dialog.Title>
+      <Dialog.SubTitle>Sub Title</Dialog.SubTitle>
+      <Dialog.Content>
+        <Loading style={{ margin: 'auto' }} />
+      </Dialog.Content>
+    </Dialog>
+  );
+}
+```
+
+<Canvas of={DialogStories.LoadingDialog} />
+
+```tsx
+function OnlyTitle() {
+  return (
+    <Dialog open={true}>
+      <Dialog.Title>Title</Dialog.Title>
+      <Dialog.Action>
+        <ButtonGroup>
+          <Button variant="secondary" label="Cancel" />
+          <Button variant="primary" label="Confirm" />
+        </ButtonGroup>
+      </Dialog.Action>
+    </Dialog>
+  );
+}
+```
+
+<Canvas of={DialogStories.OnlyTitle} />
+
+```tsx
+function NoContent() {
+  return (
+    <Dialog open={true}>
+      <Dialog.Title>Title</Dialog.Title>
+      <Dialog.SubTitle>Sub Title</Dialog.SubTitle>
+      <Dialog.Action>
+        <Button variant="primary" label="Confirm" />
+      </Dialog.Action>
+    </Dialog>
+  );
+}
+```
+
+<Canvas of={DialogStories.NoContent} />
+
+## Props
+
+<ArgTypes of={DialogStories} />

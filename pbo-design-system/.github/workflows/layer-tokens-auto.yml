@@ -1,0 +1,364 @@
+# "pbo-tokens" 브랜치는 figma에서 플러그인을 통해 push하는 브랜치입니다.
+# 디자인팀이 해당 브랜치에 플러그인을 통해 푸시하면 자동으로 token을 빌드하고 PR이 생성됩니다.
+# packages/_shared/tokens의 Core 또는 Layer 관련 폴더가 변경되었을 때만 실행됩니다.
+name: Layer Tokens Auto Pull Request
+
+on:
+  push:
+    branches:
+      - pbo-tokens
+    paths:
+      - 'packages/_shared/tokens/Core/**'
+      - 'packages/_shared/tokens/Layer*/**'
+
+jobs:
+  create-pr-if-not-exist:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      pull-requests: write
+    env:
+      BRANCH_NAME: pbo-tokens
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: |
+          pnpm install --no-frozen-lockfile
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Save main branch token files state
+        id: save_state
+        run: |
+          mkdir -p /tmp/token-backup
+          # main 브랜치의 토큰 파일들을 가져와서 백업 (비교 기준)
+          git fetch origin main:main || true
+          if git show origin/main:packages/layer-tokens/src/output/web/token.ts > /tmp/token-backup/web-token.ts 2>/dev/null; then
+            echo "Web token from main saved"
+          fi
+          if git show origin/main:packages/layer-tokens/src/output/pda/token.ts > /tmp/token-backup/pda-token.ts 2>/dev/null; then
+            echo "PDA token from main saved"
+          fi
+          if git show origin/main:packages/layer-tokens/src/output/pos/token.ts > /tmp/token-backup/pos-token.ts 2>/dev/null; then
+            echo "POS token from main saved"
+          fi
+          echo "State saved"
+
+      - name: Layer Token Build
+        run: pnpm layer-tokens figma-json:build
+
+      - name: Analyze token changes
+        id: analyze_changes
+        run: |
+          cat > /tmp/analyze-changes.js << 'EOF'
+          const fs = require('fs');
+
+          function extractTokens(filePath) {
+            if (!fs.existsSync(filePath)) return {};
+            try {
+              const content = fs.readFileSync(filePath, 'utf-8');
+              
+              // tokens 객체만 추출 (as const 전까지)
+              const tokensMatch = content.match(/export const tokens = ([\s\S]*?) as const/);
+              
+              if (!tokensMatch) {
+                console.error(`No tokens match found in ${filePath}`);
+                return {};
+              }
+              
+              // JavaScript 객체 코드를 평가하여 객체로 변환
+              const tokensCode = tokensMatch[1].trim();
+              // eval을 사용하여 JavaScript 객체를 파싱 (신뢰할 수 있는 코드이므로 안전)
+              const tokensObj = eval(`(${tokensCode})`);
+              
+              return tokensObj || {};
+            } catch (error) {
+              console.error(`Error parsing ${filePath}:`, error.message);
+              console.error(`Error stack:`, error.stack);
+              return {};
+            }
+          }
+
+          function flattenObject(obj, prefix = '') {
+            const result = {};
+            for (const [key, value] of Object.entries(obj)) {
+              const newKey = prefix ? `${prefix}.${key}` : key;
+              if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                Object.assign(result, flattenObject(value, newKey));
+              } else {
+                result[newKey] = value;
+              }
+            }
+            return result;
+          }
+
+          function compareTokens(oldPath, newPath, platform) {
+            const oldTokens = extractTokens(oldPath);
+            const newTokens = extractTokens(newPath);
+            
+            const oldFlat = flattenObject(oldTokens);
+            const newFlat = flattenObject(newTokens);
+            
+            const added = [];
+            const removed = [];
+            
+            // tokens 비교
+            for (const key in newFlat) {
+              if (!(key in oldFlat)) {
+                added.push(key);
+              }
+            }
+            for (const key in oldFlat) {
+              if (!(key in newFlat)) {
+                removed.push(key);
+              }
+            }
+            
+            return { platform, added, removed };
+          }
+
+          const results = [];
+
+          // Web 토큰 비교
+          const webOldExists = fs.existsSync('/tmp/token-backup/web-token.ts');
+          const webNewExists = fs.existsSync('packages/layer-tokens/src/output/web/token.ts');
+          if (webOldExists || webNewExists) {
+            const result = compareTokens('/tmp/token-backup/web-token.ts', 'packages/layer-tokens/src/output/web/token.ts', 'web');
+            console.log(`Web: old=${webOldExists}, new=${webNewExists}, added=${result.added.length}, removed=${result.removed.length}`);
+            results.push(result);
+          }
+
+          // PDA 토큰 비교
+          const pdaOldExists = fs.existsSync('/tmp/token-backup/pda-token.ts');
+          const pdaNewExists = fs.existsSync('packages/layer-tokens/src/output/pda/token.ts');
+          if (pdaOldExists || pdaNewExists) {
+            const result = compareTokens('/tmp/token-backup/pda-token.ts', 'packages/layer-tokens/src/output/pda/token.ts', 'pda');
+            console.log(`PDA: old=${pdaOldExists}, new=${pdaNewExists}, added=${result.added.length}, removed=${result.removed.length}`);
+            results.push(result);
+          }
+
+          // POS 토큰 비교
+          const posOldExists = fs.existsSync('/tmp/token-backup/pos-token.ts');
+          const posNewExists = fs.existsSync('packages/layer-tokens/src/output/pos/token.ts');
+          if (posOldExists || posNewExists) {
+            const result = compareTokens('/tmp/token-backup/pos-token.ts', 'packages/layer-tokens/src/output/pos/token.ts', 'pos');
+            console.log(`POS: old=${posOldExists}, new=${posNewExists}, added=${result.added.length}, removed=${result.removed.length}`);
+            results.push(result);
+          }
+
+          // 마크다운 형식으로 변경사항 정리
+          let markdown = '## 📋 변경사항 요약\n\n';
+
+          let hasChanges = false;
+          for (const result of results) {
+            if (result.added.length > 0 || result.removed.length > 0) {
+              hasChanges = true;
+              markdown += `### ${result.platform.toUpperCase()}\n\n`;
+              
+              if (result.added.length > 0) {
+                markdown += `#### ➕ 추가된 토큰 (${result.added.length}개)\n`;
+                result.added.forEach(token => {
+                  markdown += `- \`${token}\`\n`;
+                });
+                markdown += '\n';
+              }
+              
+              if (result.removed.length > 0) {
+                markdown += `#### ➖ 삭제된 토큰 (${result.removed.length}개)\n`;
+                result.removed.forEach(token => {
+                  markdown += `- \`${token}\`\n`;
+                });
+                markdown += '\n';
+              }
+            }
+          }
+
+          if (!hasChanges) {
+            markdown += '변경사항이 없습니다.\n';
+          }
+
+          // 파일로 저장
+          fs.writeFileSync('/tmp/changes.md', markdown);
+
+          // Slack용 마크다운 생성 (Slack은 GitHub 마크다운과 다름)
+          let slackMarkdown = '*📋 변경사항 요약*\n\n';
+
+          if (hasChanges) {
+            for (const result of results) {
+              if (result.added.length > 0 || result.removed.length > 0) {
+                slackMarkdown += `*${result.platform.toUpperCase()}*\n`;
+                
+                if (result.added.length > 0) {
+                  slackMarkdown += `➕ *추가된 토큰 (${result.added.length}개)*\n`;
+                  result.added.forEach(token => {
+                    slackMarkdown += `• \`${token}\`\n`;
+                  });
+                  slackMarkdown += '\n';
+                }
+                
+                if (result.removed.length > 0) {
+                  slackMarkdown += `➖ *삭제된 토큰 (${result.removed.length}개)*\n`;
+                  result.removed.forEach(token => {
+                    slackMarkdown += `• \`${token}\`\n`;
+                  });
+                  slackMarkdown += '\n';
+                }
+              }
+            }
+          } else {
+            slackMarkdown += '변경사항이 없습니다.\n';
+          }
+
+          fs.writeFileSync('/tmp/changes-slack.md', slackMarkdown);
+
+          console.log('Changes analysis completed');
+          EOF
+          node /tmp/analyze-changes.js
+
+      - name: Commit and push generated files
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git diff --cached --quiet || git commit -m "[AUTO commit] 피그마 토큰 자동 업데이트"
+          git push origin ${{ env.BRANCH_NAME }}
+
+      - name: Check if PR exists
+        id: check_pr
+        run: |
+          gh pr list --head ${{ env.BRANCH_NAME }} --state open --json number | grep -q 'number' && echo "exists=true" >> $GITHUB_OUTPUT || echo "exists=false" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create PR if not exists
+        id: create_pr
+        if: steps.check_pr.outputs.exists == 'false'
+        run: |
+          # PR 본문 생성
+          PR_BODY_FILE=$(mktemp)
+          echo "Figma 플러그인에서 자동 생성된 토큰 PR입니다." > "$PR_BODY_FILE"
+          echo "" >> "$PR_BODY_FILE"
+          if [ -f /tmp/changes.md ]; then
+            cat /tmp/changes.md >> "$PR_BODY_FILE"
+          else
+            echo "변경사항 분석 중..." >> "$PR_BODY_FILE"
+          fi
+
+          pr_url=$(gh pr create --base main --head ${{ env.BRANCH_NAME }} --title "[AUTO PR]: Layer Token 업데이트" --body-file "$PR_BODY_FILE")
+          echo "pr_url=$pr_url" >> $GITHUB_OUTPUT
+          echo "Created new PR: $pr_url"
+          rm -f "$PR_BODY_FILE"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get existing PR URL
+        id: get_existing_pr
+        if: steps.check_pr.outputs.exists == 'true'
+        run: |
+          pr_url=$(gh pr list --head ${{ env.BRANCH_NAME }} --state open --json url --jq '.[0].url')
+          pr_number=$(gh pr list --head ${{ env.BRANCH_NAME }} --state open --json number --jq '.[0].number')
+          echo "pr_url=$pr_url" >> $GITHUB_OUTPUT
+          echo "pr_number=$pr_number" >> $GITHUB_OUTPUT
+          echo "Found existing PR: $pr_url"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update existing PR with changes
+        if: steps.check_pr.outputs.exists == 'true'
+        run: |
+          # PR 본문 생성
+          PR_BODY_FILE=$(mktemp)
+          echo "Figma 플러그인에서 자동 생성된 토큰 PR입니다." > "$PR_BODY_FILE"
+          echo "" >> "$PR_BODY_FILE"
+          if [ -f /tmp/changes.md ]; then
+            cat /tmp/changes.md >> "$PR_BODY_FILE"
+          else
+            echo "변경사항 분석 중..." >> "$PR_BODY_FILE"
+          fi
+
+          gh pr edit ${{ steps.get_existing_pr.outputs.pr_number }} --body-file "$PR_BODY_FILE"
+          echo "Updated existing PR with changes"
+          rm -f "$PR_BODY_FILE"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get final PR URL
+        id: final_pr
+        run: |
+          if [ "${{ steps.check_pr.outputs.exists }}" == "false" ]; then
+            pr_url="${{ steps.create_pr.outputs.pr_url }}"
+          else
+            pr_url="${{ steps.get_existing_pr.outputs.pr_url }}"
+          fi
+          echo "pr_url=$pr_url" >> $GITHUB_OUTPUT
+          echo "Final PR URL: $pr_url"
+
+      - name: Prepare Slack payload
+        id: slack_payload
+        run: |
+          # Slack payload 생성 (Node.js 사용)
+          cat > /tmp/create-slack-payload.js << 'JS_EOF'
+          const fs = require('fs');
+
+          const prUrl = process.env.PR_URL || '';
+          let changesContent = '변경사항 분석 중...';
+
+          // Slack용 마크다운 사용
+          if (fs.existsSync('/tmp/changes-slack.md')) {
+            changesContent = fs.readFileSync('/tmp/changes-slack.md', 'utf-8');
+          } else if (fs.existsSync('/tmp/changes.md')) {
+            changesContent = fs.readFileSync('/tmp/changes.md', 'utf-8');
+          }
+
+          const payload = {
+            text: 'Layer Token 업데이트 알림',
+            blocks: [
+              {
+                type: 'section',
+                text: {
+                  type: 'mrkdwn',
+                  text: `*Layer Token이 업데이트 되어 자동으로 PR이 생성되었습니다.*\n\n<${prUrl}|PR 바로가기>`
+                }
+              },
+              {
+                type: 'section',
+                text: {
+                  type: 'mrkdwn',
+                  text: changesContent
+                }
+              }
+            ]
+          };
+
+          const payloadFile = '/tmp/slack-payload.json';
+          fs.writeFileSync(payloadFile, JSON.stringify(payload, null, 2));
+          console.log('Slack payload created:', payloadFile);
+          JS_EOF
+
+          PR_URL="${{ steps.final_pr.outputs.pr_url }}" node /tmp/create-slack-payload.js
+          echo "payload_file=/tmp/slack-payload.json" >> $GITHUB_OUTPUT
+
+      - name: Slack Notification
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          channel-id: C087PQDPBAA
+          payload-file-path: ${{ steps.slack_payload.outputs.payload_file }}
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_PBO_LAYER_BOT_TOKEN }}

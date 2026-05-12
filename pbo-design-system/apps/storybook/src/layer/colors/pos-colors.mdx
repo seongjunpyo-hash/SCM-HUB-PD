@@ -1,0 +1,114 @@
+import { Meta, ColorPalette, ColorItem } from '@storybook/blocks';
+import {
+  posPrimitiveColorTokenMap,
+  posFunctionalColorTokenMap,
+  posComponentColorTokenMap,
+} from '../_utils/pos-color-token-map';
+
+<Meta title="Layer/tokens/colors/POS" />
+
+# Layer POS Color Palette
+
+Layer POS 환경에서 사용하는 color를 정의합니다.
+
+### Primitive Color
+
+<div data-layer-theme="light" data-layer-platform="pos">
+  <table style={{ width: '100%', textAlign: 'center' }}>
+    <thead>
+      <tr>
+        <th style={{ width: '10%' }}>color</th>
+        <th style={{ width: '45%' }}>token</th>
+        <th style={{ width: '45%' }}>value</th>
+      </tr>
+    </thead>
+    <tbody style={{ fontWeight: 'bold' }}>
+      {Object.entries(posPrimitiveColorTokenMap).map(([name, hex]) => (
+        <tr key={name}>
+          <td>
+            <div
+              style={{
+                margin: '0 auto',
+                backgroundColor: hex,
+                width: '40px',
+                height: '40px',
+                borderRadius: '999px',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+              }}
+            />
+          </td>
+          <td>{name}</td>
+          <td>{hex}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+### Functional Color
+
+<div data-layer-theme="light" data-layer-platform="pos">
+  <table style={{ width: '100%', textAlign: 'center' }}>
+    <thead>
+      <tr>
+        <th style={{ width: '10%' }}>color</th>
+        <th style={{ width: '45%' }}>token</th>
+        <th style={{ width: '45%' }}>value</th>
+      </tr>
+    </thead>
+    <tbody style={{ fontWeight: 'bold' }}>
+      {Object.entries(posFunctionalColorTokenMap).map(([name, hex]) => (
+        <tr key={name}>
+          <td>
+            <div
+              style={{
+                margin: '0 auto',
+                backgroundColor: hex,
+                width: '40px',
+                height: '40px',
+                borderRadius: '999px',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+              }}
+            />
+          </td>
+          <td>{name}</td>
+          <td>{hex}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+### Component Color
+
+<div data-layer-theme="light" data-layer-platform="pos">
+  <table style={{ width: '100%', textAlign: 'center' }}>
+    <thead>
+      <tr>
+        <th style={{ width: '10%' }}>color</th>
+        <th style={{ width: '45%' }}>token</th>
+        <th style={{ width: '45%' }}>value</th>
+      </tr>
+    </thead>
+    <tbody style={{ fontWeight: 'bold' }}>
+      {Object.entries(posComponentColorTokenMap).map(([name, hex]) => (
+        <tr key={name}>
+          <td>
+            <div
+              style={{
+                margin: '0 auto',
+                backgroundColor: hex,
+                width: '40px',
+                height: '40px',
+                borderRadius: '999px',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+              }}
+            />
+          </td>
+          <td>{name}</td>
+          <td>{hex}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,469 @@
+import { Meta, Story, Canvas, ArgTypes } from '@storybook/blocks';
+import * as MultiSelectStories from './MultiSelect.stories';
+
+<Meta of={MultiSelectStories} />
+
+# MultiSelect
+
+## Anatomy
+
+- `MultiSelect` (기본 형태를 사용할 경우 `MultiSelect`를 사용해주세요. - 간소화된 형태로 제공)
+- `MultiSelect.Root`
+- `MultiSelect.Trigger`
+- `MultiSelect.OptionList`
+- `MultiSelect.OptionGroup`
+- `MultiSelect.OptionGroupTitle`
+- `MultiSelect.Option`
+- `MultiSelect.OptionAll`
+- `MultiSelect.OptionInput`
+- `MultiSelect.OptionCreatable`
+- `MultiSelect.OptionEmpty`
+
+## Example
+
+```tsx
+function MultiSelectComposition() {
+  const [input, setInput] = useState('');
+  const [fruits, setFruits] = useState<string[]>([]);
+
+  const [options, setOptions] = useState([
+    { value: '사과', label: '사과' },
+    { value: '바나나', label: '바나나' },
+    { value: '딸기', label: '딸기' },
+  ]);
+
+  const filteredOptions = options.filter((option) => option.label.includes(input));
+  const showOptions = filteredOptions.length > 0;
+
+  const handleAddOption = (value: string) => {
+    setOptions([...options, { value, label: value }]);
+  };
+
+  return (
+    <Column width="300px">
+      {/* 기본 형태 */}
+      <MultiSelect value={fruits} onValueChange={setFruits} options={options} placeholder="과일을 선택해주세요." />
+
+      {/* 커스텀이 필요한 경우 */}
+      <MultiSelect.Root value={fruits} onValueChange={setFruits} options={options}>
+        <MultiSelect.Trigger placeholder="과일을 선택해주세요." onClear={() => setFruits([])} />
+        <MultiSelect.OptionList placement="bottom">
+          <MultiSelect.OptionGroup>
+            <MultiSelect.OptionInput
+              value={input}
+              onValueChange={setInput}
+              placeholder="과일을 검색해주세요."
+              onClear={() => setInput('')}
+            />
+          </MultiSelect.OptionGroup>
+          {input && (
+            <MultiSelect.OptionGroup>
+              <MultiSelect.OptionCreatable searchValue={input} onClick={() => handleAddOption(input)} />
+            </MultiSelect.OptionGroup>
+          )}
+          {showOptions && (
+            <MultiSelect.OptionGroup>
+              <MultiSelect.OptionAll label="전체" />
+            </MultiSelect.OptionGroup>
+          )}
+          <MultiSelect.OptionGroup>
+            <MultiSelect.OptionGroupTitle title="과일" />
+            {showOptions ? (
+              filteredOptions.map((option) => (
+                <MultiSelect.Option key={option.value} value={option.value} label={option.label} />
+              ))
+            ) : (
+              <MultiSelect.OptionEmpty />
+            )}
+          </MultiSelect.OptionGroup>
+        </MultiSelect.OptionList>
+      </MultiSelect.Root>
+    </Column>
+  );
+}
+```
+
+<Canvas of={MultiSelectStories.Default} />
+
+## Case
+
+### OptionList Custom
+
+`MultiSelect.OptionList` , `MultiSelect.OptionGroup` , `MultiSelect.OptionGroupTitle` , `MultiSelect.Option` 을 조합하여 리스트를 커스텀할 수 있습니다. (추가되는 케이스는 추가예정)
+
+```tsx
+function CustomOptionListCase() {
+  const [fruits, setFruits] = useState<string[]>(['apple']);
+
+  const options = [
+    { value: 'apple', label: '사과' },
+    { value: 'banana', label: '바나나' },
+    { value: 'cherry', label: '체리' },
+    { value: 'strawberry', label: '딸기' },
+    { value: 'pineapple', label: '파인애플' },
+    { value: 'orange', label: '오렌지' },
+    { value: 'grape', label: '포도' },
+    { value: 'melon', label: '메론' },
+  ];
+
+  return (
+    <Column width="300px">
+      <MultiSelect.Root value={fruits} onValueChange={setFruits} options={options}>
+        <MultiSelect.Trigger placeholder="과일을 선택해주세요." />
+        <MultiSelect.OptionList maxHeight={300}>
+          <MultiSelect.OptionGroup>
+            <MultiSelect.OptionGroupTitle title="과일1" />
+            <MultiSelect.Option value="apple" label="사과" />
+            <MultiSelect.Option value="banana" label="바나나" />
+            <MultiSelect.Option value="cherry" label="체리" />
+          </MultiSelect.OptionGroup>
+          <MultiSelect.OptionGroup>
+            <MultiSelect.OptionGroupTitle title="과일2" />
+            <MultiSelect.Option value="strawberry" label="딸기" />
+            <MultiSelect.Option value="pineapple" label="파인애플" />
+            <MultiSelect.Option value="orange" label="오렌지" />
+          </MultiSelect.OptionGroup>
+          <MultiSelect.OptionGroup>
+            <MultiSelect.OptionGroupTitle title="과일3" />
+            <MultiSelect.Option value="grape" label="포도" />
+            <MultiSelect.Option value="melon" label="메론" />
+          </MultiSelect.OptionGroup>
+        </MultiSelect.OptionList>
+      </MultiSelect.Root>
+    </Column>
+  );
+}
+```
+
+<Canvas of={MultiSelectStories.CustomOptionList} />
+
+### Option Search
+
+```tsx
+function SearchCase() {
+  const [fruits, setFruits] = useState<string[]>(['apple']);
+  const [input, setInput] = useState('');
+
+  const options = [
+    { value: 'apple', label: '사과' },
+    { value: 'banana', label: '바나나' },
+    { value: 'cherry', label: '체리' },
+  ];
+
+  return (
+    <Column width="300px">
+      <MultiSelect.Root value={fruits} onValueChange={setFruits} options={options}>
+        <MultiSelect.Trigger placeholder="과일을 선택해주세요." />
+        <MultiSelect.OptionList>
+          <MultiSelect.OptionGroup>
+            <MultiSelect.OptionInput value={input} onValueChange={setInput} placeholder="과일을 검색해주세요." />
+          </MultiSelect.OptionGroup>
+          <MultiSelect.OptionGroup>
+            {options
+              .filter((option) => option.label.includes(input))
+              .map((option) => (
+                <MultiSelect.Option key={option.value} value={option.value} label={option.label} />
+              ))}
+          </MultiSelect.OptionGroup>
+        </MultiSelect.OptionList>
+      </MultiSelect.Root>
+    </Column>
+  );
+}
+```
+
+<Canvas of={MultiSelectStories.Search} />
+
+### Size Prop
+
+```tsx
+function WithLabelCase() {
+  const [fruits, setFruits] = useState<string[]>([]);
+
+  const options = [
+    { value: 'apple', label: '사과' },
+    { value: 'banana', label: '바나나' },
+    { value: 'cherry', label: '체리' },
+  ];
+
+  return (
+    <Column width="300px">
+      <MultiSelect.Root value={fruits} onValueChange={setFruits} options={options}>
+        <MultiSelect.Trigger required floatingBlockLabel="과일" placeholder="과일을 선택해주세요." />
+        <MultiSelect.OptionList>
+          <MultiSelect.OptionGroup>
+            {options.map((option) => (
+              <MultiSelect.Option key={option.value} value={option.value} label={option.label} />
+            ))}
+          </MultiSelect.OptionGroup>
+        </MultiSelect.OptionList>
+      </MultiSelect.Root>
+    </Column>
+  );
+}
+```
+
+<Canvas of={MultiSelectStories.Size} />
+
+### With label
+
+`MultiSelect.Trigger`에 `floatingBlockLabel` prop을 통해 내부 label을 추가할 수 있습니다.  
+(`required` prop은 floatingBlockLabel과 같이 사용되야합니다.)
+
+```tsx
+function WithLabelCase() {
+  const [fruits, setFruits] = useState<string[]>([]);
+
+  const options = [
+    { value: 'apple', label: '사과' },
+    { value: 'banana', label: '바나나' },
+    { value: 'cherry', label: '체리' },
+  ];
+
+  return (
+    <Column width="300px">
+      <MultiSelect.Root value={fruits} onValueChange={setFruits} options={options}>
+        <MultiSelect.Trigger required floatingBlockLabel="과일" placeholder="과일을 선택해주세요." />
+        <MultiSelect.OptionList>
+          <MultiSelect.OptionGroup>
+            {options.map((option) => (
+              <MultiSelect.Option key={option.value} value={option.value} label={option.label} />
+            ))}
+          </MultiSelect.OptionGroup>
+        </MultiSelect.OptionList>
+      </MultiSelect.Root>
+    </Column>
+  );
+}
+```
+
+<Canvas of={MultiSelectStories.WithLabel} />
+
+### Placement
+
+`MultiSelect.OptionList`에 `placement` prop을 통해 드롭다운의 위치를 조절할 수 있습니다.
+
+```tsx
+function PlacementCase() {
+  const [fruits, setFruits] = useState<string[]>([]);
+
+  const options = [
+    { value: 'apple', label: '사과' },
+    { value: 'banana', label: '바나나' },
+    { value: 'cherry', label: '체리' },
+  ];
+
+  return (
+    <Column width="300px">
+      <MultiSelect.Root value={fruits} onValueChange={setFruits} options={options}>
+        <MultiSelect.Trigger placeholder="아래로 열림" />
+        <MultiSelect.OptionList placement="bottom">
+          <MultiSelect.OptionGroup>
+            {options.map((option) => (
+              <MultiSelect.Option key={option.value} value={option.value} label={option.label} />
+            ))}
+          </MultiSelect.OptionGroup>
+        </MultiSelect.OptionList>
+      </MultiSelect.Root>
+
+      <MultiSelect.Root value={fruits} onValueChange={setFruits} options={options}>
+        <MultiSelect.Trigger placeholder="위로 열림" />
+        <MultiSelect.OptionList placement="top">
+          <MultiSelect.OptionGroup>
+            {options.map((option) => (
+              <MultiSelect.Option key={option.value} value={option.value} label={option.label} />
+            ))}
+          </MultiSelect.OptionGroup>
+        </MultiSelect.OptionList>
+      </MultiSelect.Root>
+    </Column>
+  );
+}
+```
+
+<Canvas of={MultiSelectStories.Placement} />
+
+### Disabled & ReadOnly
+
+`MultiSelect.Trigger`에 `disabled` or `readOnly` prop을 통해 비활성화 상태를 조절할 수 있습니다.
+
+```tsx
+function DisabledReadOnlyCase() {
+  const [fruits, setFruits] = useState<string[]>(['apple']);
+
+  const options = [
+    { value: 'apple', label: '사과' },
+    { value: 'banana', label: '바나나' },
+    { value: 'cherry', label: '체리' },
+  ];
+
+  return (
+    <Column width="300px">
+      <MultiSelect.Root value={fruits} onValueChange={setFruits} options={options}>
+        <MultiSelect.Trigger disabled placeholder="과일을 선택해주세요." />
+        <MultiSelect.OptionList placement="bottom">
+          <MultiSelect.OptionGroup>
+            {options.map((option) => (
+              <MultiSelect.Option key={option.value} value={option.value} label={option.label} />
+            ))}
+          </MultiSelect.OptionGroup>
+        </MultiSelect.OptionList>
+      </MultiSelect.Root>
+
+      <MultiSelect.Root value={fruits} onValueChange={setFruits} options={options}>
+        <MultiSelect.Trigger readOnly placeholder="과일을 선택해주세요." />
+        <MultiSelect.OptionList placement="top">
+          <MultiSelect.OptionGroup>
+            {options.map((option) => (
+              <MultiSelect.Option key={option.value} value={option.value} label={option.label} />
+            ))}
+          </MultiSelect.OptionGroup>
+        </MultiSelect.OptionList>
+      </MultiSelect.Root>
+    </Column>
+  );
+}
+```
+
+<Canvas of={MultiSelectStories.DisabledReadOnly} />
+
+### OnClear
+
+`MultiSelect.Trigger`에 `onClear` prop을 통해 선택된 값을 초기화할 수 있습니다. (값이 있을때 아이콘버튼 노출)
+
+```tsx
+function OnClearCase() {
+  const [fruits, setFruits] = useState<string[]>(['apple']);
+
+  const options = [
+    { value: 'apple', label: '사과' },
+    { value: 'banana', label: '바나나' },
+    { value: 'cherry', label: '체리' },
+  ];
+
+  return (
+    <Column width="300px">
+      <MultiSelect.Root value={fruits} onValueChange={setFruits} options={options}>
+        <MultiSelect.Trigger placeholder="과일을 선택해주세요." onClear={() => setFruits([])} />
+        <MultiSelect.OptionList>
+          <MultiSelect.OptionGroup>
+            {options.map((option) => (
+              <MultiSelect.Option key={option.value} value={option.value} label={option.label} />
+            ))}
+          </MultiSelect.OptionGroup>
+        </MultiSelect.OptionList>
+      </MultiSelect.Root>
+    </Column>
+  );
+}
+```
+
+<Canvas of={MultiSelectStories.OnClear} />
+
+### Validation
+
+`MultiSelect.Trigger`에 `validation` prop을 통해 유효성 상태를 조절할 수 있습니다.
+
+```tsx
+function ValidationCase() {
+  const [fruits, setFruits] = useState<string[]>(['apple']);
+
+  const options = [
+    { value: 'apple', label: '사과' },
+    { value: 'banana', label: '바나나' },
+    { value: 'cherry', label: '체리' },
+  ];
+
+  return (
+    <Column width="300px">
+      <MultiSelect.Root value={fruits} onValueChange={setFruits} options={options}>
+        <MultiSelect.Trigger validation="error" placeholder="과일을 선택해주세요." />
+        <MultiSelect.OptionList>
+          <MultiSelect.OptionGroup>
+            {options.map((option) => (
+              <MultiSelect.Option key={option.value} value={option.value} label={option.label} />
+            ))}
+          </MultiSelect.OptionGroup>
+        </MultiSelect.OptionList>
+      </MultiSelect.Root>
+    </Column>
+  );
+}
+```
+
+<Canvas of={MultiSelectStories.Validation} />
+
+### OptionList Prop
+
+`MultiSelect.OptionList`에 `width` or `maxHeight` prop을 통해 드롭다운의 크기를 조절할 수 있습니다.
+
+```tsx
+function OptionListPropCase() {
+  const [fruits, setFruits] = useState<string[]>(['apple']);
+
+  const options = [
+    { value: 'apple', label: '사과' },
+    { value: 'banana', label: '바나나' },
+    { value: 'cherry', label: '체리' },
+    { value: 'strawberry', label: '딸기' },
+    { value: 'pineapple', label: '파인애플' },
+    { value: 'orange', label: '오렌지' },
+    { value: 'grape', label: '포도' },
+    { value: 'melon', label: '메론' },
+  ];
+
+  return (
+    <Column width="300px">
+      <MultiSelect.Root value={fruits} onValueChange={setFruits} options={options}>
+        <MultiSelect.Trigger placeholder="과일을 선택해주세요." />
+        <MultiSelect.OptionList width="420px" maxHeight="200px">
+          <MultiSelect.OptionGroup>
+            {options.map((option) => (
+              <MultiSelect.Option key={option.value} value={option.value} label={option.label} />
+            ))}
+          </MultiSelect.OptionGroup>
+        </MultiSelect.OptionList>
+      </MultiSelect.Root>
+    </Column>
+  );
+}
+```
+
+<Canvas of={MultiSelectStories.OptionList} />
+
+### SummaryWithCount
+
+`MultiSelect.Root`에 `summaryWithCount` prop을 통해 선택된 항목을 개수로 표시할 수 있습니다.
+
+```tsx
+function SummaryWithCountCase() {
+  const [fruits, setFruits] = useState<string[]>(['apple', 'banana']);
+
+  const options = [
+    { value: 'apple', label: '사과' },
+    { value: 'banana', label: '바나나' },
+    { value: 'cherry', label: '체리' },
+  ];
+
+  return (
+    <Column width="300px">
+      <MultiSelect.Root value={fruits} onValueChange={setFruits} options={options}>
+        <MultiSelect.Trigger placeholder="과일을 선택해주세요." summaryWithCount />
+        <MultiSelect.OptionList>
+          <MultiSelect.OptionGroup>
+            {options.map((option) => (
+              <MultiSelect.Option key={option.value} value={option.value} label={option.label} />
+            ))}
+          </MultiSelect.OptionGroup>
+        </MultiSelect.OptionList>
+      </MultiSelect.Root>
+    </Column>
+  );
+}
+```
+
+<Canvas of={MultiSelectStories.SummaryWithCount} />
+
+## Props
+
+<ArgTypes of={MultiSelectStories} />

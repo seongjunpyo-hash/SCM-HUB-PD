@@ -1,0 +1,112 @@
+{
+  "layerDesktop": {
+    "nav": {
+      "envSelector": {
+        "bg-hover": {
+          "value": "{primitive.color.purple.400}",
+          "type": "color"
+        },
+        "bg-active": {
+          "value": "{primitive.color.purple.400}",
+          "type": "color"
+        }
+      },
+      "bg": {
+        "value": "{bg-contrast}",
+        "type": "color"
+      },
+      "fg": {
+        "value": "{fg-onContrast}",
+        "type": "color"
+      },
+      "fg-low": {
+        "value": "{primitive.color.gray.500}",
+        "type": "color"
+      },
+      "fg-lower": {
+        "value": "{primitive.color.gray.600}",
+        "type": "color"
+      },
+      "divider": {
+        "value": "{primitive.color.gray.alpha.15}",
+        "type": "color"
+      },
+      "item": {
+        "bg-hover": {
+          "value": "{primitive.color.gray.alpha.15}",
+          "type": "color"
+        },
+        "bg-active": {
+          "value": "{primitive.color.blue.alpha500.80}",
+          "type": "color"
+        },
+        "fg": {
+          "value": "{fg-onContrast}",
+          "type": "color"
+        },
+        "countFg": {
+          "value": "{layerDesktop.fg-accent}",
+          "type": "color"
+        },
+        "countFg-active": {
+          "value": "{fg-onContrast}",
+          "type": "color"
+        }
+      },
+      "iconButton": {
+        "fg": {
+          "value": "{fg-onContrast}",
+          "type": "color"
+        },
+        "fg-hover": {
+          "value": "{fg-onContrast}",
+          "type": "color"
+        },
+        "fg-active": {
+          "value": "{fg-onContrast}",
+          "type": "color"
+        }
+      },
+      "button": {
+        "bg": {
+          "value": "{bg-contrast}",
+          "type": "color"
+        },
+        "bg-hover": {
+          "value": "{primitive.color.gray.alpha500.15}",
+          "type": "color"
+        },
+        "bg-pressed": {
+          "value": "{primitive.color.gray.alpha500.15}",
+          "type": "color"
+        },
+        "fg": {
+          "value": "{primitive.color.gray.400}",
+          "type": "color"
+        },
+        "fg-disabled": {
+          "value": "{primitive.color.gray.alpha.20}",
+          "type": "color"
+        },
+        "border": {
+          "value": "{primitive.color.gray.alpha.15}",
+          "type": "color"
+        },
+        "border-disabled": {
+          "value": "{primitive.color.gray.alpha500.10}",
+          "type": "color"
+        }
+      },
+      "tag": {
+        "labelBg": {
+          "value": "{primitive.color.gray.alpha.10}",
+          "type": "color"
+        },
+        "lableFg": {
+          "value": "{fg-lowest}",
+          "type": "color"
+        }
+      }
+    }
+  }
+}

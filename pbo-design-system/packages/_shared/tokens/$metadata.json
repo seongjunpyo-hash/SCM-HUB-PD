@@ -1,0 +1,21 @@
+{
+  "tokenSetOrder": [
+    "Core/Primitive/Restricted",
+    "Core/Primitive/Public",
+    "Core/Functional",
+    "Core/Component",
+    "LayerDesktop/Functional",
+    "LayerDesktop/Component/Default",
+    "LayerDesktop/Component/Black",
+    "LayerPDA/Functional",
+    "LayerPDA/Component",
+    "LayerPOS/Functional",
+    "LayerPOS/Component",
+    "PhaseMobile/Primitive/Restricted",
+    "PhaseMobile/Functional",
+    "PhaseDesktop/Primitive/Restricted",
+    "PhaseDesktop/Functional",
+    "PhaseDesktop/Component",
+    "Assets"
+  ]
+}

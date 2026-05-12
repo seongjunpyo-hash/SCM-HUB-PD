@@ -1,0 +1,430 @@
+{
+  "fg": {
+    "value": "{primitive.color.gray.800}",
+    "type": "color",
+    "description": "기본 텍스트 및 아이콘 색상"
+  },
+  "fg-disabled": {
+    "value": "{primitive.color.gray.400}",
+    "type": "color",
+    "description": "비활성 상태의 텍스트 및 아이콘 색상"
+  },
+  "bg-disabled": {
+    "value": "{primitive.color.gray.100}",
+    "type": "color",
+    "description": "비활성 상태 배경 (버튼, 입력 필드 등)"
+  },
+  "bg-success-low": {
+    "value": "{primitive.color.green.0}",
+    "type": "color"
+  },
+  "bg-warning-low": {
+    "value": "{primitive.color.yellow.0}",
+    "type": "color"
+  },
+  "bg-critical-low": {
+    "value": "{primitive.color.red.0}",
+    "type": "color"
+  },
+  "size": {
+    "icon": {
+      "s": {
+        "value": "{primitive.size.icon.100}",
+        "type": "sizing"
+      },
+      "m": {
+        "value": "{primitive.size.icon.125}",
+        "type": "sizing"
+      },
+      "l": {
+        "value": "{primitive.size.icon.150}",
+        "type": "sizing"
+      },
+      "xl": {
+        "value": "{primitive.size.icon.175}",
+        "type": "sizing"
+      },
+      "32 (deprecated)": {
+        "value": "{primitive.size.icon.200}",
+        "type": "sizing"
+      },
+      "40 (deprecated)": {
+        "value": "{primitive.size.icon.250}",
+        "type": "sizing"
+      },
+      "48 (deprecated)": {
+        "value": "{primitive.size.icon.300}",
+        "type": "sizing"
+      },
+      "96 (deprecated)": {
+        "value": "{primitive.size.icon.500}",
+        "type": "sizing"
+      }
+    }
+  },
+  "rounded": {
+    "none": {
+      "value": "{primitive.rounded.0}",
+      "description": "라운드를 제거하는 것이 “의도된 선택”일 때만 사용하며, 원래 곡률이 없는 컴포넌트에는 별도로 정의하지 않습니다",
+      "type": "borderRadius"
+    },
+    "xxs": {
+      "value": "{primitive.rounded.100}",
+      "type": "borderRadius"
+    },
+    "xs": {
+      "value": "{primitive.rounded.200}",
+      "type": "borderRadius"
+    },
+    "s": {
+      "value": "{primitive.rounded.300}",
+      "type": "borderRadius"
+    },
+    "m": {
+      "value": "{primitive.rounded.400}",
+      "type": "borderRadius"
+    },
+    "l": {
+      "value": "{primitive.rounded.500}",
+      "type": "borderRadius"
+    },
+    "xl": {
+      "value": "{primitive.rounded.600}",
+      "type": "borderRadius"
+    },
+    "xxl": {
+      "value": "{primitive.rounded.700}",
+      "type": "borderRadius"
+    },
+    "full": {
+      "value": "{primitive.rounded.full}",
+      "description": "완전한 곡률(9999px)을 의미하며, pill / circle 형태를 만들 때 사용합니다",
+      "type": "borderRadius"
+    }
+  },
+  "border": {
+    "width": {
+      "value": "{primitive.borderWidth.100}",
+      "type": "borderWidth",
+      "description": "UI 요소의 기본 경계선 (1px)"
+    },
+    "bold": {
+      "width": {
+        "value": "{primitive.borderWidth.200}",
+        "description": "UI 요소의 강조 경계선 (2px)",
+        "type": "borderWidth"
+      }
+    }
+  },
+  "divide": {
+    "width": {
+      "value": "{primitive.borderWidth.100}",
+      "description": "컨텐츠 간 기본 구획선 (1px)",
+      "type": "borderWidth"
+    },
+    "bold": {
+      "width": {
+        "value": "{primitive.borderWidth.200}",
+        "description": "컨텐츠 간 강조 구획선 (2px)",
+        "type": "borderWidth"
+      }
+    }
+  },
+  "title": {
+    "title-xxl-semibold": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.semibold-600}",
+        "fontSize": "{primitive.fontSize.675}",
+        "lineHeight": "{primitive.lineHeight.850}",
+        "letterSpacing": "{primitive.letterSpacing.0}"
+      },
+      "type": "typography",
+      "description": "타이틀 스타일은 사용자가 알아야할 정보와 개념을 강조하고 페이지나 섹션을 명확하게 설명해야 합니다"
+    },
+    "title-xxl-medium": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.medium-500}",
+        "fontSize": "{primitive.fontSize.675}",
+        "lineHeight": "{primitive.lineHeight.850}",
+        "letterSpacing": "{primitive.letterSpacing.0}"
+      },
+      "type": "typography",
+      "description": "타이틀 스타일은 사용자가 알아야할 정보와 개념을 강조하고 페이지나 섹션을 명확하게 설명해야 합니다"
+    },
+    "title-xl-semibold": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.semibold-600}",
+        "fontSize": "{primitive.fontSize.600}",
+        "lineHeight": "{primitive.lineHeight.700}",
+        "letterSpacing": "{primitive.letterSpacing.0}"
+      },
+      "type": "typography",
+      "description": "타이틀 스타일은 사용자가 알아야할 정보와 개념을 강조하고 페이지나 섹션을 명확하게 설명해야 합니다"
+    },
+    "title-xl-medium": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.medium-500}",
+        "fontSize": "{primitive.fontSize.600}",
+        "lineHeight": "{primitive.lineHeight.700}",
+        "letterSpacing": "{primitive.letterSpacing.0}"
+      },
+      "type": "typography",
+      "description": "타이틀 스타일은 사용자가 알아야할 정보와 개념을 강조하고 페이지나 섹션을 명확하게 설명해야 합니다"
+    },
+    "title-l-semibold": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.semibold-600}",
+        "fontSize": "{primitive.fontSize.550}",
+        "letterSpacing": "{primitive.letterSpacing.0}",
+        "lineHeight": "{primitive.lineHeight.650}"
+      },
+      "type": "typography",
+      "description": "타이틀 스타일은 사용자가 알아야할 정보와 개념을 강조하고 페이지나 섹션을 명확하게 설명해야 합니다"
+    },
+    "title-l-medium": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.medium-500}",
+        "fontSize": "{primitive.fontSize.550}",
+        "letterSpacing": "{primitive.letterSpacing.0}",
+        "lineHeight": "{primitive.lineHeight.650}"
+      },
+      "type": "typography",
+      "description": "타이틀 스타일은 사용자가 알아야할 정보와 개념을 강조하고 페이지나 섹션을 명확하게 설명해야 합니다"
+    },
+    "title-m-semibold": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.semibold-600}",
+        "fontSize": "{primitive.fontSize.400}",
+        "letterSpacing": "{primitive.letterSpacing.0}",
+        "lineHeight": "{primitive.lineHeight.500}"
+      },
+      "type": "typography",
+      "description": "타이틀 스타일은 사용자가 알아야할 정보와 개념을 강조하고 페이지나 섹션을 명확하게 설명해야 합니다"
+    },
+    "title-m-medium": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.medium-500}",
+        "fontSize": "{primitive.fontSize.400}",
+        "letterSpacing": "{primitive.letterSpacing.0}",
+        "lineHeight": "{primitive.lineHeight.500}"
+      },
+      "type": "typography",
+      "description": "타이틀 스타일은 사용자가 알아야할 정보와 개념을 강조하고 페이지나 섹션을 명확하게 설명해야 합니다"
+    },
+    "title-s-semibold": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.semibold-600}",
+        "fontSize": "{primitive.fontSize.300}",
+        "letterSpacing": "{primitive.letterSpacing.0}",
+        "lineHeight": "{primitive.lineHeight.400}"
+      },
+      "type": "typography",
+      "description": "타이틀 스타일은 사용자가 알아야할 정보와 개념을 강조하고 페이지나 섹션을 명확하게 설명해야 합니다"
+    },
+    "title-s-medium": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.medium-500}",
+        "fontSize": "{primitive.fontSize.300}",
+        "letterSpacing": "{primitive.letterSpacing.0}",
+        "lineHeight": "{primitive.lineHeight.400}"
+      },
+      "type": "typography",
+      "description": "타이틀 스타일은 사용자가 알아야할 정보와 개념을 강조하고 페이지나 섹션을 명확하게 설명해야 합니다"
+    },
+    "title-xs-semibold": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.semibold-600}",
+        "fontSize": "{primitive.fontSize.200}",
+        "letterSpacing": "{primitive.letterSpacing.0}",
+        "lineHeight": "{primitive.lineHeight.300}"
+      },
+      "type": "typography",
+      "description": "타이틀 스타일은 사용자가 알아야할 정보와 개념을 강조하고 페이지나 섹션을 명확하게 설명해야 합니다"
+    },
+    "title-xs-medium": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.medium-500}",
+        "fontSize": "{primitive.fontSize.200}",
+        "letterSpacing": "{primitive.letterSpacing.0}",
+        "lineHeight": "{primitive.lineHeight.300}"
+      },
+      "type": "typography",
+      "description": "타이틀 스타일은 사용자가 알아야할 정보와 개념을 강조하고 페이지나 섹션을 명확하게 설명해야 합니다"
+    }
+  },
+  "text": {
+    "text-xl": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.regular-400}",
+        "fontSize": "{primitive.fontSize.250}",
+        "letterSpacing": "{primitive.letterSpacing.0}",
+        "lineHeight": "{primitive.lineHeight.350}"
+      },
+      "type": "typography",
+      "description": "텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+    },
+    "text-xl-medium": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.medium-500}",
+        "fontSize": "{primitive.fontSize.250}",
+        "letterSpacing": "{primitive.letterSpacing.0}",
+        "lineHeight": "{primitive.lineHeight.350}"
+      },
+      "type": "typography",
+      "description": "텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+    },
+    "text-xl-semibold": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.semibold-600}",
+        "fontSize": "{primitive.fontSize.250}",
+        "letterSpacing": "{primitive.letterSpacing.0}",
+        "lineHeight": "{primitive.lineHeight.350}"
+      },
+      "type": "typography",
+      "description": "텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+    },
+    "text-l": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.regular-400}",
+        "fontSize": "{primitive.fontSize.200}",
+        "letterSpacing": "{primitive.letterSpacing.0}",
+        "lineHeight": "{primitive.lineHeight.300}"
+      },
+      "type": "typography",
+      "description": "텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+    },
+    "text-l-medium": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.medium-500}",
+        "fontSize": "{primitive.fontSize.200}",
+        "letterSpacing": "{primitive.letterSpacing.0}",
+        "lineHeight": "{primitive.lineHeight.300}"
+      },
+      "type": "typography",
+      "description": "텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+    },
+    "text-l-semibold": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.semibold-600}",
+        "fontSize": "{primitive.fontSize.200}",
+        "letterSpacing": "{primitive.letterSpacing.0}",
+        "lineHeight": "{primitive.lineHeight.300}"
+      },
+      "type": "typography",
+      "description": "텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+    },
+    "text-m": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.regular-400}",
+        "fontSize": "{primitive.fontSize.125}",
+        "letterSpacing": "{primitive.letterSpacing.0}",
+        "lineHeight": "{primitive.lineHeight.250}"
+      },
+      "type": "typography",
+      "description": "텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+    },
+    "text-m-medium": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.medium-500}",
+        "fontSize": "{primitive.fontSize.125}",
+        "letterSpacing": "{primitive.letterSpacing.0}",
+        "lineHeight": "{primitive.lineHeight.250}"
+      },
+      "type": "typography",
+      "description": "텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+    },
+    "text-m-semibold": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.semibold-600}",
+        "fontSize": "{primitive.fontSize.125}",
+        "letterSpacing": "{primitive.letterSpacing.0}",
+        "lineHeight": "{primitive.lineHeight.250}"
+      },
+      "type": "typography",
+      "description": "텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+    },
+    "text-s": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.regular-400}",
+        "fontSize": "{primitive.fontSize.75}",
+        "letterSpacing": "{primitive.letterSpacing.0}",
+        "lineHeight": "{primitive.lineHeight.200}"
+      },
+      "type": "typography",
+      "description": "텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+    },
+    "text-s-medium": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.medium-500}",
+        "fontSize": "{primitive.fontSize.75}",
+        "letterSpacing": "{primitive.letterSpacing.0}",
+        "lineHeight": "{primitive.lineHeight.200}"
+      },
+      "type": "typography",
+      "description": "텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+    },
+    "text-s-semibold": {
+      "value": {
+        "fontFamily": "{primitive.fontFamily.base}",
+        "fontWeight": "{primitive.fontWeight.semibold-600}",
+        "fontSize": "{primitive.fontSize.75}",
+        "letterSpacing": "{primitive.letterSpacing.0}",
+        "lineHeight": "{primitive.lineHeight.200}"
+      },
+      "type": "typography",
+      "description": "텍스트 스타일은 페이지,UI안에서 사용자의 이해를 돕기 위해 내용을 보조할 때 사용합니다"
+    }
+  },
+  "phaseMobile": {
+    "fg-accent": {
+      "value": "{primitive.color.blue.500}",
+      "type": "color"
+    },
+    "bg-accent": {
+      "value": "{primitive.color.blue.500}",
+      "type": "color"
+    },
+    "bg-accent-low": {
+      "value": "{primitive.color.blue.0}",
+      "type": "color"
+    },
+    "border-accent": {
+      "value": "{primitive.color.blue.500}",
+      "type": "color"
+    },
+    "border-accent-low": {
+      "value": "{primitive.color.blue.400}",
+      "type": "color"
+    }
+  },
+  "stroke": {
+    "divide-low": {
+      "value": "{primitive.color.gray.100}",
+      "type": "color",
+      "description": "보조 구분선 색상으로 부드러운 콘텐츠 분리에 사용"
+    }
+  }
+}

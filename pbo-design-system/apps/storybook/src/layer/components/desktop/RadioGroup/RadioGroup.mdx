@@ -1,0 +1,88 @@
+import { Meta, Story, Canvas, ArgTypes } from '@storybook/blocks';
+import * as RadioGroupStories from './RadioGroup.stories';
+
+<Meta of={RadioGroupStories} />
+
+# RadioGroup
+
+현재는 Radio 본체만 제공하고있으며, 그 외는 사용처에서 직접 정의하여 적용해야합니다. (ex: Label, HelperText 등...)
+
+## Anatomy
+
+- `RadioGroup.Root`
+- `RadioGroup.Item`
+
+## Example
+
+```tsx
+function RadioGroupComposition() {
+  const [value, setValue] = useState('one');
+
+  return (
+    <RadioGroup.Root value={value} onValueChange={setValue}>
+      <Column>
+        <Flex>
+          <RadioGroup.Item id="one" value="one" />
+          <label htmlFor="one">One</label>
+        </Flex>
+        <Flex>
+          <RadioGroup.Item id="two" value="two" />
+          <label htmlFor="two">Two</label>
+        </Flex>
+      </Column>
+    </RadioGroup.Root>
+  );
+}
+```
+
+<Canvas of={RadioGroupStories.Default} />
+
+## Case
+
+```tsx
+function RadioSizeCase() {
+  const [value, setValue] = useState('small');
+
+  return (
+    <RadioGroup.Root value={value} onValueChange={setValue}>
+      <Column>
+        <Flex>
+          <RadioGroup.Item id="small" value="small" size="small" />
+          <label htmlFor="small">Small</label>
+        </Flex>
+        <Flex>
+          <RadioGroup.Item id="medium" value="medium" size="medium" />
+          <label htmlFor="medium">Medium</label>
+        </Flex>
+      </Column>
+    </RadioGroup.Root>
+  );
+}
+```
+
+<Canvas of={RadioGroupStories.SizeProps} />
+
+```tsx
+function RadioValidationCase() {
+  return (
+    <RadioGroup.Root value="none" onValueChange={}>
+      <Column>
+        <Flex>
+          <RadioGroup.Item id="none" value="none" validation="none" />
+          <label htmlFor="none">None</label>
+        </Flex>
+        <Flex>
+          <RadioGroup.Item id="error" value="error" validation="error" />
+          <label htmlFor="error">Error</label>
+        </Flex>
+      </Column>
+    </RadioGroup.Root>
+  );
+}
+```
+
+<Canvas of={RadioGroupStories.ValidationProps} />
+
+## Props
+
+<ArgTypes of={RadioGroupStories} />

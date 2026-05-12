@@ -1,0 +1,106 @@
+import { Meta, Story, Canvas, ArgTypes } from '@storybook/blocks';
+import * as TextareaStories from './Textarea.stories';
+
+<Meta of={TextareaStories} />
+
+# Textarea
+
+현재는 Textarea 본체만 제공하고있으며, 그 외는 사용처에서 직접 정의하여 적용해야합니다. (ex: Label, HelperText 등...)
+
+## Anatomy
+
+- `Textarea`
+
+## Example
+
+```tsx
+function TextareaComposition() {
+  const [value, setValue] = useState('');
+
+  return (
+    <Div width="300px">
+      <Textarea value={value} onChange={(e) => setValue(e.target.value)} placeholder="텍스트를 입력하세요" />
+    </Div>
+  );
+}
+```
+
+<Canvas of={TextareaStories.Default} />
+
+## Case
+
+```tsx
+function TextareaHeightModeCase() {
+  const [value1, setValue1] = useState('');
+  const [value2, setValue2] = useState('');
+  const [value3, setValue3] = useState('');
+
+  return (
+    <Flex>
+      <Textarea
+        value={value1}
+        onChange={(e) => setValue1(e.target.value)}
+        placeholder="min heightMode"
+        heightMode="min"
+      />
+      <Textarea
+        value={value2}
+        onChange={(e) => setValue2(e.target.value)}
+        placeholder="max heightMode"
+        heightMode="max"
+      />
+      <Textarea
+        value={value3}
+        onChange={(e) => setValue3(e.target.value)}
+        placeholder="auto heightMode"
+        heightMode="auto"
+      />
+    </Flex>
+  );
+}
+```
+
+<Canvas of={TextareaStories.HeightModeProps} />
+
+```tsx
+function TextareaValidationCase() {
+  const [value1, setValue1] = useState('');
+  const [value2, setValue2] = useState('');
+
+  return (
+    <Flex>
+      <Textarea
+        value={value1}
+        onChange={(e) => setValue1(e.target.value)}
+        placeholder="validationState: none"
+        validationState="none"
+      />
+      <Textarea
+        value={value2}
+        onChange={(e) => setValue2(e.target.value)}
+        placeholder="validationState: error"
+        validationState="error"
+      />
+    </Flex>
+  );
+}
+```
+
+<Canvas of={TextareaStories.ValidationProps} />
+
+```tsx
+function TextareaDisabledCase() {
+  return (
+    <Flex>
+      <Textarea placeholder="disabled" disabled />
+      <Textarea placeholder="readonly" readOnly value="readonly" />
+    </Flex>
+  );
+}
+```
+
+<Canvas of={TextareaStories.DisabledProps} />
+
+## Props
+
+<ArgTypes of={TextareaStories} />

@@ -1,0 +1,51 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable no-unused-vars */
+import { forwardRef } from 'react';
+
+import type { BasicSvgProps } from '@/types/types';
+import type { ForwardedRef } from 'react';
+
+const _IcTrophy = (
+  { size = 24, filled = false, strokeWidth = 1.4, color, ...props }: BasicSvgProps,
+  ref: ForwardedRef<SVGSVGElement>,
+) => {
+  if (filled) {
+    return (
+      <svg
+        ref={ref}
+        {...props}
+        width={size}
+        height={size}
+        viewBox="0 0 20 20"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M16.7998 4.7002H15.7002V8.65723C16.346 8.38398 16.7998 7.74531 16.7998 7V4.7002ZM3.2002 7C3.2002 7.74531 3.65399 8.38398 4.2998 8.65723V4.7002H3.2002V7ZM17.2002 3.2998C17.7523 3.29991 18.2001 3.74767 18.2002 4.2998V7C18.2002 8.56781 17.0723 9.86746 15.584 10.1426C15.1003 12.5192 13.1389 14.3564 10.7002 14.6553V16.2998H15V17.7002H5V16.2998H9.2998V14.6553C6.86104 14.3564 4.89868 12.5193 4.41504 10.1426C2.92716 9.86709 1.7998 8.56748 1.7998 7V4.2998C1.79991 3.74767 2.24768 3.29991 2.7998 3.2998H4.2998C4.29991 2.74767 4.74767 2.29991 5.2998 2.2998H14.7002C15.2523 2.29991 15.7001 2.74767 15.7002 3.2998H17.2002Z"
+          fill={color}
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <svg
+      ref={ref}
+      {...props}
+      width={size}
+      height={size}
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        vectorEffect="non-scaling-stroke"
+        d="M10 14C7.23858 14 5 11.7614 5 9V3.3C5 3.13431 5.13431 3 5.3 3H14.7C14.8657 3 15 3.13431 15 3.3V9C15 11.7614 12.7614 14 10 14ZM10 14V17M15 17H5M2.5 7V4.3C2.5 4.13431 2.63431 4 2.8 4H4.7C4.86569 4 5 4.13431 5 4.3V9.2C5 9.36569 4.86506 9.50189 4.70054 9.48225C3.46101 9.33429 2.5 8.27937 2.5 7ZM17.5 7V4.3C17.5 4.13431 17.3657 4 17.2 4H15.3C15.1343 4 15 4.13431 15 4.3V9.2C15 9.36569 15.1349 9.50189 15.2995 9.48225C16.539 9.33429 17.5 8.27937 17.5 7Z"
+        stroke={color}
+        strokeWidth={strokeWidth}
+      />
+    </svg>
+  );
+};
+
+export const IcTrophy = forwardRef(_IcTrophy);

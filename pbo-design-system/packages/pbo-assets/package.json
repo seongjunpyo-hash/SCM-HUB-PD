@@ -1,0 +1,90 @@
+{
+  "name": "@musinsa/pbo-assets",
+  "description": "MUSINSA pbo assets design system",
+  "version": "1.1.6",
+  "type": "module",
+  "license": "MIT",
+  "author": "MUSINSA-PBO-FE",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/musinsa/pbo-design-system.git"
+  },
+  "exports": {
+    ".": {
+      "require": "./src/index.ts",
+      "import": "./src/index.ts"
+    },
+    "./mwms": {
+      "require": "./src/mwms.ts",
+      "import": "./src/mwms.ts"
+    },
+    "./moms": {
+      "require": "./src/moms.ts",
+      "import": "./src/moms.ts"
+    },
+    "./scmHub": {
+      "require": "./src/scmHub.ts",
+      "import": "./src/scmHub.ts"
+    },
+    "./selfPos": {
+      "require": "./src/selfPos.ts",
+      "import": "./src/selfPos.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "main": "./dist/base/index.cjs",
+    "module": "./dist/base/index.mjs",
+    "types": "./dist/base/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/base/index.d.ts",
+        "import": "./dist/base/index.mjs",
+        "require": "./dist/base/index.cjs"
+      },
+      "./mwms": {
+        "types": "./dist/mwms/mwms.d.ts",
+        "import": "./dist/mwms/mwms.mjs",
+        "require": "./dist/mwms/mwms.cjs"
+      },
+      "./moms": {
+        "types": "./dist/moms/moms.d.ts",
+        "import": "./dist/moms/moms.mjs",
+        "require": "./dist/moms/moms.cjs"
+      },
+      "./scmHub": {
+        "types": "./dist/scmHub/scmHub.d.ts",
+        "import": "./dist/scmHub/scmHub.mjs",
+        "require": "./dist/scmHub/scmHub.cjs"
+      },
+      "./selfPos": {
+        "types": "./dist/selfPos/selfPos.d.ts",
+        "import": "./dist/selfPos/selfPos.mjs",
+        "require": "./dist/selfPos/selfPos.cjs"
+      },
+      "./package.json": "./package.json"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsx src/scripts/generate.ts && vite build && vite build --config vite.mwms.config.ts && vite build --config vite.moms.config.ts && vite build --config vite.scmHub.config.ts && vite build --config vite.selfPos.config.ts",
+    "pbo:up": "pnpm update @musinsa/*"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.1",
+    "@vitejs/plugin-react": "^4.6.0",
+    "prettier": "^3.6.2",
+    "tsx": "^4.20.3",
+    "vite": "^7.0.3",
+    "vite-plugin-dts": "^4.5.4"
+  },
+  "dependencies": {
+    "@musinsa/layer-tokens": "^1.0.0"
+  }
+}

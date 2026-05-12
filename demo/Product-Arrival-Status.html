@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1440" />
+  <title>SCM-Hub · 위탁 상품 입고현황</title>
+  <script src="/auth-gate.js"></script>
+  <script src="/scm-shell.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <link rel="stylesheet" href="../design%20system/layer-desktop.css" />
+
+  <!-- SCM Components — 데이터 리스트 페이지 표준 묶음 -->
+  <link rel="stylesheet" href="../design%20system/components/backdrop/backdrop.css" />
+  <link rel="stylesheet" href="../design%20system/components/checkbox/checkbox.css" />
+  <link rel="stylesheet" href="../design%20system/components/tag/tag.css" />
+  <link rel="stylesheet" href="../design%20system/components/toast/toast.css" />
+  <link rel="stylesheet" href="../design%20system/components/button/button.css" />
+  <link rel="stylesheet" href="../design%20system/components/search-btn/search-btn.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-reset-btn/filter-reset-btn.css" />
+  <link rel="stylesheet" href="../design%20system/components/download-btn/download-btn.css" />
+  <link rel="stylesheet" href="../design%20system/components/pager/pager.css" />
+  <link rel="stylesheet" href="../design%20system/components/pgsize-select/pgsize-select.css" />
+  <link rel="stylesheet" href="../design%20system/components/mini-action/mini-action.css" />
+  <link rel="stylesheet" href="../design%20system/components/code-link/code-link.css" />
+  <link rel="stylesheet" href="../design%20system/components/code-popover/code-popover.css" />
+  <link rel="stylesheet" href="../design%20system/components/confirm-modal/confirm-modal.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-chip/filter-chip.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-select/filter-select.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-bar/filter-bar.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-drawer/filter-drawer.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-popover/filter-popover.css" />
+  <link rel="stylesheet" href="../design%20system/components/stat/stat.css" />
+  <link rel="stylesheet" href="../design%20system/components/stats-bar/stats-bar.css" />
+  <link rel="stylesheet" href="../design%20system/components/page-head/page-head.css" />
+  <link rel="stylesheet" href="../design%20system/components/scm-table/scm-table.css" />
+  <link rel="stylesheet" href="../design%20system/components/scm-table/column-more-menu.css" />
+  <link rel="stylesheet" href="../design%20system/components/scm-table/column-filter-popover.css" />
+  <!-- 공용 셸 (GNB + LNB) -->
+  <link rel="stylesheet" href="../design%20system/components/topbar/topbar.css" />
+  <link rel="stylesheet" href="../design%20system/components/lnb/lnb.css" />
+  <!-- 도메인 chips -->
+  <link rel="stylesheet" href="../design%20system/components/status-chip/status-chip.css" />
+  <link rel="stylesheet" href="../design%20system/components/product-name/product-name.css" />
+  <link rel="stylesheet" href="../design%20system/components/detail-stack/detail-stack.css" />
+
+  <style>
+    /* sticky stack */
+    .scm-filter-bar { top: var(--scm-sticky-gnb); }
+    .scm-stats-bar--sticky { top: calc(var(--scm-sticky-gnb) + var(--scm-sticky-filter)); }
+
+    .mp-table-host { margin-top: 0; }
+    .mp-table .cell-numeric { font-variant-numeric: tabular-nums; text-align: right; }
+
+    /* 입고유형 태그 — yellow (매장 직납) — tag.css 미정의 컬러 보강 */
+    .scm-tag--yellow { background: #FFF4E5; }
+
+    /* 우측 상단 — 알림함 버튼 (page-head action 영역) */
+    .iss-notify-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      height: 44px; padding: 0 12px;
+      background: #fff; border: 1px solid #000; border-radius: 4px;
+      font-family: inherit; font-size: 15px; font-weight: 500; line-height: 20px;
+      color: #000; cursor: pointer;
+    }
+    .iss-notify-btn:hover { background: var(--ld-bg-low, #F5F5F5); }
+    .iss-notify-btn__icon { width: 16px; height: 16px; }
+    .iss-notify-btn__divider { width: 1px; height: 16px; background: #EBEBEB; }
+    .iss-notify-btn__status { display: inline-flex; align-items: center; gap: 2px; color: #245EFF; }
+    .iss-notify-btn__status-num { font-weight: 600; }
+
+    /* Sticky bottom action bar */
+    .scm-table-action-bar {
+      position: fixed; left: var(--scm-lnb-width, 56px); right: 0; bottom: 0;
+      background: #fff; border-top: 1px solid #E0E0E0; box-shadow: 0 -2px 8px rgba(0,0,0,.06);
+      z-index: 18; padding: 12px 28px;
+      transition: left .2s ease;
+    }
+    .scm-table-action-bar[hidden] { display: none; }
+    .scm-table-action-bar__inner { display: flex; align-items: center; justify-content: space-between; }
+    .scm-table-action-bar__count { font-size: 14px; font-weight: 500; }
+    .scm-table-action-bar__count strong { color: #245EFF; font-weight: 700; margin-right: 4px; }
+    .scm-table-action-bar__actions { display: flex; gap: 8px; }
+  </style>
+</head>
+<body>
+
+<!-- ============== Legacy SVG sprite ============== -->
+<script src="/scm-icons.js"></script>
+
+<!-- ============== Topbar ============== -->
+<header class="scm-topbar" role="banner"></header>
+
+<div class="app">
+  <!-- ============== LNB ============== -->
+  <nav class="scm-lnb" data-active="product-arrival-status" aria-label="주메뉴"></nav>
+
+  <main>
+    <!-- Page head — title + 우측 알림함 버튼 -->
+    <div class="scm-page-head scm-page-head--list">
+      <h1 class="scm-page-head__title">위탁 상품 입고현황</h1>
+      <div class="scm-page-head__actions">
+        <button class="iss-notify-btn" type="button" id="notify-btn" aria-label="알림함 - 진행중 2건">
+          <svg class="iss-notify-btn__icon" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M3.5 6.5a4.5 4.5 0 0 1 9 0v3l1 2H2.5l1-2v-3z" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round"/>
+            <path d="M6.5 13.5a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+          </svg>
+          <span>알림함</span>
+          <span class="iss-notify-btn__divider"></span>
+          <span class="iss-notify-btn__status">
+            <span>진행중</span>
+            <span class="iss-notify-btn__status-num">2</span>
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="scm-filter-bar" id="filter-bar">
+      <button class="scm-filter-chip" type="button" id="filter-drawer-open">
+        <svg viewBox="0 0 20 20"><use href="#ic-filter"/></svg>
+        <span>전체 필터</span>
+        <span class="scm-filter-chip__count">1</span>
+      </button>
+      <div class="scm-filter-overflow">
+        <div class="scm-filter-overflow__track">
+          <button class="scm-filter-select" type="button" data-state="active" data-mp-filter="period">
+            <span class="scm-filter-select__label">조회기간</span>
+            <span class="scm-filter-select__value">신청일 · 25.03.01~25.04.07</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="brand">
+            <span class="scm-filter-select__label">브랜드 조회</span>
+            <span class="scm-filter-select__value">무신사 · 브랜드</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="inboundType">
+            <span class="scm-filter-select__label">입고유형</span>
+            <span class="scm-filter-select__value">입고유형</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="uid">
+            <span class="scm-filter-select__label">UID</span>
+            <span class="scm-filter-select__value">UID</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="sku">
+            <span class="scm-filter-select__label">SKU번호</span>
+            <span class="scm-filter-select__value">SKU번호</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="barcode">
+            <span class="scm-filter-select__label">바코드</span>
+            <span class="scm-filter-select__value">바코드</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="styleNumber">
+            <span class="scm-filter-select__label">스타일넘버</span>
+            <span class="scm-filter-select__value">스타일넘버</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="reqNo">
+            <span class="scm-filter-select__label">신청번호</span>
+            <span class="scm-filter-select__value">신청번호</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="inNo">
+            <span class="scm-filter-select__label">입고번호</span>
+            <span class="scm-filter-select__value">입고번호</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="status">
+            <span class="scm-filter-select__label">상태</span>
+            <span class="scm-filter-select__value">상태</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+        </div>
+        <div class="scm-filter-overflow__fade scm-filter-overflow__fade--left" style="opacity:0;"></div>
+        <div class="scm-filter-overflow__fade scm-filter-overflow__fade--right" style="opacity:0;"></div>
+      </div>
+      <div class="scm-filter-actions">
+        <button class="scm-search-btn" type="button">검색</button>
+        <button class="scm-filter-reset-btn" type="button">
+          <svg viewBox="0 0 20 20"><use href="#ic-refresh"/></svg>
+          <span>초기화</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats bar -->
+    <div class="scm-stats-bar scm-stats-bar--sticky">
+      <div class="scm-stats-bar__left">
+        <div class="scm-stats-bar__counts-wrap">
+          <div class="scm-stats-bar__counts">
+            <span class="scm-stat scm-stat--all"><span class="scm-stat__label">전체</span> <span class="scm-stat__num">20</span></span>
+          </div>
+        </div>
+        <div class="scm-stats-bar__mini-actions">
+          <button class="scm-mini-action" type="button" id="iss-cancel-btn" disabled>입고 취소</button>
+        </div>
+      </div>
+      <div class="scm-stats-bar__right">
+        <button class="scm-download-btn" type="button" id="excel-download-btn">
+          <svg viewBox="0 0 20 20"><use href="#ic-download"/></svg>
+          <span>전체 엑셀 다운로드</span>
+        </button>
+        <span class="scm-stats-bar__v-divider"></span>
+        <span class="scm-pager">
+          <strong class="scm-pager__current">1</strong>
+          <span class="scm-pager__total">/ <span>1</span> 페이지</span>
+          <button class="scm-pager-btn" type="button" aria-label="이전 페이지" disabled><svg viewBox="0 0 20 20"><use href="#ic-chevronLeft"/></svg></button>
+          <button class="scm-pager-btn" type="button" aria-label="다음 페이지" disabled><svg viewBox="0 0 20 20"><use href="#ic-chevronRight"/></svg></button>
+        </span>
+        <span class="scm-pgsize-wrap" id="pgsize">
+          <button class="scm-pgsize" type="button" aria-haspopup="listbox" aria-expanded="false">
+            <span class="scm-pgsize__label">100개씩</span>
+            <svg class="scm-pgsize__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+          <ul class="scm-pgsize-popup" role="listbox"></ul>
+        </span>
+      </div>
+    </div>
+
+    <!-- Data table -->
+    <div class="mp-table-host">
+      <div class="mp-thead-sticky"><div class="mp-thead-scroll"></div></div>
+      <div class="mp-table-scroll">
+        <table class="mp-table is-cell-selectable" id="mp-table">
+          <thead>
+            <tr>
+              <th class="cb-col col-frozen-1" title="전체 선택"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" id="mp-cb-all" aria-label="전체 선택"></span></th>
+              <th class="col-auto col-frozen-2">No</th>
+              <th class="col-auto col-frozen-3">신청번호</th>
+              <th class="col-auto col-frozen-4">입고유형</th>
+              <th class="col-auto">상태 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="col-auto">입고번호</th>
+              <th class="col-auto">입고위치</th>
+              <th class="col-auto">브랜드</th>
+              <th class="col-auto">UID</th>
+              <th class="col-auto">옵션</th>
+              <th class="col-auto">SKU번호</th>
+              <th class="col-auto">바코드</th>
+              <th class="col-large" data-pad="full"><div class="cell-clamp">SKU명</div></th>
+              <th class="col-auto">스타일넘버</th>
+              <th class="col-auto cell-numeric">입고 예정 총수량</th>
+              <th class="col-auto cell-numeric">입고 확정 총수량</th>
+              <th class="col-auto">입고예정일 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="col-auto">센터 도착일시</th>
+              <th class="col-auto">입고확정일</th>
+              <th class="col-auto">신청일 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="col-spacer" aria-hidden="true"></th>
+            </tr>
+          </thead>
+          <tbody id="data-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Filter drawer -->
+<div class="scm-filter-drawer-backdrop" id="fd-backdrop" hidden></div>
+<aside class="scm-filter-drawer" id="filter-drawer" hidden role="dialog" aria-label="전체 필터">
+  <header class="scm-filter-drawer__header">
+    <h2>전체 필터</h2>
+    <button class="scm-filter-drawer__close" type="button" aria-label="닫기">
+      <svg viewBox="0 0 20 20"><use href="#ic-close"/></svg>
+    </button>
+  </header>
+  <div class="scm-filter-drawer__body"></div>
+  <footer class="scm-filter-drawer__footer">
+    <button class="scm-filter-drawer__reset" type="button">
+      <svg viewBox="0 0 20 20"><use href="#ic-refresh"/></svg>
+      <span>전체 초기화</span>
+    </button>
+    <button class="scm-filter-drawer__apply" type="button">검색 적용</button>
+  </footer>
+</aside>
+
+<!-- Filter popover root -->
+<div class="scm-filter-popover-root" id="filter-popover-root" role="dialog" aria-hidden="true"></div>
+
+<!-- Sticky bottom action bar -->
+<div class="scm-table-action-bar" id="table-action-bar" hidden>
+  <div class="scm-table-action-bar__inner">
+    <div class="scm-table-action-bar__count">
+      <strong id="tab-count">0</strong>개 선택됨
+    </div>
+    <div class="scm-table-action-bar__actions">
+      <button class="scm-button scm-button--md" type="button" id="tab-clear">선택 해제</button>
+      <button class="scm-button scm-button--md scm-button--primary" type="button" id="tab-bulk">입고 취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm modal -->
+<div class="scm-confirm-modal-backdrop" id="confirm-backdrop"></div>
+<div class="scm-confirm-modal" id="confirm-modal" role="dialog" aria-labelledby="cm-title">
+  <h3 class="scm-confirm-modal__title" id="cm-title">입고 취소 확인</h3>
+  <p class="scm-confirm-modal__desc">
+    선택하신 항목의 입고를 취소합니다.<br/>
+    계속 진행하시겠습니까?
+  </p>
+  <div class="scm-confirm-modal__actions">
+    <button type="button" class="scm-confirm-modal__cancel">취소</button>
+    <button type="button" class="scm-confirm-modal__confirm primary">변경</button>
+  </div>
+</div>
+
+<!-- Module JS -->
+<script src="../design%20system/components/lnb/lnb.js"></script>
+<script src="../design%20system/components/topbar/topbar.js"></script>
+<script src="../design%20system/components/scroll-lock/scroll-lock.js"></script>
+<script src="../design%20system/components/backdrop/backdrop.js"></script>
+<script src="../design%20system/components/checkbox/checkbox.js"></script>
+<script src="../design%20system/components/toast/toast.js"></script>
+<script src="../design%20system/components/pgsize-select/pgsize-select.js"></script>
+<script src="../design%20system/components/mini-action/mini-action.js"></script>
+<script src="../design%20system/components/code-popover/code-popover.js"></script>
+<script src="../design%20system/components/confirm-modal/confirm-modal.js"></script>
+<script src="../design%20system/components/filter-bar/filter-bar.js"></script>
+<script src="../design%20system/components/filter-drawer/filter-drawer.js"></script>
+<script src="../design%20system/components/filter-popover/filter-popover.js"></script>
+<script src="../design%20system/components/filter-popover/filter-popover-modes.js"></script>
+<script src="../design%20system/components/scm-table/scm-table.js"></script>
+<script src="../design%20system/components/scm-table/table-sort.js"></script>
+<script src="../design%20system/components/scm-table/column-more-menu.js"></script>
+<script src="../design%20system/components/scm-table/column-filter-popover.js"></script>
+<script src="../design%20system/components/scm-table/table-selection.js"></script>
+
+<script>
+(function () {
+  'use strict';
+
+  // ----- Demo data — 위탁 상품 입고현황 (20건 중 8건 데모) -----
+  const ROWS = [
+    { reqNo:'A000008101', inboundType:'MFS 입고',         status:'입고대기', statusExtra:3, inNo:'OFFLINE_250531_1234',         loc:'여주 4센터', brand:'아디다스',     brandExtra:4, uid:'65342', uidExtra:4, opt:'XXL', optExtra:10, sku:'123451', skuExtra:10, barcode:'880K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65341', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.14', arrivalDate:'-',                confirmDate:'-',                requestDate:'25.03.15 11:30' },
+    { reqNo:'A000001104', inboundType:'MFS 입고',         status:'입고대기', statusExtra:3, inNo:'OFFLINE_250531_1237',         loc:'여주 4센터', brand:'아디다스',     brandExtra:4, uid:'65342', uidExtra:4, opt:'M',   optExtra:10, sku:'123454', skuExtra:10, barcode:'883K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65341', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.14', arrivalDate:'25.03.15 11:30',   confirmDate:'25.03.15 11:30',   requestDate:'25.03.15 11:30' },
+    { reqNo:'A000001102', inboundType:'MFS 입고',         status:'센터도착', statusExtra:3, inNo:'OFFLINE_250531_1235 외 3',   loc:'여주 4센터', brand:'아디다스',     brandExtra:4, uid:'65342', uidExtra:4, opt:'XL',  optExtra:10, sku:'123452', skuExtra:10, barcode:'881K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65341', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.14', arrivalDate:'25.03.15 11:30',   confirmDate:'-',                requestDate:'25.03.15 11:30' },
+    { reqNo:'A000001103', inboundType:'MFS 입고',         status:'부분입고', statusExtra:3, inNo:'OFFLINE_250531_1236',         loc:'여주 4센터', brand:'아디다스',     brandExtra:4, uid:'65342', uidExtra:4, opt:'L',   optExtra:10, sku:'123453', skuExtra:10, barcode:'882K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65341', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.14', arrivalDate:'25.03.15 11:30',   confirmDate:'-',                requestDate:'25.03.15 11:30' },
+    { reqNo:'A000001109', inboundType:'MFS 입고',         status:'입고완료',                  inNo:'OFFLINE_250531_1238',         loc:'여주 4센터', brand:'아디다스',     brandExtra:4, uid:'65342', uidExtra:4, opt:'S',   optExtra:10, sku:'123455', skuExtra:10, barcode:'884K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65341', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.14', arrivalDate:'25.03.15 11:30',   confirmDate:'25.03.15 11:30',   requestDate:'25.03.15 11:30' },
+    { reqNo:'A000001105', inboundType:'물류센터 일괄입고', status:'입고완료',                  inNo:'OFFLINE_250531_1239 외 3',   loc:'여주 4센터', brand:'아디다스',     brandExtra:4, uid:'65342', uidExtra:4, opt:'XS',  optExtra:10, sku:'123456', skuExtra:10, barcode:'885K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65341', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.14', arrivalDate:'25.03.15 11:30',   confirmDate:'25.03.15 11:30',   requestDate:'25.03.15 11:30' },
+    { reqNo:'A000001107', inboundType:'매장 직납',         status:'입고완료',                  inNo:'OFFLINE_250531_1232',         loc:'성수 대림창고', brand:'아디다스', brandExtra:4, uid:'65342', uidExtra:4, opt:'XL',  optExtra:10, sku:'123457', skuExtra:10, barcode:'886K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65342', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.14', arrivalDate:'-',                 confirmDate:'25.03.15 11:30',   requestDate:'25.03.15 11:30' },
+    { reqNo:'A000001108', inboundType:'매장 직납',         status:'입고완료',                  inNo:'OFFLINE_250531_1233',         loc:'성수 대림창고', brand:'아디다스', brandExtra:4, uid:'65342', uidExtra:4, opt:'XL',  optExtra:10, sku:'123458', skuExtra:10, barcode:'887K/13029/EFGH 외 10', name:'스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 외 10', styleNo:'65342', expectedQty:1000, confirmedQty:1000, expectedDate:'25.03.14', arrivalDate:'-',                 confirmDate:'25.03.15 11:30',   requestDate:'25.03.15 11:30' },
+  ];
+
+  const NA = '-';
+  const isEmpty = v => v === null || v === undefined || v === '';
+  const escapeHtml = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const fmtNum = n => isEmpty(n) ? NA : Number(n).toLocaleString();
+  const fmtText = v => isEmpty(v) ? NA : escapeHtml(v);
+  const withExtra = (v, extra) => isEmpty(v) ? NA : (escapeHtml(v) + (extra ? ` <span style="color:#666;">외 ${extra}</span>` : ''));
+
+  // 입고유형 → tag color
+  const INBOUND_TAG = {
+    'MFS 입고':         'blue',
+    '물류센터 일괄입고': 'gray',
+    '매장 직납':         'yellow',
+  };
+  // 상태 → status-chip variant
+  const STATUS_CLS = {
+    '입고대기': 'waiting',      // gray (default)
+    '센터도착': 'processing',   // blue
+    '부분입고': 'moving',       // purple
+    '입고완료': 'done',         // green
+    '취소':    'cancel',
+  };
+
+  function rowHtml(r, idx) {
+    const inboundColor = INBOUND_TAG[r.inboundType] || 'gray';
+    const inboundChip  = isEmpty(r.inboundType)
+      ? NA
+      : `<span class="scm-tag scm-tag--${inboundColor}">${escapeHtml(r.inboundType)}</span>`;
+
+    const statusVar   = STATUS_CLS[r.status] || 'waiting';
+    const statusExtra = r.statusExtra ? ` <span style="font-size:13px;color:#666;">외 ${r.statusExtra}</span>` : '';
+    const statusChip  = isEmpty(r.status) ? NA : `<span class="scm-status-chip scm-status-chip--${statusVar}">${escapeHtml(r.status)}</span>${statusExtra}`;
+
+    const optChip = isEmpty(r.opt)
+      ? NA
+      : `<span class="scm-tag">${escapeHtml(r.opt)}</span>${r.optExtra ? ` <span style="color:#666;">외 ${r.optExtra}</span>` : ''}`;
+
+    const nameCell = isEmpty(r.name)
+      ? NA
+      : `<div class="cell-clamp"><span class="scm-product-name"><span class="scm-product-name__thumb"></span><span class="scm-product-name__text">${escapeHtml(r.name)}</span></span></div>`;
+
+    const confirmedColor = r.confirmedQty ? '#245EFF' : '#000';
+    const confirmedWeight = r.confirmedQty ? 600 : 400;
+
+    return `
+      <tr>
+        <td class="cb-col col-frozen-1"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="선택"></span></td>
+        <td class="col-auto col-frozen-2">${idx + 1}</td>
+        <td class="col-auto col-frozen-3">${fmtText(r.reqNo)}</td>
+        <td class="col-auto col-frozen-4">${inboundChip}</td>
+        <td class="col-auto">${statusChip}</td>
+        <td class="col-auto">${fmtText(r.inNo)}</td>
+        <td class="col-auto">${fmtText(r.loc)}</td>
+        <td class="col-auto">${withExtra(r.brand, r.brandExtra)}</td>
+        <td class="col-auto">${isEmpty(r.uid) ? NA : `<a class="scm-code-link" data-code-type="uid">${escapeHtml(r.uid)}${r.uidExtra ? ` 외 ${r.uidExtra}` : ''}</a>`}</td>
+        <td class="col-auto">${optChip}</td>
+        <td class="col-auto">${isEmpty(r.sku) ? NA : `<a class="scm-code-link" data-code-type="sku">${escapeHtml(r.sku)}${r.skuExtra ? ` 외 ${r.skuExtra}` : ''}</a>`}</td>
+        <td class="col-auto">${isEmpty(r.barcode) ? NA : `<a class="scm-code-link" data-code-type="barcode">${escapeHtml(r.barcode)}</a>`}</td>
+        <td class="col-large">${nameCell}</td>
+        <td class="col-auto">${isEmpty(r.styleNo) ? NA : `<a class="scm-code-link" data-code-type="styleNo">${escapeHtml(r.styleNo)}</a>`}</td>
+        <td class="col-auto cell-numeric">${fmtNum(r.expectedQty)}</td>
+        <td class="col-auto cell-numeric" style="color:${confirmedColor};font-weight:${confirmedWeight};">${fmtNum(r.confirmedQty)}</td>
+        <td class="col-auto">${fmtText(r.expectedDate)}</td>
+        <td class="col-auto">${fmtText(r.arrivalDate)}</td>
+        <td class="col-auto">${fmtText(r.confirmDate)}</td>
+        <td class="col-auto">${fmtText(r.requestDate)}</td>
+        <td class="col-spacer" aria-hidden="true"></td>
+      </tr>
+    `;
+  }
+
+  document.getElementById('data-tbody').innerHTML = ROWS.map(rowHtml).join('');
+
+  // ----- SCM Table interactions -----
+  if (window.SCMTable) {
+    try { window.SCMTable.init({ root: document, frozenCount: 4 }); } catch (e) { console.warn('SCMTable init failed:', e); }
+  }
+  if (window.SCM && SCM.tableSort)           SCM.tableSort.mount({ tableSelector: '.mp-table-scroll .mp-table' });
+  if (window.SCM && SCM.columnMoreMenu)      SCM.columnMoreMenu.mount({ tableSelector: '.mp-table-scroll .mp-table' });
+  if (window.SCM && SCM.columnFilterPopover) SCM.columnFilterPopover.mount({ tableSelector: '.mp-table-scroll .mp-table' });
+
+  if (!window.SCM) return;
+
+  // Pgsize
+  if (SCM.pgsizeSelect) SCM.pgsizeSelect.mount(document.getElementById('pgsize'), { value: 100 });
+
+  // ============================================================
+  // 전체 필터 (filter drawer) 안전망 wiring
+  //   scm-shell.js 의 bootFilterMounts() 가 DOMContentLoaded 시 자동 mount
+  //   하지만, 페이지 인라인 스크립트 실행 시점에 아직 안 됐을 수 있어 fallback.
+  //   dataset.scmFilterDrawerMounted 로 중복 mount 방지.
+  // ============================================================
+  (function ensureFilterDrawerMount() {
+    if (!SCM.filterDrawer) return;
+    const fdEl   = document.getElementById('filter-drawer');
+    const bdEl   = document.getElementById('fd-backdrop');
+    const openBtn = document.getElementById('filter-drawer-open');
+    if (!fdEl || fdEl.dataset.scmFilterDrawerMounted === '1') return;
+    fdEl.dataset.scmFilterDrawerMounted = '1';
+    const inst = SCM.filterDrawer.mount(fdEl, { backdrop: bdEl || undefined });
+    if (openBtn && inst && typeof inst.open === 'function') {
+      openBtn.addEventListener('click', inst.open);
+    }
+  })();
+  // Filter bar overflow 화살표 (안전망)
+  (function ensureFilterBarMount() {
+    if (!SCM.filterBar) return;
+    const fbEl = document.getElementById('filter-bar');
+    if (!fbEl || fbEl.dataset.scmFilterBarMounted === '1') return;
+    fbEl.dataset.scmFilterBarMounted = '1';
+    SCM.filterBar.mount(fbEl);
+  })();
+
+  // ============================================================
+  // Filter popover (REGISTRY + 페이지 고유 extraRegistry)
+  //   - period / inboundType / reqNo / inNo 는 페이지 고유
+  //   - status 는 글로벌 옵션을 페이지 옵션 (입고대기/센터도착/부분입고/입고완료) 으로 override
+  //   - brand / uid / sku / barcode / styleNumber 는 글로벌 REGISTRY 그대로
+  // ============================================================
+  let filterModeInstance = null;
+  const EXTRA_REGISTRY = {
+    period: { mode: 'single', options: [
+      { id:'today', label:'오늘',         selected:false },
+      { id:'w1',    label:'최근 7일',      selected:false },
+      { id:'m1',    label:'최근 30일',     selected:true  },
+      { id:'m3',    label:'최근 90일',     selected:false },
+      { id:'y1',    label:'최근 1년',      selected:false },
+    ]},
+    inboundType: { mode: 'multi', options: [
+      { id:'all', label:'전체',             selected:true  },
+      { id:'i1',  label:'MFS 입고',         selected:false },
+      { id:'i2',  label:'물류센터 일괄입고', selected:false },
+      { id:'i3',  label:'매장 직납',         selected:false },
+    ]},
+    status: { mode: 'multi', options: [
+      { id:'all', label:'전체',     selected:true  },
+      { id:'s1',  label:'입고대기', selected:false },
+      { id:'s2',  label:'센터도착', selected:false },
+      { id:'s3',  label:'부분입고', selected:false },
+      { id:'s4',  label:'입고완료', selected:false },
+    ]},
+    reqNo: { mode: 'codeinput' },
+    inNo:  { mode: 'codeinput' },
+  };
+
+  function matchesFilters(r, active) {
+    // brand (multi)
+    if (active.brand && !active.brand.includes(r.brand)) return false;
+    // inboundType (multi — 라벨이 row 와 1:1 일치)
+    if (active.inboundType && !active.inboundType.includes(r.inboundType)) return false;
+    // status (multi — 라벨이 row 와 1:1 일치)
+    if (active.status && !active.status.includes(r.status)) return false;
+    // codeinput — 부분 매치
+    const codeMatch = (vals, target) => {
+      if (!vals || !vals.length) return true;
+      if (!target) return false;
+      const t = String(target).toLowerCase();
+      return vals.some(v => t.includes(String(v).toLowerCase()));
+    };
+    if (!codeMatch(active.uid,         r.uid))     return false;
+    if (!codeMatch(active.sku,         r.sku))     return false;
+    if (!codeMatch(active.barcode,     r.barcode)) return false;
+    if (!codeMatch(active.styleNumber, r.styleNo)) return false;
+    if (!codeMatch(active.reqNo,       r.reqNo))   return false;
+    if (!codeMatch(active.inNo,        r.inNo))    return false;
+    return true;
+  }
+
+  function applyDataFilter() {
+    if (!filterModeInstance) return;
+    const active = filterModeInstance.getActiveFilters() || {};
+    const tbody = document.getElementById('data-tbody');
+    if (!tbody) return 0;
+    let visibleCount = 0;
+    Array.from(tbody.children).forEach((tr, i) => {
+      const r = ROWS[i];
+      if (!r) return;
+      const visible = matchesFilters(r, active);
+      tr.style.display = visible ? '' : 'none';
+      if (visible) visibleCount++;
+    });
+    // stats-bar "전체 N" 숫자 갱신
+    const numEl = document.querySelector('.scm-stats-bar__counts .scm-stat--all .scm-stat__num');
+    if (numEl) numEl.textContent = String(visibleCount);
+    return visibleCount;
+  }
+
+  if (SCM.filterPopoverModes) {
+    filterModeInstance = SCM.filterPopoverModes.init({
+      rootEl: document.getElementById('filter-popover-root'),
+      filterBarEl: document.getElementById('filter-bar'),
+      extraRegistry: EXTRA_REGISTRY,
+      onSearch: () => {
+        const n = applyDataFilter();
+        if (SCM.toast) SCM.toast.show({ variant: 'info', title: '검색 완료', desc: `${n}건 조회되었습니다.` });
+      },
+      onReset: () => {
+        applyDataFilter();
+        if (SCM.toast) SCM.toast.show({ variant: 'info', title: '필터 초기화 완료' });
+      },
+    });
+  }
+
+  // 코드 link → SKU 는 상세 페이지, 나머지는 popover
+  document.getElementById('data-tbody').addEventListener('click', (e) => {
+    const link = e.target.closest('.scm-code-link');
+    if (!link) return;
+    const type = link.getAttribute('data-code-type') || 'sku';
+    if (type === 'sku') {
+      const txt = (link.textContent || '').trim().split(' ')[0];
+      if (txt) {
+        e.preventDefault();
+        window.location.href = 'sku-detail.html?sku=' + encodeURIComponent(txt);
+      }
+      return;
+    }
+    if (SCM.codePopover) {
+      e.preventDefault();
+      const TITLE = { uid:'연결된 UID번호 확인', barcode:'바코드 확인', styleNo:'스타일넘버 확인' };
+      const COPY  = { uid:'UID 복사', barcode:'바코드 복사', styleNo:'스타일넘버 복사' };
+      const txt = (link.textContent || '').trim();
+      SCM.codePopover.open({
+        title: TITLE[type] || '코드 확인',
+        items: [txt],
+        copyLabel: COPY[type] || '복사',
+        anchorEl: link,
+        onCopy: () => {
+          if (navigator.clipboard) navigator.clipboard.writeText(txt);
+          if (SCM.toast) SCM.toast.show({ variant: 'success', title: `${(COPY[type]||'코드').replace(' 복사','')} 복사 완료`, desc: `${txt} 복사되었습니다.` });
+        },
+      });
+    }
+  });
+
+  // 알림함 버튼 — 데모용 토스트
+  const notifyBtn = document.getElementById('notify-btn');
+  if (notifyBtn) {
+    notifyBtn.addEventListener('click', () => {
+      if (SCM.toast) SCM.toast.show({ variant: 'info', title: '알림함', desc: '진행중인 입고 건이 2건 있습니다.' });
+    });
+  }
+
+  // 입고 취소 (mini-action) — 데모용 토스트
+  const cancelBtn = document.getElementById('iss-cancel-btn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+      if (SCM.toast) SCM.toast.show({ variant: 'warning', title: '입고 취소', desc: '취소할 항목을 먼저 선택해주세요.' });
+    });
+  }
+
+  // 엑셀 다운로드 — 데모용 토스트
+  const dlBtn = document.getElementById('excel-download-btn');
+  if (dlBtn) {
+    dlBtn.addEventListener('click', () => {
+      if (SCM.toast) SCM.toast.show({ variant: 'success', title: '엑셀 다운로드', desc: '전체 20건이 다운로드됩니다.' });
+    });
+  }
+
+  // 체크박스 선택 → 하단 액션 바
+  const tab = document.getElementById('table-action-bar');
+  const tabCount = document.getElementById('tab-count');
+  function refreshActionBar() {
+    if (!tab) return;
+    const checked = document.querySelectorAll('#data-tbody .scm-checkbox[aria-checked="true"]').length;
+    if (checked > 0) {
+      tab.hidden = false;
+      if (tabCount) tabCount.textContent = String(checked);
+      if (cancelBtn) cancelBtn.disabled = false;
+    } else {
+      tab.hidden = true;
+      if (cancelBtn) cancelBtn.disabled = true;
+    }
+  }
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.scm-checkbox')) {
+      // checkbox 모듈이 aria-checked 토글한 직후 실행되도록 다음 tick 으로 미룸
+      setTimeout(refreshActionBar, 0);
+    }
+  });
+  const tabClear = document.getElementById('tab-clear');
+  if (tabClear) {
+    tabClear.addEventListener('click', () => {
+      document.querySelectorAll('#data-tbody .scm-checkbox[aria-checked="true"]').forEach(cb => {
+        cb.setAttribute('aria-checked', 'false');
+      });
+      const all = document.getElementById('mp-cb-all');
+      if (all) all.setAttribute('aria-checked', 'false');
+      refreshActionBar();
+    });
+  }
+  const tabBulk = document.getElementById('tab-bulk');
+  if (tabBulk) {
+    tabBulk.addEventListener('click', () => {
+      if (SCM.confirmModal) {
+        SCM.confirmModal.open({
+          title: '입고 취소 확인',
+          desc: '선택하신 항목의 입고를 취소합니다.\n계속 진행하시겠습니까?',
+          confirmLabel: '확인',
+          cancelLabel: '취소',
+          onConfirm: () => {
+            if (SCM.toast) SCM.toast.show({ variant: 'success', title: '입고 취소 완료', desc: '선택한 항목이 취소되었습니다.' });
+            if (tabClear) tabClear.click();
+          },
+        });
+      }
+    });
+  }
+})();
+</script>
+
+</body>
+</html>

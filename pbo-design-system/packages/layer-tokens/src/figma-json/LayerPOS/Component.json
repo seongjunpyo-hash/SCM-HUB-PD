@@ -1,0 +1,301 @@
+{
+  "pos": {
+    "numberPad": {
+      "button": {
+        "digit": {
+          "value": {
+            "fontFamily": "{primitive.fontFamily.base}",
+            "fontWeight": "{primitive.fontWeight.regular-400}",
+            "fontSize": "{primitive.fontSize.500}",
+            "lineHeight": "{primitive.lineHeight.1}",
+            "letterSpacing": "{primitive.letterSpacing.0}"
+          },
+          "description": "numberPad의 0~9 숫자 버튼 텍스트 스타일",
+          "type": "typography"
+        },
+        "bg-pressed": {
+          "value": "{bg-low}",
+          "type": "color"
+        }
+      }
+    },
+    "checkoutSummary": {
+      "priceOriginal": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.regular-400}",
+          "fontSize": "{primitive.fontSize.300}",
+          "lineHeight": "{primitive.lineHeight.4}",
+          "textDecoration": "{primitive.textDecoration.strike}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "description": "checkoutSummary 할인 전 금액",
+        "type": "typography"
+      },
+      "priceFinal": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.medium-500}",
+          "fontSize": "{primitive.fontSize.650}",
+          "lineHeight": "{primitive.lineHeight.4}",
+          "letterSpacing": "{primitive.letterSpacing.n1}"
+        },
+        "description": "checkoutSummary 결제 금액",
+        "type": "typography"
+      },
+      "discountRate": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.medium-500}",
+          "fontSize": "{primitive.fontSize.650}",
+          "lineHeight": "{primitive.lineHeight.4}",
+          "letterSpacing": "{primitive.letterSpacing.n1}"
+        },
+        "description": "checkoutSummary 할인율(%)",
+        "type": "typography"
+      }
+    },
+    "phoneNumberField": {
+      "display": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.regular-400}",
+          "fontSize": "{primitive.fontSize.1000}",
+          "lineHeight": "{primitive.lineHeight.2}",
+          "letterSpacing": "{primitive.letterSpacing.n2}"
+        },
+        "description": "phoneNumberField 숫자 텍스트",
+        "type": "typography"
+      }
+    },
+    "loadingOverlay": {
+      "price": {
+        "value": {
+          "fontFamily": "{primitive.fontFamily.base}",
+          "fontWeight": "{primitive.fontWeight.medium-500}",
+          "fontSize": "{primitive.fontSize.600}",
+          "lineHeight": "{primitive.lineHeight.3}",
+          "letterSpacing": "{primitive.letterSpacing.0}"
+        },
+        "description": "결제 완료 loading overlay 결제 금액",
+        "type": "typography"
+      },
+      "bg": {
+        "value": "{bg}",
+        "type": "color"
+      },
+      "overlay": {
+        "bg": {
+          "value": "{bg-transparent}",
+          "type": "color"
+        }
+      }
+    },
+    "textButton": {
+      "fg": {
+        "underlined": {
+          "large": {
+            "value": {
+              "fontFamily": "{primitive.fontFamily.base}",
+              "fontWeight": "{primitive.fontWeight.regular-400}",
+              "fontSize": "{primitive.fontSize.250}",
+              "lineHeight": "{primitive.lineHeight.3}",
+              "letterSpacing": "{primitive.letterSpacing.0}",
+              "textDecoration": "{primitive.textDecoration.underline}"
+            },
+            "type": "typography"
+          },
+          "medium": {
+            "value": {
+              "fontFamily": "{primitive.fontFamily.base}",
+              "fontWeight": "{primitive.fontWeight.regular-400}",
+              "fontSize": "{primitive.fontSize.200}",
+              "lineHeight": "{primitive.lineHeight.3}",
+              "letterSpacing": "{primitive.letterSpacing.0}",
+              "textDecoration": "{primitive.textDecoration.underline}"
+            },
+            "type": "typography"
+          },
+          "small": {
+            "value": {
+              "fontFamily": "{primitive.fontFamily.base}",
+              "fontWeight": "{primitive.fontWeight.regular-400}",
+              "fontSize": "{primitive.fontSize.125}",
+              "lineHeight": "{primitive.lineHeight.4}",
+              "letterSpacing": "{primitive.letterSpacing.0}",
+              "textDecoration": "{primitive.textDecoration.underline}"
+            },
+            "type": "typography"
+          }
+        }
+      },
+      "tertiary": {
+        "fg": {
+          "value": "{primitive.color.gray.500}",
+          "type": "color"
+        },
+        "fg-disabled": {
+          "value": "{fg-disabled}",
+          "type": "color"
+        }
+      }
+    },
+    "button": {
+      "checkout": {
+        "fg": {
+          "value": "{fg-onContrast}",
+          "type": "color"
+        },
+        "countBadge": {
+          "fg": {
+            "value": "{fg-onContrast}",
+            "type": "color"
+          },
+          "bg": {
+            "value": "{primitive.color.gray.700}",
+            "type": "color"
+          },
+          "bg-pressed": {
+            "value": "{primitive.color.gray.600}",
+            "type": "color"
+          },
+          "bgGradient": {
+            "top": {
+              "value": "linear-gradient(180deg, rgba(42,42,42, 1) 0%, rgba(42,42,42, 0) 100%)",
+              "description": "Checkout CountBadge 전용 배경 그라디언트 (위 → 아래)",
+              "type": "color"
+            },
+            "bottom": {
+              "value": "linear-gradient(0deg, rgba(42,42,42,0) 0%, rgba(42,42,42,1) 100%)",
+              "description": "Checkout CountBadge 전용 배경 그라디언트 (아래 → 위)",
+              "type": "color"
+            }
+          },
+          "minWidth": {
+            "value": "{primitive.dimension}*7",
+            "description": "checkout 버튼의 최소 너비",
+            "type": "dimension"
+          }
+        },
+        "fg-disabled": {
+          "value": "{fg-disabled}",
+          "type": "color"
+        },
+        "bg": {
+          "value": "{primitive.color.gray.900}",
+          "type": "color"
+        },
+        "bg-pressed": {
+          "value": "{primitive.color.gray.alpha900.80}",
+          "type": "color"
+        },
+        "bg-disabled": {
+          "value": "{primitive.color.gray.alpha500.10}",
+          "type": "color"
+        }
+      }
+    },
+    "snackbar": {
+      "prefix": {
+        "iconSize": {
+          "m": {
+            "value": "{primitive.size.icon.150}",
+            "description": "Snackbar prefix 아이콘 크기",
+            "type": "sizing"
+          }
+        }
+      },
+      "maxWidth": {
+        "value": "{primitive.dimension}*140",
+        "description": "Snackbar Content 최대 너비",
+        "type": "dimension"
+      },
+      "minHeight": {
+        "value": "{primitive.dimension}*14",
+        "description": "Snackbar Content 최소 높이",
+        "type": "dimension"
+      },
+      "elevation": {
+        "value": {
+          "x": "0",
+          "y": "4",
+          "blur": "16",
+          "spread": "0",
+          "color": "{primitive.color.gray.alpha900.20}",
+          "type": "dropShadow"
+        },
+        "description": "Snackbar Shadow",
+        "type": "boxShadow"
+      },
+      "info": {
+        "bg": {
+          "value": "{pos.bg-accent-blue}",
+          "description": "Snackbar info 배경 색상",
+          "type": "color"
+        },
+        "fg": {
+          "value": "{fg-onContrast}",
+          "description": "Snackbar 텍스트, 아이콘 색상",
+          "type": "color"
+        }
+      },
+      "error": {
+        "bg": {
+          "value": "{primitive.color.red.0}",
+          "description": "Snackbar error 배경 색상",
+          "type": "color"
+        },
+        "fg": {
+          "value": "{fg-critical}",
+          "description": "Snackbar 텍스트, 아이콘 색상",
+          "type": "color"
+        }
+      }
+    }
+  },
+  "tag": {
+    "label": {
+      "fg-blue": {
+        "value": "{pos.fg-accent-blue}",
+        "type": "color"
+      },
+      "fg-gray": {
+        "value": "{fg-low}",
+        "type": "color"
+      }
+    },
+    "iconSize": {
+      "xs": {
+        "value": "{primitive.size.icon.125}",
+        "type": "sizing"
+      }
+    }
+  },
+  "tab": {
+    "text": {
+      "minHeight": {
+        "s": {
+          "value": "{primitive.dimension}*10",
+          "description": "small tabText 최소 높이",
+          "type": "dimension"
+        }
+      }
+    }
+  },
+  "button": {
+    "minWidth": {
+      "m": {
+        "value": "{primitive.dimension}*32",
+        "description": "medium 버튼의 최소 너비",
+        "type": "dimension"
+      }
+    },
+    "maxWidth": {
+      "m": {
+        "value": "{primitive.dimension}*105",
+        "description": "medium 버튼의 최대 너비",
+        "type": "dimension"
+      }
+    }
+  }
+}
