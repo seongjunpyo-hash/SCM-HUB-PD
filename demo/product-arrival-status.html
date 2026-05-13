@@ -219,10 +219,20 @@
       /* base CSS 의 .mp-table-scroll > .mp-table > thead::before (1.5px 검정라인) 가
          sticky thead 와 함께 상단에 따라붙으므로 별도 border-top 불필요. */
     }
-    /* colgroup 폭 강제 적용 */
+    /* table-layout: auto — header(텍스트+sort/filter 아이콘) 와 body 중 더 큰 폭으로 컬럼 자동 확장.
+       colgroup width 는 min-width hint 로만 작동 (브라우저가 콘텐츠가 더 넓으면 자동 확장).
+       fixed 였을 땐 header 의 sort/filter 아이콘이 좁은 col 에서 짤렸음. */
     #pd-drawer .pd-drawer__table-host .mp-table {
-      table-layout: fixed;
+      table-layout: auto;
     }
+    /* col-large (SKU명) — body 가 word-break:break-word + 2줄 wrap 이라 auto layout 에서
+       min-content 가 단어 길이로 좁아짐 → col 이 320 이하로 shrink 되는 회귀. min-width 명시로
+       최소 320 보장하고, body 콘텐츠가 더 길면 (한 줄에 다 안 들어가면) col 이 더 확장됨. */
+    #pd-drawer .pd-drawer__table-host .mp-table .col-large {
+      min-width: 320px;
+    }
+    /* 위 auto layout 에서도 frozen 컬럼의 좌측 sticky offset (--frozen-l-N) 은 실측 픽셀이
+       필요해서 JS 에서 동적으로 set. 초기값은 fallback 으로 colgroup 의 명시 width 합. */
     /* ⚠️ drawer thead sticky 전략 — frozen 헤더 셀이 top sticky 안 되는 문제 해결.
        원인: position: sticky 가 <th> 에 걸려있을 때, frozen <th> 는 sticky-left + sticky-top
        두 방향을 동시에 잡으려고 시도하는데 일부 브라우저/렌더에서 두 방향 조합이 어긋남.
@@ -1266,7 +1276,17 @@
     const cbCls = 'scm-checkbox' + (cbDisabled ? ' is-disabled' : '');
     const cbExtraAttr = cbDisabled ? ' aria-disabled="true"' : '';
     const cbCnt       = isInnerSub ? empty : `<span class="${cbCls}" role="checkbox" aria-checked="false" tabindex="${cbDisabled ? '-1' : '0'}" aria-label="선택"${cbExtraAttr}></span>`;
-    const inNoCnt     = isInnerSub ? empty : fmtText(r.inNo);
+    // 입고번호 — "외 N" 접미가 붙은 경우만 code-link 로 렌더해서 클릭 → codePopover 노출.
+    //   접미 없는 단일 입고번호는 일반 텍스트 그대로 (링크 X).
+    //   정규식 /\s*외\s+\d+\s*$/: 끝부분의 "외 숫자" 매칭. 데이터 예: "OFFLINE_250531_1234 외 3"
+    const inNoHasExtra = !isEmpty(r.inNo) && /\s*외\s+\d+\s*$/.test(String(r.inNo));
+    const inNoCnt     = isInnerSub
+      ? empty
+      : (isEmpty(r.inNo)
+          ? NA
+          : (inNoHasExtra
+              ? `<a class="scm-code-link" data-code-type="inNo">${escapeHtml(r.inNo)}</a>`
+              : escapeHtml(r.inNo)));
     const locCnt      = isInnerSub ? empty : fmtText(r.loc);
     const brandCnt    = isInnerSub ? empty : (isEmpty(r.brand) ? NA : `${escapeHtml(r.brand)}${r.brandExtra ? ` 외 ${r.brandExtra}` : ''}`);
     const uidCnt      = isInnerSub ? empty : (isEmpty(r.uid)   ? NA : `<a class="scm-code-link" data-code-type="uid">${escapeHtml(r.uid)}${r.uidExtra ? ` 외 ${r.uidExtra}` : ''}</a>`);
@@ -1355,6 +1375,30 @@
 
   document.getElementById('data-tbody').innerHTML = rowsToHtml(ROWS);
 
+  // 모든 데이터 컬럼 헤더에 sort/filter/more 아이콘 일괄 주입 — 메인 + 드로워 양쪽.
+  //   skip 대상: cb-col (체크박스) / col-spacer (우측 빈 영역) / col-frozen-1 (No, 정렬 의미 없음)
+  //   이미 아이콘이 있는 th 는 skip (idempotent — 중복 추가 방지).
+  //   드로워 thead 가 sticky position 으로 박혀있어 SCMTable.init 의 thead 이동 race 없음.
+  function ensureHeaderIcons(theadEl) {
+    if (!theadEl) return;
+    const ths = theadEl.querySelectorAll('tr > th');
+    ths.forEach((th) => {
+      if (th.classList.contains('cb-col')) return;
+      if (th.classList.contains('col-spacer')) return;
+      if (th.classList.contains('col-frozen-1')) return;  // No 컬럼 — 정렬 X
+      if (th.querySelector('.sort-ic')) return;            // 이미 박혀있음
+      th.insertAdjacentHTML('beforeend',
+        ' <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg>' +
+        '<span class="th-icons">' +
+          '<svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg>' +
+          '<svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg>' +
+        '</span>'
+      );
+    });
+  }
+  ensureHeaderIcons(document.querySelector('#mp-table > thead'));
+  ensureHeaderIcons(document.querySelector('#pd-drawer-mp-table > thead'));
+
   // 체크박스 토글 wiring — SCM.tableSelection.init 가 document click delegation 으로
   //   1) 본문 cb 클릭 → aria-checked 토글
   //   2) 헤더 cb-all 클릭 → 본문 일괄 토글 + mixed/all/none 동기
@@ -1413,9 +1457,20 @@
     if (window.SCMTable) {
       try { window.SCMTable.init({ root: document, frozenCount: 6 }); } catch (e) { console.warn('SCMTable init failed:', e); }
     }
-    if (window.SCM && SCM.tableSort)           SCM.tableSort.mount({ tableSelector: '.mp-table-scroll .mp-table' });
-    if (window.SCM && SCM.columnMoreMenu)      SCM.columnMoreMenu.mount({ tableSelector: '.mp-table-scroll .mp-table' });
-    if (window.SCM && SCM.columnFilterPopover) SCM.columnFilterPopover.mount({ tableSelector: '.mp-table-scroll .mp-table' });
+    // 메인 테이블 정렬/메뉴/필터 — selector 를 #mp-table 로 명시. 이전 '.mp-table-scroll .mp-table'
+    //   은 querySelector 가 첫 매치 (메인) 만 잡지만, onClick 의 closest 매칭에서 드로워 th 도
+    //   #mp-table thead 가 아닌 일반 mp-table thead 로 잡혀 충돌 가능성 있어 명시 selector 로 좁힘.
+    if (window.SCM && SCM.tableSort)           SCM.tableSort.mount({ tableSelector: '#mp-table' });
+    if (window.SCM && SCM.columnMoreMenu)      SCM.columnMoreMenu.mount({ tableSelector: '#mp-table' });
+    if (window.SCM && SCM.columnFilterPopover) SCM.columnFilterPopover.mount({ tableSelector: '#mp-table' });
+    // 드로워 테이블도 동일 컴포넌트 mount — scope 를 #pd-drawer 로 한정해서 listener 가 메인 클릭은
+    //   안 받게. tableSelector 는 드로워 안 mp-table.
+    const drawerEl = document.getElementById('pd-drawer');
+    if (drawerEl && window.SCM) {
+      if (SCM.tableSort)           SCM.tableSort.mount({ scope: drawerEl, tableSelector: '#pd-drawer-mp-table' });
+      if (SCM.columnMoreMenu)      SCM.columnMoreMenu.mount({ scope: drawerEl, tableSelector: '#pd-drawer-mp-table' });
+      if (SCM.columnFilterPopover) SCM.columnFilterPopover.mount({ scope: drawerEl, tableSelector: '#pd-drawer-mp-table' });
+    }
   }
   if (document.fonts && document.fonts.ready) {
     document.fonts.ready.then(_scmTableBoot);
@@ -1547,7 +1602,25 @@
     function renderDrawerRows(rows) {
       tbody.innerHTML = rows.map(rowToDetailHtml).join('');
       if (cntEl) cntEl.textContent = String(rows.length);
+      // table-layout: auto 에선 frozen col 의 실제 픽셀 width 가 콘텐츠에 따라 변함 →
+      //   --frozen-l1/2/3 CSS 변수를 실측값으로 갱신해야 sticky-left 가 정확히 맞음.
+      syncDrawerFrozenOffsets();
     }
+    // frozen 컬럼 (No / 입고번호 / 입고위치) 의 실측 시작 위치를 --frozen-l-N 으로 set.
+    //   No 시작=0 / 입고번호 시작=No 폭 / 입고위치 시작=No+입고번호 폭.
+    //   render 직후 + window resize 시 재계산.
+    function syncDrawerFrozenOffsets() {
+      const host = document.querySelector('#pd-drawer .pd-drawer__table-host');
+      if (!host) return;
+      const firstRow = host.querySelector('tbody tr');
+      if (!firstRow || firstRow.children.length < 3) return;
+      const w1 = Math.round(firstRow.children[0].getBoundingClientRect().width);
+      const w2 = Math.round(firstRow.children[1].getBoundingClientRect().width);
+      host.style.setProperty('--frozen-l1', '0');
+      host.style.setProperty('--frozen-l2', w1 + 'px');
+      host.style.setProperty('--frozen-l3', (w1 + w2) + 'px');
+    }
+    window.addEventListener('resize', syncDrawerFrozenOffsets);
     function applyDrawerFilter() {
       const active = _drawerFilterInstance ? (_drawerFilterInstance.getActiveFilters() || {}) : {};
       const codeMatch = (vals, target) => {
@@ -1756,19 +1829,21 @@
       return;
     }
 
-    // 3) 코드 link (sku/uid/barcode/styleNo) — 모두 codePopover (복사용 모달) 로 통일.
+    // 3) 코드 link (sku/uid/barcode/styleNo/inNo) — 모두 codePopover (복사용 모달) 로 통일.
     //   이전: sku 만 sku-detail.html 로 페이지 이동 → 사용자 요청으로 다른 코드와 동일하게
     //         popover 노출 (복사 가능, 페이지 이동 X).
+    //   inNo (입고번호) — "외 N" 접미가 붙은 row 만 code-link 로 렌더되어 여기 진입.
     const link = e.target.closest('.scm-code-link');
     if (link) {
       const type = link.getAttribute('data-code-type') || 'sku';
       if (SCM.codePopover) {
         e.preventDefault();
-        const TITLE = { sku:'SKU번호 확인', uid:'연결된 UID번호 확인', barcode:'바코드 확인', styleNo:'스타일넘버 확인' };
-        const COPY  = { sku:'SKU번호 복사', uid:'UID 복사', barcode:'바코드 복사', styleNo:'스타일넘버 복사' };
-        // sku 셀은 "123451 외 1" 처럼 접미사가 있으므로 첫 토큰만 추출.
+        const TITLE = { sku:'SKU번호 확인', uid:'연결된 UID번호 확인', barcode:'바코드 확인', styleNo:'스타일넘버 확인', inNo:'입고번호 확인' };
+        const COPY  = { sku:'SKU번호 복사', uid:'UID 복사', barcode:'바코드 복사', styleNo:'스타일넘버 복사', inNo:'입고번호 복사' };
+        // sku/inNo 셀은 "123451 외 1" / "OFFLINE_250531_1234 외 3" 처럼 접미사가 있으므로
+        //   첫 토큰만 추출 (실제 코드 본체) — popover items 와 클립보드 복사에는 본체만 들어감.
         const txtRaw = (link.textContent || '').trim();
-        const txt = type === 'sku' ? txtRaw.split(' ')[0] : txtRaw;
+        const txt = (type === 'sku' || type === 'inNo') ? txtRaw.split(' ')[0] : txtRaw;
         SCM.codePopover.open({
           title: TITLE[type] || '코드 확인',
           items: [txt],

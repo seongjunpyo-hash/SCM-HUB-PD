@@ -175,6 +175,69 @@
     // ?next=… 가 명시되어 있으면 그쪽을 우선.
     const next = params.get('next') || '/demo/sku-management';
 
+    // 로컬 dev (localhost / 127.0.0.1 / file://) — 백엔드 API 가 없어서 fetch 가 HTML 응답
+    //   ("Unexpected token '<' ... not valid JSON") 으로 실패함. auth-gate 와 동일하게
+    //   바로 next URL 로 redirect — 그쪽에서 fake super 유저로 통과시킴.
+    const isLocal =
+      location.protocol === 'file:' ||
+      location.hostname === 'localhost' ||
+      location.hostname === '127.0.0.1' ||
+      location.hostname.endsWith('.local');
+    if (isLocal) {
+      // Loop guard — 브라우저가 stale auth-gate.js 캐시를 들고 있으면 demo 페이지에서
+      //   다시 login 으로 redirect → login 에서 또 demo 로 → 무한 깜박임 loop.
+      //   sessionStorage 로 직전 redirect 기록을 보고, 짧은 시간 내 반복이면 캐시 자동 강제 갱신.
+      const LOOP_KEY = '__login_local_redirect_ts';
+      const RECOVERED_KEY = '__login_local_cache_recovered';
+      const lastTs = parseInt(sessionStorage.getItem(LOOP_KEY) || '0', 10);
+      const now = Date.now();
+
+      // 캐시 강제 갱신 — fetch({ cache: 'reload' }) 로 stale 한 absolute-path 스크립트들을
+      //   HTTP 캐시에 fresh 버전으로 덮어씀. 이후 demo 페이지가 같은 URL 을 script tag 로 로드해도
+      //   브라우저가 갱신된 캐시를 사용 → 새 auth-gate.js 로직 (isLocal 통과) 실행.
+      function refreshCachedScripts() {
+        const urls = ['/auth-gate.js', '/scm-shell.js', '/scm-icons.js'];
+        return Promise.all(
+          urls.map((u) =>
+            fetch(u, { cache: 'reload', credentials: 'omit' }).catch(() => null)
+          )
+        );
+      }
+
+      if (now - lastTs > 3000) {
+        // 3초 이내 재방문이 아니면 정상 redirect.
+        sessionStorage.setItem(LOOP_KEY, String(now));
+        location.replace(next);
+      } else if (sessionStorage.getItem(RECOVERED_KEY) !== '1') {
+        // loop 감지 + 아직 자동 복구 시도 안 했음 → fresh script 받아온 후 재시도.
+        sessionStorage.setItem(RECOVERED_KEY, '1');
+        sessionStorage.removeItem(LOOP_KEY);
+        document.addEventListener('DOMContentLoaded', () => {
+          const banner = document.createElement('div');
+          banner.style.cssText = 'position:fixed;top:0;left:0;right:0;padding:16px;background:#FFF4E5;color:#1A1A1A;font-size:14px;text-align:center;border-bottom:2px solid #F5A623;z-index:9999;';
+          banner.innerHTML = '<b>캐시 자동 갱신 중...</b><br><small>잠시만 기다려주세요.</small>';
+          document.body.prepend(banner);
+        });
+        refreshCachedScripts().then(() => {
+          // 갱신 끝나면 잠시 후 next 로 redirect — 캐시 settle 시간 확보.
+          setTimeout(() => location.replace(next), 300);
+        });
+      } else {
+        // 자동 복구 시도했는데도 loop — 수동 개입 안내.
+        sessionStorage.removeItem(LOOP_KEY);
+        sessionStorage.removeItem(RECOVERED_KEY);
+        document.addEventListener('DOMContentLoaded', () => {
+          const banner = document.createElement('div');
+          banner.style.cssText = 'position:fixed;top:0;left:0;right:0;padding:16px;background:#FFF4E5;color:#1A1A1A;font-size:14px;text-align:center;border-bottom:2px solid #F5A623;z-index:9999;';
+          banner.innerHTML =
+            '<b>자동 복구 실패 — 수동 작업 필요</b><br>' +
+            '<small>① F12 (DevTools) → Network 탭 → "Disable cache" 체크박스 ON<br>' +
+            '② 그 상태로 Cmd+Shift+R 강제 새로고침. 또는 시크릿 모드에서 다시 접속.</small>';
+          document.body.prepend(banner);
+        });
+      }
+    }
+
     // If already logged in, redirect
     fetch('/api/auth/me', { credentials: 'same-origin' })
       .then((r) => r.json())

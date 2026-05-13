@@ -224,7 +224,9 @@
   color: #000;
   /* box-sizing 은 body td 와 동일하게 content-box (default) — width 계산 일관 → thead/body column divider 1px 어긋남 방지 */
   height: 44px;
-  padding: 12px 16px;
+  /* 사용자 요청: 상/하 padding 12 제거 — 좌우 16 만 유지. line-height 19.6 + height 44 로
+     세로 가운데 정렬은 vertical-align: middle 가 처리. */
+  padding: 0 16px;
   text-align: left;
   border-bottom: 1px solid #E0E0E0;
   border-left: 1px solid #EBEBEB;
@@ -278,26 +280,45 @@
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  margin-left: 8px;
+  /* hover 시에만 margin 부여 — 비-hover 일 때 컬럼 폭 차지 안 하도록 0. is-active 면 항상 노출. */
+  margin-left: 0;
   vertical-align: middle;
+  transition: margin-left 0.15s ease;
+}
+.mp-table thead th:hover .th-icons,
+.mp-table thead th:has(.filter-ic.is-active) .th-icons {
+  margin-left: 8px;
 }
 .mp-table thead th .filter-ic {
-  width: 16px; height: 16px;
+  /* 비-hover: width 0 으로 collapse → 컬럼 폭 차지 X. hover/active 시 16px 로 expand. */
+  width: 0; height: 16px;
   color: #CCC;
   cursor: pointer;
   opacity: 0;
   pointer-events: none;
-  transition: color 0.15s ease, opacity 0.15s ease;
+  transition: color 0.15s ease, opacity 0.15s ease, width 0.15s ease;
+  overflow: hidden;
 }
-.mp-table thead th:hover .filter-ic { opacity: 1; pointer-events: auto; color: #666; }
+.mp-table thead th:hover .filter-ic {
+  width: 16px;
+  opacity: 1;
+  pointer-events: auto;
+  color: #666;
+}
 .mp-table thead th .filter-ic:hover { color: #000; }
 .mp-table thead th .more-ic { display: none; }
 
 /* 컬럼 필터가 적용된 경우 — 호버 여부와 무관하게 항상 노출 + 블루 활성 */
-.mp-table thead th .filter-ic.is-active { opacity: 1 !important; pointer-events: auto !important; color: #245EFF !important; }
+.mp-table thead th .filter-ic.is-active {
+  width: 16px !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  color: #245EFF !important;
+}
 
 /* ----- 본문 셀 — 1줄 nowrap, 잘림 (말줄임 ... 미노출), 좌측 상단 정렬 -----
-   row 헤이트 = padding 12+12 + line-height 20.4 ≈ 44.4 (1줄). thumb·multi-line 셀이 있으면 그만큼 stretch. */
+   row 헤이트 = padding 12+12 + line-height 20.4 ≈ 44.4 (1줄). thumb·multi-line 셀이 있으면 그만큼 stretch.
+   본문 셀은 12px 상/하 padding 유지 (heeader 만 0). */
 .mp-table tbody td {
   padding: 12px 16px;
   border-top: 1px solid #EBEBEB;
@@ -460,6 +481,18 @@
   flex-wrap: nowrap;
   max-width: var(--scm-col-medium-max);
   vertical-align: top;
+}
+
+/* thead 의 col-large cell-clamp — header 텍스트 (SKU명 등) 는 짧고 2줄 wrap 불필요.
+   block-like display:-webkit-box 라 뒤따르는 sort-ic / th-icons 가 다음 줄로 떨어지는 회귀
+   차단. inline-flex 로 만들어 헤더 텍스트와 정렬/필터 아이콘이 같은 라인에 위치. */
+.mp-table thead th.col-large > .cell-clamp {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 /* col-large cell-clamp: 320 고정 폭 — 컨텐츠가 폭 넘으면 2줄 wrap (말줄임). 상품명·SKU명·스타일명. */

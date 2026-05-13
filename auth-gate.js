@@ -26,6 +26,30 @@ try {
 } catch (_) {}
 
 (function () {
+  // 로컬 dev (localhost / 127.0.0.1 / file://) — 백엔드 (/api/*) 가 없어서 /api/auth/me 가
+  //   404 HTML 응답을 받음 → JSON.parse 실패 → catch → login 리다이렉트 → login 페이지도
+  //   /api/auth/login 호출 시 같은 HTML 받아 "Unexpected token '<' is not valid JSON" 노출.
+  //   로컬에선 fake super 유저로 통과시켜 데모 페이지 검수 가능하도록.
+  var isLocal =
+    location.protocol === 'file:' ||
+    location.hostname === 'localhost' ||
+    location.hostname === '127.0.0.1' ||
+    location.hostname.endsWith('.local');
+  if (isLocal) {
+    window.SCM_USER = { id: 'local', email: 'local@dev', name: '로컬', role: 'super' };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () {
+        document.dispatchEvent(new CustomEvent('scm:auth-ready', { detail: { user: window.SCM_USER } }));
+      }, { once: true });
+    } else {
+      document.dispatchEvent(new CustomEvent('scm:auth-ready', { detail: { user: window.SCM_USER } }));
+    }
+    // 로그아웃 helper 도 fake — fetch 안 보내고 그냥 reload.
+    window.SCM = window.SCM || {};
+    window.SCM.logout = function () { location.reload(); };
+    return;
+  }
+
   // 로그인 / 초대수락 페이지 자체는 인증 필요 없음 — 게이트 스킵
   var SKIP = ['/login.html', '/invite-accept.html'];
   if (SKIP.indexOf(location.pathname) !== -1) return;
