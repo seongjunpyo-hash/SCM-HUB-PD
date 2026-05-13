@@ -544,7 +544,13 @@
     .iss-notify-btn__icon { width: 16px; height: 16px; }
     .iss-notify-btn__divider { width: 1px; height: 16px; background: #EBEBEB; }
     .iss-notify-btn__status { display: inline-flex; align-items: center; gap: 2px; color: #245EFF; }
+    /* 완료 상태 — green (#1EA514, status-chip done variant 와 동일) */
+    .iss-notify-btn__status.is-done { color: #1EA514; }
     .iss-notify-btn__status-num { font-weight: 600; }
+    /* HTML 의 [hidden] 속성은 기본 display: none 이지만 위 inline-flex 룰이 더 specificity 가
+       높아서 무력화됨. [hidden] 일 땐 강제로 안 보이게. */
+    .iss-notify-btn__divider[hidden],
+    .iss-notify-btn__status[hidden] { display: none; }
 
     /* (removed: scm-table-action-bar — 하단 고정 액션 바는 사용자 요청으로 제거) */
 
@@ -575,7 +581,9 @@
     <div class="scm-page-head scm-page-head--list">
       <h1 class="scm-page-head__title">위탁 상품 입고 현황</h1>
       <div class="scm-page-head__actions">
-        <!-- 디폴트: divider + "진행중 N" 영역은 hidden. 입고 취소 처리 시 노출되고 카운트 증가. -->
+        <!-- 디폴트: divider + status 영역 모두 hidden. 입고 취소 처리 시 진행중 / 완료에 따라 노출.
+             진행중 > 0: "진행중 X/Y" (blue)
+             진행중 0 + 완료 > 0: "완료 N" (green) -->
         <button class="iss-notify-btn" type="button" id="notify-btn" aria-label="알림함">
           <svg class="iss-notify-btn__icon" viewBox="0 0 16 16" aria-hidden="true">
             <path d="M3.5 6.5a4.5 4.5 0 0 1 9 0v3l1 2H2.5l1-2v-3z" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round"/>
@@ -584,8 +592,8 @@
           <span>알림함</span>
           <span class="iss-notify-btn__divider" hidden></span>
           <span class="iss-notify-btn__status" hidden>
-            <span>진행중</span>
-            <span class="iss-notify-btn__status-num" id="iss-notify-progress-num">0</span>
+            <span class="iss-notify-btn__status-label" id="iss-notify-status-label">진행중</span>
+            <span class="iss-notify-btn__status-num" id="iss-notify-status-num">0</span>
           </span>
         </button>
       </div>
@@ -1984,6 +1992,61 @@
   if (notifyBtn) notifyBtn.addEventListener('click', openNotifyModal);
   const notifyBackdrop = document.getElementById('iss-notify-backdrop');
   if (notifyBackdrop) notifyBackdrop.addEventListener('click', closeNotifyModal);
+
+  // ============================================================
+  // 알림함 버튼 상태 머신 — progress / complete 카운트 → 진행중 / 완료 표시 분기.
+  //   bumpNotifyProgress 호출 시: progress += n, total += n  → "진행중 X/Y" (blue)
+  //   completeNotify 호출 시:     progress -= k, complete += k → 진행중 0 되면 "완료 N" (green)
+  //   데모: scheduleNotifyTransition 가 5초마다 절반씩 자동 완료 처리.
+  // ============================================================
+  const _notifyState = { progress: 0, complete: 0, total: 0 };
+  function refreshNotifyBtn() {
+    const divider = document.querySelector('.iss-notify-btn__divider');
+    const status  = document.querySelector('.iss-notify-btn__status');
+    const labelEl = document.getElementById('iss-notify-status-label');
+    const numEl   = document.getElementById('iss-notify-status-num');
+    const btn     = document.getElementById('notify-btn');
+    if (!divider || !status || !labelEl || !numEl) return;
+    if (_notifyState.progress > 0) {
+      labelEl.textContent = '진행중';
+      numEl.textContent = `${_notifyState.progress}/${_notifyState.total}`;
+      status.classList.remove('is-done');
+      divider.hidden = false;
+      status.hidden = false;
+      if (btn) btn.setAttribute('aria-label', `알림함 - 진행중 ${_notifyState.progress}건 / 전체 ${_notifyState.total}건`);
+    } else if (_notifyState.complete > 0) {
+      labelEl.textContent = '완료';
+      numEl.textContent = String(_notifyState.complete);
+      status.classList.add('is-done');
+      divider.hidden = false;
+      status.hidden = false;
+      if (btn) btn.setAttribute('aria-label', `알림함 - 완료 ${_notifyState.complete}건`);
+    } else {
+      divider.hidden = true;
+      status.hidden = true;
+      if (btn) btn.setAttribute('aria-label', '알림함');
+    }
+  }
+  function bumpNotifyProgress(n) {
+    _notifyState.progress += n;
+    _notifyState.total    += n;
+    refreshNotifyBtn();
+  }
+  function completeNotify(k) {
+    if (k > _notifyState.progress) k = _notifyState.progress;
+    _notifyState.progress -= k;
+    _notifyState.complete += k;
+    refreshNotifyBtn();
+  }
+  // 데모용 transition — 입고 취소 요청 N건이 들어오면 5초 뒤 절반 완료, 10초 뒤 나머지 완료.
+  //   실제 시스템에선 서버에서 처리 완료 알림을 받아 completeNotify(k) 호출.
+  function scheduleNotifyTransition(n) {
+    if (n <= 0) return;
+    bumpNotifyProgress(n);
+    const half = Math.ceil(n / 2);
+    setTimeout(() => completeNotify(half), 5000);
+    setTimeout(() => completeNotify(n - half), 10000);
+  }
   const notifyCloseBtn = document.getElementById('iss-notify-close-btn');
   if (notifyCloseBtn) notifyCloseBtn.addEventListener('click', closeNotifyModal);
   // 알림 row 내 "확인하기" → 데모용 토스트
@@ -2109,23 +2172,12 @@
           title: '입고 취소 처리 시작',
           desc: '화면을 닫아도 처리는 계속 진행됩니다.',
         });
-        // 알림함 버튼의 "진행중 N" 영역을 노출 + 카운트 증가 (영향받은 신청번호 그룹 수만큼).
-        //   디폴트는 divider/status 가 hidden 이라 알림함 텍스트만 노출. 첫 취소에 영역 표시 시작.
-        (function bumpNotifyProgress() {
-          const num = document.getElementById('iss-notify-progress-num');
-          const divider = document.querySelector('.iss-notify-btn__divider');
-          const status = document.querySelector('.iss-notify-btn__status');
-          if (!num || !divider || !status) return;
-          const cur = parseInt(num.textContent || '0', 10) || 0;
-          const next = cur + affectedReqNos.size;        // 신청번호 그룹 단위로 진행중 카운트
-          num.textContent = String(next);
-          if (next > 0) {
-            divider.hidden = false;
-            status.hidden = false;
-            const btn = document.getElementById('notify-btn');
-            if (btn) btn.setAttribute('aria-label', `알림함 - 진행중 ${next}건`);
-          }
-        })();
+        // 알림함 버튼 카운트 — 신청번호 그룹 단위. 진행중 / 완료 두 모드:
+        //   진행중 > 0          → "진행중 X/Y" (X=진행중, Y=총건수)  blue
+        //   진행중 0 + 완료 > 0 → "완료 N"                              green
+        //   모두 0              → divider/status 둘 다 hidden
+        // 데모: 입고 취소 직후 진행중 카운트 +N, 5초 후 절반 완료로 전환, 10초 후 전부 완료.
+        scheduleNotifyTransition(affectedReqNos.size);
       });
     });
   }
