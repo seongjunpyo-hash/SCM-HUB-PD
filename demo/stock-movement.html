@@ -200,12 +200,10 @@
     .mp-table tbody td.stm-c-amount { font-weight: 600; }
     .mp-table th.stm-c-user,    .mp-table td.stm-c-user    { min-width: 160px; }
     .mp-table th.stm-c-regdate, .mp-table td.stm-c-regdate { min-width: 140px; }
-    /* 등록일시 (마지막 데이터 컬럼) 우측 — col-spacer 와 경계 라인.
+    /* 등록일시 (마지막 데이터 컬럼) — thead 헤더 셀 우측에만 1px 라인 (body 는 X).
        mp-table 은 column divider 를 border-LEFT 로 그리는데 col-spacer 는 border-left 가 없어서
-       경계가 안 보이는 회귀. 등록일시 셀에 border-right 명시.
-       톤은 col-frozen-last 와 같은 rgba(0,0,0,0.12) — "데이터 영역 끝" 경계 강조. */
-    .mp-table th.stm-c-regdate,
-    .mp-table tbody td.stm-c-regdate { border-right: 1px solid rgba(0, 0, 0, 0.12); }
+       헤더 경계가 안 보이는 회귀. thead 의 등록일시 셀에만 border-right 명시. */
+    .mp-table thead th.stm-c-regdate { border-right: 1px solid #EBEBEB; }
 
     /* === 셀 내 도메인 콘텐츠 === */
     /* 등록번호 셀 — 코드 + 자동승인 작은 라벨 */
@@ -1541,6 +1539,7 @@
   const _stmCancelBtn = document.getElementById('stm-out-cancel-btn');
   const _stmStatEl    = document.querySelector('.scm-stats-bar__counts .scm-stat');
   function _stmRefreshActionBar() {
+    const allBodyCbs = document.querySelectorAll('#stm-tbody .scm-checkbox');
     const checked = document.querySelectorAll('#stm-tbody .scm-checkbox[aria-checked="true"]').length;
     const total = ROWS.length;
     // 출고 취소 button enable/disable
@@ -1567,6 +1566,17 @@
         _stmStatEl.classList.remove('scm-stat--selected');
         _stmStatEl.classList.add('scm-stat--all');
         _stmStatEl.innerHTML = '<span class="scm-stat__label">전체</span> <span class="scm-stat__num">' + total + '</span>';
+      }
+    }
+    // 헤더 cb-all 상태 동기화 — 0=false / 전부=true / 일부=mixed (대시)
+    const cbAll = document.getElementById('stm-cb-all');
+    if (cbAll && allBodyCbs.length > 0) {
+      let next;
+      if (checked === 0) next = 'false';
+      else if (checked === allBodyCbs.length) next = 'true';
+      else next = 'mixed';
+      if (cbAll.getAttribute('aria-checked') !== next) {
+        cbAll.setAttribute('aria-checked', next);
       }
     }
   }
