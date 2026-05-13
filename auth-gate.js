@@ -25,6 +25,51 @@ try {
   }
 } catch (_) {}
 
+// 일회성 마이그레이션 — 캐노니컬 'order' L1 (발주/입고 관리) 이 menu-deleted 에
+// 들어가있어서 OTB 예산 관리가 LNB 에서 숨겨진 케이스 자동 복구. FIX_KEY 로
+// 한 번만 실행되게 마킹. 사용자가 명시적으로 다시 삭제하면 그건 유지됨.
+try {
+  if (typeof localStorage !== 'undefined') {
+    var _FIX_KEY = 'scm:voc:_fix:order-l1-restore:v1';
+    if (!localStorage.getItem(_FIX_KEY)) {
+      ['scm:voc:menu-deleted:v1', 'scm:voc:menu-hidden:v1'].forEach(function (k) {
+        var raw = localStorage.getItem(k);
+        if (!raw) return;
+        var v;
+        try { v = JSON.parse(raw); } catch (_) { return; }
+        if (v && Array.isArray(v.l1) && v.l1.indexOf('order') >= 0) {
+          v.l1 = v.l1.filter(function (x) { return x !== 'order'; });
+          localStorage.setItem(k, JSON.stringify(v));
+        }
+      });
+      // 신규 그룹 '발주/입고 관리' 가 있는데 그 안에 OTB 가 없으면 OTB 페이지 entry 자동 추가
+      var npRaw = localStorage.getItem('scm:voc:newpages:v1');
+      if (npRaw) {
+        var np;
+        try { np = JSON.parse(npRaw); } catch (_) { np = null; }
+        if (Array.isArray(np)) {
+          var orderL1 = np.find(function (p) {
+            return p && p.mode === 'l1' && (p.l1Label === '발주/입고 관리' || p.l1 === 'Order/Receipt-Manage');
+          });
+          var hasOtb = np.find(function (p) { return p && p.path === '/demo/otb-budget.html'; });
+          if (orderL1 && !hasOtb) {
+            np.push({
+              id: 'otb-budget-restored-' + Date.now(),
+              mode: 'l2',
+              l1: orderL1.l1,
+              path: '/demo/otb-budget.html',
+              name: 'OTB 예산 관리',
+              createdAt: Date.now(),
+            });
+            localStorage.setItem('scm:voc:newpages:v1', JSON.stringify(np));
+          }
+        }
+      }
+      localStorage.setItem(_FIX_KEY, '1');
+    }
+  }
+} catch (_) {}
+
 (function () {
   // 로컬 dev (localhost / 127.0.0.1 / file://) — 백엔드 (/api/*) 가 없어서 /api/auth/me 가
   //   404 HTML 응답을 받음 → JSON.parse 실패 → catch → login 리다이렉트 → login 페이지도
