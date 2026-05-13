@@ -639,42 +639,6 @@
     });
   }
 
-  // OTB 안전망 — 부모 'order' L1 이 hide/delete 됐고 OTB 자체는 explicit
-  // hide 안 됐을 때 (부모 따라 같이 사라진 케이스) 만 강제 복원. OTB 자체를
-  // hide/delete 한 경우는 사용자 의도 존중.
-  function _ensureOtbVisible(el) {
-    if (!el) return;
-    if (el.querySelector('.scm-lnb-l2[data-key="otb-budget"]')) return;  // 이미 보임
-    var hidden = _loadMenuHidden();
-    var deleted = _loadMenuDeleted();
-    // OTB 직접 hide / delete 됐으면 (사용자 의도) 강제 복원 X
-    if (hidden.l2.indexOf('otb-budget') >= 0) return;
-    if (deleted.l2.indexOf('otb-budget') >= 0) return;
-    // 발주/입고 L1 그룹 찾기 — 캐노니컬 'order' 또는 라벨 매치
-    var targetL1 = el.querySelector('.scm-lnb-item[data-key="order"]');
-    if (!targetL1) {
-      var items = el.querySelectorAll('.scm-lnb-item');
-      for (var i = 0; i < items.length; i++) {
-        var labelEl = items[i].querySelector('.scm-lnb-label');
-        if (labelEl && labelEl.textContent && labelEl.textContent.indexOf('발주/입고') >= 0) {
-          targetL1 = items[i]; break;
-        }
-      }
-    }
-    if (!targetL1) return;
-    var l2List = targetL1.querySelector('.scm-lnb-l2-list');
-    if (!l2List) return;
-    var a = document.createElement('a');
-    a.className = 'scm-lnb-l2';
-    a.href = 'otb-budget.html';
-    a.dataset.key = 'otb-budget';
-    var span = document.createElement('span');
-    span.className = 'scm-lnb-l2-text';
-    span.textContent = 'OTB 예산 관리';
-    a.appendChild(span);
-    l2List.insertBefore(a, l2List.firstChild);
-  }
-
   function mount(el, opts) {
     if (!el) return null;
     // Empty placeholder → inject canonical LNB markup (단일 source).
@@ -689,9 +653,6 @@
     _applyMenuOrderToLnb(el);
     // VOC 메뉴관리에서 L1 그룹별로 아이콘을 변경한 결과 적용.
     _applyMenuIconsToLnb(el);
-    // OTB 안전망 — OTB 가 explicit hide 가 아닌데도 사라진 케이스 (부모 L1 deleted)
-    // 만 강제 복원. OTB 직접 hide 했으면 그대로 두기.
-    _ensureOtbVisible(el);
     var options = opts || {};
     var active = options.active || el.getAttribute('data-active');
     if (active) setActive(el, active);

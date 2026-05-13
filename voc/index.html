@@ -7760,33 +7760,6 @@
         for (const c of childMap.values()) ordered.push(c);
         return Object.assign({}, g, { children: ordered });
       });
-      // Safety net — OTB 예산 관리가 어떤 그룹에도 없으면 강제 inject.
-      // 사용자가 캐노니컬 'order' L1 또는 OTB L2 를 hide/delete 한 케이스 회귀 방지.
-      // canonical MENU 에 OTB 가 있는데 VOC 메뉴 트리에서 사라지면 사용자가 다시
-      // 복구할 방법이 없으므로, VOC UI 에서는 항상 OTB 항목이 보이도록 보장.
-      // 사용자는 여기서 hide/delete/move 정상 컨트롤 가능.
-      try {
-        const OTB_PATH = '/demo/otb-budget.html';
-        const hasOtb = tree.some((g) => g.children && g.children.some((c) => c.path === OTB_PATH));
-        if (!hasOtb) {
-          // 캐노니컬 'order' 또는 '발주/입고' 라벨의 그룹 검색
-          let targetG = tree.find((g) => g.l1 === 'order');
-          if (!targetG) {
-            targetG = tree.find((g) => (g.label || '').indexOf('발주/입고') >= 0);
-          }
-          // 그래도 없으면 발주/입고 L1 그룹을 새로 생성 (canonical 'order' 가 deleted 됐어도 복구)
-          if (!targetG) {
-            targetG = { l1: 'order', label: '발주/입고 관리', isNewL1: false, children: [] };
-            tree.push(targetG);
-          }
-          targetG.children = (targetG.children || []).concat([{
-            key: 'otb-budget',
-            label: 'OTB 예산 관리',
-            path: OTB_PATH,
-            isNewPage: false,
-          }]);
-        }
-      } catch (_) {}
       return tree;
     }
     function renderNewPageList() {
