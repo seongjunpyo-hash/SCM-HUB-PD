@@ -971,23 +971,9 @@
 (function () {
   'use strict';
 
-  // 발주/입고 관리 L1 (data-key='order') 의 VOC 아이콘 override 제거 —
-  //   사용자가 이전에 VOC 에서 ic-doc 등으로 바꾼 상태가 localStorage 에 남아있으면
-  //   _applyMenuIconsToLnb 가 캐노니컬 클립보드+체크 SVG 를 ic-doc 으로 덮어씌움.
-  //   해당 'order' entry 만 제거해서 캐노니컬 아이콘이 그대로 노출되도록.
-  (function clearOrderIconOverride() {
-    try {
-      const KEY = 'scm:voc:menu-icons:v1';
-      const raw = localStorage.getItem(KEY);
-      if (!raw) return;
-      const map = JSON.parse(raw);
-      if (map && typeof map === 'object' && !Array.isArray(map) && map.order) {
-        delete map.order;
-        if (Object.keys(map).length) localStorage.setItem(KEY, JSON.stringify(map));
-        else                          localStorage.removeItem(KEY);
-      }
-    } catch (_) {}
-  })();
+  // (removed: clearOrderIconOverride — 이제 VOC 메뉴관리에서 사용자가 직접
+  //  ic-orderSetting 등 sprite 아이콘을 골라 저장할 수 있어서, 페이지에서 강제 제거하면
+  //  사용자 선택이 매 로드마다 wipe 됨. localStorage 에 저장된 사용자 선택을 그대로 둠.)
 
   // LNB 활성 메뉴 강제 적용 — autoMount 가 data-active 를 읽어 setActive 를 호출하지만,
   // file:// 환경 / VOC localStorage 간섭 등으로 누락되는 회귀가 있어 페이지에서 직접 한 번 더
@@ -1502,6 +1488,17 @@
     });
     if (closeBtn) closeBtn.addEventListener('click', () => dr.close());
     if (closeXBtn) closeXBtn.addEventListener('click', () => dr.close());
+
+    // 드로워 테이블에 엑셀 풍 셀 드래그 선택 / Cmd+C 복사 활성 — SCMTable.setupCellSelection 만
+    //   직접 호출 (data-scm-skip-init='true' 라 SCMTable.init 의 sticky thead 경로는 skip 유지).
+    //   root = drawer 의 mp-table-host. 내부에서 .mp-table-scroll .mp-table 을 찾아 listener 부착.
+    //   event delegation 기반이라 행이 동적으로 갱신돼도 유지 — 한 번만 호출하면 충분.
+    (function enableDrawerCellSelection() {
+      if (!(window.SCMTable && SCMTable.setupCellSelection)) return;
+      const drawerHost = document.querySelector('#pd-drawer .pd-drawer__table-host');
+      if (!drawerHost) return;
+      try { SCMTable.setupCellSelection(drawerHost); } catch (e) { console.warn('drawer cell-select failed:', e); }
+    })();
 
     // 현재 drawer 에 로드된 row pool — drawer 필터 적용 시 이 pool 을 다시 거름.
     let _drawerRows = [];
@@ -2029,7 +2026,13 @@
         if (cbAll) cbAll.setAttribute('aria-checked', 'false');
         // 액션바 상태 (cancelBtn disabled, stats-bar 전체/선택됨 morph) 즉시 재계산.
         if (typeof refreshActionBar === 'function') refreshActionBar();
-        if (SCM.toast) SCM.toast.show({ variant: 'success', title: '입고 취소 요청', desc: `${checkedCbs.length}건의 입고 취소 요청이 접수되었습니다.` });
+        // 입고 취소 처리 시작 토스트 — figma snackbar spec (info variant: 파란 checkCircle 아이콘).
+        //   기존 "${N}건 접수되었습니다" 메시지를 figma 텍스트로 교체.
+        if (SCM.toast) SCM.toast.show({
+          variant: 'info',
+          title: '입고 취소 처리 시작',
+          desc: '화면을 닫아도 처리는 계속 진행됩니다.',
+        });
       });
     });
   }
