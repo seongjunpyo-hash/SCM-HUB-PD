@@ -735,10 +735,10 @@
               <th class="col-auto">스타일넘버</th>
               <th class="col-auto cell-numeric">입고 예정 총수량</th>
               <th class="col-auto cell-numeric">입고 확정 총수량</th>
+              <th class="col-auto">신청일 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
               <th class="col-auto">입고예정일 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
               <th class="col-auto">센터 도착일시</th>
               <th class="col-auto">입고확정일</th>
-              <th class="col-auto">신청일 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
               <th class="col-auto">취소사유</th>
               <th class="col-spacer" aria-hidden="true"></th>
             </tr>
@@ -856,7 +856,7 @@
             <colgroup>
               <col style="width:48px"/>     <!-- No -->
               <col style="width:200px"/>    <!-- 입고번호 -->
-              <col style="width:100px"/>    <!-- 입고위치 -->
+              <col style="width:100px" class="col-frozen-last"/>    <!-- 입고위치 (frozen 영역 끝) -->
               <col style="width:100px"/>    <!-- 브랜드 -->
               <col style="width:80px"/>     <!-- UID -->
               <col style="width:80px"/>     <!-- 옵션 -->
@@ -876,7 +876,7 @@
               <tr>
                 <th class="col-auto col-frozen-1">No</th>
                 <th class="col-auto col-frozen-2">입고번호</th>
-                <th class="col-auto col-frozen-3">입고위치</th>
+                <th class="col-auto col-frozen-3 col-frozen-last">입고위치</th>
                 <th class="col-auto">브랜드</th>
                 <th class="col-auto">UID</th>
                 <th class="col-auto">옵션</th>
@@ -1346,10 +1346,10 @@
         <td class="col-auto${iCls}">${styleNoCnt}</td>
         <td class="col-auto cell-numeric${iCls}">${expQtyCnt}</td>
         <td class="col-auto cell-numeric${iCls}" style="${isInnerSub ? '' : `color:${confirmedColor};font-weight:${confirmedWeight};`}">${cnfQtyCnt}</td>
+        <td class="col-auto${iCls}">${reqDateCnt}</td>
         <td class="col-auto${iCls}">${expDateCnt}</td>
         <td class="col-auto${iCls}">${arrDateCnt}</td>
         <td class="col-auto${iCls}">${cnfDateCnt}</td>
-        <td class="col-auto${iCls}">${reqDateCnt}</td>
         <td class="col-auto${iCls}">${reasonCnt}</td>
         <td class="col-spacer" aria-hidden="true"></td>
       </tr>
@@ -1561,15 +1561,21 @@
     if (closeBtn) closeBtn.addEventListener('click', () => dr.close());
     if (closeXBtn) closeXBtn.addEventListener('click', () => dr.close());
 
-    // 드로워 테이블에 엑셀 풍 셀 드래그 선택 / Cmd+C 복사 활성 — SCMTable.setupCellSelection 만
-    //   직접 호출 (data-scm-skip-init='true' 라 SCMTable.init 의 sticky thead 경로는 skip 유지).
-    //   root = drawer 의 mp-table-host. 내부에서 .mp-table-scroll .mp-table 을 찾아 listener 부착.
-    //   event delegation 기반이라 행이 동적으로 갱신돼도 유지 — 한 번만 호출하면 충분.
-    (function enableDrawerCellSelection() {
-      if (!(window.SCMTable && SCMTable.setupCellSelection)) return;
+    // 드로워 테이블 interactions — SCMTable.init 는 data-scm-skip-init 으로 통째 skip 하고
+    //   필요한 setup 만 직접 호출:
+    //     - setupCellSelection: 엑셀 풍 셀 드래그 선택 + Cmd+C TSV 복사
+    //     - setupTableInteractions: 컬럼 더블클릭 선택 + resize 핸들 (drag로 폭 조절) + 헤더 reorder
+    //   둘 다 sticky thead clone 없어도 origTable 직접 사용하도록 fallback 지원.
+    (function enableDrawerTableInteractions() {
+      if (!window.SCMTable) return;
       const drawerHost = document.querySelector('#pd-drawer .pd-drawer__table-host');
       if (!drawerHost) return;
-      try { SCMTable.setupCellSelection(drawerHost); } catch (e) { console.warn('drawer cell-select failed:', e); }
+      if (SCMTable.setupCellSelection) {
+        try { SCMTable.setupCellSelection(drawerHost); } catch (e) { console.warn('drawer cell-select failed:', e); }
+      }
+      if (SCMTable.setupTableInteractions) {
+        try { SCMTable.setupTableInteractions(drawerHost, { frozenCount: 3 }); } catch (e) { console.warn('drawer interactions failed:', e); }
+      }
     })();
 
     // 현재 drawer 에 로드된 row pool — drawer 필터 적용 시 이 pool 을 다시 거름.
@@ -1594,7 +1600,7 @@
         <tr>
           <td class="col-auto col-frozen-1">${idx + 1}</td>
           <td class="col-auto col-frozen-2">${escapeHtml(stripExtra(r.inNo))}</td>
-          <td class="col-auto col-frozen-3">${escapeHtml(r.loc)}</td>
+          <td class="col-auto col-frozen-3 col-frozen-last">${escapeHtml(r.loc)}</td>
           <td class="col-auto">${escapeHtml(r.brand)}</td>
           <td class="col-auto"><a class="scm-code-link" data-code-type="uid">${escapeHtml(r.uid)}</a></td>
           <td class="col-auto">${escapeHtml(r.opt)}</td>
@@ -1623,11 +1629,13 @@
       if (cntEl) cntEl.textContent = String(rows.length);
       // table-layout: auto 에선 frozen col 의 실제 픽셀 width 가 콘텐츠에 따라 변함 →
       //   --frozen-l1/2/3 CSS 변수를 실측값으로 갱신해야 sticky-left 가 정확히 맞음.
+      //   innerHTML 직후엔 layout 미완료 — 2단계로 측정 (즉시 + RAF) 해서 stable 값 보장.
       syncDrawerFrozenOffsets();
+      requestAnimationFrame(syncDrawerFrozenOffsets);
     }
     // frozen 컬럼 (No / 입고번호 / 입고위치) 의 실측 시작 위치를 --frozen-l-N 으로 set.
     //   No 시작=0 / 입고번호 시작=No 폭 / 입고위치 시작=No+입고번호 폭.
-    //   render 직후 + window resize 시 재계산.
+    //   render 직후 + drawer open 직후 + window resize 시 재계산.
     function syncDrawerFrozenOffsets() {
       const host = document.querySelector('#pd-drawer .pd-drawer__table-host');
       if (!host) return;
@@ -1635,11 +1643,32 @@
       if (!firstRow || firstRow.children.length < 3) return;
       const w1 = Math.round(firstRow.children[0].getBoundingClientRect().width);
       const w2 = Math.round(firstRow.children[1].getBoundingClientRect().width);
+      // 0 이면 layout 미완료 — skip (다음 trigger 때 재시도).
+      if (w1 === 0) return;
       host.style.setProperty('--frozen-l1', '0');
       host.style.setProperty('--frozen-l2', w1 + 'px');
       host.style.setProperty('--frozen-l3', (w1 + w2) + 'px');
     }
     window.addEventListener('resize', syncDrawerFrozenOffsets);
+    // drawer 가 hidden 상태에서 열릴 때 측정 — display 가 바뀌어 layout 다시 잡힐 때 RAF 로 재측정.
+    //   side-drawer.mount 의 open() 안에서 host.removeAttribute('hidden') 후 transform 트랜지션
+    //   시작 시점에 측정. 트랜지션 끝나면 layout 안정 → 최종 측정.
+    if (typeof MutationObserver !== 'undefined') {
+      const drawerEl = document.getElementById('pd-drawer');
+      if (drawerEl) {
+        const mo = new MutationObserver((muts) => {
+          muts.forEach((m) => {
+            if (m.attributeName !== 'hidden' && m.attributeName !== 'class') return;
+            if (drawerEl.hidden) return;
+            // 여러 시점 재측정 — sticky 가 0-width race 에 빠지지 않도록.
+            requestAnimationFrame(syncDrawerFrozenOffsets);
+            setTimeout(syncDrawerFrozenOffsets, 50);
+            setTimeout(syncDrawerFrozenOffsets, 300);
+          });
+        });
+        mo.observe(drawerEl, { attributes: true, attributeFilter: ['hidden', 'class'] });
+      }
+    }
     function applyDrawerFilter() {
       const active = _drawerFilterInstance ? (_drawerFilterInstance.getActiveFilters() || {}) : {};
       const codeMatch = (vals, target) => {
@@ -2195,11 +2224,23 @@
         //   기존 body cb 의 aria-checked='true' 도 새 markup 의 default 'false' 로 자연 리셋됨.)
         const tb = document.getElementById('data-tbody');
         if (tb && typeof rowsToHtml === 'function') tb.innerHTML = rowsToHtml(ROWS);
-        // 헤더 cb-all (mp-cb-all) 명시적 unchecked — 별도 element 라 tbody 재렌더로는 안 풀림.
-        //   이전에 mixed/checked 였던 경우 그대로 stale 표시되는 회귀 차단. MutationObserver 가
-        //   aria-checked 변경 감지해 refreshActionBar 까지 chain.
-        const cbAll = document.getElementById('mp-cb-all');
-        if (cbAll) cbAll.setAttribute('aria-checked', 'false');
+        // 헤더 cb-all (mp-cb-all) 명시적 unchecked + 본문 cb 도 안전망으로 strip — 다중 reset 으로
+        //   stale "mixed" 표시 차단. tableSelection / refreshActionBar 등 다른 path 가 후속으로
+        //   상태 재계산하더라도 본문 모든 cb 가 false 라 mixed 가 다시 박힐 일 없음.
+        function _resetAllCheckboxState() {
+          document.querySelectorAll('#data-tbody .scm-checkbox[aria-checked="true"]').forEach((cb) => {
+            cb.setAttribute('aria-checked', 'false');
+          });
+          const cbAll = document.getElementById('mp-cb-all');
+          if (cbAll && cbAll.getAttribute('aria-checked') !== 'false') {
+            cbAll.setAttribute('aria-checked', 'false');
+          }
+        }
+        _resetAllCheckboxState();
+        // RAF + setTimeout 으로 다른 path (MutationObserver chain / tableSelection refresh 등)
+        // 가 후속으로 mixed 를 다시 박는 race 까지 방어. 마지막 호출이 최종 상태가 됨.
+        requestAnimationFrame(_resetAllCheckboxState);
+        setTimeout(_resetAllCheckboxState, 50);
         // 액션바 상태 (cancelBtn disabled, stats-bar 전체/선택됨 morph) 즉시 재계산.
         if (typeof refreshActionBar === 'function') refreshActionBar();
         // 입고 취소 처리 시작 토스트 — figma snackbar spec (info variant: 파란 checkCircle 아이콘).
