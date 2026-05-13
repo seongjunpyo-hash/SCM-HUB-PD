@@ -737,10 +737,13 @@
     if (el.children.length === 0 && CANONICAL_LNB_HTML) {
       el.innerHTML = CANONICAL_LNB_HTML;
     }
-    // **순서 중요** — hidden 먼저, 그 다음 신규 페이지, 그 다음 order.
-    // 사용자가 캐노니컬 L1 (예: 'order') 을 deleted 하고 같은 키로 신규 L1 그룹
-    // 만든 케이스: hidden 먼저 실행해 캐노니컬 제거 후 신규 그룹 생성해야
-    // querySelector 충돌 없음. 그 후 order 가 cross-L1 이동 정확히 적용.
+    // **순서** — hidden(1) → newPages → order → ensureL2 → hidden(2).
+    // hidden 을 두 번 호출하는 이유:
+    //   (1) 캐노니컬 L1 (예: 'order') 이 deleted 면 미리 제거해야 그 후
+    //       newPages 의 신규 'order' L1 그룹 생성이 충돌 없이 됨.
+    //   (2) 마지막에 다시 한번 적용 — 신규 페이지 hidden / cascade 복원된
+    //       PROTECTED_L2 의 hidden 처리. 사용자가 [미노출] 토글한 신규
+    //       페이지가 LNB 에 보이던 회귀 차단.
     _applyMenuHiddenToLnb(el);
     // VOC 의 [신규] 탭에서 등록한 페이지를 LNB 에 추가.
     _applyNewPagesToLnb(el);
@@ -749,8 +752,10 @@
     // VOC 메뉴관리에서 L1 그룹별로 아이콘을 변경한 결과 적용.
     _applyMenuIconsToLnb(el);
     // PROTECTED_L2 cascade 복원 — 부모 L1 hide 등으로 anchor 가 LNB 어디에도
-    // 없어진 케이스만 첫 가시 L1 에 자동 추가. 직접 hide/delete 는 존중.
+    // 없어진 케이스만 l2Order 기반 위치 또는 fallback 으로 복원.
     _ensureProtectedL2(el);
+    // 2차 hidden 적용 — 신규 페이지 / cascade 복원 L2 중 [미노출] 토글된 것 정리.
+    _applyMenuHiddenToLnb(el);
     var options = opts || {};
     var active = options.active || el.getAttribute('data-active');
     if (active) setActive(el, active);
