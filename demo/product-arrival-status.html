@@ -2047,6 +2047,15 @@
     setTimeout(() => completeNotify(half), 5000);
     setTimeout(() => completeNotify(n - half), 10000);
   }
+  // ----- 초기 seed — 알림함 모달의 기존 dummy 데이터 = 이미 처리 완료된 알림. -----
+  //   페이지 첫 진입 시 "완료 N" (green) 으로 노출되도록 NOTIFY_ROWS 길이를 _notifyState.complete 에 set.
+  //   이후 입고 취소 시작 → 진행중 카운트가 우선 표시되고, 진행 0 으로 떨어지면 다시 완료 노출.
+  (function seedCompletedFromNotifyData() {
+    if (typeof NOTIFY_ROWS !== 'undefined' && Array.isArray(NOTIFY_ROWS)) {
+      _notifyState.complete = NOTIFY_ROWS.length;
+      refreshNotifyBtn();
+    }
+  })();
   const notifyCloseBtn = document.getElementById('iss-notify-close-btn');
   if (notifyCloseBtn) notifyCloseBtn.addEventListener('click', closeNotifyModal);
   // 알림 row 내 "확인하기" → 데모용 토스트
