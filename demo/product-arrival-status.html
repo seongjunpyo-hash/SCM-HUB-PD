@@ -1298,7 +1298,14 @@
               : escapeHtml(r.inNo)));
     const locCnt      = isInnerSub ? empty : fmtText(r.loc);
     const brandCnt    = isInnerSub ? empty : (isEmpty(r.brand) ? NA : `${escapeHtml(r.brand)}${r.brandExtra ? ` 외 ${r.brandExtra}` : ''}`);
-    const uidCnt      = isInnerSub ? empty : (isEmpty(r.uid)   ? NA : `<a class="scm-code-link" data-code-type="uid">${escapeHtml(r.uid)}${r.uidExtra ? ` 외 ${r.uidExtra}` : ''}</a>`);
+    // UID — uidExtra > 0 인 경우만 link 로 렌더 (다중 코드 popover 대상). 단일 코드는 일반 텍스트.
+    const uidCnt      = isInnerSub
+      ? empty
+      : (isEmpty(r.uid)
+          ? NA
+          : (r.uidExtra
+              ? `<a class="scm-code-link" data-code-type="uid">${escapeHtml(r.uid)} 외 ${r.uidExtra}</a>`
+              : escapeHtml(r.uid)));
     const optCnt      = isInnerSub ? empty : optChip;
     // SKU번호 / 스타일넘버 — code-link 뒤에 "외 1" 접미 추가 (사용자 요청). 다른 컬럼의
     //   "외 N" 패턴과 동일하게 span 분리 — code-link 의 underline 이 접미까지 번지지 않도록.
@@ -1842,6 +1849,8 @@
     //   이전: sku 만 sku-detail.html 로 페이지 이동 → 사용자 요청으로 다른 코드와 동일하게
     //         popover 노출 (복사 가능, 페이지 이동 X).
     //   inNo (입고번호) — "외 N" 접미가 붙은 row 만 code-link 로 렌더되어 여기 진입.
+    //     "외 N" 의 N+1 개 모두 items 로 노출 (base + N개 추가 코드). 추가 코드는 데모용으로
+    //     base 의 trailing 숫자를 +1 씩 증가시켜 synth.
     const link = e.target.closest('.scm-code-link');
     if (link) {
       const type = link.getAttribute('data-code-type') || 'sku';
@@ -1849,18 +1858,34 @@
         e.preventDefault();
         const TITLE = { sku:'SKU번호 확인', uid:'연결된 UID번호 확인', barcode:'바코드 확인', styleNo:'스타일넘버 확인', inNo:'입고번호 확인' };
         const COPY  = { sku:'SKU번호 복사', uid:'UID 복사', barcode:'바코드 복사', styleNo:'스타일넘버 복사', inNo:'입고번호 복사' };
-        // sku/inNo 셀은 "123451 외 1" / "OFFLINE_250531_1234 외 3" 처럼 접미사가 있으므로
-        //   첫 토큰만 추출 (실제 코드 본체) — popover items 와 클립보드 복사에는 본체만 들어감.
         const txtRaw = (link.textContent || '').trim();
-        const txt = (type === 'sku' || type === 'inNo') ? txtRaw.split(' ')[0] : txtRaw;
+        // "외 N" 검출 — 본체 코드 + N 추출.
+        const extraMatch = txtRaw.match(/^(.+?)\s*외\s+(\d+)\s*$/);
+        const base = extraMatch ? extraMatch[1].trim() : txtRaw;
+        const extraN = extraMatch ? parseInt(extraMatch[2], 10) : 0;
+        // items 빌드 — base 1개 + extra N개. extra 는 trailing 숫자 +1 씩 증가시켜 생성.
+        //   예: "OFFLINE_250531_1234 외 3" → [OFFLINE_250531_1234, _1235, _1236, _1237]
+        //   trailing 숫자 못 찾으면 그냥 base 만 노출.
+        function genNextCode(code, offset) {
+          const tailMatch = code.match(/^(.*?)(\d+)$/);
+          if (!tailMatch) return code + '_' + offset;
+          const prefix = tailMatch[1];
+          const num    = tailMatch[2];
+          const next   = String(parseInt(num, 10) + offset).padStart(num.length, '0');
+          return prefix + next;
+        }
+        const items = [base];
+        for (let i = 1; i <= extraN; i++) items.push(genNextCode(base, i));
         SCM.codePopover.open({
           title: TITLE[type] || '코드 확인',
-          items: [txt],
+          items: items,
           copyLabel: COPY[type] || '복사',
           anchorEl: link,
           onCopy: () => {
-            if (navigator.clipboard) navigator.clipboard.writeText(txt);
-            if (SCM.toast) SCM.toast.show({ variant: 'success', title: `${(COPY[type]||'코드').replace(' 복사','')} 복사 완료`, desc: `${txt} 복사되었습니다.` });
+            // 다수 코드일 땐 줄바꿈으로 합쳐서 복사
+            const joined = items.join('\n');
+            if (navigator.clipboard) navigator.clipboard.writeText(joined);
+            if (SCM.toast) SCM.toast.show({ variant: 'success', title: `${(COPY[type]||'코드').replace(' 복사','')} 복사 완료`, desc: `${items.length}건이 복사되었습니다.` });
           },
         });
       }
@@ -1995,11 +2020,12 @@
 
   // ============================================================
   // 알림함 버튼 상태 머신 — progress / complete 카운트 → 진행중 / 완료 표시 분기.
-  //   bumpNotifyProgress 호출 시: progress += n, total += n  → "진행중 X/Y" (blue)
-  //   completeNotify 호출 시:     progress -= k, complete += k → 진행중 0 되면 "완료 N" (green)
-  //   데모: scheduleNotifyTransition 가 5초마다 절반씩 자동 완료 처리.
+  //   bumpNotifyProgress(n): progress += n                 → "진행중 X/Y" (blue, Y = complete)
+  //   completeNotify(k):     progress -= k, complete += k  → 진행중 0 되면 "완료 N" (green)
+  //   "/Y" 의 Y 는 _notifyState.complete (기존 완료된 알림 수). progress 가 끝나면 그 만큼 complete 가
+  //   증가 → 분모가 자연스럽게 누적됨.
   // ============================================================
-  const _notifyState = { progress: 0, complete: 0, total: 0 };
+  const _notifyState = { progress: 0, complete: 0 };
   function refreshNotifyBtn() {
     const divider = document.querySelector('.iss-notify-btn__divider');
     const status  = document.querySelector('.iss-notify-btn__status');
@@ -2009,11 +2035,11 @@
     if (!divider || !status || !labelEl || !numEl) return;
     if (_notifyState.progress > 0) {
       labelEl.textContent = '진행중';
-      numEl.textContent = `${_notifyState.progress}/${_notifyState.total}`;
+      numEl.textContent = `${_notifyState.progress}/${_notifyState.complete}`;
       status.classList.remove('is-done');
       divider.hidden = false;
       status.hidden = false;
-      if (btn) btn.setAttribute('aria-label', `알림함 - 진행중 ${_notifyState.progress}건 / 전체 ${_notifyState.total}건`);
+      if (btn) btn.setAttribute('aria-label', `알림함 - 진행중 ${_notifyState.progress}건 / 완료 ${_notifyState.complete}건`);
     } else if (_notifyState.complete > 0) {
       labelEl.textContent = '완료';
       numEl.textContent = String(_notifyState.complete);
@@ -2029,7 +2055,6 @@
   }
   function bumpNotifyProgress(n) {
     _notifyState.progress += n;
-    _notifyState.total    += n;
     refreshNotifyBtn();
   }
   function completeNotify(k) {
