@@ -45,8 +45,8 @@
     </a>
   </div>
 
-  <!-- 즐겨찾기 — 사용자 localStorage 의 hidden/deleted 상태와 충돌 안 하는 신규 키.
-       PROTECTED 안전망으로 무조건 노출. quick-access 보다 한 단계 더 강한 보장. -->
+  <!-- 즐겨찾기 — OTB / 위탁 상품 입고 현황 백업 경로. 일반 캐노니컬 L1 으로
+       동작 — 사용자 hide/delete/이동 모두 자유롭게 가능. -->
   <div class="scm-lnb-item is-open" data-key="shortcut">
     <button class="scm-lnb-row" type="button" data-nav-toggle>
       <span class="scm-lnb-icon">
@@ -551,11 +551,6 @@
       };
     } catch (_) { return { l1: [], l2: [] }; }
   }
-  // **PROTECTED L2 키** — cascade 로만 보호. 사용자가 직접 hide/delete 한 의도는
-  // 존중 (= 사라진 채로). 부모 L1 이 hidden 되어 anchor 가 LNB 어디에도 없으면
-  // 첫 가시 L1 에 자동 복원해 사용자가 페이지에 영구 접근 못하는 케이스 차단.
-  // cross-L1 이동도 자유롭게 허용 — 사용자 컨트롤 우선.
-  var PROTECTED_L2 = ['fav-otb', 'fav-arrival'];
   function _applyMenuHiddenToLnb(el) {
     if (!el) return;
     // hidden 과 deleted 를 합쳐 처리 — 둘 다 LNB 에서 제거. 차이는 voc UI
@@ -678,74 +673,20 @@
     });
   }
 
-  // **PROTECTED L2 cascade 안전망** — 사용자 직접 hide/delete 는 존중하되,
-  // 부모 L1 cascade hide 로 anchor 가 LNB 어디에도 없어진 경우만 자동 복원.
-  // 복원 위치 우선순위: (1) menu-order.l2Order 에 명시된 L1 (사용자가 마지막에
-  // 옮긴 위치) (2) 즐겨찾기 (캐노니컬 위치) (3) 첫 가시 L1 (최후 fallback).
-  function _ensureProtectedL2(el) {
-    if (!el || !CANONICAL_LNB_HTML) return;
-    var hidden = _loadMenuHidden();
-    var deleted = _loadMenuDeleted();
-    var explicit = hidden.l2.concat(deleted.l2);
-    var order = _loadMenuOrder();
-    var l2Order = (order && order.l2Order) ? order.l2Order : {};
-    PROTECTED_L2.forEach(function (l2key) {
-      // L2-level 명시적 hide/delete — 사용자 의도 존중, 복원 안 함.
-      if (explicit.indexOf(l2key) !== -1) return;
-      // anchor 가 LNB 어디든 있으면 OK.
-      if (el.querySelector('.scm-lnb-l2[data-key="' + l2key + '"]')) return;
-      // (1) l2Order 에서 이 키가 속한 L1 찾기
-      var targetList = null;
-      Object.keys(l2Order).forEach(function (l1key) {
-        if (targetList) return;
-        var arr = l2Order[l1key];
-        if (!Array.isArray(arr) || arr.indexOf(l2key) === -1) return;
-        var group = el.querySelector('.scm-lnb-item[data-key="' + l1key + '"]');
-        if (group) targetList = group.querySelector('.scm-lnb-l2-list');
-      });
-      // (2) 캐노니컬 즐겨찾기 fallback
-      if (!targetList) {
-        var fav = el.querySelector('.scm-lnb-item[data-key="shortcut"] .scm-lnb-l2-list');
-        if (fav) targetList = fav;
-      }
-      // (3) 첫 가시 L1 fallback
-      if (!targetList) {
-        targetList = el.querySelector('.scm-lnb-item .scm-lnb-l2-list');
-      }
-      if (!targetList) return;
-      var tmp = document.createElement('div');
-      tmp.innerHTML = CANONICAL_LNB_HTML;
-      var src = tmp.querySelector('.scm-lnb-l2[data-key="' + l2key + '"]');
-      if (!src) return;
-      targetList.appendChild(src.cloneNode(true));
-    });
-  }
-
   function mount(el, opts) {
     if (!el) return null;
     // Empty placeholder → inject canonical LNB markup (단일 source).
     if (el.children.length === 0 && CANONICAL_LNB_HTML) {
       el.innerHTML = CANONICAL_LNB_HTML;
     }
-    // **순서** — hidden(1) → newPages → order → ensureL2 → hidden(2).
-    // hidden 을 두 번 호출하는 이유:
-    //   (1) 캐노니컬 L1 (예: 'order') 이 deleted 면 미리 제거해야 그 후
-    //       newPages 의 신규 'order' L1 그룹 생성이 충돌 없이 됨.
-    //   (2) 마지막에 다시 한번 적용 — 신규 페이지 hidden / cascade 복원된
-    //       PROTECTED_L2 의 hidden 처리. 사용자가 [미노출] 토글한 신규
-    //       페이지가 LNB 에 보이던 회귀 차단.
-    _applyMenuHiddenToLnb(el);
-    // VOC 의 [신규] 탭에서 등록한 페이지를 LNB 에 추가.
+    // VOC 의 [신규] 탭에서 등록한 페이지를 LNB 에 추가 (canonical 위에).
     _applyNewPagesToLnb(el);
+    // VOC 에서 hide 한 캐노니컬 메뉴 항목 제거 (그룹 / L2 페이지).
+    _applyMenuHiddenToLnb(el);
     // 사용자가 드래그-리오더 한 메뉴 순서 적용 (canonical + 신규 모두 대상).
     _applyMenuOrderToLnb(el);
     // VOC 메뉴관리에서 L1 그룹별로 아이콘을 변경한 결과 적용.
     _applyMenuIconsToLnb(el);
-    // PROTECTED_L2 cascade 복원 — 부모 L1 hide 등으로 anchor 가 LNB 어디에도
-    // 없어진 케이스만 l2Order 기반 위치 또는 fallback 으로 복원.
-    _ensureProtectedL2(el);
-    // 2차 hidden 적용 — 신규 페이지 / cascade 복원 L2 중 [미노출] 토글된 것 정리.
-    _applyMenuHiddenToLnb(el);
     var options = opts || {};
     var active = options.active || el.getAttribute('data-active');
     if (active) setActive(el, active);
