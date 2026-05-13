@@ -34,20 +34,26 @@
       if (!tbody) return [];
       return Array.from(tbody.querySelectorAll(rowCbSelector));
     }
+    // 활성 (is-disabled 가 아닌) row cb 만 — 헤더 토글 및 카운트의 분모로 사용.
+    function getEnabledRowCbs() {
+      return getRowCbs().filter(function (cb) { return !cb.classList.contains('is-disabled'); });
+    }
     function getCbAll() { return document.getElementById(cbAllId); }
     function getSelectedCount() {
-      return getRowCbs().filter(function (cb) { return cb.getAttribute('aria-checked') === 'true'; }).length;
+      return getEnabledRowCbs().filter(function (cb) { return cb.getAttribute('aria-checked') === 'true'; }).length;
     }
 
     function refresh() {
-      var rows = getRowCbs();
+      // mixed/all/none 판정 기준은 '활성 row cb' 만. disabled cb 는 무시.
+      var rows = getEnabledRowCbs();
       var n = rows.filter(function (cb) { return cb.getAttribute('aria-checked') === 'true'; }).length;
       var total = rows.length;
       var all = getCbAll();
       if (all) {
-        if (n === 0)         all.setAttribute('aria-checked', 'false');
-        else if (n === total) all.setAttribute('aria-checked', 'true');
-        else                  all.setAttribute('aria-checked', 'mixed');
+        if (total === 0)       all.setAttribute('aria-checked', 'false');
+        else if (n === 0)      all.setAttribute('aria-checked', 'false');
+        else if (n === total)  all.setAttribute('aria-checked', 'true');
+        else                   all.setAttribute('aria-checked', 'mixed');
       }
       if (countEl) countEl.textContent = String(n);
       if (actionBarEl) {
@@ -85,7 +91,9 @@
         //   checked   → unchecked
         next = (cur === 'true' || cur === 'mixed') ? 'false' : 'true';
         cb.setAttribute('aria-checked', next);
-        getRowCbs().forEach(function (rcb) { rcb.setAttribute('aria-checked', next); });
+        // disabled row cb (예: 입고대기 외 상태) 는 건너뜀 — 헤더 전체선택이 비활성 row 까지
+        // 강제로 체크하면 사용자가 클릭으로는 해제 불가능한 stale 상태 발생. 활성 row 만 토글.
+        getEnabledRowCbs().forEach(function (rcb) { rcb.setAttribute('aria-checked', next); });
       } else {
         next = (cur === 'true') ? 'false' : 'true';
         // 본문 cb (td.cb-col 안) → 토글 + 헤더 mixed/all/none 동기 (refresh 가 처리)

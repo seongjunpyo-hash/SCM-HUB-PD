@@ -92,8 +92,7 @@
     .mp-table-host { margin-top: 0; }
     .mp-table .cell-numeric { font-variant-numeric: tabular-nums; text-align: right; }
 
-    /* 입고유형 태그 — yellow (매장 직납) — tag.css 미정의 컬러 보강 */
-    .scm-tag--yellow { background: #FFF4E5; }
+    /* 입고유형 태그 — 사용자 요청으로 전부 gray 변종 사용. 별도 컬러 보강 불필요. */
 
     /* ic-* sprite 심볼 중 stroke-width 가 누락된 경우 (ic-close 등) 가 있어
        전체 stroke 기반 아이콘에 두께 강제. presentation attribute 보다 CSS
@@ -140,10 +139,16 @@
     #pd-drawer .pd-drawer__close-x:hover { background: rgba(0,0,0,0.04); }
     #pd-drawer .pd-drawer__close-x svg { width: 20px; height: 20px; }
     #pd-drawer .pd-drawer__title {
-      /* figma: padding 24 24 0 24 (gap은 다음 형제 wrap 의 padding-top 으로 결정) */
+      /* figma: padding 24 24 0 24 (gap은 다음 형제 wrap 의 padding-top 으로 결정).
+         타이틀 코드 텍스트 + 상태 칩 inline-flex. 칩과 코드 사이 gap 8. */
       padding: 24px 24px 0;
       color: rgba(0, 0, 0, 0.88);
       font-size: 18px; font-weight: 600; line-height: 24.48px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    /* 타이틀 옆 status-chip — 기본 칩보다 약간 큰 padding 으로 타이틀 행 시각 균형 */
+    #pd-drawer .pd-drawer__title .scm-status-chip {
+      font-size: 13px; font-weight: 500;
     }
     #pd-drawer .pd-drawer__body-wrap {
       /* figma: padding 20 24 0 24 — 위는 헤더와 거리, 아래는 footer 가 자체 24 으로 처리. */
@@ -183,6 +188,16 @@
       flex: 1 1 auto; min-height: 0;
       overflow: auto;
     }
+    /* drawer 안 취소사유 컬럼 — 같은 신청번호 그룹은 모두 동일한 cancelReason 이라
+       반복 표시 회피. 첫 row 만 값 표시 + vertical-align middle 로 그룹 가운데 정렬.
+       2번째 row 부터는 빈 셀 + border-top:0 으로 시각 merge. */
+    #pd-drawer .pd-drawer__table-host .mp-table tbody td.pd-reason-first {
+      vertical-align: middle;
+    }
+    #pd-drawer .pd-drawer__table-host .mp-table tbody td.pd-reason-sub {
+      border-top: 0;
+      background: #fff;
+    }
     /* drawer 안 mp-table — base mp-table 스타일 활용. drawer 컨텍스트 보정만:
        - table-host 는 drawer body-wrap 안에서 flex 1 로 남은 공간 채움
        - mp-table-scroll 이 자체 가로/세로 스크롤 담당
@@ -202,60 +217,52 @@
       flex: 1 1 auto; min-height: 0;
       overflow: auto;
       /* base CSS 의 .mp-table-scroll > .mp-table > thead::before (1.5px 검정라인) 가
-         아래에서 비활성화되므로, 컨테이너 상단에 동일 두께/색 라인을 직접 그림. */
-      border-top: 1.5px solid #000;
+         sticky thead 와 함께 상단에 따라붙으므로 별도 border-top 불필요. */
     }
     /* colgroup 폭 강제 적용 */
     #pd-drawer .pd-drawer__table-host .mp-table {
       table-layout: fixed;
     }
-    /* ⚠️ base scm-table.css 의 `.mp-table-scroll > .mp-table > thead { position: relative }` 가
-       thead 를 sticky 의 containing block 으로 만들어 자식 th 의 position:sticky 가
-       사실상 무효화되는 회귀를 차단. drawer 스코프 안에서만 thead 를 static 으로 되돌림. */
+    /* ⚠️ drawer thead sticky 전략 — frozen 헤더 셀이 top sticky 안 되는 문제 해결.
+       원인: position: sticky 가 <th> 에 걸려있을 때, frozen <th> 는 sticky-left + sticky-top
+       두 방향을 동시에 잡으려고 시도하는데 일부 브라우저/렌더에서 두 방향 조합이 어긋남.
+       특히 base CSS 의 .mp-table thead th { position: relative } 가 containing block 을
+       cell 단위로 좁혀버려서 sticky-top 의 동작 범위가 사실상 0 으로 수렴.
+
+       해결: <thead> 자체에 position: sticky; top: 0 적용 (modern browsers: Chrome 91+, FF,
+       Safari 모두 지원). thead 가 통째로 상단 고정되니 안의 <th> 들은 top sticky 가 필요 없고
+       frozen <th> 만 sticky-left 만 책임지면 됨 — 양방향 조합 회귀 자체가 사라짐.
+
+       base 의 thead::before (1.5px 검정 라인) 는 그대로 두면 thead 와 함께 sticky 하므로 OK.
+       다만 mp-table-scroll 에 추가한 border-top 과 중복되지 않도록 mp-table-scroll border-top 은 제거. */
     #pd-drawer .pd-drawer__table-host .mp-table-scroll > .mp-table > thead {
-      position: static;
-    }
-    /* base 의 thead::before 검정 라인 (position: absolute) 도 thead 가 static 이면
-       containing block 이 viewport 로 escape 하므로 무력화. 위 mp-table-scroll border-top 로 대체. */
-    #pd-drawer .pd-drawer__table-host .mp-table-scroll > .mp-table > thead::before {
-      display: none;
-    }
-    /* drawer 내부 sticky thead — mp-table-scroll 의 세로 스크롤 컨테이너 안에서 상단 고정. */
-    #pd-drawer .pd-drawer__table-host .mp-table-scroll thead th {
       position: sticky;
       top: 0;
-      z-index: 4;
+      /* z-index 10 — base CSS 의 본문 frozen 셀 (.col-frozen-* { z-index: 5 }) 보다 무조건
+         위에 떠야 함. 같은 z-index 면 DOM 순서가 늦은 본문이 thead 를 가리는 회귀가 있어
+         넉넉하게 10 으로 올림. (thead 가 자체 stacking context 가 되므로 자식 th 의 sticky
+         left 도 같은 컨텍스트 안에서 동작.) */
+      z-index: 10;
       background: #fff;
     }
-    /* sticky x+y 교차 (No / 입고번호 / 입고위치 의 thead) — base CSS 의 col-frozen 룰이
-       `position: sticky !important; left: var(--frozen-l-N)` 만 설정해서, top: 0 을 같은
-       cascade scope 에서 명시하지 않으면 일부 브라우저에서 top sticky 가 무시되는 회귀 발생.
-       → 같은 룰 안에 top + left + z-index 를 한 번에 박아 양방향 sticky 확정. !important 로
-       base 의 !important 와 동급 우선순위 확보.
-       z-index: 6 — 본문 frozen 셀(z=5) 위에 떠야 가로 스크롤 시 헤더가 보임. */
-    #pd-drawer .pd-drawer__table-host .mp-table-scroll thead th.col-frozen-1 {
-      position: sticky !important;
-      top: 0 !important;
-      left: var(--frozen-l1, 0) !important;
-      z-index: 6 !important;
-      background: #fff !important;
+    /* drawer 내부 sticky thead — thead 자체가 sticky 하므로 자식 th 는 top sticky 불필요.
+       background 만 명시해 가로 스크롤 시 본문 비치는 거 차단. */
+    #pd-drawer .pd-drawer__table-host .mp-table-scroll thead th {
+      background: #fff;
     }
-    #pd-drawer .pd-drawer__table-host .mp-table-scroll thead th.col-frozen-2 {
-      position: sticky !important;
-      top: 0 !important;
-      left: var(--frozen-l2, 0) !important;
-      z-index: 6 !important;
-      background: #fff !important;
-    }
+    /* frozen 헤더 (No / 입고번호 / 입고위치) — sticky-left 만 책임 (base 의 col-frozen 룰).
+       thead 자체 z=10 의 stacking context 안에서 z-index 2 면 충분 — 같은 컨텍스트의 비-frozen
+       th (z auto=0) 위에 떠서 가로 스크롤 시 비-frozen th 들이 frozen 영역 안으로 흘러들어와도
+       frozen 헤더가 위에 보임. */
+    #pd-drawer .pd-drawer__table-host .mp-table-scroll thead th.col-frozen-1,
+    #pd-drawer .pd-drawer__table-host .mp-table-scroll thead th.col-frozen-2,
     #pd-drawer .pd-drawer__table-host .mp-table-scroll thead th.col-frozen-3 {
-      position: sticky !important;
-      top: 0 !important;
-      left: var(--frozen-l3, 0) !important;
-      z-index: 6 !important;
-      background: #fff !important;
+      z-index: 2;
     }
     #pd-drawer .pd-drawer__footer {
-      padding: 24px; display: flex; justify-content: flex-end; gap: 8px;
+      /* 사용자 요청: 상/하 padding 8px (좌우는 그대로 24px 유지). */
+      padding: 8px 24px;
+      display: flex; justify-content: flex-end; gap: 8px;
       border-top: 1px solid #EBEBEB;
       background: #fff;
     }
@@ -448,6 +455,53 @@
       color: #1A1A1A;
       font-size: 15px; font-weight: 400; line-height: 20.4px;
     }
+    /* 취소사유 입력 영역 — figma spec (label + 필수 dot + textarea + counter). */
+    .iss-cancel-modal__reason {
+      padding: 0 24px 8px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .iss-cancel-modal__reason-label-row {
+      display: flex; align-items: center; gap: 2px;
+    }
+    .iss-cancel-modal__reason-label {
+      color: #666; font-size: 14px; font-weight: 500; line-height: 19.6px;
+    }
+    .iss-cancel-modal__reason-req {
+      width: 4px; height: 4px;
+      background: #245EFF;
+      border-radius: 50%;
+      align-self: center;
+    }
+    .iss-cancel-modal__reason-box {
+      height: 80px;
+      padding: 12px 16px;
+      background: #fff;
+      border: 1px solid #E0E0E0;
+      border-radius: 4px;
+      display: flex; align-items: flex-start;
+    }
+    .iss-cancel-modal__reason-input {
+      flex: 1 1 auto;
+      border: 0; outline: 0;
+      background: transparent;
+      resize: none;
+      font-family: inherit;
+      font-size: 15px; font-weight: 400; line-height: 20.4px;
+      color: #000;
+      width: 100%; height: 100%;
+      padding: 0;
+    }
+    .iss-cancel-modal__reason-input::placeholder {
+      color: #8A8A8A;
+    }
+    .iss-cancel-modal__reason-counter {
+      padding: 2px 0;
+      font-size: 14px; font-weight: 400; line-height: 19.6px;
+      color: #666;
+    }
+    .iss-cancel-modal__reason-counter strong {
+      color: #000; font-weight: 400;
+    }
     .iss-cancel-modal__footer {
       padding: 12px 24px 24px;
       display: flex; justify-content: flex-end; align-items: center; gap: 8px;
@@ -483,13 +537,10 @@
 
     /* (removed: scm-table-action-bar — 하단 고정 액션 바는 사용자 요청으로 제거) */
 
-    /* stats-bar 의 "전체 N" → "선택됨 X / N" morph. selected 상태일 때 .scm-stat--all 의
-       자식 구성이 다음으로 교체됨:
-         <span class="scm-stat__label scm-stat__label--selected">선택됨</span>
-         <span class="scm-stat__num scm-stat__num--selected">N</span>     ← #245EFF
-         <span class="scm-stat__num-total">/ N</span>                       ← #8A8A8A
-       (이때만 추가되는 두 클래스에 대해서만 스타일 정의 — placeholder 상태는 기존 스타일 그대로) */
-    .scm-stat__num--selected { color: #245EFF; }
+    /* stats-bar 의 "전체 N" → "선택됨 X / N" morph.
+       디자인 시스템의 .scm-stat--selected modifier 가 이미 num=#245EFF / label=#000 bold 처리하므로
+       JS 에서 부모 class 를 'scm-stat--all' ↔ 'scm-stat--selected' 로 swap.
+       추가로 "/ N" 회색 구분자만 별도 클래스로 정의. */
     .scm-stat__num-total {
       color: #8A8A8A; font-weight: 400;
       margin-left: 2px;
@@ -668,6 +719,7 @@
               <th class="col-auto">센터 도착일시</th>
               <th class="col-auto">입고확정일</th>
               <th class="col-auto">신청일 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="col-auto">취소사유</th>
               <th class="col-spacer" aria-hidden="true"></th>
             </tr>
           </thead>
@@ -713,8 +765,12 @@
     <svg viewBox="0 0 20 20"><use href="#ic-close"/></svg>
   </button>
   <div class="scm-side-drawer__body">
-    <!-- body 상단 타이틀: 신청번호 코드 (figma 패턴) — JS 가 동적 갱신 -->
-    <div class="pd-drawer__title" id="pd-reqno-title">A000008101</div>
+    <!-- body 상단 타이틀: 신청번호 코드 + 상태 칩 (figma 패턴) — JS 가 동적 갱신.
+         코드 텍스트는 .pd-drawer__title-code 에, 상태 칩은 .pd-drawer__title-status 에 inject. -->
+    <div class="pd-drawer__title" id="pd-reqno-title">
+      <span class="pd-drawer__title-code">A000008101</span>
+      <span class="pd-drawer__title-status"></span>
+    </div>
     <div class="pd-drawer__body-wrap">
       <!-- 검색 영역 — 본 페이지 상단 filter-bar 와 동일한 scm-filter-select chips. -->
       <div class="scm-filter-bar pd-drawer__filter-bar" id="pd-filter-bar">
@@ -794,6 +850,7 @@
               <col style="width:128px"/>    <!-- 센터도착일시 -->
               <col style="width:128px"/>    <!-- 입고확정일 -->
               <col style="width:128px"/>    <!-- 신청일 -->
+              <col style="width:160px"/>    <!-- 취소사유 -->
             </colgroup>
             <thead>
               <tr>
@@ -813,6 +870,7 @@
                 <th class="col-auto">센터 도착일시</th>
                 <th class="col-auto">입고확정일</th>
                 <th class="col-auto">신청일</th>
+                <th class="col-auto">취소사유</th>
                 <th class="col-spacer" aria-hidden="true"></th>
               </tr>
             </thead>
@@ -863,9 +921,25 @@
 <div class="iss-cancel-modal" id="iss-cancel-modal" hidden role="dialog" aria-labelledby="iss-cancel-title">
   <h3 class="iss-cancel-modal__title" id="iss-cancel-title">입고 취소를 진행하시겠습니까?</h3>
   <p class="iss-cancel-modal__desc">입고 취소는 즉시 반영되지 않고 순차적으로 처리됩니다. 처리 완료 시 좌측 메뉴 알림으로 결과를 안내해 드립니다.</p>
+  <div class="iss-cancel-modal__reason">
+    <div class="iss-cancel-modal__reason-label-row">
+      <label class="iss-cancel-modal__reason-label" for="iss-cancel-reason-input">취소사유</label>
+      <span class="iss-cancel-modal__reason-req" aria-hidden="true"></span>
+    </div>
+    <div class="iss-cancel-modal__reason-box">
+      <textarea
+        id="iss-cancel-reason-input"
+        class="iss-cancel-modal__reason-input"
+        maxlength="50"
+        placeholder="취소 사유를 입력해 주세요"
+        rows="2"
+      ></textarea>
+    </div>
+    <div class="iss-cancel-modal__reason-counter"><strong id="iss-cancel-reason-count">0</strong>/50</div>
+  </div>
   <div class="iss-cancel-modal__footer">
     <button type="button" class="iss-cancel-modal__btn-cancel" id="iss-cancel-modal-cancel">취소</button>
-    <button type="button" class="iss-cancel-modal__btn-confirm" id="iss-cancel-modal-confirm">확인</button>
+    <button type="button" class="iss-cancel-modal__btn-confirm" id="iss-cancel-modal-confirm" disabled>확인</button>
   </div>
 </div>
 
@@ -934,7 +1008,7 @@
   //   reqNo 가 outer key, _ig 가 inner key. 일부는 multi-row 그룹, 일부는 single row.
   //   group 구조 예시 (반복): outer A (3 rows: inner X 2 + inner Y 1) / single / single / outer B (2 rows: inner Z) / single ...
   (function expandDemoRows() {
-    const INBOUND_TYPES = ['MFS 입고', '물류센터 일괄입고', '매장 직납'];
+    const INBOUND_TYPES = ['MFS 입고', '물류센터 일괄입고', '스토어 개별입고', '스토어 재고이동'];
     const STATUSES      = ['입고대기', '센터도착', '부분입고', '입고완료'];
     const BRANDS        = ['아디다스', '나이키', 'MUSINSA STANDARD', '아크테릭스', '시티스케이프'];
     const LOCATIONS     = ['여주 4센터', '여주 1센터', '성수 대림창고', '인천 1센터'];
@@ -1012,6 +1086,103 @@
     }
   })();
 
+  // ----- 사용자 요청 1: 1번(A000008101) / 3번(A002000013) outer 그룹에 row 3개씩 추가 -----
+  //   group 의 마지막 row 다음에 삽입. inner 그룹 'X' 로 새 inner block 형성 (시각 분리).
+  //   기존 template row 의 공통 필드 (reqNo, inboundType 등) 는 그대로 복사, 개별 식별값
+  //   (inNo / sku / uid / barcode / opt) 만 새로 생성.
+  (function addExtraRowsToGroup1And3() {
+    function lastIdxOf(reqNo) {
+      let last = -1;
+      for (let i = 0; i < ROWS.length; i++) if (ROWS[i].reqNo === reqNo) last = i;
+      return last;
+    }
+    function makeExtra(tpl, tag, offset) {
+      return Object.assign({}, tpl, {
+        _ig:        'X' + tag,                              // 새 inner 블록
+        statusExtra: 0,
+        inNo:        'OFFLINE_EXTRA_' + tag + '_' + offset,
+        loc:         tpl.loc,
+        brand:       tpl.brand,
+        brandExtra:  0,
+        uid:         String(99900 + offset * 7),
+        uidExtra:    0,
+        opt:         ['FREE','2XL','3XL'][offset - 1] || 'FREE',
+        optExtra:    0,
+        sku:         String(990000 + offset * 11),
+        skuExtra:    0,
+        barcode:     '999' + String(offset).padStart(2, '0') + 'K/13029/EFGH',
+        styleNo:     tpl.styleNo,
+        expectedQty: 500 + offset * 100,
+        confirmedQty: 0,                                    // 입고대기 → 확정 0
+        arrivalDate: '-',
+        confirmDate: '-',
+      });
+    }
+    function appendExtras(reqNo) {
+      const tpl = ROWS.find((r) => r.reqNo === reqNo);
+      if (!tpl) return;
+      const last = lastIdxOf(reqNo);
+      const insertAt = last + 1;
+      const extras = [];
+      for (let i = 1; i <= 3; i++) extras.push(makeExtra(tpl, reqNo.slice(-3), i));
+      ROWS.splice(insertAt, 0, ...extras);
+    }
+    appendExtras('A000008101');   // No=1 그룹
+    appendExtras('A002000013');   // No=3 그룹 (expandDemoRows 의 첫 dummy outer group)
+  })();
+
+  // ----- 사용자 요청 2 & 3: outer 그룹별 status 강제 -----
+  //   reqNo 등장 순서대로 outer index 가 1, 2, 3, ... 매겨짐.
+  //     1 ~ 6   : 입고대기
+  //     7 ~ 9   : 센터도착 (3개)
+  //     10 ~ 13 : 부분입고 (4개)
+  //     14 ~    : 입고완료 (나머지 전부)
+  //   confirmedQty / arrivalDate / confirmDate 도 status 에 맞춰 일관 리셋.
+  (function forceGroupStatuses() {
+    const seen = new Set();
+    const ordered = [];
+    for (const r of ROWS) {
+      if (!seen.has(r.reqNo)) { seen.add(r.reqNo); ordered.push(r.reqNo); }
+    }
+    // reqNo → outer index (1-based)
+    const reqNoIdx = new Map();
+    ordered.forEach((rn, i) => reqNoIdx.set(rn, i + 1));
+
+    function statusForIdx(idx) {
+      if (idx <= 6)  return '입고대기';
+      if (idx <= 9)  return '센터도착';
+      if (idx <= 13) return '부분입고';
+      return '입고완료';
+    }
+
+    ROWS.forEach((r) => {
+      const idx = reqNoIdx.get(r.reqNo);
+      if (!idx) return;
+      const s = statusForIdx(idx);
+      r.status      = s;
+      r.statusExtra = 0;
+      const qty = r.expectedQty || 0;
+      if (s === '입고대기') {
+        r.confirmedQty = 0;
+        r.arrivalDate  = '-';
+        r.confirmDate  = '-';
+      } else if (s === '센터도착') {
+        r.confirmedQty = qty;       // 입고예정 수량 그대로 (센터 도착했으나 확정 별개)
+        r.arrivalDate  = r.arrivalDate && r.arrivalDate !== '-' ? r.arrivalDate : '25.03.15 11:30';
+        r.confirmDate  = r.confirmDate && r.confirmDate !== '-' ? r.confirmDate : '25.03.15 11:30';
+      } else if (s === '부분입고') {
+        r.confirmedQty = Math.floor(qty * 0.4);
+        r.arrivalDate  = r.arrivalDate && r.arrivalDate !== '-' ? r.arrivalDate : '25.03.15 11:30';
+        r.confirmDate  = '-';
+      } else {
+        // 입고완료
+        r.confirmedQty = qty;
+        r.arrivalDate  = r.arrivalDate && r.arrivalDate !== '-' ? r.arrivalDate : '25.03.15 11:30';
+        r.confirmDate  = r.confirmDate && r.confirmDate !== '-' ? r.confirmDate : '25.03.15 11:30';
+      }
+    });
+  })();
+
   const NA = '-';
   const isEmpty = v => v === null || v === undefined || v === '';
   const escapeHtml = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1019,19 +1190,21 @@
   const fmtText = v => isEmpty(v) ? NA : escapeHtml(v);
   const withExtra = (v, extra) => isEmpty(v) ? NA : (escapeHtml(v) + (extra ? ` <span style="color:#666;">외 ${extra}</span>` : ''));
 
-  // 입고유형 → tag color
+  // 입고유형 → tag color. 모두 gray 로 통일 (사용자 요청).
   const INBOUND_TAG = {
-    'MFS 입고':         'blue',
+    'MFS 입고':         'gray',
     '물류센터 일괄입고': 'gray',
-    '매장 직납':         'yellow',
+    '스토어 개별입고':   'gray',
+    '스토어 재고이동':   'gray',
   };
-  // 상태 → status-chip variant
+  // 상태 → status-chip variant.
+  //   입고취소 → cancel variant (status-chip.css 정의: bg #FFECEC, color #F31110 — red)
   const STATUS_CLS = {
     '입고대기': 'waiting',      // gray (default)
     '센터도착': 'processing',   // blue
     '부분입고': 'moving',       // purple
     '입고완료': 'done',         // green
-    '취소':    'cancel',
+    '입고취소': 'cancel',       // red
   };
 
   // 메인 목록 (위탁 상품 입고 현황) — 신청번호 단위 집계 뷰라
@@ -1082,22 +1255,31 @@
     // inner merge content (sub 일 때 비우기)
     const empty       = '';
     const statusCnt   = isInnerSub ? empty : statusChip;
-    const cbCnt       = isInnerSub ? empty : `<span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="선택"></span>`;
+    // 체크박스 — status='입고대기' 인 row 만 활성. 그 외 상태는 .is-disabled + aria-disabled
+    //   로 클릭 차단 (SCM.tableSelection / SCM.checkbox 둘 다 is-disabled 면 클릭 무시).
+    const cbDisabled = r.status !== '입고대기';
+    const cbCls = 'scm-checkbox' + (cbDisabled ? ' is-disabled' : '');
+    const cbExtraAttr = cbDisabled ? ' aria-disabled="true"' : '';
+    const cbCnt       = isInnerSub ? empty : `<span class="${cbCls}" role="checkbox" aria-checked="false" tabindex="${cbDisabled ? '-1' : '0'}" aria-label="선택"${cbExtraAttr}></span>`;
     const inNoCnt     = isInnerSub ? empty : fmtText(r.inNo);
     const locCnt      = isInnerSub ? empty : fmtText(r.loc);
     const brandCnt    = isInnerSub ? empty : (isEmpty(r.brand) ? NA : `${escapeHtml(r.brand)}${r.brandExtra ? ` 외 ${r.brandExtra}` : ''}`);
     const uidCnt      = isInnerSub ? empty : (isEmpty(r.uid)   ? NA : `<a class="scm-code-link" data-code-type="uid">${escapeHtml(r.uid)}${r.uidExtra ? ` 외 ${r.uidExtra}` : ''}</a>`);
     const optCnt      = isInnerSub ? empty : optChip;
-    const skuCnt      = isInnerSub ? empty : (isEmpty(r.sku) ? NA : `<a class="scm-code-link" data-code-type="sku">${escapeHtml(r.sku)}</a>`);
+    // SKU번호 / 스타일넘버 — code-link 뒤에 "외 1" 접미 추가 (사용자 요청). 다른 컬럼의
+    //   "외 N" 패턴과 동일하게 span 분리 — code-link 의 underline 이 접미까지 번지지 않도록.
+    const skuCnt      = isInnerSub ? empty : (isEmpty(r.sku) ? NA : `<a class="scm-code-link" data-code-type="sku">${escapeHtml(r.sku)}</a> 외 1`);
     const barcodeCnt  = isInnerSub ? empty : (isEmpty(r.barcode) ? NA : `<a class="scm-code-link" data-code-type="barcode">${escapeHtml(r.barcode)}</a>`);
     const nameCnt     = isInnerSub ? empty : nameCell;
-    const styleNoCnt  = isInnerSub ? empty : (isEmpty(r.styleNo) ? NA : `<a class="scm-code-link" data-code-type="styleNo">${escapeHtml(r.styleNo)}</a>`);
+    const styleNoCnt  = isInnerSub ? empty : (isEmpty(r.styleNo) ? NA : `<a class="scm-code-link" data-code-type="styleNo">${escapeHtml(r.styleNo)}</a> 외 1`);
     const expQtyCnt   = isInnerSub ? empty : fmtNum(r.expectedQty);
     const cnfQtyCnt   = isInnerSub ? empty : fmtNum(r.confirmedQty);
     const expDateCnt  = isInnerSub ? empty : fmtText(r.expectedDate);
     const arrDateCnt  = isInnerSub ? empty : fmtText(r.arrivalDate);
     const cnfDateCnt  = isInnerSub ? empty : fmtText(r.confirmDate);
     const reqDateCnt  = isInnerSub ? empty : fmtText(r.requestDate);
+    // 취소사유 — 빈/없음이면 '-' 표시. (NA dash 와 동일 톤). isInnerSub 면 빈 셀.
+    const reasonCnt   = isInnerSub ? empty : (r.cancelReason ? escapeHtml(r.cancelReason) : '-');
 
     // No (col 1) — outer group (신청번호) 기준 번호. outer 첫 row 에만 표시 → outer-merge.
     //   user 요청: "no는 신청번호 기준으로 하고 머지해야겠다" → 같은 신청번호 row 들은
@@ -1126,6 +1308,7 @@
         <td class="col-auto${iCls}">${arrDateCnt}</td>
         <td class="col-auto${iCls}">${cnfDateCnt}</td>
         <td class="col-auto${iCls}">${reqDateCnt}</td>
+        <td class="col-auto${iCls}">${reasonCnt}</td>
         <td class="col-spacer" aria-hidden="true"></td>
       </tr>
     `;
@@ -1337,6 +1520,9 @@
           <td class="col-auto">${escapeHtml(r.arrivalDate)}</td>
           <td class="col-auto">${escapeHtml(r.confirmDate)}</td>
           <td class="col-auto">${escapeHtml(r.requestDate)}</td>
+          ${idx === 0
+            ? `<td class="col-auto pd-reason-first">${r.cancelReason ? escapeHtml(r.cancelReason) : '-'}</td>`
+            : `<td class="col-auto pd-reason-sub"></td>`}
           <td class="col-spacer" aria-hidden="true"></td>
         </tr>
       `;
@@ -1373,7 +1559,21 @@
       const matching = ROWS.filter(r => r.reqNo === reqNo);
       // 데모: drawer 안에 입고 상품 30개를 채워 표시 (매칭 row + filler).
       _drawerRows = matching.length >= 30 ? matching : matching.concat(ROWS.slice(0, 30 - matching.length));
-      if (titleEl) titleEl.textContent = reqNo;
+      // 타이틀 — 코드 + 상태 칩 동기. 같은 reqNo 의 row 들은 status 가 통일돼 있으므로 첫 row 기준.
+      if (titleEl) {
+        const codeEl = titleEl.querySelector('.pd-drawer__title-code');
+        const statusEl = titleEl.querySelector('.pd-drawer__title-status');
+        if (codeEl) codeEl.textContent = reqNo;
+        if (statusEl) {
+          const repr = matching[0];
+          if (repr && repr.status) {
+            const variant = STATUS_CLS[repr.status] || 'waiting';
+            statusEl.innerHTML = `<span class="scm-status-chip scm-status-chip--${variant}">${escapeHtml(repr.status)}</span>`;
+          } else {
+            statusEl.innerHTML = '';
+          }
+        }
+      }
       // 필터 초기화 (있다면) 후 전체 row render
       if (_drawerFilterInstance && typeof _drawerFilterInstance.reset === 'function') {
         _drawerFilterInstance.reset();
@@ -1438,18 +1638,20 @@
     //   SCM.datePicker.DEFAULT_PRESETS 가 [오늘 / 최근 7일 / 최근 1개월 / 최근 3개월 / 최근 6개월] 제공
     //   selectedPresetId 가 chip 초기 라벨이자 reset 기준점.
     period: { mode: 'datepicker', selectedPresetId: 'm1', dpMode: 'range' },
-    inboundType: { mode: 'multi', options: [
+    inboundType: { mode: 'single', options: [
       { id:'all', label:'전체',             selected:true  },
       { id:'i1',  label:'MFS 입고',         selected:false },
       { id:'i2',  label:'물류센터 일괄입고', selected:false },
-      { id:'i3',  label:'매장 직납',         selected:false },
+      { id:'i3',  label:'스토어 개별입고',   selected:false },
+      { id:'i4',  label:'스토어 재고이동',   selected:false },
     ]},
-    status: { mode: 'multi', options: [
+    status: { mode: 'single', options: [
       { id:'all', label:'전체',     selected:true  },
       { id:'s1',  label:'입고대기', selected:false },
       { id:'s2',  label:'센터도착', selected:false },
       { id:'s3',  label:'부분입고', selected:false },
       { id:'s4',  label:'입고완료', selected:false },
+      { id:'s5',  label:'입고취소', selected:false },
     ]},
     reqNo: { mode: 'codeinput' },
     inNo:  { mode: 'codeinput' },
@@ -1715,14 +1917,34 @@
   //   모달을 띄움. onConfirm 콜백을 매번 다르게 주입.
   // ============================================================
   let _cancelOnConfirm = null;
+  const reasonInput = document.getElementById('iss-cancel-reason-input');
+  const reasonCountEl = document.getElementById('iss-cancel-reason-count');
+  function refreshCancelConfirmEnabled() {
+    const confirmBtn = document.getElementById('iss-cancel-modal-confirm');
+    if (!confirmBtn) return;
+    const val = reasonInput ? reasonInput.value.trim() : '';
+    if (val) {
+      confirmBtn.disabled = false;
+      confirmBtn.removeAttribute('disabled');
+    } else {
+      confirmBtn.disabled = true;
+      confirmBtn.setAttribute('disabled', '');
+    }
+  }
   function openCancelModal(onConfirm) {
     const bd = document.getElementById('iss-cancel-backdrop');
     if (!bd || !bd.hidden) return;  // 이미 열려있으면 중복 lock 방지
     _cancelOnConfirm = typeof onConfirm === 'function' ? onConfirm : null;
     const md = document.getElementById('iss-cancel-modal');
+    // textarea 초기화 — 매번 열릴 때 비워줘서 이전 입력 잔여 차단
+    if (reasonInput) reasonInput.value = '';
+    if (reasonCountEl) reasonCountEl.textContent = '0';
+    refreshCancelConfirmEnabled();
     bd.hidden = false;
     if (md) md.hidden = false;
     if (window.SCM && SCM.scrollLock) SCM.scrollLock.lock();
+    // 모달 열린 직후 textarea 포커스 — 사용자가 바로 입력 가능
+    if (reasonInput) setTimeout(() => reasonInput.focus(), 0);
   }
   function closeCancelModal() {
     const bd = document.getElementById('iss-cancel-backdrop');
@@ -1733,6 +1955,13 @@
     if (md) md.hidden = true;
     if (window.SCM && SCM.scrollLock) SCM.scrollLock.unlock();
   }
+  // textarea 입력 시 counter 갱신 + 확인 버튼 활성/비활성 토글
+  if (reasonInput) {
+    reasonInput.addEventListener('input', () => {
+      if (reasonCountEl) reasonCountEl.textContent = String(reasonInput.value.length);
+      refreshCancelConfirmEnabled();
+    });
+  }
   const cancelModalBackdrop = document.getElementById('iss-cancel-backdrop');
   if (cancelModalBackdrop) cancelModalBackdrop.addEventListener('click', closeCancelModal);
   const cancelModalCancel = document.getElementById('iss-cancel-modal-cancel');
@@ -1740,20 +1969,52 @@
   const cancelModalConfirm = document.getElementById('iss-cancel-modal-confirm');
   if (cancelModalConfirm) {
     cancelModalConfirm.addEventListener('click', () => {
+      if (cancelModalConfirm.disabled) return;     // disabled 상태에서는 무시
       const cb = _cancelOnConfirm;
+      const reason = reasonInput ? reasonInput.value.trim() : '';
       closeCancelModal();
-      if (cb) cb();
+      if (cb) cb(reason);                          // 콜백에 사유 전달 — 선택 row 들의 cancelReason 갱신용
     });
   }
 
-  // 입고 취소 (mini-action) — 활성 상태에서만 새 cancel modal
+  // 입고 취소 (mini-action) — 활성 상태에서만 새 cancel modal.
+  // onConfirm 콜백이 사용자가 입력한 reason 을 받아서 선택된 row 들의 cancelReason 필드에 기록.
   const cancelBtn = document.getElementById('iss-cancel-btn');
   if (cancelBtn) {
     cancelBtn.addEventListener('click', () => {
       if (cancelBtn.disabled) return;
-      const checked = document.querySelectorAll('#data-tbody .scm-checkbox[aria-checked="true"]').length;
-      openCancelModal(() => {
-        if (SCM.toast) SCM.toast.show({ variant: 'success', title: '입고 취소 요청', desc: `${checked}건의 입고 취소 요청이 접수되었습니다.` });
+      const checkedCbs = Array.from(document.querySelectorAll('#data-tbody .scm-checkbox[aria-checked="true"]'));
+      openCancelModal((reason) => {
+        // 선택된 row 들에 cancelReason 기록 + status '입고취소' 로 전환 (red chip).
+        //   같은 outer 그룹의 다른 row 도 동일 status 로 일괄 전환 — 그룹 단위 cancel 이 자연스러움.
+        const affectedReqNos = new Set();
+        checkedCbs.forEach((cb) => {
+          const tr = cb.closest('tr');
+          if (!tr) return;
+          const rIdx = parseInt(tr.getAttribute('data-row-idx'), 10);
+          if (isNaN(rIdx) || !ROWS[rIdx]) return;
+          ROWS[rIdx].cancelReason = reason;
+          ROWS[rIdx].status       = '입고취소';
+          affectedReqNos.add(ROWS[rIdx].reqNo);
+        });
+        // 같은 신청번호 그룹 내 다른 row (예: outer-merge sub row) 도 함께 cancel 처리.
+        ROWS.forEach((r) => {
+          if (!affectedReqNos.has(r.reqNo)) return;
+          if (!r.cancelReason) r.cancelReason = reason;
+          r.status = '입고취소';
+        });
+        // 본문 재렌더 → 상태 칩 & 취소사유 컬럼 즉시 반영. (tbody 가 통째 교체되므로
+        //   기존 body cb 의 aria-checked='true' 도 새 markup 의 default 'false' 로 자연 리셋됨.)
+        const tb = document.getElementById('data-tbody');
+        if (tb && typeof rowsToHtml === 'function') tb.innerHTML = rowsToHtml(ROWS);
+        // 헤더 cb-all (mp-cb-all) 명시적 unchecked — 별도 element 라 tbody 재렌더로는 안 풀림.
+        //   이전에 mixed/checked 였던 경우 그대로 stale 표시되는 회귀 차단. MutationObserver 가
+        //   aria-checked 변경 감지해 refreshActionBar 까지 chain.
+        const cbAll = document.getElementById('mp-cb-all');
+        if (cbAll) cbAll.setAttribute('aria-checked', 'false');
+        // 액션바 상태 (cancelBtn disabled, stats-bar 전체/선택됨 morph) 즉시 재계산.
+        if (typeof refreshActionBar === 'function') refreshActionBar();
+        if (SCM.toast) SCM.toast.show({ variant: 'success', title: '입고 취소 요청', desc: `${checkedCbs.length}건의 입고 취소 요청이 접수되었습니다.` });
       });
     });
   }
@@ -1773,22 +2034,27 @@
   //   (이전: document click listener 만 — SCMTable 가 이벤트 stopPropagation
   //    하거나 file:// 환경에서 selection 모듈이 부분 실패하면 호출 누락.)
   // ============================================================
-  // stats-bar 의 scm-stat--all 을 selection 상태에 맞춰 두 가지 형태로 morph:
-  //   0개 선택        → "전체 [N]"
-  //   1개 이상 선택   → "선택됨 [X] / N"  (X 는 #245EFF, "/ N" 은 #8A8A8A)
+  // stats-bar 의 scm-stat 를 selection 상태에 맞춰 두 가지 modifier 로 swap:
+  //   0개 선택        → .scm-stat--all          → "전체 [N]"               (label=#666, num=#000)
+  //   1개 이상 선택   → .scm-stat--selected     → "선택됨 [X] / N"          (label=#000 bold, num=#245EFF, /N=#8A8A8A)
+  // 디자인 시스템 stat.css 의 modifier 가 컬러를 처리. JS 는 class swap + innerHTML 만.
   // 별도 하단 액션바는 없으므로 stats-bar 가 선택 컨텍스트 표시 + iss-cancel-btn 활성 처리.
-  const statAllEl = document.querySelector('.scm-stats-bar__counts .scm-stat--all');
+  const statEl = document.querySelector('.scm-stats-bar__counts .scm-stat');
   function refreshActionBar() {
     const checked = document.querySelectorAll('#data-tbody .scm-checkbox[aria-checked="true"]').length;
     const total = (window.__issTotalCount != null) ? window.__issTotalCount : ROWS.length;
-    if (statAllEl) {
+    if (statEl) {
       if (checked > 0) {
-        statAllEl.innerHTML =
+        statEl.classList.remove('scm-stat--all');
+        statEl.classList.add('scm-stat--selected');
+        statEl.innerHTML =
           '<span class="scm-stat__label">선택됨</span> ' +
-          '<span class="scm-stat__num scm-stat__num--selected">' + checked + '</span>' +
+          '<span class="scm-stat__num">' + checked + '</span>' +
           '<span class="scm-stat__num-total">/ ' + total + '</span>';
       } else {
-        statAllEl.innerHTML =
+        statEl.classList.remove('scm-stat--selected');
+        statEl.classList.add('scm-stat--all');
+        statEl.innerHTML =
           '<span class="scm-stat__label">전체</span> ' +
           '<span class="scm-stat__num">' + total + '</span>';
       }
