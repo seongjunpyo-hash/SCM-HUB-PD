@@ -1307,12 +1307,13 @@
               ? `<a class="scm-code-link" data-code-type="uid">${escapeHtml(r.uid)} 외 ${r.uidExtra}</a>`
               : escapeHtml(r.uid)));
     const optCnt      = isInnerSub ? empty : optChip;
-    // SKU번호 / 스타일넘버 — code-link 뒤에 "외 1" 접미 추가 (사용자 요청). 다른 컬럼의
-    //   "외 N" 패턴과 동일하게 span 분리 — code-link 의 underline 이 접미까지 번지지 않도록.
-    const skuCnt      = isInnerSub ? empty : (isEmpty(r.sku) ? NA : `<a class="scm-code-link" data-code-type="sku">${escapeHtml(r.sku)}</a> 외 1`);
+    // SKU번호 / 스타일넘버 — "외 1" 접미를 <a> 내부의 .scm-code-link__extra span 으로 박음.
+    //   클릭 핸들러가 link.textContent 로 "외 N" 을 파싱해서 popover items 를 N+1 개 생성하므로
+    //   link 안에 들어가야 매칭됨. underline 은 base 코드에만 적용 (extra span 은 text-decoration:none).
+    const skuCnt      = isInnerSub ? empty : (isEmpty(r.sku) ? NA : `<a class="scm-code-link" data-code-type="sku">${escapeHtml(r.sku)}<span class="scm-code-link__extra"> 외 1</span></a>`);
     const barcodeCnt  = isInnerSub ? empty : (isEmpty(r.barcode) ? NA : `<a class="scm-code-link" data-code-type="barcode">${escapeHtml(r.barcode)}</a>`);
     const nameCnt     = isInnerSub ? empty : nameCell;
-    const styleNoCnt  = isInnerSub ? empty : (isEmpty(r.styleNo) ? NA : `<a class="scm-code-link" data-code-type="styleNo">${escapeHtml(r.styleNo)}</a> 외 1`);
+    const styleNoCnt  = isInnerSub ? empty : (isEmpty(r.styleNo) ? NA : `<a class="scm-code-link" data-code-type="styleNo">${escapeHtml(r.styleNo)}<span class="scm-code-link__extra"> 외 1</span></a>`);
     const expQtyCnt   = isInnerSub ? empty : fmtNum(r.expectedQty);
     const cnfQtyCnt   = isInnerSub ? empty : fmtNum(r.confirmedQty);
     const expDateCnt  = isInnerSub ? empty : fmtText(r.expectedDate);
@@ -1598,9 +1599,11 @@
           <td class="col-auto"><a class="scm-code-link" data-code-type="uid">${escapeHtml(r.uid)}</a></td>
           <td class="col-auto">${escapeHtml(r.opt)}</td>
           <td class="col-auto"><a class="scm-code-link" data-code-type="sku">${escapeHtml(r.sku)}</a></td>
-          <td class="col-auto"><a class="scm-code-link" data-code-type="barcode">${escapeHtml(stripExtra(r.barcode))}</a></td>
+          <!-- 바코드 / 스타일넘버 — 드로워에선 일반 텍스트 (링크 underline 제거, popover 트리거 X).
+               단일 코드라 popover 띄울 이유가 없고, 메인 목록과 톤 구분. -->
+          <td class="col-auto">${escapeHtml(stripExtra(r.barcode))}</td>
           <td class="col-large">${nameCell}</td>
-          <td class="col-auto"><a class="scm-code-link" data-code-type="styleNo">${escapeHtml(r.styleNo)}</a></td>
+          <td class="col-auto">${escapeHtml(r.styleNo)}</td>
           <td class="col-auto cell-numeric">${fmtNum(r.expectedQty)}</td>
           <td class="col-auto cell-numeric" style="color:${confirmedColor};font-weight:${confirmedWeight};">${fmtNum(r.confirmedQty)}</td>
           <td class="col-auto">${escapeHtml(r.expectedDate)}</td>

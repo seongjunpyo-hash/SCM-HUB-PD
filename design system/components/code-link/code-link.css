@@ -28,8 +28,10 @@
 }
 
 .scm-code-link__extra {
+  /* link 안의 "외 N" 접미 — 부모 .scm-code-link 의 underline 을 상속하지 않게 명시 none.
+     code 본체만 underline, 외 N 은 일반 텍스트 톤. 클릭은 link 전체로 동일하게 동작. */
   margin-left: 2px;
-  text-decoration: underline;
+  text-decoration: none;
   cursor: pointer;
   font-size: 15px;
   font-weight: 400;
