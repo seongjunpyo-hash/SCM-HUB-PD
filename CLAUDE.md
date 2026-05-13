@@ -3,6 +3,15 @@
 이 문서는 `/demo/*.html` 페이지의 공통 셸(GNB / LNB / 공통 스크립트) 아키텍처를 설명한다.
 새 페이지를 만들거나 기존 페이지를 수정할 때 참고.
 
+> **🔥 데이터 리스트 페이지 (mp-table 사용 페이지) 를 만들거나 수정할 때**:
+> 본 문서의 셸 아키텍처 + **[`design system/docs/data-list-page-gotchas.md`](./design%20system/docs/data-list-page-gotchas.md)**
+> 의 공통 패턴/gotcha 를 **모두 적용** 한다.
+>
+> 2026-05 stock-movement / product-arrival-status 작업에서 확립된 룰 — mp-table column
+> class 트랩, 2-row thead 패턴, frozen 컬럼 회피, iss-merged-cell rowspan 대체, drawer 안
+> 테이블 sticky thead, cancel/notify 모달, 체크박스 3-state, 한글 wrap, 필터 drawer markup
+> 등 모든 데이터 리스트 화면에 공통 적용되는 표준.
+
 ## 페이지 구조 (정적 HTML, no SSR)
 
 ```
@@ -80,3 +89,5 @@
 - [ ] LNB / topbar mount 호출 **불필요** — `lnb.js` / `topbar.js` 가 DOMContentLoaded 시 자동 mount (data-active 속성에서 active 키 읽음)
 - [ ] LNB 에 메뉴 등록 — `lnb.js` 의 `CANONICAL_LNB_HTML` 안 적절한 L1 그룹의 L2 list 에 새 `<a class="scm-lnb-l2" href="새페이지.html" data-key="페이지키">...</a>` 추가
 - [ ] VOC 협업 화면에도 노출하려면 `voc/index.html` 의 `MENU` 배열에도 추가
+- [ ] `functions/demo/_known-assets.js` 에 새 파일명 추가 (`node scripts/sync-demo-assets.js` 실행)
+- [ ] **데이터 리스트 페이지면** [`data-list-page-gotchas.md`](./design%20system/docs/data-list-page-gotchas.md) 의 체크리스트 §12 까지 모두 적용 (mp-table column class / 2-row thead / 체크박스 3-state / cancel·notify 모달 / 한글 wrap / 컬럼 sort·filter·more 아이콘 등)
