@@ -575,16 +575,17 @@
     <div class="scm-page-head scm-page-head--list">
       <h1 class="scm-page-head__title">위탁 상품 입고 현황</h1>
       <div class="scm-page-head__actions">
-        <button class="iss-notify-btn" type="button" id="notify-btn" aria-label="알림함 - 진행중 2건">
+        <!-- 디폴트: divider + "진행중 N" 영역은 hidden. 입고 취소 처리 시 노출되고 카운트 증가. -->
+        <button class="iss-notify-btn" type="button" id="notify-btn" aria-label="알림함">
           <svg class="iss-notify-btn__icon" viewBox="0 0 16 16" aria-hidden="true">
             <path d="M3.5 6.5a4.5 4.5 0 0 1 9 0v3l1 2H2.5l1-2v-3z" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round"/>
             <path d="M6.5 13.5a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round"/>
           </svg>
           <span>알림함</span>
-          <span class="iss-notify-btn__divider"></span>
-          <span class="iss-notify-btn__status">
+          <span class="iss-notify-btn__divider" hidden></span>
+          <span class="iss-notify-btn__status" hidden>
             <span>진행중</span>
-            <span class="iss-notify-btn__status-num">2</span>
+            <span class="iss-notify-btn__status-num" id="iss-notify-progress-num">0</span>
           </span>
         </button>
       </div>
@@ -2108,6 +2109,23 @@
           title: '입고 취소 처리 시작',
           desc: '화면을 닫아도 처리는 계속 진행됩니다.',
         });
+        // 알림함 버튼의 "진행중 N" 영역을 노출 + 카운트 증가 (영향받은 신청번호 그룹 수만큼).
+        //   디폴트는 divider/status 가 hidden 이라 알림함 텍스트만 노출. 첫 취소에 영역 표시 시작.
+        (function bumpNotifyProgress() {
+          const num = document.getElementById('iss-notify-progress-num');
+          const divider = document.querySelector('.iss-notify-btn__divider');
+          const status = document.querySelector('.iss-notify-btn__status');
+          if (!num || !divider || !status) return;
+          const cur = parseInt(num.textContent || '0', 10) || 0;
+          const next = cur + affectedReqNos.size;        // 신청번호 그룹 단위로 진행중 카운트
+          num.textContent = String(next);
+          if (next > 0) {
+            divider.hidden = false;
+            status.hidden = false;
+            const btn = document.getElementById('notify-btn');
+            if (btn) btn.setAttribute('aria-label', `알림함 - 진행중 ${next}건`);
+          }
+        })();
       });
     });
   }
