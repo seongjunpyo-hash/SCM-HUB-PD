@@ -200,6 +200,12 @@
     .mp-table tbody td.stm-c-amount { font-weight: 600; }
     .mp-table th.stm-c-user,    .mp-table td.stm-c-user    { min-width: 160px; }
     .mp-table th.stm-c-regdate, .mp-table td.stm-c-regdate { min-width: 140px; }
+    /* 등록일시 (마지막 데이터 컬럼) 우측 — col-spacer 와 경계 라인.
+       mp-table 은 column divider 를 border-LEFT 로 그리는데 col-spacer 는 border-left 가 없어서
+       경계가 안 보이는 회귀. 등록일시 셀에 border-right 명시.
+       톤은 col-frozen-last 와 같은 rgba(0,0,0,0.12) — "데이터 영역 끝" 경계 강조. */
+    .mp-table th.stm-c-regdate,
+    .mp-table tbody td.stm-c-regdate { border-right: 1px solid rgba(0, 0, 0, 0.12); }
 
     /* === 셀 내 도메인 콘텐츠 === */
     /* 등록번호 셀 — 코드 + 자동승인 작은 라벨 */
@@ -270,7 +276,10 @@
        이동 상세 drawer — 이동번호 클릭 시 우측 슬라이드.
        scm-side-drawer 베이스 + 페이지 스코프 클래스(stm-drawer__*) 로 헤더/카드/테이블 정의.
        ============================================================ */
-    #stm-drawer { width: min(1600px, 95vw); max-width: none; }
+    /* drawer 폭 — 컨텐츠(table 1677 + drawer padding ~48 ≈ 1725) 와 viewport 80% 중 작은 값.
+       • 와이드 viewport(≥ 2188px): drawer = 1750px → 테이블 1677 여유 있게 fit, 가로 스크롤 X
+       • 좁은 viewport(< 2188px): drawer = 80vw → 컨텐츠 넘치면 mp-table-scroll 가 가로 스크롤. */
+    #stm-drawer { width: min(1750px, 80vw); max-width: none; }
     /* 기본 head 빈 공백 제거. 닫기 X 는 우측 상단에 absolute. */
     #stm-drawer .scm-side-drawer__head { display: none; }
     #stm-drawer .scm-side-drawer__body {
@@ -303,15 +312,30 @@
     #stm-drawer .stm-drawer__title-code {
       font-size: 26px; font-weight: 600; line-height: 36.4px; color: #000;
     }
-    #stm-drawer .stm-drawer__title-chip { /* scm-status-chip 적용 */ }
+    /* 타이틀 옆 상태 칩 — Figma spec (padding 4 8 / font 14 / 19.6) 로 scm-status-chip 기본 (height 24) 오버라이드 */
+    #stm-drawer .stm-drawer__title-chip.scm-status-chip {
+      height: auto;
+      padding: 4px 8px;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 19.6px;
+    }
+    /* 메타 행 — 자동승인 | 사유 | desc | 등록자 | 일시. 한 줄 유지, 넘치면 wrap */
     #stm-drawer .stm-drawer__meta {
-      display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px;
+      display: flex; align-items: center; flex-wrap: wrap;
+      gap: 8px; row-gap: 4px;
+      padding-bottom: 8px;
     }
     #stm-drawer .stm-drawer__meta-item {
       font-size: 13px; font-weight: 400; line-height: 19.5px; color: #8A8A8A;
     }
+    /* divider — inline 요소(span) 라 width/height 가 무시되지 않도록 inline-block.
+       flex item 이지만 명시 display 로 안전망. */
     #stm-drawer .stm-drawer__meta-divider {
-      width: 1px; height: 12px; background: #EBEBEB;
+      display: inline-block;
+      width: 1px; height: 12px;
+      background: #EBEBEB;
+      flex-shrink: 0;
     }
     #stm-drawer .stm-drawer__cancel-btn {
       width: 80px; height: 44px; padding: 12px;
@@ -557,6 +581,191 @@
       font-family: inherit; font-size: 15px; font-weight: 500; color: #000;
       cursor: pointer;
     }
+
+    /* ============================================================
+       알림함 모달 (640px) — Product-Arrival-Status 패턴 포팅
+       ============================================================ */
+    .stm-notify-modal-backdrop {
+      position: fixed; inset: 0; z-index: 1099;
+      background: rgba(0, 0, 0, 0.45);
+    }
+    .stm-notify-modal-backdrop[hidden] { display: none; }
+    .stm-notify-modal {
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 640px; max-width: 640px;
+      background: #fff; border-radius: 8px;
+      box-shadow: 0 10px 15px 8px rgba(0,0,0,0.05);
+      display: flex; flex-direction: column;
+      max-height: calc(100vh - 80px); overflow: hidden;
+      z-index: 1100;
+      font-family: inherit;
+    }
+    .stm-notify-modal[hidden] { display: none; }
+    .stm-notify-modal__head { padding: 24px 24px 0; }
+    .stm-notify-modal__title { margin: 0; color: #000; font-size: 18px; font-weight: 600; line-height: 24.48px; }
+    .stm-notify-modal__body {
+      flex: 1 1 auto;
+      padding: 20px 24px 0;
+      max-height: 628px;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .stm-notify-table {
+      display: flex; flex-direction: column;
+      border-top: 1.5px solid #000;
+      border-bottom: 1px solid #EBEBEB;
+      overflow-y: auto;
+      min-height: 0;
+    }
+    .stm-notify-row {
+      display: flex; align-items: stretch;
+      border-top: 1px solid #EBEBEB;
+      min-height: 52px;
+      flex-shrink: 0;
+    }
+    .stm-notify-row:first-child { border-top: 0; }
+    .stm-notify-cell {
+      padding: 16px;
+      font-size: 15px; font-weight: 400; line-height: 20.4px;
+      color: #000;
+      box-sizing: border-box;
+    }
+    .stm-notify-row--head {
+      background: #fff; border-top: 0;
+      position: sticky; top: 0; z-index: 2;
+    }
+    .stm-notify-row--head .stm-notify-cell {
+      font-weight: 500; color: #000; background: #fff;
+      padding-top: 14px; padding-bottom: 14px;
+    }
+    .stm-notify-row--head::after {
+      content: ''; position: absolute; left: 0; right: 0; bottom: -1px;
+      height: 1px; background: #EBEBEB;
+    }
+    .stm-notify-cell--date { width: 152px; flex: 0 0 152px; white-space: nowrap; }
+    .stm-notify-cell--content {
+      width: 310px; flex: 0 0 310px;
+      border-left: 1px solid #EBEBEB;
+      display: flex; flex-direction: column; gap: 20px;
+    }
+    .stm-notify-cell--writer {
+      flex: 1 1 auto; min-width: 0;
+      border-left: 1px solid #EBEBEB;
+      white-space: nowrap;
+    }
+    .stm-notify-item { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .stm-notify-item__title { color: #1A1A1A; font-size: 15px; font-weight: 600; line-height: 20.4px; }
+    .stm-notify-item__title .stm-notify-success { color: #1A1A1A; }
+    .stm-notify-item__title .stm-notify-fail    { color: #FF4D4F; }
+    .stm-notify-item__row { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+    .stm-notify-item__ref { color: #8A8A8A; font-size: 15px; font-weight: 400; line-height: 20.4px; }
+    .stm-notify-item__cta {
+      display: inline-flex; align-items: center; justify-content: center; gap: 2px;
+      height: 20px; min-height: 20px; max-height: 20px;
+      padding: 0; background: transparent;
+      border: 0; border-radius: 4px;
+      color: #245EFF; font-size: 14px; font-weight: 500; line-height: 19.6px;
+      font-family: inherit; cursor: pointer; white-space: nowrap;
+    }
+    .stm-notify-item__cta:hover { background: rgba(36, 94, 255, 0.06); }
+    .stm-notify-item__cta svg { width: 16px; height: 16px; flex-shrink: 0; color: #245EFF; }
+    .stm-notify-modal__footer {
+      padding: 24px 24px 16px;
+      display: flex; justify-content: flex-end; gap: 8px;
+      border-top: 0;
+    }
+    .stm-notify-modal__close-btn {
+      min-width: 56px; height: 44px; padding: 12px;
+      background: #fff; border: 1px solid #E0E0E0; border-radius: 4px;
+      font-family: inherit; font-size: 15px; font-weight: 500; color: #000;
+      cursor: pointer;
+    }
+    .stm-notify-modal__close-btn:hover { background: #FAFBFC; }
+
+    /* ============================================================
+       출고 취소 확인 모달 (360px)
+       ============================================================ */
+    .stm-cancel-modal-backdrop {
+      position: fixed; inset: 0; z-index: 1099;
+      background: rgba(0, 0, 0, 0.45);
+    }
+    .stm-cancel-modal-backdrop[hidden] { display: none; }
+    .stm-cancel-modal {
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 360px; background: #fff;
+      box-shadow: 0 10px 15px 8px rgba(0,0,0,0.05);
+      border-radius: 6px;
+      display: flex; flex-direction: column;
+      z-index: 1100;
+      font-family: inherit;
+    }
+    .stm-cancel-modal[hidden] { display: none; }
+    .stm-cancel-modal__title {
+      margin: 0; padding: 24px 24px 4px;
+      color: rgba(0,0,0,0.88);
+      font-size: 18px; font-weight: 600; line-height: 24.48px;
+    }
+    .stm-cancel-modal__desc {
+      margin: 0; padding: 0 24px 16px;
+      color: #1A1A1A;
+      font-size: 15px; font-weight: 400; line-height: 20.4px;
+    }
+    .stm-cancel-modal__reason {
+      padding: 0 24px 8px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .stm-cancel-modal__reason-label-row { display: flex; align-items: center; gap: 2px; }
+    .stm-cancel-modal__reason-label { color: #666; font-size: 14px; font-weight: 500; line-height: 19.6px; }
+    .stm-cancel-modal__reason-req {
+      width: 4px; height: 4px;
+      background: #245EFF; border-radius: 50%;
+      align-self: center;
+    }
+    .stm-cancel-modal__reason-box {
+      height: 80px; padding: 12px 16px;
+      background: #fff;
+      border: 1px solid #E0E0E0; border-radius: 4px;
+      display: flex; align-items: flex-start;
+    }
+    .stm-cancel-modal__reason-input {
+      flex: 1 1 auto;
+      border: 0; outline: 0;
+      background: transparent; resize: none;
+      font-family: inherit;
+      font-size: 15px; font-weight: 400; line-height: 20.4px;
+      color: #000;
+      width: 100%; height: 100%; padding: 0;
+    }
+    .stm-cancel-modal__reason-input::placeholder { color: #8A8A8A; }
+    .stm-cancel-modal__reason-counter {
+      padding: 2px 0;
+      font-size: 14px; font-weight: 400; line-height: 19.6px;
+      color: #666;
+    }
+    .stm-cancel-modal__reason-counter strong { color: #000; font-weight: 400; }
+    .stm-cancel-modal__footer {
+      padding: 12px 24px 24px;
+      display: flex; justify-content: flex-end; align-items: center; gap: 8px;
+    }
+    .stm-cancel-modal__btn-cancel {
+      min-width: 56px; height: 40px; padding: 10px;
+      background: #fff; border: 1px solid #E0E0E0; border-radius: 4px;
+      font-family: inherit; font-size: 14px; font-weight: 500; line-height: 19.6px; color: #000;
+      cursor: pointer;
+    }
+    .stm-cancel-modal__btn-cancel:hover { background: #FAFBFC; }
+    .stm-cancel-modal__btn-confirm {
+      min-width: 56px; height: 40px; padding: 10px 16px;
+      background: #000; border: 0; border-radius: 4px;
+      font-family: inherit; font-size: 14px; font-weight: 500; line-height: 19.6px; color: #fff;
+      cursor: pointer;
+    }
+    .stm-cancel-modal__btn-confirm[disabled] {
+      background: rgba(138,138,138,0.10); color: rgba(0,0,0,0.20); cursor: not-allowed;
+    }
+    .stm-cancel-modal__btn-confirm:not([disabled]):hover { background: #1a1a1a; }
   </style>
 </head>
 <body>
@@ -686,13 +895,13 @@
         <table class="mp-table is-cell-selectable" id="stm-table" data-scm-frozen="3">
           <thead>
             <tr class="group-row">
-              <!-- frozen 3 (등록번호 / 이동사유 / 체크박스) — rowspan=2 로 leaf 까지 점유 -->
-              <th class="col-auto stm-c-reg col-frozen-1" rowspan="2">등록번호/상태</th>
-              <th class="col-auto stm-c-reason col-frozen-2" rowspan="2">이동 사유</th>
+              <!-- frozen 3 (등록번호 / 이동사유 / 체크박스) — rowspan=2 로 leaf 까지 점유.
+                   각 컬럼 라벨 뒤에 sort-ic + th-icons(filter-ic / more-ic) → SCM.tableSort /
+                   columnFilterPopover / columnMoreMenu 가 자동 연결. -->
+              <th class="col-auto stm-c-reg col-frozen-1" rowspan="2">등록번호/상태 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="col-auto stm-c-reason col-frozen-2" rowspan="2">이동 사유 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
               <th class="cb-col col-frozen-3 col-frozen-last" rowspan="2"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" id="stm-cb-all" aria-label="전체 선택"></span></th>
-              <!-- 이동번호 — row1 에 라벨 + 펼치기 button.
-                   collapsed 상태에서는 colspan=1 (이동번호 leaf 하나만 cover),
-                   expanded 시 JS 가 colspan=3 으로 변경 + row2 / tbody 에 출고번호 / 입고번호 셀 inject. -->
+              <!-- 이동번호 — row1 에 라벨 + 펼치기 button (이 셀은 group cell 이라 sort/filter X) -->
               <th class="col-auto stm-c-moveno-head" id="stm-moveno-head">
                 <div class="stm-moveno-head">
                   <span class="stm-moveno-head__label">이동번호</span>
@@ -702,22 +911,21 @@
                   </button>
                 </div>
               </th>
-              <!-- 나머지 컬럼은 rowspan=2 로 풀 height -->
-              <th class="col-auto stm-c-status" rowspan="2">이동상태</th>
-              <th class="col-medium stm-c-route" rowspan="2">경로</th>
-              <th class="col-large stm-c-sku" rowspan="2">SKU명</th>
-              <th class="col-auto stm-c-qty cell-numeric" rowspan="2">요청수량</th>
-              <th class="col-auto stm-c-qty cell-numeric" rowspan="2">출고수량(출발)</th>
-              <th class="col-auto stm-c-qty cell-numeric" rowspan="2">입고수량(도착)</th>
-              <th class="col-auto stm-c-amount cell-numeric" rowspan="2">요청 상품 총액</th>
-              <th class="col-auto stm-c-user" rowspan="2">등록자</th>
-              <th class="col-auto stm-c-regdate" rowspan="2">등록일시</th>
+              <!-- 나머지 leaf 컬럼 — 모두 sort + filter + more 아이콘 -->
+              <th class="col-auto stm-c-status" rowspan="2">이동상태 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="col-medium stm-c-route" rowspan="2">경로 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="col-large stm-c-sku" rowspan="2">SKU명 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="col-auto stm-c-qty cell-numeric" rowspan="2">요청수량 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="col-auto stm-c-qty cell-numeric" rowspan="2">출고수량(출발) <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="col-auto stm-c-qty cell-numeric" rowspan="2">입고수량(도착) <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="col-auto stm-c-amount cell-numeric" rowspan="2">요청 상품 총액 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="col-auto stm-c-user" rowspan="2">등록자 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="col-auto stm-c-regdate" rowspan="2">등록일시 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
               <th class="col-spacer" data-empty="true" rowspan="2" aria-hidden="true"></th>
             </tr>
             <tr id="stm-leaf-row">
-              <!-- row2 leaves — 기본 collapsed: 이동번호만.
-                   펼치기 토글 시 JS 가 출고번호 / 입고번호 th 를 inject. -->
-              <th class="col-auto stm-c-moveno">이동번호</th>
+              <!-- row2 leaves — 기본 collapsed: 이동번호만. 펼치기 토글 시 JS 가 출고번호 / 입고번호 th inject. -->
+              <th class="col-auto stm-c-moveno">이동번호 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
             </tr>
           </thead>
           <tbody id="stm-tbody"></tbody>
@@ -726,6 +934,28 @@
     </div>
   </main>
 </div>
+
+<!-- Filter popover root (single/multi/codeinput 공용 — 각 필터 칩 클릭 시 여기로 popover 가 mount) -->
+<div class="scm-filter-popover-root" id="filter-popover-root" role="dialog" aria-hidden="true"></div>
+
+<!-- Filter drawer — "전체 필터" 클릭 시 우측 슬라이드. 본문은 SCM.filterPopoverModes.init 가 REGISTRY 기반으로 자동 생성. -->
+<div class="scm-filter-drawer-backdrop" id="fd-backdrop" hidden></div>
+<aside class="scm-filter-drawer" id="filter-drawer" hidden role="dialog" aria-label="전체 필터">
+  <header class="scm-filter-drawer__header">
+    <h2>전체 필터</h2>
+    <button class="scm-filter-drawer__close" type="button" aria-label="닫기">
+      <svg viewBox="0 0 20 20"><use href="#ic-close"/></svg>
+    </button>
+  </header>
+  <div class="scm-filter-drawer__body"></div>
+  <footer class="scm-filter-drawer__footer">
+    <button class="scm-filter-drawer__reset" type="button">
+      <svg viewBox="0 0 20 20"><use href="#ic-refresh"/></svg>
+      <span>전체 초기화</span>
+    </button>
+    <button class="scm-filter-drawer__apply" type="button">검색 적용</button>
+  </footer>
+</aside>
 
 <!-- 이동 상세 drawer -->
 <div class="scm-side-drawer-backdrop" id="stm-drawer-backdrop" hidden></div>
@@ -888,6 +1118,41 @@
   </footer>
 </aside>
 
+<!-- 알림함 모달 -->
+<div class="stm-notify-modal-backdrop" id="stm-notify-modal-backdrop" hidden></div>
+<div class="stm-notify-modal" id="stm-notify-modal" hidden role="dialog" aria-labelledby="stm-notify-modal-title">
+  <header class="stm-notify-modal__head">
+    <h2 class="stm-notify-modal__title" id="stm-notify-modal-title">알림함</h2>
+  </header>
+  <div class="stm-notify-modal__body">
+    <div class="stm-notify-table" id="stm-notify-modal-tbody"></div>
+  </div>
+  <footer class="stm-notify-modal__footer">
+    <button class="stm-notify-modal__close-btn" type="button" id="stm-notify-modal-close-btn">닫기</button>
+  </footer>
+</div>
+
+<!-- 출고 취소 확인 모달 -->
+<div class="stm-cancel-modal-backdrop" id="stm-cancel-modal-backdrop" hidden></div>
+<div class="stm-cancel-modal" id="stm-cancel-modal" hidden role="dialog" aria-labelledby="stm-cancel-modal-title">
+  <h3 class="stm-cancel-modal__title" id="stm-cancel-modal-title">출고 취소를 진행하시겠습니까?</h3>
+  <p class="stm-cancel-modal__desc">출고 취소는 즉시 반영되지 않고 순차적으로 처리됩니다. 처리 완료 시 좌측 메뉴 알림으로 결과를 안내해 드립니다.</p>
+  <div class="stm-cancel-modal__reason">
+    <div class="stm-cancel-modal__reason-label-row">
+      <label class="stm-cancel-modal__reason-label" for="stm-cancel-reason-input">취소사유</label>
+      <span class="stm-cancel-modal__reason-req" aria-hidden="true"></span>
+    </div>
+    <div class="stm-cancel-modal__reason-box">
+      <textarea id="stm-cancel-reason-input" class="stm-cancel-modal__reason-input" maxlength="50" placeholder="취소 사유를 입력해 주세요" rows="2"></textarea>
+    </div>
+    <div class="stm-cancel-modal__reason-counter"><strong id="stm-cancel-reason-count">0</strong>/50</div>
+  </div>
+  <div class="stm-cancel-modal__footer">
+    <button type="button" class="stm-cancel-modal__btn-cancel" id="stm-cancel-modal-cancel">취소</button>
+    <button type="button" class="stm-cancel-modal__btn-confirm" id="stm-cancel-modal-confirm" disabled>확인</button>
+  </div>
+</div>
+
 <!-- Module JS -->
 <script src="../design%20system/components/lnb/lnb.js"></script>
 <script src="../design%20system/components/topbar/topbar.js"></script>
@@ -937,107 +1202,177 @@
   //   출고취소     → outNo 있음, inNo='-'
   //   입고대기     → outNo 있음, inNo='-'
   const ROWS = [
-    {
-      regNo: 'TX-MVR\n2508220000487', auto: '자동승인',
-      reasonTitle: '재고보충 (물류센터→물류센터)',
-      reasonDesc: '위탁-시즌반품회수, 10월 10차분 매장 재고이동',
-      author: '정이삭(M2025012204)', time: '25.02.13 19:00',
-      items: [
-        { moveNo:'2508240000837', outNo:'OB94825-3850837NWH01', inNo:'TX-INB2508260000003',
-          status:'입고완료', overseaTag:'해외',
-          from:'글로벌 센터(JP1)-무신사-오프라인', to:'여주1-무신사-오프라인',
-          sku:'Basal 5 Pockets Denim Shorts Light Grey', skuExtra:'70개',
-          reqQty:34, outQty:34, inQty:25, totalAmount:'177,150,000원' },
-      ],
-    },
-    {
-      regNo: 'TX-MVR\n2508220000488', auto: '자동승인',
-      reasonTitle: '재고보충 (물류센터→물류센터)',
-      reasonDesc: '위탁-시즌반품회수, 10월 10차분 매장 재고이동',
-      author: '정이삭(M2025012204)', time: '25.02.13 19:00',
-      items: [
-        { moveNo:'2508240000837', outNo:'TX-OTB2508220000487', inNo:'TX-INB2508260000003',
-          status:'입고완료', overseaTag:'해외',
-          from:'글로벌 센터(JP1)-무신사-오프라인', to:'여주1-무신사-오프라인',
-          sku:'Basal 5 Pockets Denim Shorts Light Grey', skuExtra:'70개',
-          reqQty:34, outQty:34, inQty:25, totalAmount:'177,150,000원' },
-      ],
-    },
-    {
-      regNo: 'TX-MVR\n2508220000489', auto: '자동승인',
-      reasonTitle: 'MFS 물류중앙화 (입고 → 물류센터 → 매장)',
-      reasonDesc: '물류 중앙화',
-      author: '정이삭(M2025012204)', time: '25.02.13 19:00',
-      items: [
-        { moveNo:'2508240000838', outNo:'TX-OTB2508220000488', inNo:'-',
-          status:'입고대기',
-          from:'여주1-무신사-오프라인', to:'무신사 스토어 강남',
-          sku:'Basal 5 Pockets Denim Shorts Light Grey', skuExtra:'70개',
-          reqQty:34, outQty:34, inQty:25, totalAmount:'177,150,000원' },
-      ],
-    },
-    {
-      regNo: 'TX-MVR\n2508220000490', auto: '자동승인',
-      reasonTitle: '촬영용 반출', reasonTitleWarn: true,
-      reasonDesc: '[에디터팀] 0623 미미미누 무진장 컨텐츠 촬영',
-      author: '정이삭(M2025012204)', time: '25.02.13 19:00',
-      items: [
-        { moveNo:'2508240000839', outNo:'TX-OTB2508220000490', inNo:'-',
-          status:'출고취소',
-          from:'여주1-무신사-오프라인', to:'무신사 스탠다드 포토팀',
-          sku:'[쿨탠다드] 오버사이즈 블레이저 [블랙]', skuExtra:'3개',
-          reqQty:4, outQty:4, inQty:4, totalAmount:'290,000원' },
-      ],
-    },
-    {
-      regNo: 'TX-MVR\n2508220000491', auto: '자동승인',
-      reasonTitle: '촬영용 반출', reasonTitleWarn: true,
-      reasonDesc: '[에디터팀] 0626 이시안 무진장 컨텐츠 촬영',
-      author: '정이삭(M2025012204)', time: '25.02.13 19:00',
-      items: [
-        { moveNo:'2508240000840', outNo:'TX-OTB2508220000491', inNo:'-',
-          status:'출고취소',
-          from:'여주1-무신사-오프라인', to:'무신사뷰티 콘텐츠팀',
-          sku:'베이비 하프 문 백', skuExtra:'',
-          reqQty:1, outQty:1, inQty:1, totalAmount:'19,900원' },
-      ],
-    },
-    {
-      regNo: 'TX-MVR\n2508220000492', auto: '자동승인',
-      reasonTitle: '재고보충',
-      reasonDesc: '[브랜드사업팀] 디스커스 나이스웨더 대구 재고 보충 241114',
-      author: '정이삭(M2025012204)', time: '25.02.13 19:00',
-      items: [
-        { moveNo:'2508240000841', outNo:'TX-OTB2508220000492', inNo:'-',
-          status:'출고완료',
-          from:'여주1-무신사-오프라인', to:'무신사뷰티 콘텐츠팀',
-          sku:'나이스웨더 컬래버 Nice Series 5-Panel Cap Dark Blue', skuExtra:'25개',
-          reqQty:'2,454', outQty:'2,454', inQty:'-', totalAmount:'177,150,000원' },
-        { moveNo:'2508240000842', outNo:'TX-OTB2508220000492', inNo:'-',
-          status:'출고완료',
-          from:'여주1-무신사-오프라인', to:'무신사뷰티 콘텐츠팀',
-          sku:'N.W 워터 글라스', skuExtra:'1,240개',
-          reqQty:34, outQty:34, inQty:'-', totalAmount:'177,150,000원' },
-      ],
-    },
-    {
-      regNo: 'TX-MVR\n2508220000493', auto: '자동승인',
+    // 1~4: 출고대기 ────────────────────────────────────────────
+    { regNo: 'TX-MVR\n2508220000487', auto: '자동승인',
       reasonTitle: '마케팅 시딩, 증정용 반출',
       reasonDesc: '[풋웨어팀] 250628_푸마_차정원시딩_반납조건_김지민',
       author: '정이삭(M2025012204)', time: '25.02.13 19:00',
-      items: [
-        { moveNo:'2508240000843', outNo:'-', inNo:'-',
-          status:'출고대기',
-          from:'여주1-무신사-오프라인', to:'무신사 마케팅팀',
-          sku:'젤-1130 - 스틸 그레이:퓨어 실버 / 1201A934-020', skuExtra:'',
-          reqQty:1, outQty:'-', inQty:'-', totalAmount:'150,000원' },
-        { moveNo:'2508240000844', outNo:'-', inNo:'-',
-          status:'출고대기',
-          from:'여주1-무신사-오프라인', to:'무신사 마케팅팀',
-          sku:'(여성) 링컨 4 - 드루지:마운틴 포그 / 1155131-DFG', skuExtra:'',
-          reqQty:1, outQty:'-', inQty:'-', totalAmount:'150,000원' },
-      ],
-    },
+      items: [{ moveNo:'2508240000801', outNo:'-', inNo:'-', status:'출고대기',
+        from:'여주1-무신사-오프라인', to:'무신사 마케팅팀',
+        sku:'젤-1130 - 스틸 그레이:퓨어 실버 / 1201A934-020', skuExtra:'',
+        reqQty:1, outQty:'-', inQty:'-', totalAmount:'150,000원' }] },
+    { regNo: 'TX-MVR\n2508220000488', auto: '자동승인',
+      reasonTitle: '마케팅 시딩, 증정용 반출',
+      reasonDesc: '[브랜드사업팀] 250712_나이키 콜라보 시딩_김민지',
+      author: '박지수(M2025012205)', time: '25.02.13 19:05',
+      items: [{ moveNo:'2508240000802', outNo:'-', inNo:'-', status:'출고대기',
+        from:'여주1-무신사-오프라인', to:'무신사 마케팅팀',
+        sku:'(여성) 링컨 4 - 드루지:마운틴 포그 / 1155131-DFG', skuExtra:'',
+        reqQty:2, outQty:'-', inQty:'-', totalAmount:'320,000원' }] },
+    { regNo: 'TX-MVR\n2508220000489', auto: '자동승인',
+      reasonTitle: '재고보충 (물류센터→물류센터)',
+      reasonDesc: '위탁-신규 입점 매장 초도 배송',
+      author: '정이삭(M2025012204)', time: '25.02.13 19:10',
+      items: [{ moveNo:'2508240000803', outNo:'-', inNo:'-', status:'출고대기',
+        from:'여주1-무신사-오프라인', to:'성수 대림창고',
+        sku:'와이드 데님 팬츠 [인디고][30]', skuExtra:'15개',
+        reqQty:50, outQty:'-', inQty:'-', totalAmount:'4,950,000원' }] },
+    { regNo: 'TX-MVR\n2508220000490', auto: '자동승인',
+      reasonTitle: 'MFS 물류중앙화 (입고 → 물류센터 → 매장)',
+      reasonDesc: '물류 중앙화 - 10월 5차분',
+      author: '홍길동(M2025012206)', time: '25.02.13 19:15',
+      items: [{ moveNo:'2508240000804', outNo:'-', inNo:'-', status:'출고대기',
+        from:'JP1-무신사-오프라인', to:'무신사 스토어 강남',
+        sku:'베이직 옥스포드 셔츠 [화이트][M]', skuExtra:'8개',
+        reqQty:34, outQty:'-', inQty:'-', totalAmount:'1,256,800원' }] },
+
+    // 5~6: 출고취소 ────────────────────────────────────────────
+    { regNo: 'TX-MVR\n2508220000491', auto: '자동승인',
+      reasonTitle: '촬영용 반출', reasonTitleWarn: true,
+      reasonDesc: '[에디터팀] 0623 미미미누 무진장 컨텐츠 촬영',
+      author: '정이삭(M2025012204)', time: '25.02.13 19:20',
+      items: [{ moveNo:'2508240000805', outNo:'TX-OTB2508220000491', inNo:'-', status:'출고취소',
+        from:'여주1-무신사-오프라인', to:'무신사 스탠다드 포토팀',
+        sku:'[쿨탠다드] 오버사이즈 블레이저 [블랙]', skuExtra:'3개',
+        reqQty:4, outQty:4, inQty:'-', totalAmount:'290,000원' }] },
+    { regNo: 'TX-MVR\n2508220000492', auto: '자동승인',
+      reasonTitle: '촬영용 반출', reasonTitleWarn: true,
+      reasonDesc: '[에디터팀] 0626 이시안 무진장 컨텐츠 촬영',
+      author: '박지수(M2025012205)', time: '25.02.13 19:25',
+      items: [{ moveNo:'2508240000806', outNo:'TX-OTB2508220000492', inNo:'-', status:'출고취소',
+        from:'여주1-무신사-오프라인', to:'무신사뷰티 콘텐츠팀',
+        sku:'베이비 하프 문 백', skuExtra:'',
+        reqQty:1, outQty:1, inQty:'-', totalAmount:'19,900원' }] },
+
+    // 7~12: 출고완료 ───────────────────────────────────────────
+    { regNo: 'TX-MVR\n2508220000493', auto: '자동승인',
+      reasonTitle: '재고보충',
+      reasonDesc: '[브랜드사업팀] 디스커스 나이스웨더 대구 재고 보충 241114',
+      author: '정이삭(M2025012204)', time: '25.02.13 19:30',
+      items: [{ moveNo:'2508240000807', outNo:'TX-OTB2508220000493', inNo:'-', status:'출고완료',
+        from:'여주1-무신사-오프라인', to:'무신사뷰티 콘텐츠팀',
+        sku:'나이스웨더 컬래버 Nice Series 5-Panel Cap Dark Blue', skuExtra:'25개',
+        reqQty:'2,454', outQty:'2,454', inQty:'-', totalAmount:'177,150,000원' }] },
+    { regNo: 'TX-MVR\n2508220000494', auto: '자동승인',
+      reasonTitle: '재고보충 (물류센터→물류센터)',
+      reasonDesc: '위탁-시즌반품회수, 10월 10차분 매장 재고이동',
+      author: '정이삭(M2025012204)', time: '25.02.13 19:35',
+      items: [{ moveNo:'2508240000808', outNo:'TX-OTB2508220000494', inNo:'-', status:'출고완료',
+        from:'여주1-무신사-오프라인', to:'성수 대림창고',
+        sku:'N.W 워터 글라스', skuExtra:'1,240개',
+        reqQty:34, outQty:34, inQty:'-', totalAmount:'177,150,000원' }] },
+    { regNo: 'TX-MVR\n2508220000495', auto: '자동승인',
+      reasonTitle: 'MFS 물류중앙화 (입고 → 물류센터 → 매장)',
+      reasonDesc: '물류 중앙화 - 11월 1차분 매장 분배',
+      author: '홍길동(M2025012206)', time: '25.02.13 19:40',
+      items: [{ moveNo:'2508240000809', outNo:'TX-OTB2508220000495', inNo:'-', status:'출고완료',
+        from:'여주1-무신사-오프라인', to:'무신사 스토어 강남',
+        sku:'후디 베이직 [그레이][L]', skuExtra:'20개',
+        reqQty:80, outQty:80, inQty:'-', totalAmount:'2,800,000원' }] },
+    { regNo: 'TX-MVR\n2508220000496', auto: '자동승인',
+      reasonTitle: '재고보충',
+      reasonDesc: '[브랜드사업팀] 쿨탠다드 명동 매장 보충',
+      author: '박지수(M2025012205)', time: '25.02.13 19:45',
+      items: [{ moveNo:'2508240000810', outNo:'TX-OTB2508220000496', inNo:'-', status:'출고완료',
+        from:'여주1-무신사-오프라인', to:'성수 대림창고',
+        sku:'슬랙스 테이퍼드 [차콜][32]', skuExtra:'12개',
+        reqQty:45, outQty:45, inQty:'-', totalAmount:'2,250,000원' }] },
+    { regNo: 'TX-MVR\n2508220000497', auto: '자동승인',
+      reasonTitle: '재고보충 (물류센터→물류센터)',
+      reasonDesc: '위탁-신상품 출고 25년 봄 시즌',
+      author: '정이삭(M2025012204)', time: '25.02.13 19:50',
+      items: [{ moveNo:'2508240000811', outNo:'TX-OTB2508220000497', inNo:'-', status:'출고완료',
+        from:'JP1-무신사-오프라인', to:'여주1-무신사-오프라인',
+        sku:'옥스포드 셔츠 [네이비][L]', skuExtra:'18개',
+        reqQty:60, outQty:60, inQty:'-', totalAmount:'4,200,000원' }] },
+    { regNo: 'TX-MVR\n2508220000498', auto: '자동승인',
+      reasonTitle: '촬영용 반출', reasonTitleWarn: true,
+      reasonDesc: '[에디터팀] 0704 신예지 SS25 컨텐츠 촬영',
+      author: '홍길동(M2025012206)', time: '25.02.13 19:55',
+      items: [{ moveNo:'2508240000812', outNo:'TX-OTB2508220000498', inNo:'-', status:'출고완료',
+        from:'여주1-무신사-오프라인', to:'무신사 스탠다드 포토팀',
+        sku:'볼캡 로고 [블랙][FREE]', skuExtra:'4개',
+        reqQty:8, outQty:8, inQty:'-', totalAmount:'320,000원' }] },
+
+    // 13~18: 입고대기 ─────────────────────────────────────────
+    { regNo: 'TX-MVR\n2508220000499', auto: '자동승인',
+      reasonTitle: 'MFS 물류중앙화 (입고 → 물류센터 → 매장)',
+      reasonDesc: '물류 중앙화',
+      author: '정이삭(M2025012204)', time: '25.02.13 20:00',
+      items: [{ moveNo:'2508240000813', outNo:'TX-OTB2508220000499', inNo:'-', status:'입고대기',
+        from:'JP1-무신사-오프라인', to:'무신사 스토어 강남',
+        sku:'Basal 5 Pockets Denim Shorts Light Grey', skuExtra:'70개',
+        reqQty:34, outQty:34, inQty:'-', totalAmount:'177,150,000원' }] },
+    { regNo: 'TX-MVR\n2508220000500', auto: '자동승인',
+      reasonTitle: '재고보충 (물류센터→물류센터)',
+      reasonDesc: '위탁-매장간 재고 이관',
+      author: '박지수(M2025012205)', time: '25.02.13 20:05',
+      items: [{ moveNo:'2508240000814', outNo:'TX-OTB2508220000500', inNo:'-', status:'입고대기',
+        from:'여주1-무신사-오프라인', to:'무신사 스토어 강남',
+        sku:'토트백 캔버스 [블랙][FREE]', skuExtra:'10개',
+        reqQty:30, outQty:30, inQty:'-', totalAmount:'1,500,000원' }] },
+    { regNo: 'TX-MVR\n2508220000501', auto: '자동승인',
+      reasonTitle: '재고보충',
+      reasonDesc: '[브랜드사업팀] 무탠 압구정 플래그십 보충',
+      author: '홍길동(M2025012206)', time: '25.02.13 20:10',
+      items: [{ moveNo:'2508240000815', outNo:'TX-OTB2508220000501', inNo:'-', status:'입고대기',
+        from:'여주1-무신사-오프라인', to:'성수 대림창고',
+        sku:'반팔티 베이직 [화이트][L]', skuExtra:'25개',
+        reqQty:100, outQty:100, inQty:'-', totalAmount:'2,500,000원' }] },
+    { regNo: 'TX-MVR\n2508220000502', auto: '자동승인',
+      reasonTitle: 'MFS 물류중앙화 (입고 → 물류센터 → 매장)',
+      reasonDesc: '물류 중앙화 - 매장 분배',
+      author: '정이삭(M2025012204)', time: '25.02.13 20:15',
+      items: [{ moveNo:'2508240000816', outNo:'TX-OTB2508220000502', inNo:'-', status:'입고대기',
+        from:'JP1-무신사-오프라인', to:'성수 대림창고',
+        sku:'와이드 데님 팬츠 [인디고][32]', skuExtra:'8개',
+        reqQty:24, outQty:24, inQty:'-', totalAmount:'2,376,000원' }] },
+    { regNo: 'TX-MVR\n2508220000503', auto: '자동승인',
+      reasonTitle: '재고보충 (물류센터→물류센터)',
+      reasonDesc: '위탁-출고 후 입고 대기',
+      author: '박지수(M2025012205)', time: '25.02.13 20:20',
+      items: [{ moveNo:'2508240000817', outNo:'TX-OTB2508220000503', inNo:'-', status:'입고대기',
+        from:'여주1-무신사-오프라인', to:'JP1-무신사-오프라인',
+        sku:'스니커즈 코어 [화이트][275]', skuExtra:'15개',
+        reqQty:45, outQty:45, inQty:'-', totalAmount:'4,950,000원' }] },
+    { regNo: 'TX-MVR\n2508220000504', auto: '자동승인',
+      reasonTitle: '재고보충',
+      reasonDesc: '[브랜드사업팀] 디스커스 사당점 신규 입점',
+      author: '홍길동(M2025012206)', time: '25.02.13 20:25',
+      items: [{ moveNo:'2508240000818', outNo:'TX-OTB2508220000504', inNo:'-', status:'입고대기',
+        from:'여주1-무신사-오프라인', to:'무신사 스토어 강남',
+        sku:'데드 PACK TIE_그레이', skuExtra:'',
+        reqQty:20, outQty:20, inQty:'-', totalAmount:'400,000원' }] },
+
+    // 19~20: 입고완료 ─────────────────────────────────────────
+    { regNo: 'TX-MVR\n2508220000505', auto: '자동승인',
+      reasonTitle: '재고보충 (물류센터→물류센터)',
+      reasonDesc: '위탁-시즌반품회수, 10월 10차분 매장 재고이동',
+      author: '정이삭(M2025012204)', time: '25.02.13 20:30',
+      items: [{ moveNo:'2508240000819', outNo:'OB94825-3850837NWH01', inNo:'TX-INB2508260000003',
+        status:'입고완료', overseaTag:'해외',
+        from:'글로벌 센터(JP1)-무신사-오프라인', to:'여주1-무신사-오프라인',
+        sku:'Basal 5 Pockets Denim Shorts Light Grey', skuExtra:'70개',
+        reqQty:34, outQty:34, inQty:25, totalAmount:'177,150,000원' }] },
+    { regNo: 'TX-MVR\n2508220000506', auto: '자동승인',
+      reasonTitle: 'MFS 물류중앙화 (입고 → 물류센터 → 매장)',
+      reasonDesc: '물류 중앙화',
+      author: '박지수(M2025012205)', time: '25.02.13 20:35',
+      items: [{ moveNo:'2508240000820', outNo:'TX-OTB2508220000506', inNo:'TX-INB2508260000004',
+        status:'입고완료',
+        from:'JP1-무신사-오프라인', to:'무신사 스토어 강남',
+        sku:'삼바 OG - 블랙:크림화이트 / JQ5141', skuExtra:'18개',
+        reqQty:50, outQty:50, inQty:50, totalAmount:'5,500,000원' }] },
   ];
 
   // 상태 → scm-status-chip variant 매핑
@@ -1200,6 +1535,299 @@
     if (SCM.toast) SCM.toast.show({ variant: 'info', title: '신규 등록', desc: '재고이동 등록 화면으로 이동합니다.' });
   });
 
+  // ============================================================
+  // 체크박스 선택 → 출고 취소 버튼 활성 + stats-bar morph
+  // ============================================================
+  const _stmCancelBtn = document.getElementById('stm-out-cancel-btn');
+  const _stmStatEl    = document.querySelector('.scm-stats-bar__counts .scm-stat');
+  function _stmRefreshActionBar() {
+    const checked = document.querySelectorAll('#stm-tbody .scm-checkbox[aria-checked="true"]').length;
+    const total = ROWS.length;
+    // 출고 취소 button enable/disable
+    if (_stmCancelBtn) {
+      if (checked > 0) {
+        _stmCancelBtn.disabled = false;
+        _stmCancelBtn.removeAttribute('disabled');
+      } else {
+        _stmCancelBtn.disabled = true;
+        _stmCancelBtn.setAttribute('disabled', '');
+      }
+    }
+    // stats-bar morph: 전체 N ↔ 선택됨 X / N
+    if (_stmStatEl) {
+      if (checked > 0) {
+        _stmStatEl.classList.remove('scm-stat--all');
+        _stmStatEl.classList.add('scm-stat--selected');
+        _stmStatEl.innerHTML =
+          '<span class="scm-stat__label">선택됨</span> ' +
+          `<span class="scm-stat__num">${checked}</span>` +
+          ' <span class="scm-stat__divider">/</span> ' +
+          `<span class="scm-stat__num-total">${total}</span>`;
+      } else {
+        _stmStatEl.classList.remove('scm-stat--selected');
+        _stmStatEl.classList.add('scm-stat--all');
+        _stmStatEl.innerHTML = '<span class="scm-stat__label">전체</span> <span class="scm-stat__num">' + total + '</span>';
+      }
+    }
+  }
+  // tbody 의 모든 aria-checked 변경 감지 (SCM.checkbox / SCM.tableSelection 가 어떻게 토글하든)
+  (function watchCbState() {
+    const tbody = document.getElementById('stm-tbody');
+    if (!tbody) return;
+    const obs = new MutationObserver(_stmRefreshActionBar);
+    obs.observe(tbody, { attributes: true, subtree: true, attributeFilter: ['aria-checked'] });
+    // 클릭 fallback (selection 모듈이 없을 때도 동작)
+    tbody.addEventListener('click', (e) => {
+      const cb = e.target.closest('.scm-checkbox');
+      if (!cb) return;
+      const cur = cb.getAttribute('aria-checked') === 'true';
+      cb.setAttribute('aria-checked', cur ? 'false' : 'true');
+    });
+    // 헤더 cb-all → 본문 일괄 토글
+    const cbAll = document.getElementById('stm-cb-all');
+    if (cbAll) {
+      cbAll.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const cur = cbAll.getAttribute('aria-checked') === 'true';
+        const next = cur ? 'false' : 'true';
+        cbAll.setAttribute('aria-checked', next);
+        document.querySelectorAll('#stm-tbody .scm-checkbox').forEach((cb) => {
+          cb.setAttribute('aria-checked', next);
+        });
+      });
+    }
+  })();
+
+  // ============================================================
+  // 출고 취소 확인 모달
+  // ============================================================
+  let _stmCancelOnConfirm = null;
+  const _stmReasonInput = document.getElementById('stm-cancel-reason-input');
+  const _stmReasonCntEl = document.getElementById('stm-cancel-reason-count');
+  function _stmRefreshCancelConfirm() {
+    const btn = document.getElementById('stm-cancel-modal-confirm');
+    if (!btn) return;
+    const val = _stmReasonInput ? _stmReasonInput.value.trim() : '';
+    if (val) { btn.disabled = false; btn.removeAttribute('disabled'); }
+    else     { btn.disabled = true;  btn.setAttribute('disabled', ''); }
+  }
+  function _stmOpenCancelModal(onConfirm) {
+    const bd = document.getElementById('stm-cancel-modal-backdrop');
+    if (!bd || !bd.hidden) return;
+    _stmCancelOnConfirm = typeof onConfirm === 'function' ? onConfirm : null;
+    const md = document.getElementById('stm-cancel-modal');
+    if (_stmReasonInput) _stmReasonInput.value = '';
+    if (_stmReasonCntEl) _stmReasonCntEl.textContent = '0';
+    _stmRefreshCancelConfirm();
+    bd.hidden = false;
+    if (md) md.hidden = false;
+    if (SCM.scrollLock) SCM.scrollLock.lock();
+    if (_stmReasonInput) setTimeout(() => _stmReasonInput.focus(), 0);
+  }
+  function _stmCloseCancelModal() {
+    const bd = document.getElementById('stm-cancel-modal-backdrop');
+    if (!bd || bd.hidden) return;
+    const md = document.getElementById('stm-cancel-modal');
+    _stmCancelOnConfirm = null;
+    bd.hidden = true;
+    if (md) md.hidden = true;
+    if (SCM.scrollLock) SCM.scrollLock.unlock();
+  }
+  if (_stmReasonInput) {
+    _stmReasonInput.addEventListener('input', () => {
+      if (_stmReasonCntEl) _stmReasonCntEl.textContent = String(_stmReasonInput.value.length);
+      _stmRefreshCancelConfirm();
+    });
+  }
+  const _stmCancelBd = document.getElementById('stm-cancel-modal-backdrop');
+  if (_stmCancelBd) _stmCancelBd.addEventListener('click', _stmCloseCancelModal);
+  const _stmCancelClose = document.getElementById('stm-cancel-modal-cancel');
+  if (_stmCancelClose) _stmCancelClose.addEventListener('click', _stmCloseCancelModal);
+  const _stmCancelConfirm = document.getElementById('stm-cancel-modal-confirm');
+  if (_stmCancelConfirm) {
+    _stmCancelConfirm.addEventListener('click', () => {
+      if (_stmCancelConfirm.disabled) return;
+      const cb = _stmCancelOnConfirm;
+      const reason = _stmReasonInput ? _stmReasonInput.value.trim() : '';
+      _stmCloseCancelModal();
+      if (cb) cb(reason);
+    });
+  }
+
+  // 출고 취소 mini-action 버튼 클릭 → 선택 row 들 출고취소 처리
+  if (_stmCancelBtn) {
+    _stmCancelBtn.addEventListener('click', () => {
+      if (_stmCancelBtn.disabled) return;
+      const checkedCbs = Array.from(document.querySelectorAll('#stm-tbody .scm-checkbox[aria-checked="true"]'));
+      _stmOpenCancelModal((reason) => {
+        // 선택된 row 들의 status 를 '출고취소' 로 전환 + cancelReason 기록 (메모리)
+        checkedCbs.forEach((cbEl) => {
+          const tr = cbEl.closest('tr');
+          if (!tr) return;
+          const rowIdx = Array.from(tr.parentNode.children).indexOf(tr);
+          const r = ROWS[rowIdx];
+          if (!r) return;
+          r.items.forEach((it) => {
+            it.status = '출고취소';
+            it._cancelReason = reason;
+          });
+        });
+        // 본문 재렌더 → 칩 컬러 즉시 반영
+        const tb = document.getElementById('stm-tbody');
+        if (tb) tb.innerHTML = rowsToHtml(ROWS, _stmExpanded);
+        // checkbox 전체 reset
+        const cbAll = document.getElementById('stm-cb-all');
+        if (cbAll) cbAll.setAttribute('aria-checked', 'false');
+        _stmRefreshActionBar();
+        // 토스트
+        if (SCM.toast) SCM.toast.show({
+          variant: 'info',
+          title: '출고 취소 처리 시작',
+          desc: '화면을 닫아도 처리는 계속 진행됩니다.',
+        });
+        // 알림함 카운트 증가 (진행중)
+        _stmBumpNotifyProgress(checkedCbs.length);
+        // 데모 transition — 5초 후 절반 완료, 10초 후 전부 완료
+        const n = checkedCbs.length;
+        const half = Math.ceil(n / 2);
+        setTimeout(() => _stmCompleteNotify(half), 5000);
+        setTimeout(() => _stmCompleteNotify(n - half), 10000);
+      });
+    });
+  }
+
+  // ============================================================
+  // 알림함 모달 (notify modal)
+  // ============================================================
+  const _stmNotifyState = { progress: 0, complete: 0 };
+  function _stmRefreshNotifyBtn() {
+    const btn = document.getElementById('stm-notify-btn');
+    if (!btn) return;
+    const divider = btn.querySelector('.stm-notify-btn__divider');
+    const status  = btn.querySelector('.stm-notify-btn__status');
+    const numEl   = btn.querySelector('.stm-notify-btn__status-num');
+    const labelEl = status ? status.querySelector('span:not(.stm-notify-btn__status-num)') : null;
+    if (!divider || !status || !numEl) return;
+    if (_stmNotifyState.progress > 0) {
+      if (labelEl) labelEl.textContent = '진행중';
+      numEl.textContent = `${_stmNotifyState.progress}/${_stmNotifyState.complete}`;
+      status.style.color = '#245EFF';
+    } else if (_stmNotifyState.complete > 0) {
+      if (labelEl) labelEl.textContent = '완료';
+      numEl.textContent = String(_stmNotifyState.complete);
+      status.style.color = '#1EA514';
+    } else {
+      if (labelEl) labelEl.textContent = '진행중';
+      numEl.textContent = '0';
+      status.style.color = '#245EFF';
+    }
+  }
+  function _stmBumpNotifyProgress(n) {
+    _stmNotifyState.progress += n;
+    _stmRefreshNotifyBtn();
+  }
+  function _stmCompleteNotify(k) {
+    if (k > _stmNotifyState.progress) k = _stmNotifyState.progress;
+    _stmNotifyState.progress -= k;
+    _stmNotifyState.complete += k;
+    _stmNotifyState.notifyHistory = (_stmNotifyState.notifyHistory || []).concat({
+      date: new Date().toLocaleString('ko-KR', { year:'2-digit', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false }).replace(/\. /g, '.').replace('.', ''),
+      writer: '정이삭',
+      items: [{ kind:'success', count: k, ref: 'TX-MVR' + Math.floor(Math.random()*10000) }],
+    });
+    _stmRefreshNotifyBtn();
+  }
+
+  // 더미 알림 데이터 — 처음 열었을 때 보이는 기본 row 들
+  const _STM_NOTIFY_ROWS = [
+    { date:'25.02.13 12:00', writer:'홍길동', items: [{ kind:'success', count:9,  ref:'TX-MVR2508220000487 외 5' }]},
+    { date:'25.02.13 12:00', writer:'홍길동', items: [
+      { kind:'success', count:9,  ref:'TX-MVR2508220000488 외 5' },
+      { kind:'fail',    count:1,  ref:'TX-MVR2508220000489' },
+    ]},
+    { date:'25.02.13 11:30', writer:'박지수', items: [{ kind:'success', count:12, ref:'TX-MVR2508220000490 외 5' }]},
+    { date:'25.02.13 10:00', writer:'정이삭', items: [
+      { kind:'success', count:20, ref:'TX-MVR2508220000491 외 5' },
+      { kind:'fail',    count:2,  ref:'TX-MVR2508220000492 외 1' },
+    ]},
+    { date:'25.02.12 18:00', writer:'홍길동', items: [{ kind:'success', count:5,  ref:'TX-MVR2508220000493 외 5' }]},
+  ];
+  function _stmNotifyItemHtml(it) {
+    const word = it.kind === 'success' ? '성공' : '실패';
+    const toneCls = it.kind === 'success' ? 'stm-notify-success' : 'stm-notify-fail';
+    return (
+      '<div class="stm-notify-item">' +
+        '<div class="stm-notify-item__title">' +
+          `<span>${it.count}건 출고 취소 </span>` +
+          `<span class="${toneCls}">${word}</span>` +
+        '</div>' +
+        '<div class="stm-notify-item__row">' +
+          `<span class="stm-notify-item__ref">${escapeHtml(it.ref)}</span>` +
+          `<button type="button" class="stm-notify-item__cta" data-ref="${escapeHtml(it.ref)}">` +
+            '<span>확인하기</span>' +
+            '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.2L10.8 8L6 12.8" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+          '</button>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+  function _stmRenderNotifyList() {
+    const root = document.getElementById('stm-notify-modal-tbody');
+    if (!root) return;
+    const allRows = [].concat(_stmNotifyState.notifyHistory || []).concat(_STM_NOTIFY_ROWS);
+    const headHtml = (
+      '<div class="stm-notify-row stm-notify-row--head">' +
+        '<div class="stm-notify-cell stm-notify-cell--date">처리일시</div>' +
+        '<div class="stm-notify-cell stm-notify-cell--content">내용</div>' +
+        '<div class="stm-notify-cell stm-notify-cell--writer">처리자</div>' +
+      '</div>'
+    );
+    root.innerHTML = headHtml + allRows.map(r => (
+      '<div class="stm-notify-row">' +
+        `<div class="stm-notify-cell stm-notify-cell--date">${escapeHtml(r.date)}</div>` +
+        '<div class="stm-notify-cell stm-notify-cell--content">' +
+          r.items.map(_stmNotifyItemHtml).join('') +
+        '</div>' +
+        `<div class="stm-notify-cell stm-notify-cell--writer">${escapeHtml(r.writer)}</div>` +
+      '</div>'
+    )).join('');
+  }
+  function _stmOpenNotifyModal() {
+    const bd = document.getElementById('stm-notify-modal-backdrop');
+    if (!bd || !bd.hidden) return;
+    _stmRenderNotifyList();
+    const md = document.getElementById('stm-notify-modal');
+    bd.hidden = false;
+    if (md) md.hidden = false;
+    if (SCM.scrollLock) SCM.scrollLock.lock();
+  }
+  function _stmCloseNotifyModal() {
+    const bd = document.getElementById('stm-notify-modal-backdrop');
+    if (!bd || bd.hidden) return;
+    const md = document.getElementById('stm-notify-modal');
+    bd.hidden = true;
+    if (md) md.hidden = true;
+    if (SCM.scrollLock) SCM.scrollLock.unlock();
+  }
+  const _stmNotifyBtn = document.getElementById('stm-notify-btn');
+  if (_stmNotifyBtn) _stmNotifyBtn.addEventListener('click', _stmOpenNotifyModal);
+  const _stmNotifyBd = document.getElementById('stm-notify-modal-backdrop');
+  if (_stmNotifyBd) _stmNotifyBd.addEventListener('click', _stmCloseNotifyModal);
+  const _stmNotifyCloseBtn = document.getElementById('stm-notify-modal-close-btn');
+  if (_stmNotifyCloseBtn) _stmNotifyCloseBtn.addEventListener('click', _stmCloseNotifyModal);
+  // 알림 row 내 "확인하기" → 토스트
+  (function wireNotifyCta() {
+    const root = document.getElementById('stm-notify-modal-tbody');
+    if (!root) return;
+    root.addEventListener('click', (e) => {
+      const btn = e.target.closest('.stm-notify-item__cta');
+      if (!btn) return;
+      const ref = btn.getAttribute('data-ref') || '';
+      _stmCloseNotifyModal();
+      if (SCM.toast) SCM.toast.show({ variant: 'info', title: '확인하기', desc: ref + ' 상세로 이동합니다.' });
+    });
+  })();
+
   // ----- 이동번호 펼치기 toggle — DOM 자체를 재구성 (colspan / leaf / body cell 일관) -----
   // collapsed → moveno-head colspan=1, row2 leaf 1개, body 14 cell.
   // expanded  → moveno-head colspan=3, row2 leaf 3개, body 16 cell.
@@ -1220,14 +1848,19 @@
       // thead row1 group cell colspan
       if (willExpand) movenoHead.setAttribute('colspan', '3');
       else            movenoHead.removeAttribute('colspan');
-      // thead row2 leaves
+      // thead row2 leaves — 각 leaf 에 sort-ic + th-icons (filter / more) inject
+      const _thIcons = ' <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg>' +
+        '<span class="th-icons">' +
+          '<svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg>' +
+          '<svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg>' +
+        '</span>';
       if (willExpand) {
         leafRow.innerHTML =
-          '<th class="col-auto stm-c-moveno">이동번호</th>' +
-          '<th class="col-auto stm-c-outno">출고번호</th>' +
-          '<th class="col-auto stm-c-inno">입고번호</th>';
+          `<th class="col-auto stm-c-moveno">이동번호${_thIcons}</th>` +
+          `<th class="col-auto stm-c-outno">출고번호${_thIcons}</th>` +
+          `<th class="col-auto stm-c-inno">입고번호${_thIcons}</th>`;
       } else {
-        leafRow.innerHTML = '<th class="col-auto stm-c-moveno">이동번호</th>';
+        leafRow.innerHTML = `<th class="col-auto stm-c-moveno">이동번호${_thIcons}</th>`;
       }
       // tbody 재구성
       stmTbody.innerHTML = rowsToHtml(ROWS, willExpand);
