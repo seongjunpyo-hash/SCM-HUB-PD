@@ -517,6 +517,11 @@
       };
     } catch (_) { return { l1: [], l2: [] }; }
   }
+  // 캐노니컬 LNB 에서 절대 hide / delete 되면 안 되는 보호 메뉴들.
+  // VOC 편집모드에서 실수로 hide/delete 했어도 LNB 에는 항상 보이도록 immune 처리.
+  // (편집모드 메뉴 트리에는 보일 수 있지만 LNB 렌더 시 hide 작업이 무시됨.)
+  var PROTECTED_L1 = ['order'];                // 발주/입고 관리
+  var PROTECTED_L2 = ['otb-budget'];           // OTB 예산 관리
   function _applyMenuHiddenToLnb(el) {
     if (!el) return;
     // hidden 과 deleted 를 합쳐 처리 — 둘 다 LNB 에서 제거. 차이는 voc UI
@@ -527,6 +532,7 @@
     var l2All = hidden.l2.concat(deleted.l2);
     if (l1All.length) {
       l1All.forEach(function (l1key) {
+        if (PROTECTED_L1.indexOf(l1key) >= 0) return;  // 보호된 L1 은 skip
         var item = el.querySelector('.scm-lnb-item[data-key="' + l1key + '"]');
         if (item && item.parentNode) item.parentNode.removeChild(item);
       });
@@ -534,6 +540,7 @@
     // L2 hide / 삭제 → 해당 .scm-lnb-l2 anchor 제거.
     if (l2All.length) {
       l2All.forEach(function (l2key) {
+        if (PROTECTED_L2.indexOf(l2key) >= 0) return;  // 보호된 L2 는 skip
         var a = el.querySelector('.scm-lnb-l2[data-key="' + l2key + '"]');
         if (a && a.parentNode) a.parentNode.removeChild(a);
       });
