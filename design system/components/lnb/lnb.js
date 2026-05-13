@@ -424,6 +424,20 @@
       el.appendChild(_buildL1Group(p, key2));
     });
     // Pass 2 — L2 anchor 를 부모 L1 그룹 아래 append.
+    // **Orphan 보호** — 부모 L1 그룹이 LNB 에 없으면 (deleted 캐노니컬 L1 or
+    // stale p.l1) 첫 가시 L1 그룹에 fallback append. 그냥 skip 하면 사용자
+    // 입장에서 "신규 L2 가 사라짐" 으로 보임.
+    function _orphanFallbackL2List() {
+      var first = el.querySelector('.scm-lnb-item .scm-lnb-l2-list');
+      if (first) return first;
+      // LNB 안에 L1 그룹이 아예 없으면 새 fallback 그룹 만들기
+      var orphan = el.querySelector('.scm-lnb-item[data-key="__orphan"]');
+      if (!orphan) {
+        orphan = _buildL1Group({ id: '__orphan', l1: '__orphan', l1Label: '복구된 메뉴' }, '');
+        el.appendChild(orphan);
+      }
+      return orphan.querySelector('.scm-lnb-l2-list');
+    }
     sorted.forEach(function (p) {
       if (!p) return;
       // 이미 anchor 가 존재하면 skip (재mount)
@@ -434,13 +448,11 @@
         // 옛 entry — 그룹은 이미 Pass 1 에서 만들었으니 L2 anchor 만 추가
         if (!p.name) return;
         var existing = el.querySelector('.scm-lnb-item[data-key="' + p.l1 + '"]');
-        if (!existing) return;
-        var l2List = existing.querySelector('.scm-lnb-l2-list');
+        var l2List = existing ? existing.querySelector('.scm-lnb-l2-list') : _orphanFallbackL2List();
         if (l2List) l2List.appendChild(_buildL2Anchor(p, key));
       } else {
         var group = el.querySelector('.scm-lnb-item[data-key="' + p.l1 + '"]');
-        if (!group) return;
-        var l2 = group.querySelector('.scm-lnb-l2-list');
+        var l2 = group ? group.querySelector('.scm-lnb-l2-list') : _orphanFallbackL2List();
         if (l2) l2.appendChild(_buildL2Anchor(p, key));
       }
     });
