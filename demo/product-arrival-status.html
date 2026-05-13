@@ -1433,12 +1433,19 @@
     });
   }
 
-  // stats-bar "전체 N" 을 실제 데이터 길이로 동기화
+  // stats-bar "전체 N" 을 신청번호(reqNo) 그룹 distinct 개수로 동기화 — row 단위가 아니라 신청 단위
+  //   카운트. 같은 신청번호의 여러 row 는 한 건으로 집계.
+  function _countDistinctReqNos(rows) {
+    const s = new Set();
+    rows.forEach((r) => { if (r && r.reqNo) s.add(r.reqNo); });
+    return s.size;
+  }
   (function syncTotalCount() {
+    const total = _countDistinctReqNos(ROWS);
     const numEl = document.querySelector('.scm-stats-bar__counts .scm-stat--all .scm-stat__num');
-    if (numEl) numEl.textContent = String(ROWS.length);
-    // 엑셀 다운로드 토스트 desc 도 동적 N 사용 위해 전역 보관
-    window.__issTotalCount = ROWS.length;
+    if (numEl) numEl.textContent = String(total);
+    // 엑셀 다운로드 토스트 desc / refreshActionBar 의 분모 — 모두 신청번호 그룹 수 기준.
+    window.__issTotalCount = total;
   })();
 
   // 안전망: 잔여 scroll lock 해제 — modal open/close 카운터 mismatch 등으로 body 가 overflow:hidden
@@ -1823,17 +1830,18 @@
     const active = filterModeInstance.getActiveFilters() || {};
     const tbody = document.getElementById('data-tbody');
     if (!tbody) return 0;
-    let visibleCount = 0;
+    const visibleReqNos = new Set();
     Array.from(tbody.children).forEach((tr) => {
       const rIdx = parseInt(tr.getAttribute('data-row-idx'), 10);
       const r = ROWS[rIdx];
       if (!r) return;
       const visible = matchesFilters(r, active);
       tr.style.display = visible ? '' : 'none';
-      if (visible) visibleCount++;
+      if (visible && r.reqNo) visibleReqNos.add(r.reqNo);
     });
-    // stats-bar 의 전체/선택됨 N 갱신 — refreshActionBar 가 통합 처리 (선택 상태에 따라 morph).
-    //   filter 변경 시 total 도 변하므로 window.__issTotalCount 를 동기화하고 refresh.
+    // stats-bar 의 전체/선택됨 N 갱신 — 신청번호 그룹 distinct 카운트 (row 수 X). refreshActionBar
+    //   가 통합 처리 (선택 상태에 따라 morph). 필터 변경 시 total 도 변하므로 동기화 후 refresh.
+    const visibleCount = visibleReqNos.size;
     window.__issTotalCount = visibleCount;
     if (typeof refreshActionBar === 'function') refreshActionBar();
     return visibleCount;
@@ -2264,7 +2272,7 @@
   const dlBtn = document.getElementById('excel-download-btn');
   if (dlBtn) {
     dlBtn.addEventListener('click', () => {
-      if (SCM.toast) SCM.toast.show({ variant: 'success', title: '엑셀 다운로드', desc: `전체 ${ROWS.length}건이 다운로드됩니다.` });
+      if (SCM.toast) SCM.toast.show({ variant: 'success', title: '엑셀 다운로드', desc: `전체 ${_countDistinctReqNos(ROWS)}건이 다운로드됩니다.` });
     });
   }
 

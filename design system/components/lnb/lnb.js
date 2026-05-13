@@ -130,7 +130,9 @@
         </svg>
       </span>
     </button>
-    <div class="scm-lnb-l2-list"></div>
+    <div class="scm-lnb-l2-list">
+      <a class="scm-lnb-l2" href="stock-movement.html" data-key="stock-movement"><span class="scm-lnb-l2-text">재고이동</span></a>
+    </div>
   </div>
 
   <!-- 운영 설정 — 위와 같은 이유로 L1 유지, L2 는 신규 페이지로만. -->

@@ -15,5 +15,6 @@ export const KNOWN_DEMO_ASSETS = [
   'sku-detail.html',
   'sku-management.html',
   'sku-register.html',
+  'stock-movement.html',
   'wireframe.html',
 ];

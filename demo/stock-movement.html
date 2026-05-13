@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1440" />
+  <title>SCM-Hub · 재고이동</title>
+  <script src="/auth-gate.js"></script>
+  <script src="/scm-shell.js" defer></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <link rel="stylesheet" href="../design%20system/layer-desktop.css" />
+
+  <!-- 데이터 리스트 표준 묶음 -->
+  <link rel="stylesheet" href="../design%20system/components/backdrop/backdrop.css" />
+  <link rel="stylesheet" href="../design%20system/components/checkbox/checkbox.css" />
+  <link rel="stylesheet" href="../design%20system/components/tag/tag.css" />
+  <link rel="stylesheet" href="../design%20system/components/toast/toast.css" />
+  <link rel="stylesheet" href="../design%20system/components/button/button.css" />
+  <link rel="stylesheet" href="../design%20system/components/search-btn/search-btn.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-reset-btn/filter-reset-btn.css" />
+  <link rel="stylesheet" href="../design%20system/components/download-btn/download-btn.css" />
+  <link rel="stylesheet" href="../design%20system/components/pager/pager.css" />
+  <link rel="stylesheet" href="../design%20system/components/pgsize-select/pgsize-select.css" />
+  <link rel="stylesheet" href="../design%20system/components/mini-action/mini-action.css" />
+  <link rel="stylesheet" href="../design%20system/components/code-link/code-link.css" />
+  <link rel="stylesheet" href="../design%20system/components/code-popover/code-popover.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-chip/filter-chip.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-select/filter-select.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-bar/filter-bar.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-drawer/filter-drawer.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-popover/filter-popover.css" />
+  <link rel="stylesheet" href="../design%20system/components/date-picker/date-picker.css" />
+  <link rel="stylesheet" href="../design%20system/components/stat/stat.css" />
+  <link rel="stylesheet" href="../design%20system/components/stats-bar/stats-bar.css" />
+  <link rel="stylesheet" href="../design%20system/components/page-head/page-head.css" />
+  <link rel="stylesheet" href="../design%20system/components/scm-table/scm-table.css" />
+  <link rel="stylesheet" href="../design%20system/components/scm-table/column-more-menu.css" />
+  <link rel="stylesheet" href="../design%20system/components/scm-table/column-filter-popover.css" />
+  <!-- 공용 셸 -->
+  <link rel="stylesheet" href="../design%20system/components/topbar/topbar.css" />
+  <link rel="stylesheet" href="../design%20system/components/lnb/lnb.css" />
+  <link rel="stylesheet" href="../design%20system/components/status-chip/status-chip.css" />
+  <link rel="stylesheet" href="../design%20system/components/side-drawer/side-drawer.css" />
+
+  <style>
+    /* sticky stack */
+    .scm-filter-bar { top: var(--scm-sticky-gnb); }
+    .scm-stats-bar--sticky { top: calc(var(--scm-sticky-gnb) + var(--scm-sticky-filter)); }
+
+    /* === filter-bar joined group — 출발지/도착지 같은 인접 chip 두 개를 segmented 페어로 연결 ===
+       base filter-select.css 의 .scm-filter-group 은 inline-flex 만 정의 (활성 chip 의 우측 라인 처리는 base).
+       border-radius zeroing + first/last 만 radius 보존 + 가운데 우측 border 제거 는 페이지 스코프에서 opt-in.
+       (sku-management 와 동일 패턴) */
+    .scm-filter-group > * { border-radius: 0 !important; }
+    .scm-filter-group > *:first-child {
+      border-top-left-radius: 4px !important;
+      border-bottom-left-radius: 4px !important;
+    }
+    .scm-filter-group > *:last-child {
+      border-top-right-radius: 4px !important;
+      border-bottom-right-radius: 4px !important;
+    }
+    .scm-filter-group > *:not(:last-child) { border-right-width: 0 !important; }
+
+    /* ======== 재고이동 페이지 전용 ======== */
+
+    /* 페이지헤드 우측 액션 — "신규 등록" primary (filled) + "알림함" outlined */
+    .stm-register-btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      height: 44px; min-width: 84px;
+      padding: 12px 16px;
+      background: #000; color: #fff; border: 0; border-radius: 4px;
+      font-family: inherit; font-size: 15px; font-weight: 500; line-height: 20.4px;
+      cursor: pointer; white-space: nowrap;
+    }
+    .stm-register-btn:hover { background: #333; }
+    .stm-register-btn svg { width: 20px; height: 20px; color: #fff; }
+
+    .stm-notify-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      height: 44px; padding: 0 12px;
+      background: #fff; border: 1px solid #000; border-radius: 4px;
+      font-family: inherit; font-size: 15px; font-weight: 500; line-height: 20.4px;
+      color: #000; cursor: pointer; white-space: nowrap;
+    }
+    .stm-notify-btn:hover { background: var(--ld-bg-low, #F5F5F5); }
+    .stm-notify-btn__divider { width: 1px; height: 16px; background: #EBEBEB; }
+    .stm-notify-btn__status { display: inline-flex; align-items: center; gap: 2px; color: #245EFF; }
+    .stm-notify-btn__status-num { font-weight: 600; }
+
+    /* stats-bar 의 "미반납 건 보기" 토글 — 우측 정렬 */
+    .stm-toggle-wrap {
+      display: inline-flex; align-items: center; gap: 8px;
+      margin-left: auto;
+    }
+    .stm-toggle-label {
+      font-size: 15px; font-weight: 500; line-height: 20.4px; color: #000;
+    }
+    .stm-toggle {
+      position: relative; width: 32px; height: 20px;
+      background: #CCCCCC; border-radius: 10px;
+      cursor: pointer; transition: background 0.15s ease;
+      border: 0; padding: 0;
+    }
+    .stm-toggle::before {
+      content: ''; position: absolute; top: 2px; left: 2px;
+      width: 16px; height: 16px; background: #fff; border-radius: 50%;
+      transition: left 0.15s ease;
+    }
+    .stm-toggle[aria-pressed="true"] { background: #245EFF; }
+    .stm-toggle[aria-pressed="true"]::before { left: 14px; }
+
+    /* ======== Table — 재고이동 list (mp-table 기반) ========
+     * mp-table 의 frozen / sticky thead / cell-selectable / hover 등 기본 동작은 그대로 사용.
+     * 페이지 스코프에서는 (a) 컬럼별 폭, (b) 셀 안 도메인 콘텐츠 (등록번호 코드/사유 타이틀/경로 dot 등) 만 정의.
+     *
+     * Row grouping — 같은 등록(reg) 의 inner item 들을 시각적으로 merge:
+     *   real HTML rowspan 대신 sub-row 의 outer 셀을 "빈셀 + iss-merged-cell" 로 렌더.
+     *   이렇게 해야 매 <tr> 가 동일 leaf 개수를 가져서 SCMTable.init 의 자동 frozen-class
+     *   재할당 (child index 기반) 이 정상 동작. Product-Arrival-Status 와 동일 패턴.
+     */
+    .mp-table .cell-numeric { font-variant-numeric: tabular-nums; text-align: right; }
+    .mp-table thead th.cell-numeric { text-align: right; }
+
+    /* 본 페이지 셀은 top-align 으로 통일 — 등록번호/사유/경로 모두 위에서 정렬되어야 시각적으로 깔끔 */
+    .mp-table tbody td { vertical-align: top; }
+
+    /* sub-row outer 빈셀 — border-top 제거해서 first-row outer 셀과 시각적으로 merge.
+       frozen 셀은 position:sticky 라 뒤 셀 비침 방지 위해 SOLID white 배경 명시. */
+    #stm-tbody td.iss-merged-cell { border-top: 0; background: #fff; }
+    #stm-tbody tr:hover td.iss-merged-cell { background: var(--ld-bg-low, #FAFBFC); }
+
+    /* 2-row thead frozen-boundary 더블 라인 보정 —
+       row1 의 체크박스(col-frozen-last) 가 rowspan=2 로 row2 까지 점유한다.
+       base CSS 의 'col-frozen-last + :not(col-frozen)' 규칙은 same-row 인접 형제만 매칭하므로
+       row2 의 첫 leaf 셀(이동번호) 의 border-left 가 그대로 남아서 frozen 우측 보더(0.5px) 와 겹친다.
+       row2 첫 leaf 의 좌측 보더를 0 으로 두어 이중선 제거.
+       주의: SCMTable.init 이 thead 를 sticky clone 컨테이너로 옮기기 때문에 #stm-table 셀렉터로
+       타겟하면 안 됨. 셀 클래스로 직접 타겟. */
+    .mp-table thead tr:not(.group-row) th.stm-c-moveno { border-left: 0; }
+
+    /* 이동번호 컬럼만 split header — row1 = 라벨 + 펼치기 button, row2 = 라벨.
+       base scm-table.css 의 .group-row non-frozen non-empty th 가 sticky-left(--frozen-l-end) 로
+       강제되는데 (sku-management 의 "기본정보" 같은 그룹 라벨용), 이 셀은 본인 column 위치에 있어야
+       하므로 sticky 비활성화. 안 그러면 가로 스크롤 시 헤더와 본문 컬럼 어긋남.
+       주의: SCMTable.init 이 thead 를 sticky clone 컨테이너로 옮기므로 #stm-table 셀렉터 의존 X.
+       ID 직접 타겟. */
+    #stm-moveno-head {
+      position: static;
+      z-index: auto;
+    }
+
+    .stm-moveno-head {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .stm-moveno-head__label {
+      font-size: 15px; font-weight: 500; line-height: 20.4px; color: #000;
+    }
+    .stm-moveno-toggle {
+      display: inline-flex; align-items: center; gap: 2px;
+      height: 32px; min-width: 60px; padding: 6px 10px;
+      background: #fff; border: 1px solid #E0E0E0; border-radius: 4px;
+      font-family: inherit; font-size: 13px; font-weight: 400; line-height: 19.5px;
+      color: #000; cursor: pointer; white-space: nowrap;
+    }
+    .stm-moveno-toggle:hover { background: var(--ld-bg-low, #FAFBFC); }
+    .stm-moveno-toggle svg {
+      width: 20px; height: 20px; color: #000; flex-shrink: 0;
+      transition: transform 0.15s ease;
+    }
+    /* 펼치기 (collapsed) → chevron 오른쪽 / 접기 (expanded) → chevron 왼쪽 */
+    .stm-moveno-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+
+    /* === stock-movement 컬럼 폭 ===
+       SCMTable.init 의 class-based 보정:
+         - col-medium → 88-260px 캡 (wrap-needed 컬럼에 부적합)
+         - col-large  → 320px 강제
+         - col-auto   → 측정 폭 그대로 (단 white-space:nowrap 기본 적용 → 셀 단위 override 필요)
+       이동 사유 (300px) = col-auto + white-space:normal + 명시 width.
+       SKU명     (320px) = col-large (자동 320 강제). */
+    .mp-table th.stm-c-reg,    .mp-table td.stm-c-reg    { min-width: 145px; }
+    .mp-table th.stm-c-reason, .mp-table td.stm-c-reason {
+      width: 300px; min-width: 300px; max-width: 300px;
+      white-space: normal;  /* col-auto 의 nowrap override → 한글 어절 wrap 가능 */
+    }
+    .mp-table th.stm-c-moveno, .mp-table td.stm-c-moveno { min-width: 168px; }
+    /* 이동번호 본문 셀은 통째로 클릭 가능 (drawer trigger) — cursor pointer 로 affordance */
+    .mp-table tbody td.stm-c-moveno { cursor: pointer; }
+    .mp-table th.stm-c-outno,  .mp-table td.stm-c-outno  { min-width: 151px; }
+    .mp-table th.stm-c-inno,   .mp-table td.stm-c-inno   { min-width: 151px; }
+    .mp-table th.stm-c-status, .mp-table td.stm-c-status { min-width: 100px; }
+    .mp-table th.stm-c-route,  .mp-table td.stm-c-route  { min-width: 252px; max-width: 320px; }
+    .mp-table th.stm-c-sku,    .mp-table td.stm-c-sku    {
+      white-space: normal;  /* col-large 자체는 nowrap 없지만 명시적으로 안전망 */
+    }
+    .mp-table th.stm-c-qty,    .mp-table td.stm-c-qty    { min-width: 140px; }
+    .mp-table th.stm-c-amount, .mp-table td.stm-c-amount { min-width: 140px; }
+    /* 요청 상품 총액 — bold 강조 (다른 수량 / 코드 셀과 시각 위계 분리) */
+    .mp-table tbody td.stm-c-amount { font-weight: 600; }
+    .mp-table th.stm-c-user,    .mp-table td.stm-c-user    { min-width: 160px; }
+    .mp-table th.stm-c-regdate, .mp-table td.stm-c-regdate { min-width: 140px; }
+
+    /* === 셀 내 도메인 콘텐츠 === */
+    /* 등록번호 셀 — 코드 + 자동승인 작은 라벨 */
+    .stm-reg-code { color: #000; font-size: 15px; font-weight: 400; line-height: 20.4px; white-space: pre-line; }
+    .stm-reg-auto { padding-top: 4px; color: #666; font-size: 13px; font-weight: 400; line-height: 19.5px; }
+
+    /* 이동 사유 — 굵은 카테고리 타이틀 + 본문 설명.
+       inline-flex 였던 title 을 flex 로 바꿔야 부모 td 폭을 인지하고 wrap 됨.
+       text 줄도 word-break: keep-all 로 한글 어절 단위로 끊어지게. */
+    .stm-reason-title {
+      font-size: 15px; font-weight: 500; line-height: 20.4px; color: #000;
+      display: flex; align-items: flex-start; gap: 4px;
+      word-break: keep-all; overflow-wrap: break-word;
+    }
+    .stm-reason-title__warn { width: 16px; height: 16px; color: #FA9200; flex-shrink: 0; margin-top: 2px; }
+    .stm-reason-desc {
+      margin-top: 6px; font-size: 14px; font-weight: 400; line-height: 19.6px; color: #000;
+      word-break: keep-all; overflow-wrap: break-word;
+    }
+
+    /* 경로 셀 — 출발지 → 도착지 dots + 라인 */
+    .stm-tag-mini {
+      display: inline-flex; align-items: center; padding: 2px 8px;
+      background: rgba(138, 138, 138, 0.15); border-radius: 4px;
+      font-size: 12px; font-weight: 500; line-height: 18px; color: #000;
+      margin-bottom: 6px;
+    }
+    .stm-route { display: flex; flex-direction: column; position: relative; }
+    .stm-route__item { display: flex; align-items: flex-start; gap: 8px; padding-bottom: 6px; }
+    .stm-route__item:last-child { padding-bottom: 0; }
+    .stm-route__dot {
+      width: 8px; height: 8px; flex-shrink: 0;
+      border-radius: 50%; border: 2px solid #CCC;
+      margin-top: 6px;
+    }
+    .stm-route__item--to .stm-route__dot { border-color: #8A8A8A; }
+    .stm-route__label { font-size: 15px; font-weight: 400; line-height: 20.4px; color: #000; }
+    /* 점선 — from dot 아래 / to dot 위를 잇는 세로 dotted line.
+       8px dot(border 2px 포함) 의 가로 중앙이 x=4. 점선도 정확히 그 축에 정렬 필요.
+       3×3 타일 안에 1.5px radius dot 을 그려서 시각 중심 = x=4 와 매칭 (1px 우측 nudge 포함).
+       top/bottom 18px 으로 dot 자체(높이 8 + margin-top 6 = 14) 와 살짝 떨어뜨림. */
+    .stm-route::before {
+      content: '';
+      position: absolute;
+      top: 18px;
+      bottom: 18px;
+      left: 2.5px;
+      width: 3px;
+      background-image: radial-gradient(circle, #BBB 1px, transparent 1.5px);
+      background-size: 3px 5px;
+      background-repeat: repeat-y;
+      pointer-events: none;
+    }
+
+    /* SKU명 셀 — "외 N개" 톤 (code-link__extra 와 통일된 톤).
+       한글 어절 단위 + 영문 긴 토큰 fallback 둘 다 처리. */
+    .stm-sku-name {
+      font-size: 15px; font-weight: 400; line-height: 20.4px; color: #000;
+      word-break: keep-all; overflow-wrap: break-word;
+    }
+    .stm-sku-extra { font-weight: 500; }
+
+    /* 등록자 / 일시 셀 */
+    .stm-author-name { font-size: 15px; font-weight: 400; line-height: 20.4px; color: #000; }
+    .stm-author-time { margin-top: 8px; font-size: 15px; font-weight: 400; line-height: 20.4px; color: #666; }
+
+    /* ============================================================
+       이동 상세 drawer — 이동번호 클릭 시 우측 슬라이드.
+       scm-side-drawer 베이스 + 페이지 스코프 클래스(stm-drawer__*) 로 헤더/카드/테이블 정의.
+       ============================================================ */
+    #stm-drawer { width: min(1600px, 95vw); max-width: none; }
+    /* 기본 head 빈 공백 제거. 닫기 X 는 우측 상단에 absolute. */
+    #stm-drawer .scm-side-drawer__head { display: none; }
+    #stm-drawer .scm-side-drawer__body {
+      padding: 0;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      min-height: 0;
+    }
+    #stm-drawer .stm-drawer__close-x {
+      position: absolute; top: 16px; right: 16px;
+      width: 32px; height: 32px; padding: 6px;
+      background: transparent; border: 0; border-radius: 4px;
+      color: #000; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      z-index: 5;
+    }
+    #stm-drawer .stm-drawer__close-x:hover { background: rgba(0,0,0,0.04); }
+    #stm-drawer .stm-drawer__close-x svg { width: 20px; height: 20px; }
+
+    /* === 헤더 === */
+    #stm-drawer .stm-drawer__header {
+      padding: 24px 24px 12px;
+      display: flex; align-items: flex-start; gap: 8px;
+    }
+    #stm-drawer .stm-drawer__header-main { flex: 1 1 0; min-width: 0; }
+    #stm-drawer .stm-drawer__title-row {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 2px 0 8px;
+    }
+    #stm-drawer .stm-drawer__title-code {
+      font-size: 26px; font-weight: 600; line-height: 36.4px; color: #000;
+    }
+    #stm-drawer .stm-drawer__title-chip { /* scm-status-chip 적용 */ }
+    #stm-drawer .stm-drawer__meta {
+      display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px;
+    }
+    #stm-drawer .stm-drawer__meta-item {
+      font-size: 13px; font-weight: 400; line-height: 19.5px; color: #8A8A8A;
+    }
+    #stm-drawer .stm-drawer__meta-divider {
+      width: 1px; height: 12px; background: #EBEBEB;
+    }
+    #stm-drawer .stm-drawer__cancel-btn {
+      width: 80px; height: 44px; padding: 12px;
+      background: rgba(138, 138, 138, 0.10);
+      color: rgba(0, 0, 0, 0.20);
+      border: 0; border-radius: 4px;
+      font-family: inherit; font-size: 15px; font-weight: 500; line-height: 20.4px;
+      cursor: not-allowed; white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* === 카드 row (5~6 카드 가로 정렬) === */
+    /* 컨테이너: 가로 스크롤 가능하지만 scrollbar 숨김 → "더 보기" 버튼으로만 스크롤 */
+    #stm-drawer .stm-drawer__cards-wrap {
+      position: relative;
+      padding: 0 24px;
+    }
+    #stm-drawer .stm-drawer__cards {
+      display: flex; flex-wrap: nowrap; align-items: stretch; gap: 12px;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+      scrollbar-width: none;          /* Firefox */
+      -ms-overflow-style: none;       /* IE / Edge */
+    }
+    #stm-drawer .stm-drawer__cards::-webkit-scrollbar { display: none; }
+
+    /* 우측 더 보기 button — cards 가 잘릴 때 노출 (JS 가 has-overflow 클래스 토글) */
+    #stm-drawer .stm-drawer__cards-more {
+      position: absolute;
+      top: 50%;
+      right: 8px;
+      transform: translateY(-50%);
+      width: 36px; height: 36px;
+      background: #fff; border: 1px solid #E0E0E0; border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+      cursor: pointer;
+      display: none;
+      align-items: center; justify-content: center;
+      color: #000; z-index: 2;
+    }
+    #stm-drawer .stm-drawer__cards-wrap.has-overflow .stm-drawer__cards-more { display: inline-flex; }
+    #stm-drawer .stm-drawer__cards-more:hover { background: #FAFBFC; }
+    #stm-drawer .stm-drawer__cards-more svg { width: 16px; height: 16px; }
+    #stm-drawer .stm-drawer__cards-more.is-end svg { transform: rotate(180deg); }
+
+    /* 우측 fade — overflow 가 있을 때만 노출 (시각 hint) */
+    #stm-drawer .stm-drawer__cards-fade {
+      position: absolute;
+      top: 0; right: 24px; bottom: 0;
+      width: 56px;
+      background: linear-gradient(to right, rgba(255,255,255,0), #fff 80%);
+      pointer-events: none;
+      display: none;
+    }
+    #stm-drawer .stm-drawer__cards-wrap.has-overflow:not(.is-end) .stm-drawer__cards-fade { display: block; }
+    #stm-drawer .stm-drawer__card {
+      padding: 20px;
+      border: 1px solid #E0E0E0; border-radius: 4px;
+      display: flex; flex-direction: column; gap: 12px;
+      flex-shrink: 0;
+    }
+    #stm-drawer .stm-drawer__card--route {
+      flex-direction: row; align-items: center; gap: 20px;
+      min-width: 480px;
+    }
+    #stm-drawer .stm-drawer__card--code,
+    #stm-drawer .stm-drawer__card--qty {
+      min-width: 220px;
+      justify-content: space-between;
+    }
+    #stm-drawer .stm-drawer__card--total {
+      min-width: 180px;
+      justify-content: space-between;
+    }
+    #stm-drawer .stm-drawer__card--memo {
+      min-width: 240px; max-width: 380px;
+    }
+    #stm-drawer .stm-drawer__card-title {
+      font-size: 15px; font-weight: 500; line-height: 20.4px; color: #000;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    #stm-drawer .stm-drawer__card-title svg { width: 14px; height: 14px; color: #666; }
+
+    /* route card 내부 */
+    #stm-drawer .stm-drawer__route-block {
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    #stm-drawer .stm-drawer__route-line {
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    #stm-drawer .stm-drawer__route-name {
+      font-size: 15px; font-weight: 600; line-height: 20.4px; color: #000;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    #stm-drawer .stm-drawer__route-addr {
+      font-size: 14px; font-weight: 400; line-height: 19.6px; color: #666;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    #stm-drawer .stm-drawer__route-arrow {
+      width: 24px; height: 24px; flex-shrink: 0;
+      color: #000;
+    }
+
+    /* code / qty card row */
+    #stm-drawer .stm-drawer__kv-list {
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    #stm-drawer .stm-drawer__kv-row {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      gap: 12px;
+    }
+    #stm-drawer .stm-drawer__kv-label {
+      font-size: 13px; font-weight: 500; line-height: 19.5px; color: #8A8A8A;
+      flex-shrink: 0;
+    }
+    #stm-drawer .stm-drawer__kv-val {
+      font-size: 15px; font-weight: 600; line-height: 20.4px; color: #000;
+      text-align: right;
+    }
+    /* total card 값 */
+    #stm-drawer .stm-drawer__total-val {
+      font-size: 15px; font-weight: 600; line-height: 20.4px; color: #000;
+    }
+    /* memo card 본문 */
+    #stm-drawer .stm-drawer__memo-text {
+      font-size: 14px; font-weight: 400; line-height: 19.6px; color: #000;
+      max-height: 60px; overflow: hidden;
+    }
+    /* 입고 취소 사유 card — 타이틀 빨강 */
+    #stm-drawer .stm-drawer__card--cancel .stm-drawer__card-title {
+      color: #F31110;
+    }
+
+    /* === 상세 테이블 === */
+    #stm-drawer .stm-drawer__table-wrap {
+      flex: 1 1 auto; min-height: 0;
+      padding: 12px 24px 0;
+      display: flex; flex-direction: column; gap: 0;
+      overflow: hidden;
+    }
+    #stm-drawer .stm-drawer__table-stats {
+      height: 60px; min-height: 60px; padding: 12px 16px;
+      box-sizing: border-box;       /* padding 포함 60px 고정 */
+      display: flex; align-items: center; gap: 4px;
+    }
+    #stm-drawer .stm-drawer__table-stats-label {
+      font-size: 15px; font-weight: 500; line-height: 20.4px; color: #000;
+    }
+    #stm-drawer .stm-drawer__table-stats-num {
+      font-size: 15px; font-weight: 600; line-height: 20.4px; color: #000;
+    }
+    #stm-drawer .stm-drawer__table-host {
+      flex: 1 1 auto; min-height: 0;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      /* border-top 제거 — base scm-table.css 의 .mp-table-scroll > .mp-table > thead::before
+         가 이미 1.5px 검정 라인을 그리므로 page-scope 보더는 중복. */
+      border-bottom: 1px solid #E0E0E0;
+      /* frozen 4 컬럼 (NO 54 / SKU 320 / 옵션 135 / 이동상태 111) 누적 left offset.
+         base CSS 의 .col-frozen-N 룰이 var(--frozen-l*) 을 참조해서 sticky-left 잡음. */
+      --frozen-l1: 0px;
+      --frozen-l2: 54px;
+      --frozen-l3: 374px;   /* 54 + 320 */
+      --frozen-l4: 509px;   /* 374 + 135 */
+    }
+    /* drawer thead 안의 frozen 셀은 thead(z:10) 안에서 z:2 로 비-frozen th 위에 stack.
+       body 의 frozen 셀 white 배경 / hover #FAFBFC 는 base scm-table.css 가 이미 처리. */
+    #stm-drawer .stm-drawer__table-host .mp-table-scroll thead th.col-frozen-1,
+    #stm-drawer .stm-drawer__table-host .mp-table-scroll thead th.col-frozen-2,
+    #stm-drawer .stm-drawer__table-host .mp-table-scroll thead th.col-frozen-3,
+    #stm-drawer .stm-drawer__table-host .mp-table-scroll thead th.col-frozen-4 {
+      z-index: 2;
+    }
+    #stm-drawer .stm-drawer__table-host .mp-table-scroll {
+      flex: 1 1 auto; min-height: 0;
+      overflow: auto;
+    }
+    /* drawer thead sticky — Product-Arrival-Status 와 동일 패턴 */
+    #stm-drawer .stm-drawer__table-host .mp-table-scroll > .mp-table > thead {
+      position: sticky; top: 0; z-index: 10; background: #fff;
+    }
+    #stm-drawer .stm-drawer__table-host .mp-table-scroll thead th {
+      background: #fff;
+    }
+    /* drawer 안 mp-table — fixed layout + colgroup 합계 만큼 명시 width.
+       base .mp-table 의 width:100% 가 컨테이너 폭(보통 더 좁음)으로 stretch 해서
+       column 들이 비율 분배되는 회귀 차단. 합계: 54+320+135+111+160+96+84+151*3+88*3+151 = 1677.
+       이렇게 폭을 고정해야 frozen offset (54/320/135/111) 이 실측치와 일치. */
+    #stm-drawer .stm-drawer__table-host .mp-table {
+      table-layout: fixed;
+      width: 1677px;
+      min-width: 1677px;
+    }
+    /* SKU명 col-large — colgroup 320 고정. min/max 명시는 fixed 에선 무시되지만 안전망. */
+    #stm-drawer .stm-drawer__table-host .mp-table .col-large { width: 320px; min-width: 320px; max-width: 320px; }
+    /* drawer body 셀 — 모든 셀 white-space normal 강제 (긴 텍스트 wrap 보장).
+       앞으로 SKU 명이 320 폭을 넘어도 무조건 다음 줄로 내려가야 함. */
+    #stm-drawer .stm-drawer__table-host .mp-table tbody td { white-space: normal; }
+    /* SKU 썸네일 */
+    #stm-drawer .stm-drawer__sku-cell {
+      display: flex; align-items: flex-start; gap: 12px;
+    }
+    #stm-drawer .stm-drawer__sku-thumb {
+      width: 60px; height: 72px; flex-shrink: 0;
+      background: #F5F5F5;
+      border-radius: 4px;
+      position: relative;
+      overflow: hidden;
+    }
+    #stm-drawer .stm-drawer__sku-thumb::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.05);
+    }
+    #stm-drawer .stm-drawer__sku-name {
+      font-size: 15px; font-weight: 400; line-height: 20.4px; color: #000;
+      /* fixed table-layout 에서 셀 폭 초과 텍스트 wrap (영문 긴 토큰도 fallback) */
+      word-break: keep-all; overflow-wrap: break-word;
+      min-width: 0;
+    }
+    /* 옵션 칩 stack */
+    #stm-drawer .stm-drawer__opt-chips {
+      display: inline-flex; flex-wrap: wrap; gap: 8px;
+    }
+    #stm-drawer .stm-drawer__opt-chip {
+      padding: 4px 8px; border-radius: 4px;
+      background: rgba(138, 138, 138, 0.10);
+      font-size: 14px; font-weight: 500; line-height: 19.6px; color: #000;
+    }
+    /* 데이터 - / null tone */
+    #stm-drawer .stm-drawer__dash { color: #8A8A8A; }
+
+    /* === 푸터 === 위탁 상품 입고 현황 drawer 와 동일 — 상/하 padding 8px */
+    #stm-drawer .stm-drawer__footer {
+      padding: 8px 24px;
+      display: flex; justify-content: flex-end; gap: 8px;
+      border-top: 1px solid #EBEBEB;
+      background: #fff;
+    }
+    #stm-drawer .stm-drawer__close-btn {
+      min-width: 56px; height: 44px; padding: 12px;
+      background: #fff; border: 1px solid #E0E0E0; border-radius: 4px;
+      font-family: inherit; font-size: 15px; font-weight: 500; color: #000;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<!-- SVG sprite -->
+<script src="/scm-icons.js"></script>
+
+<header class="scm-topbar" role="banner"></header>
+
+<div class="app">
+  <nav class="scm-lnb" data-active="stock-movement" aria-label="주메뉴"></nav>
+
+  <main>
+    <!-- Page head -->
+    <div class="scm-page-head scm-page-head--list">
+      <h1 class="scm-page-head__title">재고이동</h1>
+      <div class="scm-page-head__actions">
+        <button class="stm-register-btn" type="button" id="stm-register-btn">
+          <span>신규 등록</span>
+        </button>
+        <button class="stm-notify-btn" type="button" id="stm-notify-btn" aria-label="알림함">
+          <span>알림함</span>
+          <span class="stm-notify-btn__divider"></span>
+          <span class="stm-notify-btn__status">
+            <span>진행중</span>
+            <span class="stm-notify-btn__status-num">2</span>
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="scm-filter-bar" id="filter-bar">
+      <button class="scm-filter-chip" type="button" id="filter-drawer-open">
+        <svg viewBox="0 0 20 20"><use href="#ic-filter"/></svg>
+        <span>전체 필터</span>
+        <span class="scm-filter-chip__count">1</span>
+      </button>
+      <div class="scm-filter-overflow">
+        <div class="scm-filter-overflow__track">
+          <button class="scm-filter-select" type="button" data-state="filled" data-mp-filter="period">
+            <span class="scm-filter-select__label">등록일<span class="scm-filter-select__req-dot"></span></span>
+            <span class="scm-filter-select__value">25.03.01~25.03.07</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="moveNo">
+            <span class="scm-filter-select__label">이동번호</span>
+            <span class="scm-filter-select__value">이동번호</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+          <span class="scm-filter-group">
+            <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="origin">
+              <span class="scm-filter-select__label">출발지</span>
+              <span class="scm-filter-select__value">출발지</span>
+              <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+            </button>
+            <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="destination">
+              <span class="scm-filter-select__label">도착지</span>
+              <span class="scm-filter-select__value">도착지</span>
+              <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+            </button>
+          </span>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="author">
+            <span class="scm-filter-select__label">등록자</span>
+            <span class="scm-filter-select__value">등록자</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="reason">
+            <span class="scm-filter-select__label">이동사유</span>
+            <span class="scm-filter-select__value">이동사유</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="uidBarcode">
+            <span class="scm-filter-select__label">UID/바코드</span>
+            <span class="scm-filter-select__value">UID/바코드</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="moveStatus">
+            <span class="scm-filter-select__label">이동상태</span>
+            <span class="scm-filter-select__value">이동상태</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+          <button class="scm-filter-select" type="button" data-state="placeholder" data-mp-filter="reqStatus">
+            <span class="scm-filter-select__label">요청상태</span>
+            <span class="scm-filter-select__value">요청상태</span>
+            <svg class="scm-filter-select__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+        </div>
+        <div class="scm-filter-overflow__fade scm-filter-overflow__fade--left" style="opacity:0;"></div>
+        <div class="scm-filter-overflow__fade scm-filter-overflow__fade--right" style="opacity:0;"></div>
+        <button class="scm-filter-overflow__nav scm-filter-overflow__nav--left" type="button" aria-label="이전 필터" hidden></button>
+        <button class="scm-filter-overflow__nav scm-filter-overflow__nav--right" type="button" aria-label="다음 필터" hidden></button>
+      </div>
+      <div class="scm-filter-actions">
+        <button class="scm-search-btn" type="button">검색</button>
+        <button class="scm-filter-reset-btn" type="button">
+          <svg viewBox="0 0 20 20"><use href="#ic-refresh"/></svg>
+          <span>초기화</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats bar -->
+    <div class="scm-stats-bar scm-stats-bar--sticky">
+      <div class="scm-stats-bar__left">
+        <div class="scm-stats-bar__counts-wrap">
+          <div class="scm-stats-bar__counts">
+            <span class="scm-stat scm-stat--all"><span class="scm-stat__label">전체</span> <span class="scm-stat__num">20</span></span>
+          </div>
+        </div>
+        <div class="scm-stats-bar__mini-actions">
+          <button class="scm-mini-action scm-mini-action--primary" type="button" id="stm-out-cancel-btn" disabled>출고 취소</button>
+        </div>
+      </div>
+      <div class="scm-stats-bar__right">
+        <div class="stm-toggle-wrap">
+          <label class="stm-toggle-label" for="stm-unreturned-toggle">미반납 건 보기</label>
+          <button class="stm-toggle" id="stm-unreturned-toggle" type="button" role="switch" aria-pressed="false" aria-label="미반납 건 보기"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table — mp-table (frozen 3: 등록번호/이동사유/체크박스) -->
+    <div class="mp-table-host">
+      <div class="mp-thead-sticky"><div class="mp-thead-scroll"></div></div>
+      <div class="mp-table-scroll">
+        <table class="mp-table is-cell-selectable" id="stm-table" data-scm-frozen="3">
+          <thead>
+            <tr class="group-row">
+              <!-- frozen 3 (등록번호 / 이동사유 / 체크박스) — rowspan=2 로 leaf 까지 점유 -->
+              <th class="col-auto stm-c-reg col-frozen-1" rowspan="2">등록번호/상태</th>
+              <th class="col-auto stm-c-reason col-frozen-2" rowspan="2">이동 사유</th>
+              <th class="cb-col col-frozen-3 col-frozen-last" rowspan="2"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" id="stm-cb-all" aria-label="전체 선택"></span></th>
+              <!-- 이동번호 — row1 에 라벨 + 펼치기 button.
+                   collapsed 상태에서는 colspan=1 (이동번호 leaf 하나만 cover),
+                   expanded 시 JS 가 colspan=3 으로 변경 + row2 / tbody 에 출고번호 / 입고번호 셀 inject. -->
+              <th class="col-auto stm-c-moveno-head" id="stm-moveno-head">
+                <div class="stm-moveno-head">
+                  <span class="stm-moveno-head__label">이동번호</span>
+                  <button class="stm-moveno-toggle" type="button" id="stm-moveno-toggle" aria-label="이동번호 펼치기">
+                    <span class="stm-moveno-toggle__label">펼치기</span>
+                    <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 5l5 5-5 5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                </div>
+              </th>
+              <!-- 나머지 컬럼은 rowspan=2 로 풀 height -->
+              <th class="col-auto stm-c-status" rowspan="2">이동상태</th>
+              <th class="col-medium stm-c-route" rowspan="2">경로</th>
+              <th class="col-large stm-c-sku" rowspan="2">SKU명</th>
+              <th class="col-auto stm-c-qty cell-numeric" rowspan="2">요청수량</th>
+              <th class="col-auto stm-c-qty cell-numeric" rowspan="2">출고수량(출발)</th>
+              <th class="col-auto stm-c-qty cell-numeric" rowspan="2">입고수량(도착)</th>
+              <th class="col-auto stm-c-amount cell-numeric" rowspan="2">요청 상품 총액</th>
+              <th class="col-auto stm-c-user" rowspan="2">등록자</th>
+              <th class="col-auto stm-c-regdate" rowspan="2">등록일시</th>
+              <th class="col-spacer" data-empty="true" rowspan="2" aria-hidden="true"></th>
+            </tr>
+            <tr id="stm-leaf-row">
+              <!-- row2 leaves — 기본 collapsed: 이동번호만.
+                   펼치기 토글 시 JS 가 출고번호 / 입고번호 th 를 inject. -->
+              <th class="col-auto stm-c-moveno">이동번호</th>
+            </tr>
+          </thead>
+          <tbody id="stm-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- 이동 상세 drawer -->
+<div class="scm-side-drawer-backdrop" id="stm-drawer-backdrop" hidden></div>
+<aside class="scm-side-drawer" id="stm-drawer" hidden role="dialog" aria-label="이동 상세">
+  <div class="scm-side-drawer__body">
+    <!-- 헤더 — 이동번호 + 상태 + 메타 + 이동취소 button -->
+    <div class="stm-drawer__header">
+      <div class="stm-drawer__header-main">
+        <div class="stm-drawer__title-row">
+          <span class="stm-drawer__title-code" id="stm-drawer-title-code">2508240000837</span>
+          <span class="stm-drawer__title-chip" id="stm-drawer-title-chip"></span>
+        </div>
+        <div class="stm-drawer__meta" id="stm-drawer-meta"></div>
+      </div>
+      <button class="stm-drawer__cancel-btn" type="button" disabled>이동취소</button>
+    </div>
+
+    <!-- 카드 row (overflow 시 scrollbar 숨기고 우측 "더 보기" 버튼만 노출) -->
+    <div class="stm-drawer__cards-wrap" id="stm-drawer-cards-wrap">
+    <div class="stm-drawer__cards" id="stm-drawer-cards">
+      <!-- 출발지(출고) / 도착지(입고) -->
+      <div class="stm-drawer__card stm-drawer__card--route">
+        <div class="stm-drawer__route-block">
+          <div class="stm-drawer__card-title">출발지(출고)</div>
+          <div class="stm-drawer__route-line">
+            <div class="stm-drawer__route-name" id="stm-drawer-from-name">SS020042 - 여주1-무신사-오프라인</div>
+            <div class="stm-drawer__route-addr" id="stm-drawer-from-addr">
+              <span>경기도 여주시 시, 대신면 초현리 395-2 지하1층</span>
+              <span>홍길동 010-4321-4321</span>
+            </div>
+          </div>
+        </div>
+        <svg class="stm-drawer__route-arrow" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="stm-drawer__route-block">
+          <div class="stm-drawer__card-title">도착지(입고)</div>
+          <div class="stm-drawer__route-line">
+            <div class="stm-drawer__route-name" id="stm-drawer-to-name">
+              <span>SS020042 - JP1-무신사-오프라인</span>
+              <span class="stm-tag-mini" id="stm-drawer-to-tag" hidden>해외</span>
+            </div>
+            <div class="stm-drawer__route-addr" id="stm-drawer-to-addr">
+              <span>Saitama, Sakado, Nishi Inter, 2-chōme-2-1</span>
+              <span>Kentaro Sakaguchi +81 439-87-1234</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- 출/입고 번호 -->
+      <div class="stm-drawer__card stm-drawer__card--code">
+        <div class="stm-drawer__card-title">출/입고 번호</div>
+        <div class="stm-drawer__kv-list">
+          <div class="stm-drawer__kv-row">
+            <span class="stm-drawer__kv-label">출고</span>
+            <span class="stm-drawer__kv-val" id="stm-drawer-outno">OB94825-3850837NWH01</span>
+          </div>
+          <div class="stm-drawer__kv-row">
+            <span class="stm-drawer__kv-label">입고</span>
+            <span class="stm-drawer__kv-val" id="stm-drawer-inno">TX-INB2508260000003</span>
+          </div>
+        </div>
+      </div>
+      <!-- 수량 -->
+      <div class="stm-drawer__card stm-drawer__card--qty">
+        <div class="stm-drawer__card-title">수량</div>
+        <div class="stm-drawer__kv-list">
+          <div class="stm-drawer__kv-row">
+            <span class="stm-drawer__kv-label">요청</span>
+            <span class="stm-drawer__kv-val" id="stm-drawer-req-qty">68</span>
+          </div>
+          <div class="stm-drawer__kv-row">
+            <span class="stm-drawer__kv-label">출고</span>
+            <span class="stm-drawer__kv-val" id="stm-drawer-out-qty">68</span>
+          </div>
+          <div class="stm-drawer__kv-row">
+            <span class="stm-drawer__kv-label">입고</span>
+            <span class="stm-drawer__kv-val" id="stm-drawer-in-qty">68</span>
+          </div>
+        </div>
+      </div>
+      <!-- 요청 상품 총액 -->
+      <div class="stm-drawer__card stm-drawer__card--total">
+        <div class="stm-drawer__card-title">
+          요청 상품 총액
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
+        </div>
+        <div class="stm-drawer__total-val" id="stm-drawer-total">120,160,000원</div>
+      </div>
+      <!-- 메모 -->
+      <div class="stm-drawer__card stm-drawer__card--memo">
+        <div class="stm-drawer__card-title">메모</div>
+        <div class="stm-drawer__memo-text" id="stm-drawer-memo">
+          재고 이동 요청드립니다. [출발지]의 [품목명] [수량]개를 [목적지]로 이동 요청드립니다. 확인 후 신속한 처리 및 완료 회신 부탁드리며 진행사항은 #채널명 에서 공유 해주세요
+        </div>
+      </div>
+      <!-- 입고 취소 사유 — 출고취소 case 등에서만 노출 (JS 가 hidden 토글) -->
+      <div class="stm-drawer__card stm-drawer__card--memo stm-drawer__card--cancel" id="stm-drawer-card-cancel" hidden>
+        <div class="stm-drawer__card-title">입고 취소 사유</div>
+        <div class="stm-drawer__memo-text" id="stm-drawer-cancel-text">
+          재고가 부족합니다.
+        </div>
+      </div>
+    </div>
+    <div class="stm-drawer__cards-fade" aria-hidden="true"></div>
+    <button class="stm-drawer__cards-more" type="button" id="stm-drawer-cards-more" aria-label="카드 더 보기">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    </div>
+
+    <!-- 상세 테이블 -->
+    <div class="stm-drawer__table-wrap">
+      <div class="stm-drawer__table-stats">
+        <span class="stm-drawer__table-stats-label">전체</span>
+        <span class="stm-drawer__table-stats-num" id="stm-drawer-total-count">6</span>
+      </div>
+      <div class="mp-table-host stm-drawer__table-host">
+        <div class="mp-table-scroll">
+          <table class="mp-table" id="stm-drawer-table" data-scm-skip-init="true">
+            <colgroup>
+              <col class="col-frozen-1"                  style="width:54px"/>     <!-- NO -->
+              <col class="col-frozen-2"                  style="width:320px"/>    <!-- SKU명 -->
+              <col class="col-frozen-3"                  style="width:135px"/>    <!-- 옵션 -->
+              <col class="col-frozen-4 col-frozen-last"  style="width:111px"/>    <!-- 이동상태 -->
+              <col style="width:160px"/>    <!-- 바코드 -->
+              <col style="width:96px"/>     <!-- UID -->
+              <col style="width:84px"/>     <!-- 매입유형 -->
+              <col style="width:151px"/>    <!-- 출고번호 -->
+              <col style="width:151px"/>    <!-- 입고번호 -->
+              <col style="width:88px"/>     <!-- 요청수량 -->
+              <col style="width:88px"/>     <!-- 출고수량 -->
+              <col style="width:88px"/>     <!-- 입고수량 -->
+              <col style="width:151px"/>    <!-- 출고 취소 사유 -->
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="col-auto col-frozen-1">NO</th>
+                <th class="col-large col-frozen-2"><div class="cell-clamp">SKU명</div></th>
+                <th class="col-auto col-frozen-3">옵션</th>
+                <th class="col-auto col-frozen-4 col-frozen-last">이동상태</th>
+                <th class="col-auto">바코드</th>
+                <th class="col-auto">UID</th>
+                <th class="col-auto">매입유형</th>
+                <th class="col-auto">출고번호</th>
+                <th class="col-auto">입고번호</th>
+                <th class="col-auto cell-numeric">요청수량</th>
+                <th class="col-auto cell-numeric">출고수량</th>
+                <th class="col-auto cell-numeric">입고수량</th>
+                <th class="col-auto">출고 취소 사유</th>
+              </tr>
+            </thead>
+            <tbody id="stm-drawer-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer class="stm-drawer__footer">
+    <button class="stm-drawer__close-btn" type="button" id="stm-drawer-close-btn">닫기</button>
+  </footer>
+</aside>
+
+<!-- Module JS -->
+<script src="../design%20system/components/lnb/lnb.js"></script>
+<script src="../design%20system/components/topbar/topbar.js"></script>
+<script src="../design%20system/components/scroll-lock/scroll-lock.js"></script>
+<script src="../design%20system/components/backdrop/backdrop.js"></script>
+<script src="../design%20system/components/checkbox/checkbox.js"></script>
+<script src="../design%20system/components/toast/toast.js"></script>
+<script src="../design%20system/components/pgsize-select/pgsize-select.js"></script>
+<script src="../design%20system/components/mini-action/mini-action.js"></script>
+<script src="../design%20system/components/code-popover/code-popover.js"></script>
+<script src="../design%20system/components/side-drawer/side-drawer.js"></script>
+<script src="../design%20system/components/filter-bar/filter-bar.js"></script>
+<script src="../design%20system/components/filter-drawer/filter-drawer.js"></script>
+<script src="../design%20system/components/filter-popover/filter-popover.js"></script>
+<script src="../design%20system/components/date-picker/date-picker.js"></script>
+<script src="../design%20system/components/filter-popover/filter-popover-modes.js"></script>
+<!-- scm-table 인터랙션 (sticky thead / frozen / sort / cell-select / column menu / filter) -->
+<script src="../design%20system/components/scm-table/scm-table.js"></script>
+<script src="../design%20system/components/scm-table/table-sort.js"></script>
+<script src="../design%20system/components/scm-table/column-more-menu.js"></script>
+<script src="../design%20system/components/scm-table/column-filter-popover.js"></script>
+<script src="../design%20system/components/scm-table/table-selection.js"></script>
+
+<script>
+(function () {
+  'use strict';
+
+  // LNB 활성 메뉴 강제 적용
+  function _forceLnbActive() {
+    if (!(window.SCM && SCM.lnb && SCM.lnb.setActive)) return;
+    var navEl = document.querySelector('.scm-lnb');
+    if (navEl) SCM.lnb.setActive(navEl, 'stock-movement');
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _forceLnbActive, { once: true });
+  } else {
+    _forceLnbActive();
+  }
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(_forceLnbActive);
+
+  // ---- Demo data — 재고이동 ----
+  // 한 등록번호 (TX-MVR) 는 여러 이동(item) 을 가질 수 있음. inner row 로 표시.
+  // outNo (출고번호) / inNo (입고번호) — 펼치기 토글 시 노출되는 상세 코드.
+  //   입고완료     → outNo + inNo 둘 다 있음
+  //   출고완료     → outNo 있음, inNo='-'
+  //   출고대기     → 둘 다 '-' (아직 출고 전)
+  //   출고취소     → outNo 있음, inNo='-'
+  //   입고대기     → outNo 있음, inNo='-'
+  const ROWS = [
+    {
+      regNo: 'TX-MVR\n2508220000487', auto: '자동승인',
+      reasonTitle: '재고보충 (물류센터→물류센터)',
+      reasonDesc: '위탁-시즌반품회수, 10월 10차분 매장 재고이동',
+      author: '정이삭(M2025012204)', time: '25.02.13 19:00',
+      items: [
+        { moveNo:'2508240000837', outNo:'OB94825-3850837NWH01', inNo:'TX-INB2508260000003',
+          status:'입고완료', overseaTag:'해외',
+          from:'글로벌 센터(JP1)-무신사-오프라인', to:'여주1-무신사-오프라인',
+          sku:'Basal 5 Pockets Denim Shorts Light Grey', skuExtra:'70개',
+          reqQty:34, outQty:34, inQty:25, totalAmount:'177,150,000원' },
+      ],
+    },
+    {
+      regNo: 'TX-MVR\n2508220000488', auto: '자동승인',
+      reasonTitle: '재고보충 (물류센터→물류센터)',
+      reasonDesc: '위탁-시즌반품회수, 10월 10차분 매장 재고이동',
+      author: '정이삭(M2025012204)', time: '25.02.13 19:00',
+      items: [
+        { moveNo:'2508240000837', outNo:'TX-OTB2508220000487', inNo:'TX-INB2508260000003',
+          status:'입고완료', overseaTag:'해외',
+          from:'글로벌 센터(JP1)-무신사-오프라인', to:'여주1-무신사-오프라인',
+          sku:'Basal 5 Pockets Denim Shorts Light Grey', skuExtra:'70개',
+          reqQty:34, outQty:34, inQty:25, totalAmount:'177,150,000원' },
+      ],
+    },
+    {
+      regNo: 'TX-MVR\n2508220000489', auto: '자동승인',
+      reasonTitle: 'MFS 물류중앙화 (입고 → 물류센터 → 매장)',
+      reasonDesc: '물류 중앙화',
+      author: '정이삭(M2025012204)', time: '25.02.13 19:00',
+      items: [
+        { moveNo:'2508240000838', outNo:'TX-OTB2508220000488', inNo:'-',
+          status:'입고대기',
+          from:'여주1-무신사-오프라인', to:'무신사 스토어 강남',
+          sku:'Basal 5 Pockets Denim Shorts Light Grey', skuExtra:'70개',
+          reqQty:34, outQty:34, inQty:25, totalAmount:'177,150,000원' },
+      ],
+    },
+    {
+      regNo: 'TX-MVR\n2508220000490', auto: '자동승인',
+      reasonTitle: '촬영용 반출', reasonTitleWarn: true,
+      reasonDesc: '[에디터팀] 0623 미미미누 무진장 컨텐츠 촬영',
+      author: '정이삭(M2025012204)', time: '25.02.13 19:00',
+      items: [
+        { moveNo:'2508240000839', outNo:'TX-OTB2508220000490', inNo:'-',
+          status:'출고취소',
+          from:'여주1-무신사-오프라인', to:'무신사 스탠다드 포토팀',
+          sku:'[쿨탠다드] 오버사이즈 블레이저 [블랙]', skuExtra:'3개',
+          reqQty:4, outQty:4, inQty:4, totalAmount:'290,000원' },
+      ],
+    },
+    {
+      regNo: 'TX-MVR\n2508220000491', auto: '자동승인',
+      reasonTitle: '촬영용 반출', reasonTitleWarn: true,
+      reasonDesc: '[에디터팀] 0626 이시안 무진장 컨텐츠 촬영',
+      author: '정이삭(M2025012204)', time: '25.02.13 19:00',
+      items: [
+        { moveNo:'2508240000840', outNo:'TX-OTB2508220000491', inNo:'-',
+          status:'출고취소',
+          from:'여주1-무신사-오프라인', to:'무신사뷰티 콘텐츠팀',
+          sku:'베이비 하프 문 백', skuExtra:'',
+          reqQty:1, outQty:1, inQty:1, totalAmount:'19,900원' },
+      ],
+    },
+    {
+      regNo: 'TX-MVR\n2508220000492', auto: '자동승인',
+      reasonTitle: '재고보충',
+      reasonDesc: '[브랜드사업팀] 디스커스 나이스웨더 대구 재고 보충 241114',
+      author: '정이삭(M2025012204)', time: '25.02.13 19:00',
+      items: [
+        { moveNo:'2508240000841', outNo:'TX-OTB2508220000492', inNo:'-',
+          status:'출고완료',
+          from:'여주1-무신사-오프라인', to:'무신사뷰티 콘텐츠팀',
+          sku:'나이스웨더 컬래버 Nice Series 5-Panel Cap Dark Blue', skuExtra:'25개',
+          reqQty:'2,454', outQty:'2,454', inQty:'-', totalAmount:'177,150,000원' },
+        { moveNo:'2508240000842', outNo:'TX-OTB2508220000492', inNo:'-',
+          status:'출고완료',
+          from:'여주1-무신사-오프라인', to:'무신사뷰티 콘텐츠팀',
+          sku:'N.W 워터 글라스', skuExtra:'1,240개',
+          reqQty:34, outQty:34, inQty:'-', totalAmount:'177,150,000원' },
+      ],
+    },
+    {
+      regNo: 'TX-MVR\n2508220000493', auto: '자동승인',
+      reasonTitle: '마케팅 시딩, 증정용 반출',
+      reasonDesc: '[풋웨어팀] 250628_푸마_차정원시딩_반납조건_김지민',
+      author: '정이삭(M2025012204)', time: '25.02.13 19:00',
+      items: [
+        { moveNo:'2508240000843', outNo:'-', inNo:'-',
+          status:'출고대기',
+          from:'여주1-무신사-오프라인', to:'무신사 마케팅팀',
+          sku:'젤-1130 - 스틸 그레이:퓨어 실버 / 1201A934-020', skuExtra:'',
+          reqQty:1, outQty:'-', inQty:'-', totalAmount:'150,000원' },
+        { moveNo:'2508240000844', outNo:'-', inNo:'-',
+          status:'출고대기',
+          from:'여주1-무신사-오프라인', to:'무신사 마케팅팀',
+          sku:'(여성) 링컨 4 - 드루지:마운틴 포그 / 1155131-DFG', skuExtra:'',
+          reqQty:1, outQty:'-', inQty:'-', totalAmount:'150,000원' },
+      ],
+    },
+  ];
+
+  // 상태 → scm-status-chip variant 매핑
+  // 입고완료     → done       (green)
+  // 출고완료     → processing (blue, 진행/완료 톤)
+  // 입고대기/출고대기 → waiting (gray)
+  // 출고취소/입고취소 → cancel  (red)
+  const STATUS_CHIP = {
+    '입고완료': 'done',
+    '출고완료': 'processing',
+    '입고대기': 'waiting',
+    '출고대기': 'waiting',
+    '출고취소': 'cancel',
+    '입고취소': 'cancel',
+  };
+
+  const escapeHtml = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  // 한 등록(rows[i]) 의 inner items 를 모두 그리되, 각 <tr> 는 동일 leaf 개수 유지.
+  // collapsed: 14 leaf (등록번호 / 사유 / 체크박스 / 이동번호 / 이동상태 / 경로 / SKU / 4 numeric / 등록자 / 등록일시 / spacer)
+  // expanded:  16 leaf (이동번호 뒤에 출고번호 / 입고번호 inject)
+  // outer 컬럼 (등록번호 / 사유 / 체크박스 / 등록자 / 등록일시) — first inner row 에만 콘텐츠.
+  // sub inner row 는 빈셀 + iss-merged-cell 클래스 (border-top:0 으로 시각적 merge).
+  function rowsToHtml(rows, isExpanded) {
+    let html = '';
+    rows.forEach((r) => {
+      const warnIcon = r.reasonTitleWarn
+        ? '<svg class="stm-reason-title__warn" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 14.75V12.88M10 11.95V7.28M2.31 16.5H17.69C17.93 16.5 18.07 16.24 17.95 16.04L10.26 3.42C10.14 3.23 9.86 3.23 9.74 3.42L2.05 16.04C1.93 16.24 2.07 16.5 2.31 16.5Z" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>'
+        : '';
+      r.items.forEach((it, idx) => {
+        const isFirst = idx === 0;
+        const oCls = isFirst ? '' : ' iss-merged-cell';
+        // outer content — first row 만, 나머지는 빈문자열
+        const regCnt    = isFirst ? `<div class="stm-reg-code">${escapeHtml(r.regNo)}</div><div class="stm-reg-auto">${escapeHtml(r.auto)}</div>` : '';
+        const reasonCnt = isFirst ? `<div class="stm-reason-title">${escapeHtml(r.reasonTitle)}${warnIcon}</div><div class="stm-reason-desc">${escapeHtml(r.reasonDesc)}</div>` : '';
+        const cbCnt     = isFirst ? '<span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="선택"></span>' : '';
+        const userCnt    = isFirst ? `<div class="stm-author-name">${escapeHtml(r.author)}</div>` : '';
+        const regDateCnt = isFirst ? `<div class="stm-author-name">${escapeHtml(r.time)}</div>` : '';
+
+        // inner content — 매 row 마다
+        const chipVar = STATUS_CHIP[it.status] || 'waiting';
+        const moveLink = `<a class="scm-code-link" data-code-type="moveNo">${escapeHtml(it.moveNo)}</a>`;
+        const statusChip = `<span class="scm-status-chip scm-status-chip--${chipVar}">${escapeHtml(it.status)}</span>`;
+        // 출고번호 / 입고번호 — '-' 면 muted 톤, 그 외엔 일반 텍스트 (펼치기 토글 시만 보임)
+        const outNoCell = (it.outNo && it.outNo !== '-')
+          ? escapeHtml(it.outNo)
+          : '<span style="color:#8A8A8A;">-</span>';
+        const inNoCell = (it.inNo && it.inNo !== '-')
+          ? escapeHtml(it.inNo)
+          : '<span style="color:#8A8A8A;">-</span>';
+        const overseaHtml = it.overseaTag ? `<span class="stm-tag-mini">${escapeHtml(it.overseaTag)}</span>` : '';
+        const routeHtml =
+          overseaHtml +
+          '<div class="stm-route">' +
+            '<div class="stm-route__item stm-route__item--from">' +
+              '<span class="stm-route__dot"></span>' +
+              `<span class="stm-route__label">${escapeHtml(it.from)}</span>` +
+            '</div>' +
+            '<div class="stm-route__item stm-route__item--to">' +
+              '<span class="stm-route__dot"></span>' +
+              `<span class="stm-route__label">${escapeHtml(it.to)}</span>` +
+            '</div>' +
+          '</div>';
+        const skuExtra = it.skuExtra ? ` 외 <span class="stm-sku-extra">${escapeHtml(it.skuExtra)}</span>` : '';
+        const skuHtml = `<div class="stm-sku-name">${escapeHtml(it.sku)}${skuExtra}</div>`;
+
+        html +=
+          '<tr>' +
+            // outer 컬럼들 (col-frozen-1/2/3) — first row 만 콘텐츠
+            //   col-frozen-1: 등록번호/상태 (leftmost)
+            //   col-frozen-2: 이동 사유
+            //   col-frozen-3 col-frozen-last: 체크박스 (frozen 경계)
+            `<td class="col-auto stm-c-reg col-frozen-1${oCls}">${regCnt}</td>` +
+            `<td class="col-auto stm-c-reason col-frozen-2${oCls}">${reasonCnt}</td>` +
+            `<td class="cb-col col-frozen-3 col-frozen-last${oCls}">${cbCnt}</td>` +
+            // inner 컬럼들 — 매 row 마다 콘텐츠
+            `<td class="col-auto stm-c-moveno">${moveLink}</td>` +
+            // 출고번호 / 입고번호 — 펼치기 토글 시만 inject
+            (isExpanded
+              ? `<td class="col-auto stm-c-outno">${outNoCell}</td><td class="col-auto stm-c-inno">${inNoCell}</td>`
+              : '') +
+            `<td class="col-auto stm-c-status">${statusChip}</td>` +
+            `<td class="col-medium stm-c-route">${routeHtml}</td>` +
+            `<td class="col-large stm-c-sku">${skuHtml}</td>` +
+            `<td class="col-auto stm-c-qty cell-numeric">${escapeHtml(String(it.reqQty))}</td>` +
+            `<td class="col-auto stm-c-qty cell-numeric">${escapeHtml(String(it.outQty))}</td>` +
+            `<td class="col-auto stm-c-qty cell-numeric">${escapeHtml(String(it.inQty))}</td>` +
+            `<td class="col-auto stm-c-amount cell-numeric">${escapeHtml(it.totalAmount)}</td>` +
+            // outer 등록 정보 — first row 만 콘텐츠 (등록자 / 등록일시 두 컬럼)
+            `<td class="col-auto stm-c-user${oCls}">${userCnt}</td>` +
+            `<td class="col-auto stm-c-regdate${oCls}">${regDateCnt}</td>` +
+            // 우측 빈 공간 흡수
+            '<td class="col-spacer" aria-hidden="true"></td>' +
+          '</tr>';
+      });
+    });
+    return html;
+  }
+
+  // 초기 렌더 — collapsed
+  let _stmExpanded = false;
+  document.getElementById('stm-tbody').innerHTML = rowsToHtml(ROWS, _stmExpanded);
+
+  // ----- SCM Table 인터랙션 init -----
+  // data-scm-frozen="3" → 등록번호/이동사유/체크박스 가 frozen.
+  // 매 <tr> 가 동일 leaf 개수 (13개 + spacer) 라 SCMTable.init 의 child-index 기반
+  // frozen-class 자동 재할당이 정상 동작 (rowspan 패턴은 자동 재할당과 충돌하므로 사용 X).
+  if (window.SCMTable) {
+    try { window.SCMTable.init({ root: document }); } catch (e) { console.warn('SCMTable init failed:', e); }
+  }
+  if (window.SCM && SCM.tableSort) SCM.tableSort.mount({ tableSelector: '.mp-table-scroll .mp-table' });
+  if (window.SCM && SCM.columnMoreMenu) SCM.columnMoreMenu.mount({ tableSelector: '.mp-table-scroll .mp-table' });
+  if (window.SCM && SCM.columnFilterPopover) SCM.columnFilterPopover.mount({ tableSelector: '.mp-table-scroll .mp-table' });
+
+  // stats-bar 전체 N 동기화
+  (function syncTotal() {
+    const numEl = document.querySelector('.scm-stats-bar .scm-stat__num');
+    if (numEl) numEl.textContent = String(ROWS.length);
+  })();
+
+  // 안전망 — scroll lock 잔여 해제
+  if (window.SCM && SCM.scrollLock && SCM.scrollLock.reset) {
+    try { SCM.scrollLock.reset(); } catch (e) {}
+  }
+  document.documentElement.style.overflow = '';
+  document.documentElement.style.paddingRight = '';
+  document.body.style.overflow = '';
+  document.body.style.paddingRight = '';
+
+  // sticky 변수 fallback
+  (function syncStickyVarsFallback() {
+    const root = document.documentElement;
+    const fb = document.getElementById('filter-bar');
+    const sb = document.querySelector('.scm-stats-bar');
+    if (fb) root.style.setProperty('--scm-sticky-filter', fb.offsetHeight + 'px');
+    if (sb) root.style.setProperty('--scm-sticky-stats',  sb.offsetHeight + 'px');
+  })();
+
+  if (!window.SCM) return;
+
+  // ----- 미반납 토글 -----
+  const toggle = document.getElementById('stm-unreturned-toggle');
+  if (toggle) {
+    toggle.addEventListener('click', () => {
+      const cur = toggle.getAttribute('aria-pressed') === 'true';
+      toggle.setAttribute('aria-pressed', cur ? 'false' : 'true');
+      if (SCM.toast) {
+        SCM.toast.show({
+          variant: 'info',
+          title: cur ? '미반납 건 보기 해제' : '미반납 건 보기 활성',
+          desc: cur ? '전체 목록 표시' : '미반납 건만 필터 적용',
+        });
+      }
+    });
+  }
+
+  // ----- 신규 등록 버튼 — 데모용 토스트 -----
+  const regBtn = document.getElementById('stm-register-btn');
+  if (regBtn) regBtn.addEventListener('click', () => {
+    if (SCM.toast) SCM.toast.show({ variant: 'info', title: '신규 등록', desc: '재고이동 등록 화면으로 이동합니다.' });
+  });
+
+  // ----- 이동번호 펼치기 toggle — DOM 자체를 재구성 (colspan / leaf / body cell 일관) -----
+  // collapsed → moveno-head colspan=1, row2 leaf 1개, body 14 cell.
+  // expanded  → moveno-head colspan=3, row2 leaf 3개, body 16 cell.
+  const movenoToggle = document.getElementById('stm-moveno-toggle');
+  const movenoHead   = document.getElementById('stm-moveno-head');
+  const leafRow      = document.getElementById('stm-leaf-row');
+  const stmTbody     = document.getElementById('stm-tbody');
+  if (movenoToggle && movenoHead && leafRow && stmTbody) {
+    movenoToggle.setAttribute('aria-expanded', 'false');
+    movenoToggle.addEventListener('click', () => {
+      const wasExpanded = movenoToggle.getAttribute('aria-expanded') === 'true';
+      const willExpand = !wasExpanded;
+      _stmExpanded = willExpand;
+      movenoToggle.setAttribute('aria-expanded', willExpand ? 'true' : 'false');
+      // 라벨 갱신
+      const label = movenoToggle.querySelector('.stm-moveno-toggle__label');
+      if (label) label.textContent = willExpand ? '접기' : '펼치기';
+      // thead row1 group cell colspan
+      if (willExpand) movenoHead.setAttribute('colspan', '3');
+      else            movenoHead.removeAttribute('colspan');
+      // thead row2 leaves
+      if (willExpand) {
+        leafRow.innerHTML =
+          '<th class="col-auto stm-c-moveno">이동번호</th>' +
+          '<th class="col-auto stm-c-outno">출고번호</th>' +
+          '<th class="col-auto stm-c-inno">입고번호</th>';
+      } else {
+        leafRow.innerHTML = '<th class="col-auto stm-c-moveno">이동번호</th>';
+      }
+      // tbody 재구성
+      stmTbody.innerHTML = rowsToHtml(ROWS, willExpand);
+      // sticky thead 재구성 — scm-table.js 의 rebuild() 는 sticky 컨테이너 innerHTML 을
+      // 비우면서 thead 자체를 파괴하는 버그가 있어 사용 불가.
+      // 우회: thead 를 원래 origTable 로 되돌리고 colgroup 제거 후 inline 스타일 클리어,
+      //       그 다음 init 재호출 → setupStickyThead 가 새 thead 기준으로 폭 재측정.
+      (function reinitStmTable() {
+        const tbl  = document.getElementById('stm-table');
+        const host = tbl && tbl.closest('.mp-table-host');
+        if (!tbl || !host) return;
+        const stickyInner = host.querySelector('.mp-thead-sticky .mp-thead-scroll');
+        // 1) sticky 안에 옮겨진 thead 를 origTable 로 복귀
+        if (stickyInner) {
+          const stickyThead = stickyInner.querySelector('thead');
+          if (stickyThead) {
+            const tbody = tbl.querySelector('tbody');
+            if (tbody) tbl.insertBefore(stickyThead, tbody);
+            else       tbl.appendChild(stickyThead);
+          }
+          stickyInner.innerHTML = '';
+        }
+        // 2) 이전 setup 이 추가한 colgroup 제거 (새 컬럼 개수로 재생성됨)
+        const cg = tbl.querySelector(':scope > colgroup');
+        if (cg) cg.remove();
+        // 3) inline 스타일 (table-layout / width) 클리어
+        tbl.style.tableLayout = '';
+        tbl.style.width = '';
+        tbl.style.minWidth = '';
+        // 4) init flag 리셋 후 재init
+        tbl.dataset.scmInited = '';
+        if (window.SCMTable) {
+          try { window.SCMTable.init({ root: document }); } catch (e) { console.warn('SCMTable re-init failed:', e); }
+        }
+      })();
+    });
+  }
+
+  // ----- 이동 상세 drawer (side-drawer 베이스) -----
+  // 이동번호 link 클릭 → drawer open + 헤더/카드/테이블 데이터 inject.
+  const _stmDrawer = (function initStmDrawer() {
+    const drawer  = document.getElementById('stm-drawer');
+    const backdrop = document.getElementById('stm-drawer-backdrop');
+    const closeBtn= document.getElementById('stm-drawer-close-btn');
+    if (!drawer || !SCM.sideDrawer) return null;
+    const dr = SCM.sideDrawer.mount(drawer, { backdrop: backdrop });
+    if (closeBtn) closeBtn.addEventListener('click', () => dr.close());
+    return dr;
+  })();
+
+  // ----- 카드 row 더 보기 button — overflow 시 노출 + 클릭 시 가로 스크롤 -----
+  (function initStmCardsMore() {
+    const wrap = document.getElementById('stm-drawer-cards-wrap');
+    const cards = document.getElementById('stm-drawer-cards');
+    const moreBtn = document.getElementById('stm-drawer-cards-more');
+    if (!wrap || !cards || !moreBtn) return;
+
+    // overflow 측정 — drawer open 후 / resize 시 호출
+    function syncOverflowState() {
+      const overflow = cards.scrollWidth > cards.clientWidth + 1;
+      wrap.classList.toggle('has-overflow', overflow);
+      const atEnd = cards.scrollLeft + cards.clientWidth >= cards.scrollWidth - 1;
+      wrap.classList.toggle('is-end', atEnd);
+      moreBtn.classList.toggle('is-end', atEnd);
+    }
+    cards.addEventListener('scroll', syncOverflowState, { passive: true });
+    window.addEventListener('resize', syncOverflowState);
+    // drawer open 시점에 measure 가능하도록 외부 노출
+    window._stmSyncCardsOverflow = syncOverflowState;
+
+    // 클릭 — atEnd 면 처음으로, 아니면 한 카드 폭만큼 우측 스크롤
+    moreBtn.addEventListener('click', () => {
+      const atEnd = wrap.classList.contains('is-end');
+      if (atEnd) {
+        cards.scrollTo({ left: 0, behavior: 'smooth' });
+      } else {
+        cards.scrollBy({ left: 280, behavior: 'smooth' });
+      }
+    });
+  })();
+
+  // 클릭한 이동번호의 row context (등록 + item) 찾기.
+  function _stmFindContext(moveNo) {
+    for (const r of ROWS) {
+      for (const it of r.items) {
+        if (it.moveNo === moveNo) return { r, it };
+      }
+    }
+    return null;
+  }
+
+  // 상세 테이블 데모 row 생성 — 실제 API 가 아닐 시 클릭한 item 의 정보를 기반으로 6 row 생성.
+  function _stmBuildDetailRows(ctx) {
+    if (!ctx) return [];
+    const { r, it } = ctx;
+    const baseStatuses = (it.status === '출고완료' || it.status === '입고완료')
+      ? ['출고취소', '출고취소', '출고취소', '출고완료', '출고완료', '출고완료']
+      : Array(6).fill(it.status);
+    return baseStatuses.map((status, i) => ({
+      no: i + 1,
+      name: '스몰 소프트 나파 크루아상 숄더백 - 다크 초콜릿 / XL',
+      options: i === 0 ? ['Black', 'Blue'] : ['Black'],
+      status,
+      barcode: '880K/13029/EFGH',
+      uid: '8845608',
+      purchaseType: '일반매입',
+      outNo: status === '출고대기' ? '-' : (it.outNo || '-'),
+      inNo: status === '입고완료' ? (it.inNo || '-') : '-',
+      reqQty: i === 0 ? 1 : (i === 1 ? 1 : 21),
+      outQty: status === '출고대기' ? '-' : (status === '출고취소' ? '-' : '-'),
+      inQty: '-',
+      cancelReason: status === '출고취소' ? '재고가 부족합니다.' : '',
+    }));
+  }
+
+  const escDash = (v) => (v == null || v === '' || v === '-')
+    ? '<span class="stm-drawer__dash">-</span>'
+    : escapeHtml(v);
+
+  function _stmRenderDrawerTable(detailRows) {
+    const tbody = document.getElementById('stm-drawer-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = detailRows.map((d) => {
+      const statusVar = STATUS_CHIP[d.status] || 'waiting';
+      const optChips = (d.options || []).map(o =>
+        `<span class="stm-drawer__opt-chip">${escapeHtml(o)}</span>`
+      ).join('');
+      return (
+        '<tr>' +
+          `<td class="col-auto col-frozen-1">${d.no}</td>` +
+          '<td class="col-large col-frozen-2">' +
+            '<div class="stm-drawer__sku-cell">' +
+              '<div class="stm-drawer__sku-thumb"></div>' +
+              `<div class="stm-drawer__sku-name">${escapeHtml(d.name)}</div>` +
+            '</div>' +
+          '</td>' +
+          `<td class="col-auto col-frozen-3"><span class="stm-drawer__opt-chips">${optChips}</span></td>` +
+          `<td class="col-auto col-frozen-4 col-frozen-last"><span class="scm-status-chip scm-status-chip--${statusVar}">${escapeHtml(d.status)}</span></td>` +
+          `<td class="col-auto">${escDash(d.barcode)}</td>` +
+          `<td class="col-auto">${escDash(d.uid)}</td>` +
+          `<td class="col-auto">${escDash(d.purchaseType)}</td>` +
+          `<td class="col-auto">${escDash(d.outNo)}</td>` +
+          `<td class="col-auto">${escDash(d.inNo)}</td>` +
+          `<td class="col-auto cell-numeric">${escDash(d.reqQty)}</td>` +
+          `<td class="col-auto cell-numeric">${escDash(d.outQty)}</td>` +
+          `<td class="col-auto cell-numeric">${escDash(d.inQty)}</td>` +
+          `<td class="col-auto">${escDash(d.cancelReason)}</td>` +
+        '</tr>'
+      );
+    }).join('');
+    const cntEl = document.getElementById('stm-drawer-total-count');
+    if (cntEl) cntEl.textContent = String(detailRows.length);
+  }
+
+  function _stmOpenDrawer(moveNo) {
+    if (!_stmDrawer) return;
+    const ctx = _stmFindContext(moveNo);
+    if (!ctx) return;
+    const { r, it } = ctx;
+
+    // 헤더 — 이동번호 + 상태 chip + 메타 (자동승인 | 사유 | desc | 등록자 | 일시)
+    document.getElementById('stm-drawer-title-code').textContent = it.moveNo;
+    const chipVar = STATUS_CHIP[it.status] || 'waiting';
+    const chipEl = document.getElementById('stm-drawer-title-chip');
+    if (chipEl) {
+      chipEl.className = `stm-drawer__title-chip scm-status-chip scm-status-chip--${chipVar}`;
+      chipEl.textContent = it.status;
+    }
+    const metaEl = document.getElementById('stm-drawer-meta');
+    if (metaEl) {
+      const metaItems = [r.auto, r.reasonTitle, r.reasonDesc, r.author, r.time].filter(Boolean);
+      metaEl.innerHTML = metaItems.map((m, i) =>
+        (i > 0 ? '<span class="stm-drawer__meta-divider"></span>' : '') +
+        `<span class="stm-drawer__meta-item">${escapeHtml(m)}</span>`
+      ).join('');
+    }
+    // 출/입고 번호 카드
+    document.getElementById('stm-drawer-outno').textContent = it.outNo || '-';
+    document.getElementById('stm-drawer-inno').textContent  = it.inNo  || '-';
+    // 수량 카드
+    document.getElementById('stm-drawer-req-qty').textContent = String(it.reqQty);
+    document.getElementById('stm-drawer-out-qty').textContent = String(it.outQty);
+    document.getElementById('stm-drawer-in-qty').textContent  = String(it.inQty);
+    // 총액 카드
+    document.getElementById('stm-drawer-total').textContent = it.totalAmount;
+    // 경로 카드 — from/to 텍스트만 일단 교체. 주소는 더미 유지.
+    document.getElementById('stm-drawer-from-name').textContent = it.from;
+    const toNameEl = document.getElementById('stm-drawer-to-name');
+    if (toNameEl) {
+      const toTag = it.overseaTag ? `<span class="stm-tag-mini">${escapeHtml(it.overseaTag)}</span>` : '';
+      toNameEl.innerHTML = `<span>${escapeHtml(it.to)}</span> ${toTag}`;
+    }
+    // 상세 테이블
+    _stmRenderDrawerTable(_stmBuildDetailRows(ctx));
+
+    // 입고 취소 사유 카드 — 출고취소 / 입고취소 case 만 노출
+    const cancelCard = document.getElementById('stm-drawer-card-cancel');
+    if (cancelCard) {
+      const isCancel = it.status === '출고취소' || it.status === '입고취소';
+      cancelCard.hidden = !isCancel;
+    }
+
+    _stmDrawer.open();
+    // 카드 row 가로 스크롤 가능 상태 측정 (drawer 가 화면에 올라온 후)
+    requestAnimationFrame(() => {
+      if (typeof window._stmSyncCardsOverflow === 'function') {
+        window._stmSyncCardsOverflow();
+      }
+    });
+  }
+
+  // 이동번호 셀 전체 클릭 → drawer open (link 텍스트만 아니라 셀 어디든)
+  document.getElementById('stm-tbody').addEventListener('click', (e) => {
+    const cell = e.target.closest('td.stm-c-moveno');
+    if (!cell) return;
+    const link = cell.querySelector('.scm-code-link');
+    if (!link) return;
+    e.preventDefault();
+    const moveNo = (link.textContent || '').trim();
+    _stmOpenDrawer(moveNo);
+  });
+
+  // ----- 필터 popover (period 만 datepicker — 나머진 placeholder) -----
+  const EXTRA_REGISTRY = {
+    period: { mode: 'datepicker', selectedPresetId: 'w1', dpMode: 'range' },
+    moveNo:      { mode: 'codeinput' },
+    origin:      { mode: 'multi', options: [
+      { id:'all', label:'전체', selected:true },
+      { id:'o1',  label:'여주1-무신사-오프라인',     selected:false },
+      { id:'o2',  label:'글로벌 센터(JP1)',             selected:false },
+      { id:'o3',  label:'성수 대림창고',                 selected:false },
+    ]},
+    destination: { mode: 'multi', options: [
+      { id:'all', label:'전체', selected:true },
+      { id:'d1',  label:'무신사 스토어 강남',            selected:false },
+      { id:'d2',  label:'무신사 마케팅팀',                selected:false },
+      { id:'d3',  label:'무신사뷰티 콘텐츠팀',           selected:false },
+      { id:'d4',  label:'무신사 스탠다드 포토팀',        selected:false },
+    ]},
+    author: { mode: 'multi', options: [
+      { id:'all', label:'전체',                       selected:true  },
+      { id:'a1',  label:'정이삭(M2025012204)',        selected:false },
+      { id:'a2',  label:'박지수(M2025012205)',        selected:false },
+      { id:'a3',  label:'홍길동(M2025012206)',        selected:false },
+      { id:'a4',  label:'김민지(M2025012207)',        selected:false },
+    ]},
+    reason: { mode: 'single', options: [
+      { id:'all', label:'전체',                                              selected:true  },
+      { id:'r1',  label:'재고보충',                                          selected:false },
+      { id:'r2',  label:'MFS 물류중앙화 (입고 → 물류센터 → 매장)',          selected:false },
+      { id:'r3',  label:'촬영용 반출',                                       selected:false },
+      { id:'r4',  label:'마케팅 시딩, 증정용 반출',                          selected:false },
+    ]},
+    uidBarcode:  { mode: 'codeinput' },
+    moveStatus: { mode: 'single', options: [
+      { id:'all', label:'전체',     selected:true  },
+      { id:'s1',  label:'출고대기', selected:false },
+      { id:'s2',  label:'출고완료', selected:false },
+      { id:'s3',  label:'입고대기', selected:false },
+      { id:'s4',  label:'입고완료', selected:false },
+      { id:'s5',  label:'출고취소', selected:false },
+    ]},
+    reqStatus: { mode: 'single', options: [
+      { id:'all', label:'전체',     selected:true  },
+      { id:'q1',  label:'자동승인', selected:false },
+      { id:'q2',  label:'검토중',   selected:false },
+      { id:'q3',  label:'반려',     selected:false },
+    ]},
+  };
+  if (SCM.filterPopoverModes) {
+    SCM.filterPopoverModes.init({
+      rootEl: null,
+      filterBarEl: document.getElementById('filter-bar'),
+      extraRegistry: EXTRA_REGISTRY,
+      onSearch: () => {
+        if (SCM.toast) SCM.toast.show({ variant: 'info', title: '검색 완료', desc: `${ROWS.length}건 조회되었습니다.` });
+      },
+      onReset: () => {
+        if (SCM.toast) SCM.toast.show({ variant: 'info', title: '필터 초기화 완료' });
+      },
+    });
+  }
+
+  // filter-bar overflow / drawer 자동 mount 는 scm-shell.js 가 처리.
+})();
+</script>
+</body>
+</html>
