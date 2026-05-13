@@ -45,28 +45,6 @@
     </a>
   </div>
 
-  <!-- 즐겨찾기 — OTB / 위탁 상품 입고 현황 백업 경로. 일반 캐노니컬 L1 으로
-       동작 — 사용자 hide/delete/이동 모두 자유롭게 가능. -->
-  <div class="scm-lnb-item is-open" data-key="shortcut">
-    <button class="scm-lnb-row" type="button" data-nav-toggle>
-      <span class="scm-lnb-icon">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 3 L14.5 9 L21 9.5 L16 13.5 L17.5 20 L12 16.5 L6.5 20 L8 13.5 L3 9.5 L9.5 9 Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="none"/>
-        </svg>
-      </span>
-      <span class="scm-lnb-label">즐겨찾기</span>
-      <span class="scm-lnb-chev">
-        <svg viewBox="0 0 16 16" aria-hidden="true">
-          <path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-        </svg>
-      </span>
-    </button>
-    <div class="scm-lnb-l2-list">
-      <a class="scm-lnb-l2" href="otb-budget.html" data-key="fav-otb"><span class="scm-lnb-l2-text">OTB 예산 계획</span></a>
-      <a class="scm-lnb-l2" href="product-arrival-status.html" data-key="fav-arrival"><span class="scm-lnb-l2-text">위탁 상품 입고 현황</span></a>
-    </div>
-  </div>
-
   <!-- 스토어 -->
   <div class="scm-lnb-item is-open" data-key="store">
     <button class="scm-lnb-row" type="button" data-nav-toggle>
@@ -131,6 +109,29 @@
     <div class="scm-lnb-l2-list">
       <a class="scm-lnb-l2" href="otb-budget.html" data-key="otb-budget"><span class="scm-lnb-l2-text">OTB 예산 관리</span></a>
       <a class="scm-lnb-l2" href="product-arrival-status.html" data-key="product-arrival-status"><span class="scm-lnb-l2-text">위탁 상품 입고 현황</span></a>
+    </div>
+  </div>
+
+  <!-- 발주/입고 관리 (v2) — 사용자가 캐노니컬 'order' L1 을 deleted 한 상태라
+       새 키 'order-v2' 로 만들어 우회. 사용자 localStorage 의 hidden/deleted
+       리스트에 절대 매칭 안 됨 (새 키). 사용자가 명시적으로 hide 안 한 한 노출. -->
+  <div class="scm-lnb-item is-open" data-key="order-v2">
+    <button class="scm-lnb-row" type="button" data-nav-toggle>
+      <span class="scm-lnb-icon">
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path fill="currentColor" d="M16.6666 10.8334L17.1616 10.3384C16.8883 10.065 16.445 10.065 16.1717 10.3384L16.6666 10.8334ZM11.7019 15.7981L11.2069 15.3031L11.093 15.4171L11.0403 15.5694L11.7019 15.7981ZM18.4344 12.6011L18.9294 13.0961C19.0607 12.9648 19.1344 12.7868 19.1344 12.6011C19.1344 12.4155 19.0607 12.2374 18.9294 12.1062L18.4344 12.6011ZM13.4697 17.5658L13.6984 18.2274L13.8507 18.1748L13.9646 18.0608L13.4697 17.5658ZM10.7679 18.4998L10.1064 18.2711C10.0188 18.5243 10.0835 18.8053 10.273 18.9948C10.4624 19.1842 10.7434 19.2489 10.9966 19.1614L10.7679 18.4998ZM6.19046 5.55H5.49046V6.95H6.19046V5.55ZM10.4166 6.95H11.1166V5.55H10.4166V6.95ZM8.33331 18.2H9.03331V16.8H8.33331V18.2ZM15.9666 8.33333V9.03333H17.3666V8.33333H15.9666ZM6.19046 8.83125H5.49046V10.2312H6.19046V8.83125ZM13.3333 10.2312H14.0333V8.83125H13.3333V10.2312ZM16.6666 10.8334L16.1717 10.3384L11.2069 15.3031L11.7019 15.7981L12.1969 16.2931L17.1616 11.3284L16.6666 10.8334ZM16.6666 10.8334L16.1717 11.3284L17.9394 13.0961L18.4344 12.6011L18.9294 12.1062L17.1616 10.3384L16.6666 10.8334ZM18.4344 12.6011L17.9394 12.1062L12.9747 17.0709L13.4697 17.5658L13.9646 18.0608L18.9294 13.0961L18.4344 12.6011ZM13.4697 17.5658L13.241 16.9043L10.5392 17.8382L10.7679 18.4998L10.9966 19.1614L13.6984 18.2274L13.4697 17.5658ZM10.7679 18.4998L11.4295 18.7285L12.3635 16.0268L11.7019 15.7981L11.0403 15.5694L10.1064 18.2711L10.7679 18.4998ZM16.3876 2.5V1.8H3.6124V2.5V3.2H16.3876V2.5ZM3.33331 2.78125H2.63331V17.2188H3.33331H4.03331V2.78125H3.33331ZM3.33331 17.2188H2.63331C2.63331 17.771 3.08507 18.2 3.61903 18.2V17.5V16.8C3.8374 16.8 4.03331 16.9771 4.03331 17.2188H3.33331ZM3.6124 2.5V1.8C3.05693 1.8 2.63331 2.25048 2.63331 2.78125H3.33331H4.03331C4.03331 3.00136 3.85227 3.2 3.6124 3.2V2.5ZM16.6666 2.78125H17.3666C17.3666 2.25048 16.943 1.8 16.3876 1.8V2.5V3.2C16.1477 3.2 15.9666 3.00136 15.9666 2.78125H16.6666ZM6.19046 6.25V6.95H10.4166V6.25V5.55H6.19046V6.25ZM8.33331 17.5V16.8H3.61903V17.5V18.2H8.33331V17.5ZM16.6666 8.33333H17.3666V2.78125H16.6666H15.9666V8.33333H16.6666ZM6.19046 9.53125V10.2312H13.3333V9.53125V8.83125H6.19046V9.53125Z"/>
+        </svg>
+      </span>
+      <span class="scm-lnb-label">발주/입고 관리</span>
+      <span class="scm-lnb-chev">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+    </button>
+    <div class="scm-lnb-l2-list">
+      <a class="scm-lnb-l2" href="otb-budget.html" data-key="otb-v2"><span class="scm-lnb-l2-text">OTB 예산 계획</span></a>
+      <a class="scm-lnb-l2" href="product-arrival-status.html" data-key="arrival-v2"><span class="scm-lnb-l2-text">위탁 상품 입고 현황</span></a>
     </div>
   </div>
 
