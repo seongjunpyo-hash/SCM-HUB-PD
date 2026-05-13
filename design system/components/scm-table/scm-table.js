@@ -311,6 +311,8 @@ function setupStickyThead(root = document, opts = {}) {
   if (!hasDataRow && !origColgroupExisting) return null;
 
   // 1) 측정 — 자연 폭. col-spacer 는 자체 width:100% 로 잠긴 상태라 측정값이 부정확하므로 0 으로 처리.
+  //    body 폭 + header 폭 둘 다 측정해서 큰 쪽 사용 — 헤더 (텍스트 + sort/filter 아이콘 reserved
+  //    영역) 가 body 보다 넓으면 header 기준으로 컬럼 auto-fit. 반대로 body 가 더 넓으면 body 기준.
   let colWidths;
   if (hasDataRow) {
     const bodyCells = Array.from(firstBodyRow.children);
@@ -324,6 +326,16 @@ function setupStickyThead(root = document, opts = {}) {
       return w;
     });
   }
+  // header 폭 보정 — leaf th 의 실측 width 가 body 폭보다 크면 header 기준으로 확장.
+  //   col-spacer 는 비교 X.
+  const _leafForMeasure = buildLeafHeaders(origThead);
+  _leafForMeasure.forEach((th, i) => {
+    if (i >= colWidths.length) return;
+    if (th.classList && th.classList.contains('col-spacer')) return;
+    const headerW = Math.round(th.getBoundingClientRect().width);
+    if (headerW > colWidths[i]) colWidths[i] = headerW;
+  });
+
 
   // 2) 클래스 기반 보정
   const leafs = buildLeafHeaders(origThead);

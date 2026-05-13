@@ -280,27 +280,21 @@
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  /* hover 시에만 margin 부여 — 비-hover 일 때 컬럼 폭 차지 안 하도록 0. is-active 면 항상 노출. */
-  margin-left: 0;
-  vertical-align: middle;
-  transition: margin-left 0.15s ease;
-}
-.mp-table thead th:hover .th-icons,
-.mp-table thead th:has(.filter-ic.is-active) .th-icons {
+  /* 항상 8px 여백 — filter-ic 가 hover 로 보이든 안 보이든 폭은 reserve.
+     컬럼 auto width 계산 시 filter 영역까지 포함되도록. */
   margin-left: 8px;
+  vertical-align: middle;
 }
 .mp-table thead th .filter-ic {
-  /* 비-hover: width 0 으로 collapse → 컬럼 폭 차지 X. hover/active 시 16px 로 expand. */
-  width: 0; height: 16px;
+  /* width 16px 항상 차지 (column 폭 계산 시 reserve). opacity 만 hover/active 토글. */
+  width: 16px; height: 16px;
   color: #CCC;
   cursor: pointer;
   opacity: 0;
   pointer-events: none;
-  transition: color 0.15s ease, opacity 0.15s ease, width 0.15s ease;
-  overflow: hidden;
+  transition: color 0.15s ease, opacity 0.15s ease;
 }
 .mp-table thead th:hover .filter-ic {
-  width: 16px;
   opacity: 1;
   pointer-events: auto;
   color: #666;
@@ -310,7 +304,6 @@
 
 /* 컬럼 필터가 적용된 경우 — 호버 여부와 무관하게 항상 노출 + 블루 활성 */
 .mp-table thead th .filter-ic.is-active {
-  width: 16px !important;
   opacity: 1 !important;
   pointer-events: auto !important;
   color: #245EFF !important;

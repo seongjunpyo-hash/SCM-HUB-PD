@@ -2689,6 +2689,24 @@ ${jsxBody}
       const active = ver.list && ver.list.find((v) => v.id === ver.activeId);
       const a = active && active.applied;
       if (!a) return;
+      // 0) showSort / showFilter CSS — VOC 편집 모드에서 컬럼별로 토글한 정렬·필터 아이콘 노출
+      //    설정을 데모에 동기. 디폴트는 모두 숨김, showSort/showFilter 에 등록된 selector 만 노출.
+      //    main scope 로 제한해서 LNB/topbar 등 페이지 chrome 영향 X.
+      const showSort   = Array.isArray(a.showSort)   ? a.showSort   : [];
+      const showFilter = Array.isArray(a.showFilter) ? a.showFilter : [];
+      if (showSort.length || showFilter.length) {
+        const iconLines = [];
+        // 디폴트 hide — 데모 HTML 에 inline 으로 박힌 sort-ic / filter-ic 까지 일괄 숨김.
+        iconLines.push('main .mp-table thead th .sort-ic, main .mp-table thead th .scm-th-sort { display: none !important; }');
+        iconLines.push('main .mp-table thead th .filter-ic { display: none !important; }');
+        // showSort / showFilter 의 selector 들만 selective 노출.
+        showSort.forEach((s) => iconLines.push(`main .mp-table thead ${s} .sort-ic, main .mp-table thead ${s} .scm-th-sort { display: inline-block !important; }`));
+        showFilter.forEach((s) => iconLines.push(`main .mp-table thead ${s} .filter-ic { display: inline-block !important; }`));
+        const iconStyle = document.createElement('style');
+        iconStyle.id = 'scm-voc-version-icons';
+        iconStyle.textContent = iconLines.join('\n');
+        document.head.appendChild(iconStyle);
+      }
       // 1) Hide CSS — only inject if hidden has entries.
       if (Array.isArray(a.hidden) && a.hidden.length) {
         // 모든 hidden 셀렉터를 main 안으로 scope — VOC scanEditTargets 가
