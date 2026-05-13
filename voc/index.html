@@ -7694,26 +7694,12 @@
       });
       // Pass 2 — 모든 L2 entry 를 부모 L1 그룹 아래 push. mode='l1' 인데 path/name
       // 있는 옛 entry 도 여기서 children 추가 처리 (하위 호환).
-      // **Orphan 보호** — 부모 L1 그룹이 없으면 (deleted 캐노니컬 L1 / 잘못된 stale
-      // p.l1) 첫 가시 그룹에 fallback push. 그냥 skip 하면 사용자 입장에서 "L2 가
-      // 사라짐" 으로 보임 (가장 흔한 회귀 패턴).
-      const _orphanFallbackL1 = () => {
-        // 캐노니컬 첫 그룹 → 신규 L1 첫 그룹 → 그래도 없으면 새 fallback 그룹 생성
-        if (canonicalL1Order.length) return canonicalL1Order[0];
-        if (newL1Order.length) return newL1Order[0];
-        const fbKey = '__orphan';
-        if (!groups[fbKey]) {
-          groups[fbKey] = { l1: fbKey, label: '복구된 메뉴', isNewL1: true, children: [] };
-        }
-        return fbKey;
-      };
       _np.forEach((p) => {
         if (!p) return;
         if (p.mode === 'l1') {
           if (!p.path || !p.name) return;
-          const targetL1 = groups[p.l1] ? p.l1 : _orphanFallbackL1();
-          if (!groups[targetL1]) return;
-          groups[targetL1].children.push({
+          if (!groups[p.l1]) return;
+          groups[p.l1].children.push({
             key: _newpageL2Key(p),
             label: p.name,
             path: p.path,
@@ -7721,9 +7707,8 @@
             npEntry: p,
           });
         } else {
-          const targetL1 = groups[p.l1] ? p.l1 : _orphanFallbackL1();
-          if (!groups[targetL1]) return;
-          groups[targetL1].children.push({
+          if (!groups[p.l1]) return;
+          groups[p.l1].children.push({
             key: _newpageL2Key(p),
             label: p.name,
             path: p.path,
@@ -7970,22 +7955,17 @@
       const tree = _buildMenuTree();
       const sourceG = tree.find((x) => x.l1 === sourceL1);
       const targetG = tree.find((x) => x.l1 === targetL1);
-      // **sourceG / targetG 가 트리에 없어도 강제 진행** — silent return 하면
-      // 사용자가 드래그했는데 아무 반응 없어 "사라짐" 으로 오해. (이전엔 source 가
-      // deleted 캐노니컬 L1 이면 모든 cross-L1 이동이 fail.) 그룹이 없으면 빈
-      // children 가정해 menuOrder 갱신만 수행.
-      const sourceChildren = sourceG ? sourceG.children : [];
-      const targetChildren = targetG ? targetG.children : [];
+      if (!sourceG || !targetG) return;
 
       state.menuOrder = state.menuOrder || {};
       state.menuOrder.l2Order = state.menuOrder.l2Order || {};
 
       if (sourceL1 === targetL1) {
         // Same-L1 reorder — 기존 동작
-        const keys = sourceChildren.map((c) => c.key);
+        const keys = sourceG.children.map((c) => c.key);
         const fromIdx = keys.indexOf(fromKey);
-        // fromIdx < 0 여도 강제 진행 (silent fail 방지). fromKey 를 toKey 근처로 삽입.
-        if (fromIdx >= 0) keys.splice(fromIdx, 1);
+        if (fromIdx < 0) return;
+        keys.splice(fromIdx, 1);
         let toIdx = keys.indexOf(toKey);
         if (toIdx < 0) toIdx = keys.length;
         else if (!above) toIdx += 1;
@@ -7994,24 +7974,15 @@
       } else {
         // Cross-L1 — sourceL1 children 에서 제거 + targetL1 에 삽입.
         // 1) sourceL1 의 새 키 list (fromKey 제거)
-        const srcKeys = sourceChildren.map((c) => c.key).filter((k) => k !== fromKey);
+        const srcKeys = sourceG.children.map((c) => c.key).filter((k) => k !== fromKey);
         state.menuOrder.l2Order[sourceL1] = srcKeys;
         // 2) targetL1 의 새 키 list (fromKey 삽입)
-        const tgtKeys = targetChildren.map((c) => c.key);
+        const tgtKeys = targetG.children.map((c) => c.key);
         let toIdx = tgtKeys.indexOf(toKey);
         if (toIdx < 0) toIdx = tgtKeys.length;
         else if (!above) toIdx += 1;
         tgtKeys.splice(toIdx, 0, fromKey);
         state.menuOrder.l2Order[targetL1] = tgtKeys;
-        // 추가 — stale l2Order entry 정리. 다른 L1 들의 l2Order array 에 fromKey 가
-        // 남아있으면 cross-L1 reassignment 가 충돌해 사라짐 회귀. 모든 L1 에서 청소.
-        Object.keys(state.menuOrder.l2Order).forEach((k) => {
-          if (k === sourceL1 || k === targetL1) return;
-          const arr = state.menuOrder.l2Order[k];
-          if (!Array.isArray(arr)) return;
-          const i = arr.indexOf(fromKey);
-          if (i >= 0) arr.splice(i, 1);
-        });
         // 3) 신규 페이지 entry 의 부모 L1 갱신 (영구 이동)
         const moved = (state.newPages || []).find((p) => p.slug === fromKey || _newpageL2Key(p) === fromKey);
         if (moved) {
