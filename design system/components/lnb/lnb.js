@@ -109,6 +109,12 @@
     <div class="scm-lnb-l2-list">
       <a class="scm-lnb-l2" href="otb-budget.html" data-key="otb-budget"><span class="scm-lnb-l2-text">OTB 예산 관리</span></a>
       <a class="scm-lnb-l2" href="product-arrival-status.html" data-key="product-arrival-status"><span class="scm-lnb-l2-text">위탁 상품 입고 현황</span></a>
+      <!-- 신규 식별자/라벨로 추가 — 캐노니컬 otb-budget / product-arrival-status L2 가
+           사용자 localStorage 의 menu-hidden/deleted/order 상태에 묶여 사라진 케이스
+           우회. 같은 페이지를 가리키되 data-key 와 라벨을 새로 부여해 사용자
+           localStorage 와 충돌 없이 항상 노출. -->
+      <a class="scm-lnb-l2" href="otb-budget.html" data-key="otb-plan-v2"><span class="scm-lnb-l2-text">OTB 예산 계획 (신규)</span></a>
+      <a class="scm-lnb-l2" href="product-arrival-status.html" data-key="arrival-status-v2"><span class="scm-lnb-l2-text">상품 입고 현황 (신규)</span></a>
     </div>
   </div>
 
