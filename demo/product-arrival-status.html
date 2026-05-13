@@ -385,7 +385,8 @@
       gap: 2px;
     }
     .iss-notify-item__ref {
-      color: #1A1A1A; font-size: 15px; font-weight: 400; line-height: 20.4px;
+      /* 사용자 요청: 입고번호 + 외 N 전체 텍스트 회색 적용 (functional-fg-lower) */
+      color: #8A8A8A; font-size: 15px; font-weight: 400; line-height: 20.4px;
     }
     /* "확인하기" — Ghost button small.
        원래 figma spec 은 min-width 64 + padding 8/8/8/12 인데 content cell 폭 310 안에
@@ -1758,23 +1759,19 @@
       return;
     }
 
-    // 3) 코드 link (sku/uid/barcode/styleNo)
+    // 3) 코드 link (sku/uid/barcode/styleNo) — 모두 codePopover (복사용 모달) 로 통일.
+    //   이전: sku 만 sku-detail.html 로 페이지 이동 → 사용자 요청으로 다른 코드와 동일하게
+    //         popover 노출 (복사 가능, 페이지 이동 X).
     const link = e.target.closest('.scm-code-link');
     if (link) {
       const type = link.getAttribute('data-code-type') || 'sku';
-      if (type === 'sku') {
-        const txt = (link.textContent || '').trim().split(' ')[0];
-        if (txt) {
-          e.preventDefault();
-          window.location.href = 'sku-detail.html?sku=' + encodeURIComponent(txt);
-        }
-        return;
-      }
       if (SCM.codePopover) {
         e.preventDefault();
-        const TITLE = { uid:'연결된 UID번호 확인', barcode:'바코드 확인', styleNo:'스타일넘버 확인' };
-        const COPY  = { uid:'UID 복사', barcode:'바코드 복사', styleNo:'스타일넘버 복사' };
-        const txt = (link.textContent || '').trim();
+        const TITLE = { sku:'SKU번호 확인', uid:'연결된 UID번호 확인', barcode:'바코드 확인', styleNo:'스타일넘버 확인' };
+        const COPY  = { sku:'SKU번호 복사', uid:'UID 복사', barcode:'바코드 복사', styleNo:'스타일넘버 복사' };
+        // sku 셀은 "123451 외 1" 처럼 접미사가 있으므로 첫 토큰만 추출.
+        const txtRaw = (link.textContent || '').trim();
+        const txt = type === 'sku' ? txtRaw.split(' ')[0] : txtRaw;
         SCM.codePopover.open({
           title: TITLE[type] || '코드 확인',
           items: [txt],
