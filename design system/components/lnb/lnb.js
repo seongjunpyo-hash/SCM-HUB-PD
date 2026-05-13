@@ -646,6 +646,37 @@
     });
   }
 
+  // 보호 메뉴 safety net — VOC 편집모드의 어떤 override (hide / delete / reorder /
+  // newpages 의 stale entry) 가 있어도 LNB 에 OTB anchor 가 반드시 존재하도록 강제.
+  // 캐노니컬 'order' L1 이 있으면 그 안에, 없으면 visible 한 첫 L1 안에 inject.
+  function _ensureOtbAnchor(el) {
+    if (!el) return;
+    if (el.querySelector('.scm-lnb-l2[data-key="otb-budget"]')) return;  // 이미 있음
+    // 캐노니컬 'order' L1 또는 라벨이 '발주/입고 관리' 인 L1 검색
+    var targetL1 = el.querySelector('.scm-lnb-item[data-key="order"]');
+    if (!targetL1) {
+      var items = el.querySelectorAll('.scm-lnb-item');
+      for (var i = 0; i < items.length; i++) {
+        var labelEl = items[i].querySelector('.scm-lnb-label');
+        if (labelEl && labelEl.textContent && labelEl.textContent.indexOf('발주/입고') >= 0) {
+          targetL1 = items[i]; break;
+        }
+      }
+    }
+    if (!targetL1) return;       // 발주/입고 L1 자체가 없으면 포기 (다른 L1 에 박으면 더 혼란)
+    var l2List = targetL1.querySelector('.scm-lnb-l2-list');
+    if (!l2List) return;
+    var a = document.createElement('a');
+    a.className = 'scm-lnb-l2';
+    a.href = 'otb-budget.html';
+    a.dataset.key = 'otb-budget';
+    var span = document.createElement('span');
+    span.className = 'scm-lnb-l2-text';
+    span.textContent = 'OTB 예산 관리';
+    a.appendChild(span);
+    l2List.insertBefore(a, l2List.firstChild);
+  }
+
   function mount(el, opts) {
     if (!el) return null;
     // Empty placeholder → inject canonical LNB markup (단일 source).
@@ -660,6 +691,8 @@
     _applyMenuOrderToLnb(el);
     // VOC 메뉴관리에서 L1 그룹별로 아이콘을 변경한 결과 적용.
     _applyMenuIconsToLnb(el);
+    // Safety net — OTB anchor 없으면 강제 inject (어떤 override 도 무시).
+    _ensureOtbAnchor(el);
     var options = opts || {};
     var active = options.active || el.getAttribute('data-active');
     if (active) setActive(el, active);
