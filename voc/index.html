@@ -99,24 +99,8 @@
       margin: 0 4px 0 0;
     }
 
-    /* L1 menu chips (depth 1) */
-    .menu-l1 {
-      display: inline-flex; gap: 2px;
-      padding: 3px;
-      background: var(--bg); border: 1px solid var(--line);
-      border-radius: 4px;
-    }
-    .menu-l1__chip {
-      padding: 5px 12px;
-      background: transparent; color: var(--fg-mute); border: 0;
-      border-radius: 4px;
-      font-family: inherit; font-size: 13px; font-weight: 500;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.12s ease, color 0.12s ease;
-    }
-    .menu-l1__chip:hover { color: var(--fg); }
-    .menu-l1__chip.is-active { background: var(--accent); color: #fff; }
+    /* L1 menu (depth 1) — select 로 통일. .page-select 가 기본 스타일 처리. */
+    /* (이전: chip 행 — 그룹이 8개 이상되어 너무 길어져 select 로 변경) */
 
     .icon-btn {
       display: inline-flex; align-items: center; justify-content: center;
@@ -1933,7 +1917,7 @@
     <a class="topbar__back" id="topbarGoDemo" href="/demo/index.html" title="현재 편집 중인 데모 페이지로 이동">← 데모로 가기</a>
     <span class="topbar__sep"></span>
     <span class="menu-label">1뎁스</span>
-    <div class="menu-l1" id="menuL1"></div>
+    <select class="page-select menu-l1" id="menuL1"></select>
     <span class="menu-label">2뎁스</span>
     <select class="page-select menu-l2" id="l2Select"></select>
     <span class="menu-l3-wrap" id="menuL3Wrap" hidden>
@@ -2984,10 +2968,8 @@
       initNewPagePane();
       // L1 chips — canonical + 신규 L1 그룹 모두 포함 (사용자 정의 순서 적용).
       _renderTopL1Chips();
-      menuL1.addEventListener('click', (e) => {
-        const btn = e.target.closest('.menu-l1__chip');
-        if (!btn) return;
-        const target = selectL1(btn.dataset.l1);
+      menuL1.addEventListener('change', () => {
+        const target = selectL1(menuL1.value);
         if (target !== state.currentPage) navigateTo(target);
       });
       l2Select.addEventListener('change', () => navigateTo(l2Select.value));
@@ -3313,9 +3295,7 @@
       const tree = _buildMenuTree();
       const item = tree.find((m) => m.l1 === l1id) || tree[0];
       if (!item) return null;
-      menuL1.querySelectorAll('.menu-l1__chip').forEach((b) => {
-        b.classList.toggle('is-active', b.dataset.l1 === item.l1);
-      });
+      menuL1.value = item.l1;
       // canonical L2 중 hide 된 항목 제외 (신규 페이지는 항상 노출).
       const visibleChildren = item.children.filter((c) => c.isNewPage || !isMenuHidden('l2', c.key));
       l2Select.innerHTML = visibleChildren
@@ -3384,9 +3364,7 @@
       const tree = _buildMenuTree();
       const treeL1 = tree.find((g) => g.l1 === m.l1.l1) || m.l1;
       const visibleChildren = treeL1.children.filter((c) => c.isNewPage || !isMenuHidden('l2', c.key));
-      menuL1.querySelectorAll('.menu-l1__chip').forEach((b) => {
-        b.classList.toggle('is-active', b.dataset.l1 === m.l1.l1);
-      });
+      menuL1.value = m.l1.l1;
       // rebuild L2 options if the L1 group changed (paths/order)
       const currentValues = Array.from(l2Select.options).map((o) => o.value);
       const expected = visibleChildren.map((c) => c.path);
@@ -7453,8 +7431,7 @@
     // 을 다시 호출해서 L2 도 새 children 으로 재렌더.
     function _refreshTopMenuAfterNewPagesChange() {
       _renderTopL1Chips();
-      const activeChip = menuL1.querySelector('.menu-l1__chip.is-active');
-      const activeL1 = activeChip ? activeChip.dataset.l1 : null;
+      const activeL1 = menuL1.value || null;
       if (activeL1) selectL1(activeL1, state.currentPage);
       // [신규] 탭 폼의 L1 dropdown 도 신규 L1 그룹 변경 즉시 반영.
       _refreshL1Select();
@@ -7495,8 +7472,8 @@
       renderNewPageList();
       _renderTopL1Chips();
       // 메뉴 hide 가 변하면 L2 select 도 다시 그려야 함 — 현재 L1 기준으로 재선택.
-      const activeChip = menuL1.querySelector('.menu-l1__chip.is-active');
-      if (activeChip) selectL1(activeChip.dataset.l1, state.currentPage);
+      const activeL1ForHide = menuL1.value;
+      if (activeL1ForHide) selectL1(activeL1ForHide, state.currentPage);
       _refreshIframeLnb();
     }
     function isMenuHidden(level, key) {
@@ -7523,8 +7500,8 @@
       persistMenuHidden();
       renderNewPageList();
       _renderTopL1Chips();
-      const activeChip = menuL1.querySelector('.menu-l1__chip.is-active');
-      if (activeChip) selectL1(activeChip.dataset.l1, state.currentPage);
+      const activeL1Now = menuL1.value;
+      if (activeL1Now) selectL1(activeL1Now, state.currentPage);
       _refreshIframeLnb();
     }
     function isMenuDeleted(level, key) {
@@ -7645,19 +7622,16 @@
       const m = (p.path || '').match(/\/([^\/]+?)(?:\.html)?$/);
       return (m && m[1]) || p.id;
     }
-    // 상단 L1 chips 재렌더 — _buildMenuTree() 결과 사용 (canonical + 신규).
-    // 활성 chip 상태는 보존: 변경 전 .is-active 가 있던 l1 키를 다시 적용.
+    // 상단 L1 select 재렌더 — _buildMenuTree() 결과 사용 (canonical + 신규).
+    // 활성 상태는 select.value 로 보존.
     function _renderTopL1Chips() {
       if (!menuL1) return;
-      const activeL1 = (menuL1.querySelector('.menu-l1__chip.is-active') || {}).dataset
-        ? menuL1.querySelector('.menu-l1__chip.is-active').dataset.l1
-        : '';
+      const activeL1 = menuL1.value || '';
       // canonical 중 hide 된 L1 제외 (신규 그룹은 항상 노출).
       const tree = _buildMenuTree().filter((g) => g.isNewL1 || !isMenuHidden('l1', g.l1));
       menuL1.innerHTML = tree.map((g) => {
-        const cls = ['menu-l1__chip'];
-        if (g.l1 === activeL1) cls.push('is-active');
-        return `<button type="button" class="${cls.join(' ')}" data-l1="${escapeHtml(g.l1)}">${escapeHtml(g.label)}</button>`;
+        const sel = g.l1 === activeL1 ? ' selected' : '';
+        return `<option value="${escapeHtml(g.l1)}"${sel}>${escapeHtml(g.label)}</option>`;
       }).join('');
     }
     // 통합 트리 빌드 — { l1Order: [{l1, label, isNewL1, children:[...]}], }
