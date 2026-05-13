@@ -45,6 +45,28 @@
     </a>
   </div>
 
+  <!-- 즐겨찾기 — 사용자 localStorage 의 hidden/deleted 상태와 충돌 안 하는 신규 키.
+       PROTECTED 안전망으로 무조건 노출. quick-access 보다 한 단계 더 강한 보장. -->
+  <div class="scm-lnb-item is-open" data-key="shortcut">
+    <button class="scm-lnb-row" type="button" data-nav-toggle>
+      <span class="scm-lnb-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 3 L14.5 9 L21 9.5 L16 13.5 L17.5 20 L12 16.5 L6.5 20 L8 13.5 L3 9.5 L9.5 9 Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+      <span class="scm-lnb-label">즐겨찾기</span>
+      <span class="scm-lnb-chev">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+    </button>
+    <div class="scm-lnb-l2-list">
+      <a class="scm-lnb-l2" href="otb-budget.html" data-key="fav-otb"><span class="scm-lnb-l2-text">OTB 예산 계획</span></a>
+      <a class="scm-lnb-l2" href="product-arrival-status.html" data-key="fav-arrival"><span class="scm-lnb-l2-text">위탁 상품 입고 현황</span></a>
+    </div>
+  </div>
+
   <!-- 스토어 -->
   <div class="scm-lnb-item is-open" data-key="store">
     <button class="scm-lnb-row" type="button" data-nav-toggle>
@@ -109,30 +131,6 @@
     <div class="scm-lnb-l2-list">
       <a class="scm-lnb-l2" href="otb-budget.html" data-key="otb-budget"><span class="scm-lnb-l2-text">OTB 예산 관리</span></a>
       <a class="scm-lnb-l2" href="product-arrival-status.html" data-key="product-arrival-status"><span class="scm-lnb-l2-text">위탁 상품 입고 현황</span></a>
-    </div>
-  </div>
-
-  <!-- 바로가기 — 사용자 localStorage 의 menu-hidden/deleted 상태와 충돌하는 캐노니컬
-       키 (order / otb-budget / product-arrival-status) 우회 목적. data-key 가 캐노니컬
-       어디에도 없는 새 키 (quick-access) 라 사용자 localStorage 와 절대 안 겹쳐 항상
-       노출됨. 같은 페이지를 가리키되 식별자/라벨을 새로 부여. -->
-  <div class="scm-lnb-item is-open" data-key="quick-access">
-    <button class="scm-lnb-row" type="button" data-nav-toggle>
-      <span class="scm-lnb-icon">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M13 3 L4 14 H11 L10 21 L20 9 H13 Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="none"/>
-        </svg>
-      </span>
-      <span class="scm-lnb-label">바로가기</span>
-      <span class="scm-lnb-chev">
-        <svg viewBox="0 0 16 16" aria-hidden="true">
-          <path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-        </svg>
-      </span>
-    </button>
-    <div class="scm-lnb-l2-list">
-      <a class="scm-lnb-l2" href="otb-budget.html" data-key="otb-plan-v2"><span class="scm-lnb-l2-text">OTB 예산 계획</span></a>
-      <a class="scm-lnb-l2" href="product-arrival-status.html" data-key="arrival-status-v2"><span class="scm-lnb-l2-text">위탁 상품 입고 현황</span></a>
     </div>
   </div>
 
@@ -569,8 +567,8 @@
   // 'quick-access' = 발주/입고 관리 (order) L1 이 hidden 된 사용자 환경에서
   // OTB / 위탁 상품 입고 현황 페이지로 가는 backup 경로 — 사라지면 사용자가
   // 영구히 페이지 접근 불가.
-  var PROTECTED_L1 = ['quick-access'];
-  var PROTECTED_L2 = ['otb-plan-v2', 'arrival-status-v2'];
+  var PROTECTED_L1 = ['shortcut'];
+  var PROTECTED_L2 = ['fav-otb', 'fav-arrival'];
   function _selfHealProtectedKeys() {
     try {
       if (typeof localStorage === 'undefined') return;
@@ -758,6 +756,34 @@
     });
   }
 
+  // **Aggressive ensure** — PROTECTED L1 그룹이 LNB 에서 사라졌으면 강제 재주입.
+  // 캐노니컬 markup 의 해당 L1 그룹 원본을 다시 파싱해 LNB 상위 (대시보드 다음) 에
+  // prepend. 사용자 localStorage 의 hidden/deleted/order 가 어떤 상태이든 보장.
+  function _ensureProtectedL1(el) {
+    if (!el || !CANONICAL_LNB_HTML) return;
+    var missing = PROTECTED_L1.filter(function (key) {
+      return !el.querySelector('.scm-lnb-item[data-key="' + key + '"]');
+    });
+    if (!missing.length) return;
+    var tmp = document.createElement('div');
+    tmp.innerHTML = CANONICAL_LNB_HTML;
+    // 대시보드 anchor 찾아 그 다음에 삽입. 없으면 LNB 맨 위에 prepend.
+    var dashboard = el.querySelector('.scm-lnb-item[data-key="dashboard"]');
+    var insertAfter = dashboard;
+    missing.forEach(function (key) {
+      var src = tmp.querySelector('.scm-lnb-item[data-key="' + key + '"]');
+      if (!src) return;
+      var clone = src.cloneNode(true);
+      if (insertAfter && insertAfter.parentNode === el) {
+        el.insertBefore(clone, insertAfter.nextSibling);
+        insertAfter = clone;
+      } else {
+        el.insertBefore(clone, el.firstChild);
+        insertAfter = clone;
+      }
+    });
+  }
+
   function mount(el, opts) {
     if (!el) return null;
     // Empty placeholder → inject canonical LNB markup (단일 source).
@@ -772,6 +798,10 @@
     _applyMenuOrderToLnb(el);
     // VOC 메뉴관리에서 L1 그룹별로 아이콘을 변경한 결과 적용.
     _applyMenuIconsToLnb(el);
+    // **Aggressive ensure** — PROTECTED L1 그룹이 LNB 에 없으면 강제 재주입.
+    // hidden/deleted self-heal 이 실패한 케이스 (다른 탭이 변경, race condition 등)
+    // 마지막 방어선. 캐노니컬 markup 의 원본을 다시 파싱해 missing 한 그룹만 prepend.
+    _ensureProtectedL1(el);
     var options = opts || {};
     var active = options.active || el.getAttribute('data-active');
     if (active) setActive(el, active);
