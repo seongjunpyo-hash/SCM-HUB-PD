@@ -7672,22 +7672,33 @@
       //   (a) 순수 L1 그룹 (path/name 없음) — 그룹만 만들고 children 안 추가
       //   (b) 옛 entry 로 path/name 도 있는 케이스 — 그룹 + children 모두 추가
       //       (하위 호환).
+      // **2-pass 처리 필수** — 1차로 L1 entry 만 추가 (그룹 생성), 2차로 L2 entry 추가.
+      // 단일 pass 로 처리하면 L2 entry 가 array 순서상 L1 entry 보다 먼저 iterate 될 때
+      // 부모 L1 그룹이 아직 없어서 L2 가 skip 됨 → "신규 1뎁스 만들고 2뎁스 넣으면
+      // 사라짐" 회귀 발생.
       const newL1Order = [];
       const _newL1Deleted = (l1key) => isMenuDeleted('l1', l1key);
-      ((state.newPages) || []).forEach((p) => {
+      const _np = (state.newPages) || [];
+      // Pass 1 — 모든 L1 entry 먼저 그룹으로 등록
+      _np.forEach((p) => {
+        if (!p || p.mode !== 'l1') return;
+        if (_newL1Deleted(p.l1)) return;
+        if (!groups[p.l1]) {
+          groups[p.l1] = {
+            l1: p.l1, label: p.l1Label || p.l1, isNewL1: true,
+            isNewL1Entry: p,
+            children: [],
+          };
+          newL1Order.push(p.l1);
+        }
+      });
+      // Pass 2 — 모든 L2 entry 를 부모 L1 그룹 아래 push. mode='l1' 인데 path/name
+      // 있는 옛 entry 도 여기서 children 추가 처리 (하위 호환).
+      _np.forEach((p) => {
+        if (!p) return;
         if (p.mode === 'l1') {
-          if (_newL1Deleted(p.l1)) return;
-          if (!groups[p.l1]) {
-            groups[p.l1] = {
-              l1: p.l1, label: p.l1Label || p.l1, isNewL1: true,
-              isNewL1Entry: p, // 그룹 자체의 npEntry 참조 (삭제 시 사용)
-              children: [],
-            };
-            newL1Order.push(p.l1);
-          }
-          // path 가 없으면 (순수 L1 그룹) children 추가 안 함 — 사용자가 별도로
-          // mode='l2' 로 페이지 추가해야 노출.
           if (!p.path || !p.name) return;
+          if (!groups[p.l1]) return;
           groups[p.l1].children.push({
             key: _newpageL2Key(p),
             label: p.name,
@@ -7696,7 +7707,7 @@
             npEntry: p,
           });
         } else {
-          if (!groups[p.l1]) return;   // L1 모르면 skip
+          if (!groups[p.l1]) return;
           groups[p.l1].children.push({
             key: _newpageL2Key(p),
             label: p.name,

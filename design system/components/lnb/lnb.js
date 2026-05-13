@@ -398,32 +398,42 @@
       if (oa !== ob) return oa - ob;
       return (a.createdAt || 0) - (b.createdAt || 0);
     });
+    // **2-pass 처리** — 1차로 모든 L1 그룹 생성, 2차로 L2 anchor 추가.
+    // 단일 pass 면 L2 entry 가 L1 entry 보다 먼저 iterate 될 때 부모 L1 그룹이
+    // 아직 없어서 L2 가 skip 됨 → "신규 1뎁스 만들고 2뎁스 넣으면 사라짐" 버그 회귀.
+    // Pass 1 — 모든 L1 그룹 생성
     sorted.forEach(function (p) {
       if (!p) return;
-      // 이미 존재하면 (재mount 등) skip — data-voc-np-id 로 마킹.
+      if (p.mode !== 'l1') return;
+      // 이미 존재하면 skip
       if (el.querySelector('[data-voc-np-id="' + p.id + '"]')) return;
-      // 순수 L1 그룹 entry — path/name 없는 경우. 그룹만 만들고 L2 anchor 안 만듦.
-      // (사용자가 voc 에서 mode='l1' 선택 시 path/name 입력 안 받음.)
-      if (p.mode === 'l1' && (!p.path || !p.name)) {
-        var existsL1 = el.querySelector('.scm-lnb-item[data-key="' + p.l1 + '"]');
-        if (!existsL1) el.appendChild(_buildL1Group(p, ''));
+      if (el.querySelector('.scm-lnb-item[data-key="' + p.l1 + '"]')) return;
+      // 순수 L1 그룹 entry — path/name 없는 경우
+      if (!p.path || !p.name) {
+        el.appendChild(_buildL1Group(p, ''));
         return;
       }
-      if (!p.path) return;
+      // 옛 entry — path 도 있는 mode='l1' (하위 호환). 그룹만 먼저 만듦. L2 는 Pass 2 에서.
+      var key2 = ((p.path.match(/\/([^\/]+?)(?:\.html)?$/) || [])[1]) || p.id;
+      el.appendChild(_buildL1Group(p, key2));
+    });
+    // Pass 2 — L2 anchor 를 부모 L1 그룹 아래 append.
+    sorted.forEach(function (p) {
+      if (!p) return;
+      // 이미 anchor 가 존재하면 skip (재mount)
+      if (p.id && el.querySelector('.scm-lnb-l2[data-voc-np-id="' + p.id + '"]')) return;
+      if (!p.path) return;  // L1-only entry skip
       var key = ((p.path.match(/\/([^\/]+?)(?:\.html)?$/) || [])[1]) || p.id;
       if (p.mode === 'l1') {
-        // 옛 entry — path 도 있는 mode='l1' (하위 호환). 그룹 + L2 모두.
+        // 옛 entry — 그룹은 이미 Pass 1 에서 만들었으니 L2 anchor 만 추가
+        if (!p.name) return;
         var existing = el.querySelector('.scm-lnb-item[data-key="' + p.l1 + '"]');
-        if (existing) {
-          var l2List = existing.querySelector('.scm-lnb-l2-list');
-          if (l2List) l2List.appendChild(_buildL2Anchor(p, key));
-        } else {
-          el.appendChild(_buildL1Group(p, key));
-        }
+        if (!existing) return;
+        var l2List = existing.querySelector('.scm-lnb-l2-list');
+        if (l2List) l2List.appendChild(_buildL2Anchor(p, key));
       } else {
-        // 기존 L1 그룹 아래로 append
         var group = el.querySelector('.scm-lnb-item[data-key="' + p.l1 + '"]');
-        if (!group) return;   // L1 안 보이면 skip
+        if (!group) return;
         var l2 = group.querySelector('.scm-lnb-l2-list');
         if (l2) l2.appendChild(_buildL2Anchor(p, key));
       }
