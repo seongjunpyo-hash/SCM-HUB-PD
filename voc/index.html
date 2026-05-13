@@ -2942,45 +2942,6 @@
           return (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
         } catch (_) { return {}; }
       })();
-      // **PROTECTED 키 self-heal** — lnb.js 의 동일 안전망과 sync. 사용자가
-      // 실수로 hide/delete 하거나 다른 L1 으로 cross-L1 이동해도 mount 시
-      // 자동으로 정리해 LNB 와 VOC 메뉴관리 화면 모두 quick-access 위치에
-      // 복원. lnb.js 가 데모 페이지 LNB 만 self-heal 하므로 VOC 메인 페이지
-      // 의 메뉴관리 / 신규탭 dropdown 도 동일 처리 필요.
-      (function _vocSelfHealProtected() {
-        const PROTECTED_L1 = ['shortcut'];
-        const PROTECTED_L2 = ['fav-otb', 'fav-arrival'];
-        let dirtyHidden = false, dirtyDeleted = false, dirtyOrder = false;
-        if (state.menuHidden && Array.isArray(state.menuHidden.l1)) {
-          const nl = state.menuHidden.l1.filter((k) => !PROTECTED_L1.includes(k));
-          if (nl.length !== state.menuHidden.l1.length) { state.menuHidden.l1 = nl; dirtyHidden = true; }
-        }
-        if (state.menuHidden && Array.isArray(state.menuHidden.l2)) {
-          const nl = state.menuHidden.l2.filter((k) => !PROTECTED_L2.includes(k));
-          if (nl.length !== state.menuHidden.l2.length) { state.menuHidden.l2 = nl; dirtyHidden = true; }
-        }
-        if (state.menuDeleted && Array.isArray(state.menuDeleted.l1)) {
-          const nl = state.menuDeleted.l1.filter((k) => !PROTECTED_L1.includes(k));
-          if (nl.length !== state.menuDeleted.l1.length) { state.menuDeleted.l1 = nl; dirtyDeleted = true; }
-        }
-        if (state.menuDeleted && Array.isArray(state.menuDeleted.l2)) {
-          const nl = state.menuDeleted.l2.filter((k) => !PROTECTED_L2.includes(k));
-          if (nl.length !== state.menuDeleted.l2.length) { state.menuDeleted.l2 = nl; dirtyDeleted = true; }
-        }
-        if (state.menuOrder && state.menuOrder.l2Order && typeof state.menuOrder.l2Order === 'object') {
-          Object.keys(state.menuOrder.l2Order).forEach((l1key) => {
-            const arr = state.menuOrder.l2Order[l1key];
-            if (!Array.isArray(arr)) return;
-            const fil = arr.filter((k) => !PROTECTED_L2.includes(k));
-            if (fil.length !== arr.length) { state.menuOrder.l2Order[l1key] = fil; dirtyOrder = true; }
-          });
-        }
-        try {
-          if (dirtyHidden)  localStorage.setItem(MENU_HIDDEN_KEY,  JSON.stringify(state.menuHidden));
-          if (dirtyDeleted) localStorage.setItem(MENU_DELETED_KEY, JSON.stringify(state.menuDeleted));
-          if (dirtyOrder)   localStorage.setItem(MENU_ORDER_KEY,   JSON.stringify(state.menuOrder));
-        } catch (_) {}
-      })();
       // L1 그룹별 아이콘 override — { l1key: 'ic-XXX' }.
       state.menuIcons = (function () {
         try {

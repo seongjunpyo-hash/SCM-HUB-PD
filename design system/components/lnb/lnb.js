@@ -561,85 +561,19 @@
       };
     } catch (_) { return { l1: [], l2: [] }; }
   }
-  // **PROTECTED 키** — LNB 에서 절대 사라지면 안 되는 캐노니컬 안전망 키들.
-  // 사용자 localStorage 의 menu-hidden / menu-deleted 에 이 키가 있으면 자동
-  // 정리해 다시 보이게 함. 사용자가 실수로 hide/delete 해도 LNB 에 무조건 노출.
-  // 'quick-access' = 발주/입고 관리 (order) L1 이 hidden 된 사용자 환경에서
-  // OTB / 위탁 상품 입고 현황 페이지로 가는 backup 경로 — 사라지면 사용자가
-  // 영구히 페이지 접근 불가.
-  var PROTECTED_L1 = ['shortcut'];
+  // **PROTECTED L2 키** — cascade 로만 보호. 사용자가 직접 hide/delete 한 의도는
+  // 존중 (= 사라진 채로). 부모 L1 이 hidden 되어 anchor 가 LNB 어디에도 없으면
+  // 첫 가시 L1 에 자동 복원해 사용자가 페이지에 영구 접근 못하는 케이스 차단.
+  // cross-L1 이동도 자유롭게 허용 — 사용자 컨트롤 우선.
   var PROTECTED_L2 = ['fav-otb', 'fav-arrival'];
-  function _selfHealProtectedKeys() {
-    try {
-      if (typeof localStorage === 'undefined') return;
-      // hidden 정리
-      var hRaw = localStorage.getItem('scm:voc:menu-hidden:v1');
-      if (hRaw) {
-        var h = JSON.parse(hRaw);
-        if (h && typeof h === 'object' && !Array.isArray(h)) {
-          var changed = false;
-          if (Array.isArray(h.l1)) {
-            var newL1 = h.l1.filter(function (k) { return PROTECTED_L1.indexOf(k) === -1; });
-            if (newL1.length !== h.l1.length) { h.l1 = newL1; changed = true; }
-          }
-          if (Array.isArray(h.l2)) {
-            var newL2 = h.l2.filter(function (k) { return PROTECTED_L2.indexOf(k) === -1; });
-            if (newL2.length !== h.l2.length) { h.l2 = newL2; changed = true; }
-          }
-          if (changed) localStorage.setItem('scm:voc:menu-hidden:v1', JSON.stringify(h));
-        }
-      }
-      // deleted 정리
-      var dRaw = localStorage.getItem('scm:voc:menu-deleted:v1');
-      if (dRaw) {
-        var d = JSON.parse(dRaw);
-        if (d && typeof d === 'object' && !Array.isArray(d)) {
-          var changed2 = false;
-          if (Array.isArray(d.l1)) {
-            var newDL1 = d.l1.filter(function (k) { return PROTECTED_L1.indexOf(k) === -1; });
-            if (newDL1.length !== d.l1.length) { d.l1 = newDL1; changed2 = true; }
-          }
-          if (Array.isArray(d.l2)) {
-            var newDL2 = d.l2.filter(function (k) { return PROTECTED_L2.indexOf(k) === -1; });
-            if (newDL2.length !== d.l2.length) { d.l2 = newDL2; changed2 = true; }
-          }
-          if (changed2) localStorage.setItem('scm:voc:menu-deleted:v1', JSON.stringify(d));
-        }
-      }
-      // menu-order 정리 — PROTECTED_L2 가 다른 L1 으로 reassign 되어 그쪽 L1
-      // 이 hidden 일 때 같이 사라지는 케이스 차단. 모든 l2Order array 에서
-      // PROTECTED_L2 키 제거 → 캐노니컬 (quick-access) 자연 위치로 복귀.
-      var oRaw = localStorage.getItem('scm:voc:menu-order:v1');
-      if (oRaw) {
-        var o = JSON.parse(oRaw);
-        if (o && typeof o === 'object' && !Array.isArray(o)) {
-          var changed3 = false;
-          if (o.l2Order && typeof o.l2Order === 'object') {
-            Object.keys(o.l2Order).forEach(function (l1key) {
-              var arr = o.l2Order[l1key];
-              if (!Array.isArray(arr)) return;
-              var filtered = arr.filter(function (k) { return PROTECTED_L2.indexOf(k) === -1; });
-              if (filtered.length !== arr.length) { o.l2Order[l1key] = filtered; changed3 = true; }
-            });
-          }
-          if (changed3) localStorage.setItem('scm:voc:menu-order:v1', JSON.stringify(o));
-        }
-      }
-    } catch (_) {}
-  }
   function _applyMenuHiddenToLnb(el) {
     if (!el) return;
-    // mount 시 자동으로 PROTECTED 키를 hidden/deleted 리스트에서 제거. 사용자가
-    // 다른 페이지에서 실수로 hide/delete 한 경우 reload 만으로 자동 복원.
-    _selfHealProtectedKeys();
     // hidden 과 deleted 를 합쳐 처리 — 둘 다 LNB 에서 제거. 차이는 voc UI
     // 토글 가능 여부 (deleted 는 voc 에서도 안 보이게 _buildMenuTree 에서 제외).
     var hidden = _loadMenuHidden();
     var deleted = _loadMenuDeleted();
-    // PROTECTED 키는 합친 리스트에서 한번 더 필터 — 위 _selfHealProtectedKeys 가
-    // 실패하거나 다른 탭이 다시 hide 했을 때를 대비한 2차 방어.
-    var l1All = hidden.l1.concat(deleted.l1).filter(function (k) { return PROTECTED_L1.indexOf(k) === -1; });
-    var l2All = hidden.l2.concat(deleted.l2).filter(function (k) { return PROTECTED_L2.indexOf(k) === -1; });
+    var l1All = hidden.l1.concat(deleted.l1);
+    var l2All = hidden.l2.concat(deleted.l2);
     if (l1All.length) {
       l1All.forEach(function (l1key) {
         var item = el.querySelector('.scm-lnb-item[data-key="' + l1key + '"]');
@@ -695,8 +629,6 @@
         // 옮기면 voc/_buildMenuTree 가 보여주는 위치와 어긋남.** 캐노니컬 L2
         // 는 p.l1 개념 없으므로 cross-L1 그대로 동작.
         arr.slice().reverse().forEach(function (l2key) {
-          // PROTECTED_L2 는 cross-L1 이동 차단 — 캐노니컬 quick-access 에 머무름.
-          if (PROTECTED_L2.indexOf(l2key) !== -1) return;
           var anchor = el.querySelector('.scm-lnb-l2[data-key="' + l2key + '"]');
           if (!anchor) return;
           if (anchor.parentNode !== l2List) {
@@ -756,31 +688,27 @@
     });
   }
 
-  // **Aggressive ensure** — PROTECTED L1 그룹이 LNB 에서 사라졌으면 강제 재주입.
-  // 캐노니컬 markup 의 해당 L1 그룹 원본을 다시 파싱해 LNB 상위 (대시보드 다음) 에
-  // prepend. 사용자 localStorage 의 hidden/deleted/order 가 어떤 상태이든 보장.
-  function _ensureProtectedL1(el) {
+  // **PROTECTED L2 cascade 안전망** — 사용자 직접 hide/delete 는 존중하되,
+  // 부모 L1 cascade hide 로 anchor 가 LNB 어디에도 없어진 경우만 첫 가시 L1 에
+  // 자동 복원. 사용자가 페이지 접근 영구히 못하는 케이스 차단.
+  function _ensureProtectedL2(el) {
     if (!el || !CANONICAL_LNB_HTML) return;
-    var missing = PROTECTED_L1.filter(function (key) {
-      return !el.querySelector('.scm-lnb-item[data-key="' + key + '"]');
-    });
-    if (!missing.length) return;
-    var tmp = document.createElement('div');
-    tmp.innerHTML = CANONICAL_LNB_HTML;
-    // 대시보드 anchor 찾아 그 다음에 삽입. 없으면 LNB 맨 위에 prepend.
-    var dashboard = el.querySelector('.scm-lnb-item[data-key="dashboard"]');
-    var insertAfter = dashboard;
-    missing.forEach(function (key) {
-      var src = tmp.querySelector('.scm-lnb-item[data-key="' + key + '"]');
+    var hidden = _loadMenuHidden();
+    var deleted = _loadMenuDeleted();
+    var explicit = hidden.l2.concat(deleted.l2);
+    PROTECTED_L2.forEach(function (l2key) {
+      // L2-level 명시적 hide/delete — 사용자 의도 존중, 복원 안 함.
+      if (explicit.indexOf(l2key) !== -1) return;
+      // anchor 가 LNB 어디든 있으면 OK.
+      if (el.querySelector('.scm-lnb-l2[data-key="' + l2key + '"]')) return;
+      // 없으면 캐노니컬에서 가져와 첫 가시 L1 의 l2List 에 append.
+      var tmp = document.createElement('div');
+      tmp.innerHTML = CANONICAL_LNB_HTML;
+      var src = tmp.querySelector('.scm-lnb-l2[data-key="' + l2key + '"]');
       if (!src) return;
-      var clone = src.cloneNode(true);
-      if (insertAfter && insertAfter.parentNode === el) {
-        el.insertBefore(clone, insertAfter.nextSibling);
-        insertAfter = clone;
-      } else {
-        el.insertBefore(clone, el.firstChild);
-        insertAfter = clone;
-      }
+      var firstList = el.querySelector('.scm-lnb-item .scm-lnb-l2-list');
+      if (!firstList) return;
+      firstList.appendChild(src.cloneNode(true));
     });
   }
 
@@ -798,10 +726,9 @@
     _applyMenuOrderToLnb(el);
     // VOC 메뉴관리에서 L1 그룹별로 아이콘을 변경한 결과 적용.
     _applyMenuIconsToLnb(el);
-    // **Aggressive ensure** — PROTECTED L1 그룹이 LNB 에 없으면 강제 재주입.
-    // hidden/deleted self-heal 이 실패한 케이스 (다른 탭이 변경, race condition 등)
-    // 마지막 방어선. 캐노니컬 markup 의 원본을 다시 파싱해 missing 한 그룹만 prepend.
-    _ensureProtectedL1(el);
+    // PROTECTED_L2 cascade 복원 — 부모 L1 hide 등으로 anchor 가 LNB 어디에도
+    // 없어진 케이스만 첫 가시 L1 에 자동 추가. 직접 hide/delete 는 존중.
+    _ensureProtectedL2(el);
     var options = opts || {};
     var active = options.active || el.getAttribute('data-active');
     if (active) setActive(el, active);
