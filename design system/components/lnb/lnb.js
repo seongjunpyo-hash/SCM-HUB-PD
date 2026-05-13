@@ -689,26 +689,45 @@
   }
 
   // **PROTECTED L2 cascade 안전망** — 사용자 직접 hide/delete 는 존중하되,
-  // 부모 L1 cascade hide 로 anchor 가 LNB 어디에도 없어진 경우만 첫 가시 L1 에
-  // 자동 복원. 사용자가 페이지 접근 영구히 못하는 케이스 차단.
+  // 부모 L1 cascade hide 로 anchor 가 LNB 어디에도 없어진 경우만 자동 복원.
+  // 복원 위치 우선순위: (1) menu-order.l2Order 에 명시된 L1 (사용자가 마지막에
+  // 옮긴 위치) (2) 즐겨찾기 (캐노니컬 위치) (3) 첫 가시 L1 (최후 fallback).
   function _ensureProtectedL2(el) {
     if (!el || !CANONICAL_LNB_HTML) return;
     var hidden = _loadMenuHidden();
     var deleted = _loadMenuDeleted();
     var explicit = hidden.l2.concat(deleted.l2);
+    var order = _loadMenuOrder();
+    var l2Order = (order && order.l2Order) ? order.l2Order : {};
     PROTECTED_L2.forEach(function (l2key) {
       // L2-level 명시적 hide/delete — 사용자 의도 존중, 복원 안 함.
       if (explicit.indexOf(l2key) !== -1) return;
       // anchor 가 LNB 어디든 있으면 OK.
       if (el.querySelector('.scm-lnb-l2[data-key="' + l2key + '"]')) return;
-      // 없으면 캐노니컬에서 가져와 첫 가시 L1 의 l2List 에 append.
+      // (1) l2Order 에서 이 키가 속한 L1 찾기
+      var targetList = null;
+      Object.keys(l2Order).forEach(function (l1key) {
+        if (targetList) return;
+        var arr = l2Order[l1key];
+        if (!Array.isArray(arr) || arr.indexOf(l2key) === -1) return;
+        var group = el.querySelector('.scm-lnb-item[data-key="' + l1key + '"]');
+        if (group) targetList = group.querySelector('.scm-lnb-l2-list');
+      });
+      // (2) 캐노니컬 즐겨찾기 fallback
+      if (!targetList) {
+        var fav = el.querySelector('.scm-lnb-item[data-key="shortcut"] .scm-lnb-l2-list');
+        if (fav) targetList = fav;
+      }
+      // (3) 첫 가시 L1 fallback
+      if (!targetList) {
+        targetList = el.querySelector('.scm-lnb-item .scm-lnb-l2-list');
+      }
+      if (!targetList) return;
       var tmp = document.createElement('div');
       tmp.innerHTML = CANONICAL_LNB_HTML;
       var src = tmp.querySelector('.scm-lnb-l2[data-key="' + l2key + '"]');
       if (!src) return;
-      var firstList = el.querySelector('.scm-lnb-item .scm-lnb-l2-list');
-      if (!firstList) return;
-      firstList.appendChild(src.cloneNode(true));
+      targetList.appendChild(src.cloneNode(true));
     });
   }
 
@@ -718,10 +737,13 @@
     if (el.children.length === 0 && CANONICAL_LNB_HTML) {
       el.innerHTML = CANONICAL_LNB_HTML;
     }
-    // VOC 의 [신규] 탭에서 등록한 페이지를 LNB 에 추가 (canonical 위에).
-    _applyNewPagesToLnb(el);
-    // VOC 에서 hide 한 캐노니컬 메뉴 항목 제거 (그룹 / L2 페이지).
+    // **순서 중요** — hidden 먼저, 그 다음 신규 페이지, 그 다음 order.
+    // 사용자가 캐노니컬 L1 (예: 'order') 을 deleted 하고 같은 키로 신규 L1 그룹
+    // 만든 케이스: hidden 먼저 실행해 캐노니컬 제거 후 신규 그룹 생성해야
+    // querySelector 충돌 없음. 그 후 order 가 cross-L1 이동 정확히 적용.
     _applyMenuHiddenToLnb(el);
+    // VOC 의 [신규] 탭에서 등록한 페이지를 LNB 에 추가.
+    _applyNewPagesToLnb(el);
     // 사용자가 드래그-리오더 한 메뉴 순서 적용 (canonical + 신규 모두 대상).
     _applyMenuOrderToLnb(el);
     // VOC 메뉴관리에서 L1 그룹별로 아이콘을 변경한 결과 적용.
