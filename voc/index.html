@@ -3037,9 +3037,21 @@
         // navigation path 결정 (L3 child 케이스 등 처리).
         initPath = selectL1(initL1, state.currentPage) || state.currentPage;
       } else {
-        // 옛 fallback — canonical MENU 검색 후 fallback to MENU[0]
-        const initialMatch = findMenuByPath(state.currentPage) || { l1: MENU[0], l2: MENU[0].children[0] };
-        initPath = selectL1(initialMatch.l1.l1, initialMatch.l2.path);
+        // 트리에서 currentPage 못 찾음 — 대부분 사용자가 VOC 에서 그 페이지의
+        // 부모 L1 을 hide/delete 한 케이스. **그래도 iframe 에 currentPage 를
+        // 그대로 로드** — selectL1 fallback 으로 dashboard 강제 이동하던 회귀
+        // ("OTB 페이지에서 편집 눌렀는데 대시보드로 감") 차단. 메뉴 chip /
+        // select 의 활성 표시는 안 되더라도 사용자가 의도한 페이지가 보이는 게 우선.
+        const canon = findMenuByPath(state.currentPage);
+        if (canon) {
+          // 캐노니컬에는 있는 페이지 — L1 chip 도 같이 시도 (hide 됐어도 시각적
+          // selectL1 호출은 가능, 실패하면 그대로 currentPage 유지).
+          try { initPath = selectL1(canon.l1.l1, canon.l2.path) || state.currentPage; }
+          catch (_) { initPath = state.currentPage; }
+        } else {
+          // 캐노니컬에도 없고 newpages 도 매치 X — 정말 알 수 없는 path. 그래도 일단 로드.
+          initPath = state.currentPage;
+        }
       }
       navigateTo(initPath);
 
