@@ -109,10 +109,28 @@
     <div class="scm-lnb-l2-list">
       <a class="scm-lnb-l2" href="otb-budget.html" data-key="otb-budget"><span class="scm-lnb-l2-text">OTB 예산 관리</span></a>
       <a class="scm-lnb-l2" href="product-arrival-status.html" data-key="product-arrival-status"><span class="scm-lnb-l2-text">위탁 상품 입고 현황</span></a>
-      <!-- 신규 식별자/라벨로 추가 — 캐노니컬 otb-budget / product-arrival-status L2 가
-           사용자 localStorage 의 menu-hidden/deleted/order 상태에 묶여 사라진 케이스
-           우회. 같은 페이지를 가리키되 data-key 와 라벨을 새로 부여해 사용자
-           localStorage 와 충돌 없이 항상 노출. -->
+    </div>
+  </div>
+
+  <!-- 바로가기 — 사용자 localStorage 의 menu-hidden/deleted 상태와 충돌하는 캐노니컬
+       키 (order / otb-budget / product-arrival-status) 우회 목적. data-key 가 캐노니컬
+       어디에도 없는 새 키 (quick-access) 라 사용자 localStorage 와 절대 안 겹쳐 항상
+       노출됨. 같은 페이지를 가리키되 식별자/라벨을 새로 부여. -->
+  <div class="scm-lnb-item is-open" data-key="quick-access">
+    <button class="scm-lnb-row" type="button" data-nav-toggle>
+      <span class="scm-lnb-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M13 3 L4 14 H11 L10 21 L20 9 H13 Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+      <span class="scm-lnb-label">바로가기</span>
+      <span class="scm-lnb-chev">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 10 L8 5 L13 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+    </button>
+    <div class="scm-lnb-l2-list">
       <a class="scm-lnb-l2" href="otb-budget.html" data-key="otb-plan-v2"><span class="scm-lnb-l2-text">OTB 예산 계획 (신규)</span></a>
       <a class="scm-lnb-l2" href="product-arrival-status.html" data-key="arrival-status-v2"><span class="scm-lnb-l2-text">상품 입고 현황 (신규)</span></a>
     </div>
