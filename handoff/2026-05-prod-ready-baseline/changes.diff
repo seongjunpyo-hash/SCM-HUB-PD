@@ -1,0 +1,32 @@
+--- a/src/main.tsx
++++ b/src/main.tsx
+@@ -3,6 +3,7 @@
+ import { datadogRum } from '@datadog/browser-rum'
+ import Provider from '@/provider'
+ import '@/styles/reset.css'
++import '@/styles/scm-tokens.css'
+ import { initializeDatadogUser } from '@/utils/auth'
+ import { isProd } from '@/utils/utils'
+ 
+
+--- a/src/components/tableV2/GridTableV2.tsx
++++ b/src/components/tableV2/GridTableV2.tsx
+@@ -3,6 +3,7 @@
+ import { GridOptions, ProcessCellForExportParams, ProcessDataFromClipboardParams, RowClassParams } from 'ag-grid-community'
+ import 'ag-grid-community/styles/ag-grid.css'
+ import 'ag-grid-community/styles/ag-theme-balham.css'
++import '@/styles/ag-grid-balham-overrides.css'
+ import { CellValueChangedEvent, ColDef, ColGroupDef, GetRowIdParams, IRowNode, PasteEndEvent, SelectionChangedEvent } from 'ag-grid-enterprise'
+ import { AgGridReact, AgGridReactProps } from 'ag-grid-react'
+ import cx from 'classnames'
+
+--- a/src/components/table/GridTable.tsx
++++ b/src/components/table/GridTable.tsx
+@@ -3,6 +3,7 @@
+ import { GridOptions, ProcessDataFromClipboardParams, RowClassParams } from 'ag-grid-community'
+ import 'ag-grid-community/styles/ag-grid.css'
+ import 'ag-grid-community/styles/ag-theme-balham.css'
++import '@/styles/ag-grid-balham-overrides.css'
+ import { CellValueChangedEvent, ColDef, ColGroupDef, GetRowIdParams, IRowNode, PasteEndEvent, SelectionChangedEvent } from 'ag-grid-enterprise'
+ import { AgGridReact, AgGridReactProps } from 'ag-grid-react'
+ import cx from 'classnames'

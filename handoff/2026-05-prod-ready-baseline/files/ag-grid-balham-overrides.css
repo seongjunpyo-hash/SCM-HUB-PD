@@ -1,0 +1,133 @@
+/* ============================================================
+ * AG Grid Balham 테마 — SCM Hub 디자인시스템 override
+ * ------------------------------------------------------------
+ * Production 의 AG Grid 테이블이 SCM Hub 디자인시스템 톤으로
+ * 보이도록 Balham 테마의 CSS 변수를 override.
+ *
+ * 적용:
+ *   1. AG Grid 의 기존 'ag-grid.css' / 'ag-theme-balham.css' import 후에
+ *   2. 이 파일을 추가 import 하면 끝
+ *      import 'ag-grid-community/styles/ag-grid.css';
+ *      import 'ag-grid-community/styles/ag-theme-balham.css';
+ *      import './ag-grid-balham-overrides.css';   ← 추가
+ *
+ * 효과:
+ *   · AG Grid 의 sky blue 액센트 → 모노톤 검정
+ *   · 헤더 배경 #f5f7f7 → 흰색 + 검은 1.5px 상단 보더 (demo mp-table 톤)
+ *   · 행 높이 28px → 44px (버튼/페이지 head 와 동일 리듬)
+ *   · 폰트 system → Pretendard
+ *   · 폰트 사이즈 12px → 13px (본문보다 1px 작게 — 정보 밀도 유지)
+ *   · 줄무늬 (zebra) 제거 — demo 처럼 깔끔하게
+ *
+ * 의존성: scm-tokens.css 권장 (var(--scm-*) 사용 시).
+ *         scm-tokens.css 없어도 hardcode 값 fallback 으로 동작.
+ * ============================================================ */
+
+.ag-theme-balham,
+.ag-theme-balham-dark,
+.ag-theme-balham-auto-dark {
+  /* ===== 액센트 → 모노톤 ===== */
+  --ag-balham-active-color:                #242424;                 /* sky blue 제거 */
+  --ag-checkbox-checked-color:             var(--scm-fg-default, #242424);
+  --ag-range-selection-border-color:       var(--scm-fg-default, #242424);
+  --ag-row-numbers-selected-color:         color-mix(in srgb, transparent, #242424 50%);
+
+  --ag-selected-row-background-color:      rgba(36, 36, 36, 0.06);  /* 선택 행 — 옅은 모노톤 */
+  --ag-range-selection-background-color:   rgba(36, 36, 36, 0.08);
+  --ag-range-selection-background-color-2: rgba(36, 36, 36, 0.16);
+  --ag-range-selection-background-color-3: rgba(36, 36, 36, 0.24);
+  --ag-range-selection-background-color-4: rgba(36, 36, 36, 0.32);
+
+  /* ===== Foreground / Background ===== */
+  --ag-foreground-color:           var(--scm-fg-default, #242424);
+  --ag-background-color:           var(--scm-bg-default, #ffffff);
+  --ag-header-foreground-color:    var(--scm-fg-strong, #000000);
+  --ag-header-background-color:    var(--scm-bg-default, #ffffff);    /* sky tone 제거, 흰색 */
+  --ag-secondary-foreground-color: var(--scm-fg-muted, #666666);
+  --ag-disabled-foreground-color:  var(--scm-fg-disabled, rgba(0, 0, 0, 0.2));
+
+  --ag-tooltip-background-color:        #1F1F26;
+  --ag-subheader-background-color:      var(--scm-bg-soft, #F5F5F5);
+  --ag-subheader-toolbar-background-color: rgba(245, 245, 245, 0.5);
+  --ag-control-panel-background-color:  var(--scm-bg-default, #ffffff);
+  --ag-panel-background-color:          var(--scm-bg-default, #ffffff);
+
+  /* ===== Hover / Odd row ===== */
+  --ag-row-hover-color:               var(--scm-bg-low, #FAFBFC);
+  --ag-column-hover-color:            var(--scm-bg-low, #FAFBFC);
+  --ag-odd-row-background-color:      var(--scm-bg-default, #ffffff);  /* 줄무늬 제거 */
+
+  /* ===== Border ===== */
+  --ag-border-color:           var(--scm-border-default, #E0E0E0);
+  --ag-row-border-color:       var(--scm-border-low, #F4F4F7);          /* 행 구분 옅게 */
+  --ag-input-border-color:     var(--scm-border-default, #E0E0E0);
+  --ag-input-focus-border-color:    #242424;
+  --ag-input-disabled-border-color: rgba(189, 189, 189, 0.3);
+  --ag-header-column-separator-color: transparent;                       /* 헤더 구분선 제거 */
+
+  /* ===== Input / Disabled ===== */
+  --ag-input-disabled-background-color: var(--scm-bg-disabled, rgba(138, 138, 138, 0.1));
+  --ag-checkbox-unchecked-color:        var(--scm-fg-muted, #666666);
+  --ag-checkbox-background-color:       var(--scm-bg-default, #ffffff);
+  --ag-input-focus-box-shadow:          0 0 0 2px rgba(36, 36, 36, 0.12);
+  --ag-invalid-color:                   var(--scm-status-error, #D9332B);
+
+  /* ===== Chip / pill ===== */
+  --ag-chip-background-color: var(--scm-bg-soft, #F5F5F5);
+
+  /* ===== Typography ===== */
+  --ag-font-family: var(--scm-font-family, Pretendard, notokr, -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
+  --ag-font-size:   13px;                                                /* 12 → 13 (Pretendard 가독성) */
+
+  /* ===== Sizing — 데모 mp-table 리듬에 맞춤 ===== */
+  --ag-grid-size:               4px;
+  --ag-icon-size:                16px;
+  --ag-row-height:               44px;                                   /* 28 → 44 (버튼과 동일) */
+  --ag-header-height:            48px;                                   /* 32 → 48 */
+  --ag-list-item-height:         36px;
+  --ag-row-group-indent-size:    calc(var(--ag-grid-size) * 3 + var(--ag-icon-size));
+  --ag-cell-horizontal-padding:  12px;
+  --ag-input-height:             32px;
+
+  /* ===== Visual ===== */
+  --ag-border-radius:           var(--scm-radius-sm, 2px);
+  --ag-checkbox-border-radius:  3px;
+  --ag-card-shadow:             none;
+  --ag-header-column-separator-display: none;
+}
+
+/* ===== 헤더 위/아래 굵은 검은 보더 (demo mp-table 의 1.5px 검은 라인 매칭) ===== */
+.ag-theme-balham .ag-header,
+.ag-theme-balham-dark .ag-header,
+.ag-theme-balham-auto-dark .ag-header {
+  border-top:    1.5px solid #000;
+  border-bottom: 1px solid #000;
+}
+
+/* ===== 헤더 셀 폰트 ===== */
+.ag-theme-balham .ag-header-cell,
+.ag-theme-balham .ag-header-group-cell,
+.ag-theme-balham-dark .ag-header-cell,
+.ag-theme-balham-dark .ag-header-group-cell {
+  font-weight: var(--scm-font-weight-bold, 600);
+}
+
+/* ===== 셀 줄넘김 / vertical-align ===== */
+.ag-theme-balham .ag-cell {
+  display: flex;
+  align-items: center;
+}
+
+/* ===== 호버 시 컬럼 헤더 강조 부드럽게 ===== */
+.ag-theme-balham .ag-header-cell-comp-wrapper:hover {
+  background: var(--scm-bg-low, #FAFBFC);
+}
+
+/* ===== Code-link 같이 셀 안의 link 색 통일 ===== */
+.ag-theme-balham a {
+  color: var(--scm-fg-default, #242424);
+  text-decoration: underline;
+}
+.ag-theme-balham a:hover {
+  color: #000;
+}

@@ -12,7 +12,6 @@
 
   <!-- SCM Components — 데이터 리스트 페이지 표준 묶음 -->
   <link rel="stylesheet" href="../design%20system/components/backdrop/backdrop.css" />
-  <link rel="stylesheet" href="../design%20system/components/checkbox/checkbox.css" />
   <link rel="stylesheet" href="../design%20system/components/tag/tag.css" />
   <link rel="stylesheet" href="../design%20system/components/toast/toast.css" />
   <link rel="stylesheet" href="../design%20system/components/button/button.css" />
@@ -63,31 +62,13 @@
       background: #fff;
     }
 
-    /* frozenCount=8 — base scm-table.css 는 col-frozen-6 까지만 정의. 7/8 추가. */
-    .mp-table .col-frozen-7 { position: sticky !important; left: var(--frozen-l7, 0); z-index: 5; }
-    .mp-table .col-frozen-8 { position: sticky !important; left: var(--frozen-l8, 0); z-index: 5; }
-
-    /* cb-col 의 border-left 복원 — base scm-table.css 는 체크박스가 leftmost(col 1)인 페이지를
-       전제로 .cb-col { border-left: 0 } 처리. 이 페이지는 CB 를 col 5 로 이동했으므로
-       다른 셀과 동일하게 좌측 세로 divider (1px #EBEBEB) 가 필요. 헤더 / 본문 둘 다 복원. */
-    .mp-table thead th.cb-col {
-      border-left: 1px solid #EBEBEB;
-    }
-    .mp-table tbody td.cb-col {
-      border-left: 1px solid #EBEBEB;
-    }
-    /* leftmost (No) 의 좌측 라인 제거 — base 는 .cb-col 가 leftmost 라 가정해 cb-col 에만
-       border-left:0 적용. 이 페이지는 No 가 leftmost 이므로 th:first-child 에도 적용 필요.
-       tbody 는 base 가 td:first-child { border-left: 0 } 으로 이미 처리. */
+    /* leftmost (No) 의 좌측 라인 제거 — base scm-table.css 는 .cb-col 가 leftmost 라
+       가정해 cb-col 에만 border-left:0 적용. 이 페이지는 No 가 leftmost 이므로
+       th:first-child 에도 적용 필요. tbody 는 base 가 td:first-child { border-left: 0 }
+       으로 이미 처리. */
     .mp-table thead tr:not(.group-row) th:first-child {
       border-left: 0;
     }
-    .mp-table thead th.col-frozen-7,
-    .mp-table thead th.col-frozen-8 { background: #fff; }
-    .mp-table tbody td.col-frozen-7,
-    .mp-table tbody td.col-frozen-8 { background: #fff; }
-    .mp-table tbody tr:hover td.col-frozen-7,
-    .mp-table tbody tr:hover td.col-frozen-8 { background: var(--ld-bg-low, #FAFBFC); }
 
     .mp-table-host { margin-top: 0; }
     .mp-table .cell-numeric { font-variant-numeric: tabular-nums; text-align: right; }
@@ -101,8 +82,7 @@
     .scm-stats-bar svg,
     .scm-pager svg,
     .scm-mini-action svg,
-    .scm-side-drawer svg,
-    .iss-notify-btn svg { stroke-width: 1.4; }
+    .scm-side-drawer svg { stroke-width: 1.4; }
 
     /* 신청번호 link — code-link 와 동일 underline 패턴 */
     .mp-table .iss-reqno-link {
@@ -284,284 +264,8 @@
     }
     #pd-drawer .pd-drawer__close-btn:hover { background: #FAFBFC; }
 
-    /* ========== 알림함 모달 (figma spec: 640px, flex 레이아웃) ========== */
-    .iss-notify-modal-backdrop {
-      position: fixed; inset: 0; z-index: 1099;
-      background: rgba(0, 0, 0, 0.45);
-    }
-    .iss-notify-modal-backdrop[hidden] { display: none; }
-    .iss-notify-modal {
-      position: fixed; top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      width: 640px; max-width: 640px;
-      background: #fff; border-radius: 8px;
-      box-shadow: 0 10px 15px 8px rgba(0,0,0,0.05);
-      display: flex; flex-direction: column;
-      max-height: calc(100vh - 80px); overflow: hidden;
-      z-index: 1100;
-      font-family: inherit;
-    }
-    .iss-notify-modal[hidden] { display: none; }
-    .iss-notify-modal__head { padding: 24px 24px 0; }
-    .iss-notify-modal__title {
-      margin: 0; color: #000;
-      font-size: 18px; font-weight: 600; line-height: 24.48px;
-    }
-    /* body — figma: padding-top 20 / L·R 24 / height 628 / overflow hidden */
-    .iss-notify-modal__body {
-      flex: 1 1 auto;
-      padding: 20px 24px 0;
-      max-height: 628px;
-      overflow: hidden;
-      display: flex; flex-direction: column;
-    }
-    /* 테이블 영역 — flex 컬럼. 상단 두꺼운 블랙 라인 1.5px (figma 기존 2 → 1.5 로 변경) */
-    .iss-notify-table {
-      display: flex; flex-direction: column;
-      border-top: 1.5px solid #000;
-      border-bottom: 1px solid #EBEBEB;
-      overflow-y: auto;
-      min-height: 0;
-    }
-    /* 한 행 — date / content / writer 의 flex row.
-       flex-shrink: 0 — 부모 flex-column + overflow-y:auto 컨텍스트에서 row 가 content 보다
-       작게 압축돼서 다음 row 영역으로 넘쳐 보이던 회귀 차단. */
-    .iss-notify-row {
-      display: flex; align-items: stretch;
-      border-top: 1px solid #EBEBEB;
-      min-height: 52px;
-      flex-shrink: 0;
-    }
-    .iss-notify-row:first-child { border-top: 0; }
-    .iss-notify-cell {
-      padding: 16px;
-      font-size: 15px; font-weight: 400; line-height: 20.4px;
-      color: #000;
-      box-sizing: border-box;
-    }
-    /* 헤더 row — 날짜 / 내용 / 작성자.
-       sticky 처리 — .iss-notify-table 가 overflow-y:auto 의 스크롤 컨테이너이므로
-       그 안에서 top: 0 sticky 가 동작. 셀 마다 흰 배경 + z-index 로 스크롤 시 content 가
-       비치는 것 차단. */
-    .iss-notify-row--head {
-      background: #fff;
-      border-top: 0;
-      position: sticky;
-      top: 0;
-      z-index: 2;
-    }
-    .iss-notify-row--head .iss-notify-cell {
-      font-weight: 500;
-      color: #000;
-      background: #fff;       /* 각 셀에도 배경 — 셀 사이 border-left 부근 비치는 거 방지 */
-      padding-top: 14px; padding-bottom: 14px;
-    }
-    /* sticky head 의 하단 divider — sticky 상태에서도 1px 라인이 항상 보이도록
-       head 자체에 ::after 로 그림 (다음 row 의 border-top 만 의존하면 sticky 영역
-       바닥에 라인 누락 가능). position: sticky 가 absolute child 의 anchor 역할. */
-    .iss-notify-row--head::after {
-      content: '';
-      position: absolute; left: 0; right: 0; bottom: -1px;
-      height: 1px; background: #EBEBEB;
-    }
-    .iss-notify-cell--date {
-      /* "25.03.14 12:00" 가 한 줄에 들어가도록 폭 확보 (이전 88 → 152) */
-      width: 152px; flex: 0 0 152px;
-      white-space: nowrap;
-    }
-    .iss-notify-cell--content {
-      /* figma 310 유지 */
-      width: 310px; flex: 0 0 310px;
-      border-left: 1px solid #EBEBEB;
-      /* 성공/실패 두 덩어리 사이 간격 — 8 → 20 으로 확장 (덩어리 간 시각 분리 강화) */
-      display: flex; flex-direction: column; gap: 20px;
-    }
-    .iss-notify-cell--writer {
-      flex: 1 1 auto; min-width: 0;
-      border-left: 1px solid #EBEBEB;
-      white-space: nowrap;
-    }
-    /* 알림 아이템 — 한 행 안에 1개 또는 2개 (성공+실패 등) */
-    .iss-notify-item { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-    .iss-notify-item__title {
-      color: #1A1A1A; font-size: 15px; font-weight: 600; line-height: 20.4px;
-    }
-    .iss-notify-item__title .iss-notify-success { color: #1A1A1A; }
-    .iss-notify-item__title .iss-notify-fail    { color: #FF4D4F; }
-    /* ref 텍스트와 확인하기 cta 를 세로 stack — cta 가 ref 다음 줄로 떨어지도록.
-       이전: row (수평) → ref 옆에 inline. 변경: column → ref 아래 cta. */
-    .iss-notify-item__row {
-      display: flex; flex-direction: column; align-items: flex-start;
-      gap: 2px;
-    }
-    .iss-notify-item__ref {
-      /* 사용자 요청: 입고번호 + 외 N 전체 텍스트 회색 적용 (functional-fg-lower) */
-      color: #8A8A8A; font-size: 15px; font-weight: 400; line-height: 20.4px;
-    }
-    /* "확인하기" — Ghost button small.
-       원래 figma spec 은 min-width 64 + padding 8/8/8/12 인데 content cell 폭 310 안에
-       ref 텍스트("OFFLINE_250531_1234 외 5" ~190px) 와 같이 inline 으로 들어가야 해서
-       좌우 padding + min-width 제거 (사용자 요청). 클릭 영역은 세로 8 + 텍스트/아이콘 으로 충분. */
-    .iss-notify-item__cta {
-      display: inline-flex; align-items: center; justify-content: center;
-      gap: 2px;
-      /* height 36 → 20 으로 축소 — row 높이가 ref 텍스트 line-height(20.4) 와 맞아
-         title ↔ row 시각 간격이 cta 자체 padding 때문에 부풀던 회귀 차단. */
-      height: 20px; min-height: 20px; max-height: 20px;
-      padding: 0;
-      background: transparent;
-      border: 0; border-radius: 4px;
-      color: #245EFF; font-size: 14px; font-weight: 500; line-height: 19.6px;
-      font-family: inherit;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .iss-notify-item__cta:hover { background: rgba(36, 94, 255, 0.06); }
-    .iss-notify-item__cta svg {
-      width: 16px; height: 16px; flex-shrink: 0;
-      color: #245EFF;
-    }
-    .iss-notify-modal__footer {
-      padding: 24px 24px 16px;
-      display: flex; justify-content: flex-end; gap: 8px;
-      border-top: 0;
-    }
-    .iss-notify-modal__close-btn {
-      min-width: 56px; height: 44px; padding: 12px;
-      background: #fff; border: 1px solid #E0E0E0; border-radius: 4px;
-      font-family: inherit; font-size: 15px; font-weight: 500; color: #000;
-      cursor: pointer;
-    }
-    .iss-notify-modal__close-btn:hover { background: #FAFBFC; }
-
-    /* ========== 입고 취소 확인 모달 (figma spec: 360px) ========== */
-    .iss-cancel-modal-backdrop {
-      position: fixed; inset: 0; z-index: 1099;
-      background: rgba(0, 0, 0, 0.45);
-    }
-    .iss-cancel-modal-backdrop[hidden] { display: none; }
-    .iss-cancel-modal {
-      position: fixed; top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      width: 360px; background: #fff;
-      box-shadow: 0 10px 15px 8px rgba(0,0,0,0.05);
-      border-radius: 6px;
-      display: flex; flex-direction: column;
-      z-index: 1100;
-      font-family: inherit;
-    }
-    .iss-cancel-modal[hidden] { display: none; }
-    .iss-cancel-modal__title {
-      /* margin: 0 — h3 의 user-agent 기본 margin (1em top/bottom) 이 padding 위에 더해져
-         타이틀↔설명 간격이 부풀던 회귀 차단. padding-bottom 도 12 → 4 로 축소. */
-      margin: 0;
-      padding: 24px 24px 4px;
-      color: rgba(0,0,0,0.88);
-      font-size: 18px; font-weight: 600; line-height: 24.48px;
-    }
-    .iss-cancel-modal__desc {
-      /* margin: 0 — p 의 ua 기본 margin 차단 */
-      margin: 0;
-      padding: 0 24px 16px;
-      color: #1A1A1A;
-      font-size: 15px; font-weight: 400; line-height: 20.4px;
-    }
-    /* 취소사유 입력 영역 — figma spec (label + 필수 dot + textarea + counter). */
-    .iss-cancel-modal__reason {
-      padding: 0 24px 8px;
-      display: flex; flex-direction: column; gap: 4px;
-    }
-    .iss-cancel-modal__reason-label-row {
-      display: flex; align-items: center; gap: 2px;
-    }
-    .iss-cancel-modal__reason-label {
-      color: #666; font-size: 14px; font-weight: 500; line-height: 19.6px;
-    }
-    .iss-cancel-modal__reason-req {
-      width: 4px; height: 4px;
-      background: #245EFF;
-      border-radius: 50%;
-      align-self: center;
-    }
-    .iss-cancel-modal__reason-box {
-      height: 80px;
-      padding: 12px 16px;
-      background: #fff;
-      border: 1px solid #E0E0E0;
-      border-radius: 4px;
-      display: flex; align-items: flex-start;
-    }
-    .iss-cancel-modal__reason-input {
-      flex: 1 1 auto;
-      border: 0; outline: 0;
-      background: transparent;
-      resize: none;
-      font-family: inherit;
-      font-size: 15px; font-weight: 400; line-height: 20.4px;
-      color: #000;
-      width: 100%; height: 100%;
-      padding: 0;
-    }
-    .iss-cancel-modal__reason-input::placeholder {
-      color: #8A8A8A;
-    }
-    .iss-cancel-modal__reason-counter {
-      padding: 2px 0;
-      font-size: 14px; font-weight: 400; line-height: 19.6px;
-      color: #666;
-    }
-    .iss-cancel-modal__reason-counter strong {
-      color: #000; font-weight: 400;
-    }
-    .iss-cancel-modal__footer {
-      padding: 12px 24px 24px;
-      display: flex; justify-content: flex-end; align-items: center; gap: 8px;
-    }
-    .iss-cancel-modal__btn-cancel {
-      min-width: 56px; height: 40px; padding: 10px;
-      background: #fff; border: 1px solid #E0E0E0; border-radius: 4px;
-      font-family: inherit; font-size: 14px; font-weight: 500; line-height: 19.6px; color: #000;
-      cursor: pointer;
-    }
-    .iss-cancel-modal__btn-cancel:hover { background: #FAFBFC; }
-    .iss-cancel-modal__btn-confirm {
-      min-width: 56px; height: 40px; padding: 10px 16px;
-      background: #000; border: 0; border-radius: 4px;
-      font-family: inherit; font-size: 14px; font-weight: 500; line-height: 19.6px; color: #fff;
-      cursor: pointer;
-    }
-    .iss-cancel-modal__btn-confirm:hover { background: #1a1a1a; }
-
-    /* 우측 상단 — 알림함 버튼 (page-head action 영역) */
-    .iss-notify-btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      height: 44px; padding: 0 12px;
-      background: #fff; border: 1px solid #000; border-radius: 4px;
-      font-family: inherit; font-size: 15px; font-weight: 500; line-height: 20px;
-      color: #000; cursor: pointer;
-    }
-    .iss-notify-btn:hover { background: var(--ld-bg-low, #F5F5F5); }
-    .iss-notify-btn__icon { width: 16px; height: 16px; }
-    .iss-notify-btn__divider { width: 1px; height: 16px; background: #EBEBEB; }
-    .iss-notify-btn__status { display: inline-flex; align-items: center; gap: 2px; color: #245EFF; }
-    /* 완료 상태 — green (#1EA514, status-chip done variant 와 동일) */
-    .iss-notify-btn__status.is-done { color: #1EA514; }
-    .iss-notify-btn__status-num { font-weight: 600; }
-    /* HTML 의 [hidden] 속성은 기본 display: none 이지만 위 inline-flex 룰이 더 specificity 가
-       높아서 무력화됨. [hidden] 일 땐 강제로 안 보이게. */
-    .iss-notify-btn__divider[hidden],
-    .iss-notify-btn__status[hidden] { display: none; }
-
-    /* (removed: scm-table-action-bar — 하단 고정 액션 바는 사용자 요청으로 제거) */
-
-    /* stats-bar 의 "전체 N" → "선택됨 X / N" morph.
-       디자인 시스템의 .scm-stat--selected modifier 가 이미 num=#245EFF / label=#000 bold 처리하므로
-       JS 에서 부모 class 를 'scm-stat--all' ↔ 'scm-stat--selected' 로 swap.
-       추가로 "/ N" 회색 구분자만 별도 클래스로 정의. */
-    .scm-stat__num-total {
-      color: #8A8A8A; font-weight: 400;
-      margin-left: 2px;
-    }
+    /* (removed: 알림함 모달 / 입고 취소 확인 모달 / 알림함 버튼 / 선택 morph 관련 CSS —
+       사용자 요청으로 알림함 버튼, 체크박스, 입고 취소 액션 버튼 모두 제거.) */
   </style>
 </head>
 <body>
@@ -577,26 +281,9 @@
   <nav class="scm-lnb" data-active="product-arrival-status" aria-label="주메뉴"></nav>
 
   <main>
-    <!-- Page head — title + 우측 알림함 버튼 -->
+    <!-- Page head — title -->
     <div class="scm-page-head scm-page-head--list">
       <h1 class="scm-page-head__title">위탁 상품 입고 현황</h1>
-      <div class="scm-page-head__actions">
-        <!-- 디폴트: divider + status 영역 모두 hidden. 입고 취소 처리 시 진행중 / 완료에 따라 노출.
-             진행중 > 0: "진행중 X/Y" (blue)
-             진행중 0 + 완료 > 0: "완료 N" (green) -->
-        <button class="iss-notify-btn" type="button" id="notify-btn" aria-label="알림함">
-          <svg class="iss-notify-btn__icon" viewBox="0 0 16 16" aria-hidden="true">
-            <path d="M3.5 6.5a4.5 4.5 0 0 1 9 0v3l1 2H2.5l1-2v-3z" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round"/>
-            <path d="M6.5 13.5a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round"/>
-          </svg>
-          <span>알림함</span>
-          <span class="iss-notify-btn__divider" hidden></span>
-          <span class="iss-notify-btn__status" hidden>
-            <span class="iss-notify-btn__status-label" id="iss-notify-status-label">진행중</span>
-            <span class="iss-notify-btn__status-num" id="iss-notify-status-num">0</span>
-          </span>
-        </button>
-      </div>
     </div>
 
     <!-- Filter bar -->
@@ -686,9 +373,6 @@
             <span class="scm-stat scm-stat--all"><span class="scm-stat__label">전체</span> <span class="scm-stat__num">20</span></span>
           </div>
         </div>
-        <div class="scm-stats-bar__mini-actions">
-          <button class="scm-mini-action scm-mini-action--primary" type="button" id="iss-cancel-btn" disabled>입고 취소</button>
-        </div>
       </div>
       <div class="scm-stats-bar__right">
         <button class="scm-download-btn" type="button" id="excel-download-btn">
@@ -723,8 +407,7 @@
               <th class="col-auto col-frozen-2">신청번호</th>
               <th class="col-auto col-frozen-3">입고유형</th>
               <th class="col-auto col-frozen-4">상태 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
-              <th class="cb-col col-frozen-5" title="전체 선택"><span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" id="mp-cb-all" aria-label="전체 선택"></span></th>
-              <th class="col-auto col-frozen-6">입고번호</th>
+              <th class="col-auto col-frozen-5">입고번호</th>
               <th class="col-auto">입고위치</th>
               <th class="col-auto">브랜드</th>
               <th class="col-auto">UID</th>
@@ -908,67 +591,11 @@
 <!-- 하단 고정 액션 바 — 사용자 요청으로 제거. 선택 개수 표시는 stats-bar 의
      scm-stat--all 이 "전체 N" → "선택됨 X / N" 으로 morph 하는 방식으로 대체. -->
 
-<!-- Confirm modal (legacy SCM.confirmModal — 현재 데모에서는 사용 안 함, 호환용 유지) -->
-<div class="scm-confirm-modal-backdrop" id="confirm-backdrop"></div>
-<div class="scm-confirm-modal" id="confirm-modal" role="dialog" aria-labelledby="cm-title">
-  <h3 class="scm-confirm-modal__title" id="cm-title">입고 취소 확인</h3>
-  <p class="scm-confirm-modal__desc">
-    선택하신 항목의 입고를 취소합니다.<br/>
-    계속 진행하시겠습니까?
-  </p>
-  <div class="scm-confirm-modal__actions">
-    <button type="button" class="scm-confirm-modal__cancel">취소</button>
-    <button type="button" class="scm-confirm-modal__confirm primary">변경</button>
-  </div>
-</div>
-
-<!-- ============== 알림함 모달 (figma spec: 640px, flex 레이아웃) ============== -->
-<div class="iss-notify-modal-backdrop" id="iss-notify-backdrop" hidden></div>
-<div class="iss-notify-modal" id="iss-notify-modal" hidden role="dialog" aria-labelledby="iss-notify-title">
-  <header class="iss-notify-modal__head">
-    <h2 class="iss-notify-modal__title" id="iss-notify-title">알림함</h2>
-  </header>
-  <div class="iss-notify-modal__body">
-    <div class="iss-notify-table" id="iss-notify-tbody"></div>
-  </div>
-  <footer class="iss-notify-modal__footer">
-    <button class="iss-notify-modal__close-btn" type="button" id="iss-notify-close-btn">닫기</button>
-  </footer>
-</div>
-
-<!-- ============== 입고 취소 확인 모달 (figma spec: 360px) ============== -->
-<div class="iss-cancel-modal-backdrop" id="iss-cancel-backdrop" hidden></div>
-<div class="iss-cancel-modal" id="iss-cancel-modal" hidden role="dialog" aria-labelledby="iss-cancel-title">
-  <h3 class="iss-cancel-modal__title" id="iss-cancel-title">입고 취소를 진행하시겠습니까?</h3>
-  <p class="iss-cancel-modal__desc">입고 취소는 즉시 반영되지 않고 순차적으로 처리됩니다. 처리 완료 시 좌측 메뉴 알림으로 결과를 안내해 드립니다.</p>
-  <div class="iss-cancel-modal__reason">
-    <div class="iss-cancel-modal__reason-label-row">
-      <label class="iss-cancel-modal__reason-label" for="iss-cancel-reason-input">취소사유</label>
-      <span class="iss-cancel-modal__reason-req" aria-hidden="true"></span>
-    </div>
-    <div class="iss-cancel-modal__reason-box">
-      <textarea
-        id="iss-cancel-reason-input"
-        class="iss-cancel-modal__reason-input"
-        maxlength="50"
-        placeholder="취소 사유를 입력해 주세요"
-        rows="2"
-      ></textarea>
-    </div>
-    <div class="iss-cancel-modal__reason-counter"><strong id="iss-cancel-reason-count">0</strong>/50</div>
-  </div>
-  <div class="iss-cancel-modal__footer">
-    <button type="button" class="iss-cancel-modal__btn-cancel" id="iss-cancel-modal-cancel">취소</button>
-    <button type="button" class="iss-cancel-modal__btn-confirm" id="iss-cancel-modal-confirm" disabled>확인</button>
-  </div>
-</div>
-
 <!-- Module JS -->
 <script src="../design%20system/components/lnb/lnb.js"></script>
 <script src="../design%20system/components/topbar/topbar.js"></script>
 <script src="../design%20system/components/scroll-lock/scroll-lock.js"></script>
 <script src="../design%20system/components/backdrop/backdrop.js"></script>
-<script src="../design%20system/components/checkbox/checkbox.js"></script>
 <script src="../design%20system/components/toast/toast.js"></script>
 <script src="../design%20system/components/pgsize-select/pgsize-select.js"></script>
 <script src="../design%20system/components/mini-action/mini-action.js"></script>
@@ -984,7 +611,6 @@
 <script src="../design%20system/components/scm-table/table-sort.js"></script>
 <script src="../design%20system/components/scm-table/column-more-menu.js"></script>
 <script src="../design%20system/components/scm-table/column-filter-popover.js"></script>
-<script src="../design%20system/components/scm-table/table-selection.js"></script>
 
 <script>
 (function () {
@@ -1263,7 +889,7 @@
 
     // ctx (group context): { isOuterSub, isInnerSub }
     //   outer-merge (sub 일 때 빈 content): 신청번호 / 입고유형
-    //   inner-merge (sub 일 때 빈 content): 상태 / 체크박스 / 입고번호 / 입고위치 / 브랜드 /
+    //   inner-merge (sub 일 때 빈 content): 상태 / 입고번호 / 입고위치 / 브랜드 /
     //     UID / 옵션 / SKU번호 / 바코드 / SKU명 / 스타일넘버 / 입고예정총수량 / 입고확정총수량 /
     //     입고예정일 / 센터 도착일시 / 입고확정일 / 신청일
     //   non-merge: No (항상 row 별 표시)
@@ -1279,12 +905,7 @@
     // inner merge content (sub 일 때 비우기)
     const empty       = '';
     const statusCnt   = isInnerSub ? empty : statusChip;
-    // 체크박스 — status='입고대기' 인 row 만 활성. 그 외 상태는 .is-disabled + aria-disabled
-    //   로 클릭 차단 (SCM.tableSelection / SCM.checkbox 둘 다 is-disabled 면 클릭 무시).
-    const cbDisabled = r.status !== '입고대기';
-    const cbCls = 'scm-checkbox' + (cbDisabled ? ' is-disabled' : '');
-    const cbExtraAttr = cbDisabled ? ' aria-disabled="true"' : '';
-    const cbCnt       = isInnerSub ? empty : `<span class="${cbCls}" role="checkbox" aria-checked="false" tabindex="${cbDisabled ? '-1' : '0'}" aria-label="선택"${cbExtraAttr}></span>`;
+    // (체크박스 컬럼 제거됨 — 사용자 요청)
     // 입고번호 — "외 N" 접미가 붙은 경우만 code-link 로 렌더해서 클릭 → codePopover 노출.
     //   접미 없는 단일 입고번호는 일반 텍스트 그대로 (링크 X).
     //   정규식 /\s*외\s+\d+\s*$/: 끝부분의 "외 숫자" 매칭. 데이터 예: "OFFLINE_250531_1234 외 3"
@@ -1334,8 +955,7 @@
         <td class="col-auto col-frozen-2${oCls}">${reqCnt}</td>
         <td class="col-auto col-frozen-3${oCls}">${inbCnt}</td>
         <td class="col-auto col-frozen-4${iCls}">${statusCnt}</td>
-        <td class="cb-col col-frozen-5${iCls}">${cbCnt}</td>
-        <td class="col-auto col-frozen-6${iCls}">${inNoCnt}</td>
+        <td class="col-auto col-frozen-5${iCls}">${inNoCnt}</td>
         <td class="col-auto${iCls}">${locCnt}</td>
         <td class="col-auto${iCls}">${brandCnt}</td>
         <td class="col-auto${iCls}">${uidCnt}</td>
@@ -1393,14 +1013,13 @@
   document.getElementById('data-tbody').innerHTML = rowsToHtml(ROWS);
 
   // 모든 데이터 컬럼 헤더에 sort/filter/more 아이콘 일괄 주입 — 메인 + 드로워 양쪽.
-  //   skip 대상: cb-col (체크박스) / col-spacer (우측 빈 영역) / col-frozen-1 (No, 정렬 의미 없음)
+  //   skip 대상: col-spacer (우측 빈 영역) / col-frozen-1 (No, 정렬 의미 없음)
   //   이미 아이콘이 있는 th 는 skip (idempotent — 중복 추가 방지).
   //   드로워 thead 가 sticky position 으로 박혀있어 SCMTable.init 의 thead 이동 race 없음.
   function ensureHeaderIcons(theadEl) {
     if (!theadEl) return;
     const ths = theadEl.querySelectorAll('tr > th');
     ths.forEach((th) => {
-      if (th.classList.contains('cb-col')) return;
       if (th.classList.contains('col-spacer')) return;
       if (th.classList.contains('col-frozen-1')) return;  // No 컬럼 — 정렬 X
       if (th.querySelector('.sort-ic')) return;            // 이미 박혀있음
@@ -1416,22 +1035,7 @@
   ensureHeaderIcons(document.querySelector('#mp-table > thead'));
   ensureHeaderIcons(document.querySelector('#pd-drawer-mp-table > thead'));
 
-  // 체크박스 토글 wiring — SCM.tableSelection.init 가 document click delegation 으로
-  //   1) 본문 cb 클릭 → aria-checked 토글
-  //   2) 헤더 cb-all 클릭 → 본문 일괄 토글 + mixed/all/none 동기
-  //   3) action-bar hidden / count 자동 갱신
-  // refreshActionBar (아래) 는 cancelBtn disabled 상태까지 함께 처리하기 위해 MutationObserver
-  // 로 aria-checked 변화를 별도 감지 — tableSelection 의 동작과 중복되지만 같은 상태를 쓰므로
-  // 충돌 없음.
-  if (window.SCM && SCM.tableSelection) {
-    SCM.tableSelection.init({
-      tableEl: document.getElementById('mp-table'),
-      cbAllId: 'mp-cb-all',
-      rowCbSelector: 'td.cb-col .scm-checkbox',
-      // 하단 액션바 제거 — actionBarEl / countEl 미지정. 선택 상태는 stats-bar 의
-      // scm-stat--all "전체 N" → "선택됨 X / N" morph (MutationObserver + refreshActionBar) 로 표현.
-    });
-  }
+  // (체크박스 컬럼 + tableSelection 제거됨 — 사용자 요청)
 
   // stats-bar "전체 N" 을 신청번호(reqNo) 그룹 distinct 개수로 동기화 — row 단위가 아니라 신청 단위
   //   카운트. 같은 신청번호의 여러 row 는 한 건으로 집계.
@@ -1479,7 +1083,7 @@
   //   기반으로 동작하므로 함께 deferred — init 끝난 다음에 mount.
   function _scmTableBoot() {
     if (window.SCMTable) {
-      try { window.SCMTable.init({ root: document, frozenCount: 6 }); } catch (e) { console.warn('SCMTable init failed:', e); }
+      try { window.SCMTable.init({ root: document, frozenCount: 5 }); } catch (e) { console.warn('SCMTable init failed:', e); }
     }
     // 메인 테이블 정렬/메뉴/필터 — selector 를 #mp-table 로 명시. 이전 '.mp-table-scroll .mp-table'
     //   은 querySelector 가 첫 매치 (메인) 만 잡지만, onClick 의 closest 매칭에서 드로워 th 도
@@ -1552,15 +1156,12 @@
     if (!drawer || !SCM.sideDrawer) return;
 
     // side-drawer.js 의 onClose 콜백 — drawer close 완료 (250ms 애니메이션 후) 시점에 호출.
-    //   다른 modal (알림함 / 취소확인) 이 열려있지 않으면 scrollLock 강제 reset →
     //   side-drawer 의 open/close 카운터 race 로 body overflow 가 stuck 되는 회귀 차단.
+    //   (알림함/취소 모달 제거로 다른 lock 체크 불필요 — 항상 scrollLock.reset 호출)
     const dr = SCM.sideDrawer.mount(drawer, {
       backdrop: backdrop,
       onClose: () => {
-        const notifyBd = document.getElementById('iss-notify-backdrop');
-        const cancelBd = document.getElementById('iss-cancel-backdrop');
-        const otherOpen = (notifyBd && !notifyBd.hidden) || (cancelBd && !cancelBd.hidden);
-        if (!otherOpen && window.SCM && SCM.scrollLock && SCM.scrollLock.reset) {
+        if (window.SCM && SCM.scrollLock && SCM.scrollLock.reset) {
           SCM.scrollLock.reset();
         }
       },
@@ -1864,16 +1465,11 @@
   }
 
   // tbody 통합 클릭 핸들러
-  //   - 신청번호 셀(col-frozen-3) 또는 그 안의 link 클릭 → drawer 열기
-  //   - 체크박스/체크박스 셀 → 자체 토글 (drawer 안 열림)
+  //   - 신청번호 셀(col-frozen-2) 또는 그 안의 link 클릭 → drawer 열기
   //   - 코드 link (sku/uid/barcode/styleNo) → SKU 페이지 이동 또는 popover
   //   - 그 외 영역(다른 셀, 빈 공간) → 아무 동작 안 함
   document.getElementById('data-tbody').addEventListener('click', (e) => {
-    // 1) 체크박스 — 자체 모듈이 토글 처리. drawer 열지 않음.
-    if (e.target.closest('.scm-checkbox') || e.target.closest('td.cb-col')) return;
-
-    // 2) 신청번호 셀 — link 텍스트 위든 셀 빈 공간이든 클릭하면 drawer
-    //    (reorder: 체크박스가 col-frozen-3 → col-frozen-2 로 이동)
+    // 1) 신청번호 셀 — link 텍스트 위든 셀 빈 공간이든 클릭하면 drawer
     const reqCell = e.target.closest('td.col-frozen-2');
     if (reqCell) {
       e.preventDefault();
@@ -1885,7 +1481,7 @@
       return;
     }
 
-    // 3) 코드 link (sku/uid/barcode/styleNo/inNo) — 모두 codePopover (복사용 모달) 로 통일.
+    // 2) 코드 link (sku/uid/barcode/styleNo/inNo) — 모두 codePopover (복사용 모달) 로 통일.
     //   이전: sku 만 sku-detail.html 로 페이지 이동 → 사용자 요청으로 다른 코드와 동일하게
     //         popover 노출 (복사 가능, 페이지 이동 X).
     //   inNo (입고번호) — "외 N" 접미가 붙은 row 만 code-link 로 렌더되어 여기 진입.
@@ -1932,7 +1528,7 @@
       return;
     }
 
-    // 4) 그 외 영역 — 아무 동작 안 함 (drawer 안 열림)
+    // 3) 그 외 영역 — 아무 동작 안 함 (drawer 안 열림)
   });
   // 신청번호 셀에만 cursor:pointer + hover 시각 피드백 (행 전체 X)
   (function styleReqCellClickable() {
@@ -1946,328 +1542,9 @@
   })();
 
   // ============================================================
-  // 알림함 모달 — 진행/완료 결과 리스트 (figma spec: 640px, flex 레이아웃)
-  //   한 row 안에 items[] (1~2개) — 같은 날짜의 성공/실패가 한 행에 모임.
+  // (removed) 알림함 / 입고 취소 모달 — 사용자 요청으로 알림함 버튼, 체크박스,
+  //   입고 취소 액션 버튼이 모두 제거됨. 관련 JS 도 통째 제거.
   // ============================================================
-  const NOTIFY_ROWS = (function buildNotifyRows() {
-    const base = [
-      { date:'25.03.14 12:00', writer:'홍길동', items: [
-        { kind:'success', count:9,  ref:'OFFLINE_250531_1234 외 5' },
-      ]},
-      { date:'25.03.14 12:00', writer:'홍길동', items: [
-        { kind:'success', count:9,  ref:'OFFLINE_250531_1234 외 5' },
-        { kind:'fail',    count:1,  ref:'OFFLINE_250531_1234 외 5' },
-      ]},
-      { date:'25.03.14 12:00', writer:'홍길동', items: [
-        { kind:'success', count:12, ref:'OFFLINE_250531_1234 외 5' },
-      ]},
-      { date:'25.03.14 12:00', writer:'홍길동', items: [
-        { kind:'success', count:20, ref:'OFFLINE_250531_1234 외 5' },
-        { kind:'fail',    count:2,  ref:'OFFLINE_250531_1234 외 5' },
-      ]},
-      { date:'25.03.13 12:00', writer:'홍길동', items: [
-        { kind:'success', count:5,  ref:'OFFLINE_250531_1234 외 5' },
-      ]},
-    ];
-    // 30개 추가 — base 패턴을 날짜/카운트/케이스 살짝씩 바꿔 반복
-    const WRITERS = ['홍길동', '김무신', '이무탠', '박오피', '최물류'];
-    const REFS = ['OFFLINE_250531_1234 외 5', 'OFFLINE_250531_1240 외 3', 'OFFLINE_250531_1257 외 2', 'OFFLINE_250531_1289'];
-    const extra = [];
-    for (let i = 0; i < 30; i++) {
-      const day = 13 - (i % 8);                  // 25.03.05 ~ 25.03.13
-      const hh  = 9 + (i % 9);                   // 09:00 ~ 17:00
-      const mm  = (i * 7) % 60;
-      const dateStr = `25.03.${String(day).padStart(2,'0')} ${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
-      const writer = WRITERS[i % WRITERS.length];
-      const refA = REFS[i % REFS.length];
-      const items = [];
-      const successCount = 1 + ((i * 3) % 25);
-      items.push({ kind:'success', count: successCount, ref: refA });
-      if (i % 3 === 0) {
-        const refB = REFS[(i + 1) % REFS.length];
-        items.push({ kind:'fail', count: 1 + (i % 4), ref: refB });
-      }
-      extra.push({ date: dateStr, writer, items });
-    }
-    return base.concat(extra);
-  })();
-  function _itemHtml(it) {
-    const word = it.kind === 'success' ? '성공' : '실패';
-    const toneCls = it.kind === 'success' ? 'iss-notify-success' : 'iss-notify-fail';
-    return (
-      '<div class="iss-notify-item">' +
-        '<div class="iss-notify-item__title">' +
-          '<span>' + it.count + '건 입고 취소 </span>' +
-          '<span class="' + toneCls + '">' + word + '</span>' +
-        '</div>' +
-        '<div class="iss-notify-item__row">' +
-          '<span class="iss-notify-item__ref">' + it.ref + '</span>' +
-          '<button type="button" class="iss-notify-item__cta" data-ref="' + it.ref + '">' +
-            '<span>확인하기</span>' +
-            // figma: arrowRight regular (1.4 stroke), bounds 4.8x9.6 within 16x16 viewBox
-            '<svg viewBox="0 0 16 16" aria-hidden="true">' +
-              '<path d="M6 3.2L10.8 8L6 12.8" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' +
-            '</svg>' +
-          '</button>' +
-        '</div>' +
-      '</div>'
-    );
-  }
-  function renderNotifyList() {
-    const root = document.getElementById('iss-notify-tbody');
-    if (!root) return;
-    const headHtml = (
-      '<div class="iss-notify-row iss-notify-row--head">' +
-        '<div class="iss-notify-cell iss-notify-cell--date">처리일시</div>' +
-        '<div class="iss-notify-cell iss-notify-cell--content">내용</div>' +
-        '<div class="iss-notify-cell iss-notify-cell--writer">처리자</div>' +
-      '</div>'
-    );
-    root.innerHTML = headHtml + NOTIFY_ROWS.map(r => (
-      '<div class="iss-notify-row">' +
-        '<div class="iss-notify-cell iss-notify-cell--date">' + r.date + '</div>' +
-        '<div class="iss-notify-cell iss-notify-cell--content">' +
-          r.items.map(_itemHtml).join('') +
-        '</div>' +
-        '<div class="iss-notify-cell iss-notify-cell--writer">' + r.writer + '</div>' +
-      '</div>'
-    )).join('');
-  }
-  // 모달 열림/닫힘 시 body scroll lock — SCM.scrollLock 직접 호출 (자체 counter 보유,
-  // 자체 wrapper 두면 drawer 등 다른 모듈 lock 과 sync 어긋남). open 마다 lock, close 마다 unlock
-  // 페어로 정확히 호출하면 SCM.scrollLock 가 모든 모달/드로어 lock 총합을 안전하게 관리.
-  function openNotifyModal() {
-    const bd = document.getElementById('iss-notify-backdrop');
-    if (!bd || !bd.hidden) return;  // 이미 열려있으면 중복 lock 방지
-    renderNotifyList();
-    const md = document.getElementById('iss-notify-modal');
-    bd.hidden = false;
-    if (md) md.hidden = false;
-    if (window.SCM && SCM.scrollLock) SCM.scrollLock.lock();
-  }
-  function closeNotifyModal() {
-    const bd = document.getElementById('iss-notify-backdrop');
-    if (!bd || bd.hidden) return;  // 이미 닫힌 상태면 unlock 중복 호출 방지
-    const md = document.getElementById('iss-notify-modal');
-    bd.hidden = true;
-    if (md) md.hidden = true;
-    if (window.SCM && SCM.scrollLock) SCM.scrollLock.unlock();
-  }
-  const notifyBtn = document.getElementById('notify-btn');
-  if (notifyBtn) notifyBtn.addEventListener('click', openNotifyModal);
-  const notifyBackdrop = document.getElementById('iss-notify-backdrop');
-  if (notifyBackdrop) notifyBackdrop.addEventListener('click', closeNotifyModal);
-
-  // ============================================================
-  // 알림함 버튼 상태 머신 — progress / complete 카운트 → 진행중 / 완료 표시 분기.
-  //   bumpNotifyProgress(n): progress += n                 → "진행중 X/Y" (blue, Y = complete)
-  //   completeNotify(k):     progress -= k, complete += k  → 진행중 0 되면 "완료 N" (green)
-  //   "/Y" 의 Y 는 _notifyState.complete (기존 완료된 알림 수). progress 가 끝나면 그 만큼 complete 가
-  //   증가 → 분모가 자연스럽게 누적됨.
-  // ============================================================
-  const _notifyState = { progress: 0, complete: 0 };
-  function refreshNotifyBtn() {
-    const divider = document.querySelector('.iss-notify-btn__divider');
-    const status  = document.querySelector('.iss-notify-btn__status');
-    const labelEl = document.getElementById('iss-notify-status-label');
-    const numEl   = document.getElementById('iss-notify-status-num');
-    const btn     = document.getElementById('notify-btn');
-    if (!divider || !status || !labelEl || !numEl) return;
-    if (_notifyState.progress > 0) {
-      labelEl.textContent = '진행중';
-      numEl.textContent = `${_notifyState.progress}/${_notifyState.complete}`;
-      status.classList.remove('is-done');
-      divider.hidden = false;
-      status.hidden = false;
-      if (btn) btn.setAttribute('aria-label', `알림함 - 진행중 ${_notifyState.progress}건 / 완료 ${_notifyState.complete}건`);
-    } else if (_notifyState.complete > 0) {
-      labelEl.textContent = '완료';
-      numEl.textContent = String(_notifyState.complete);
-      status.classList.add('is-done');
-      divider.hidden = false;
-      status.hidden = false;
-      if (btn) btn.setAttribute('aria-label', `알림함 - 완료 ${_notifyState.complete}건`);
-    } else {
-      divider.hidden = true;
-      status.hidden = true;
-      if (btn) btn.setAttribute('aria-label', '알림함');
-    }
-  }
-  function bumpNotifyProgress(n) {
-    _notifyState.progress += n;
-    refreshNotifyBtn();
-  }
-  function completeNotify(k) {
-    if (k > _notifyState.progress) k = _notifyState.progress;
-    _notifyState.progress -= k;
-    _notifyState.complete += k;
-    refreshNotifyBtn();
-  }
-  // 데모용 transition — 입고 취소 요청 N건이 들어오면 5초 뒤 절반 완료, 10초 뒤 나머지 완료.
-  //   실제 시스템에선 서버에서 처리 완료 알림을 받아 completeNotify(k) 호출.
-  function scheduleNotifyTransition(n) {
-    if (n <= 0) return;
-    bumpNotifyProgress(n);
-    const half = Math.ceil(n / 2);
-    setTimeout(() => completeNotify(half), 5000);
-    setTimeout(() => completeNotify(n - half), 10000);
-  }
-  // ----- 초기 seed — 알림함 모달의 기존 dummy 데이터 = 이미 처리 완료된 알림. -----
-  //   페이지 첫 진입 시 "완료 N" (green) 으로 노출되도록 NOTIFY_ROWS 길이를 _notifyState.complete 에 set.
-  //   이후 입고 취소 시작 → 진행중 카운트가 우선 표시되고, 진행 0 으로 떨어지면 다시 완료 노출.
-  (function seedCompletedFromNotifyData() {
-    if (typeof NOTIFY_ROWS !== 'undefined' && Array.isArray(NOTIFY_ROWS)) {
-      _notifyState.complete = NOTIFY_ROWS.length;
-      refreshNotifyBtn();
-    }
-  })();
-  const notifyCloseBtn = document.getElementById('iss-notify-close-btn');
-  if (notifyCloseBtn) notifyCloseBtn.addEventListener('click', closeNotifyModal);
-  // 알림 row 내 "확인하기" → 데모용 토스트
-  (function wireNotifyCta() {
-    const root = document.getElementById('iss-notify-tbody');
-    if (!root) return;
-    root.addEventListener('click', (e) => {
-      const btn = e.target.closest('.iss-notify-item__cta');
-      if (!btn) return;
-      const ref = btn.getAttribute('data-ref') || '';
-      closeNotifyModal();
-      if (SCM.toast) SCM.toast.show({ variant: 'info', title: '확인하기', desc: ref + ' 상세로 이동합니다.' });
-    });
-  })();
-
-  // ============================================================
-  // 입고 취소 확인 모달 — figma spec (360px)
-  //   stats-bar 의 입고 취소 버튼, 하단 액션바의 입고 취소 버튼 둘 다 같은
-  //   모달을 띄움. onConfirm 콜백을 매번 다르게 주입.
-  // ============================================================
-  let _cancelOnConfirm = null;
-  const reasonInput = document.getElementById('iss-cancel-reason-input');
-  const reasonCountEl = document.getElementById('iss-cancel-reason-count');
-  function refreshCancelConfirmEnabled() {
-    const confirmBtn = document.getElementById('iss-cancel-modal-confirm');
-    if (!confirmBtn) return;
-    const val = reasonInput ? reasonInput.value.trim() : '';
-    if (val) {
-      confirmBtn.disabled = false;
-      confirmBtn.removeAttribute('disabled');
-    } else {
-      confirmBtn.disabled = true;
-      confirmBtn.setAttribute('disabled', '');
-    }
-  }
-  function openCancelModal(onConfirm) {
-    const bd = document.getElementById('iss-cancel-backdrop');
-    if (!bd || !bd.hidden) return;  // 이미 열려있으면 중복 lock 방지
-    _cancelOnConfirm = typeof onConfirm === 'function' ? onConfirm : null;
-    const md = document.getElementById('iss-cancel-modal');
-    // textarea 초기화 — 매번 열릴 때 비워줘서 이전 입력 잔여 차단
-    if (reasonInput) reasonInput.value = '';
-    if (reasonCountEl) reasonCountEl.textContent = '0';
-    refreshCancelConfirmEnabled();
-    bd.hidden = false;
-    if (md) md.hidden = false;
-    if (window.SCM && SCM.scrollLock) SCM.scrollLock.lock();
-    // 모달 열린 직후 textarea 포커스 — 사용자가 바로 입력 가능
-    if (reasonInput) setTimeout(() => reasonInput.focus(), 0);
-  }
-  function closeCancelModal() {
-    const bd = document.getElementById('iss-cancel-backdrop');
-    if (!bd || bd.hidden) return;
-    const md = document.getElementById('iss-cancel-modal');
-    _cancelOnConfirm = null;
-    bd.hidden = true;
-    if (md) md.hidden = true;
-    if (window.SCM && SCM.scrollLock) SCM.scrollLock.unlock();
-  }
-  // textarea 입력 시 counter 갱신 + 확인 버튼 활성/비활성 토글
-  if (reasonInput) {
-    reasonInput.addEventListener('input', () => {
-      if (reasonCountEl) reasonCountEl.textContent = String(reasonInput.value.length);
-      refreshCancelConfirmEnabled();
-    });
-  }
-  const cancelModalBackdrop = document.getElementById('iss-cancel-backdrop');
-  if (cancelModalBackdrop) cancelModalBackdrop.addEventListener('click', closeCancelModal);
-  const cancelModalCancel = document.getElementById('iss-cancel-modal-cancel');
-  if (cancelModalCancel) cancelModalCancel.addEventListener('click', closeCancelModal);
-  const cancelModalConfirm = document.getElementById('iss-cancel-modal-confirm');
-  if (cancelModalConfirm) {
-    cancelModalConfirm.addEventListener('click', () => {
-      if (cancelModalConfirm.disabled) return;     // disabled 상태에서는 무시
-      const cb = _cancelOnConfirm;
-      const reason = reasonInput ? reasonInput.value.trim() : '';
-      closeCancelModal();
-      if (cb) cb(reason);                          // 콜백에 사유 전달 — 선택 row 들의 cancelReason 갱신용
-    });
-  }
-
-  // 입고 취소 (mini-action) — 활성 상태에서만 새 cancel modal.
-  // onConfirm 콜백이 사용자가 입력한 reason 을 받아서 선택된 row 들의 cancelReason 필드에 기록.
-  const cancelBtn = document.getElementById('iss-cancel-btn');
-  if (cancelBtn) {
-    cancelBtn.addEventListener('click', () => {
-      if (cancelBtn.disabled) return;
-      const checkedCbs = Array.from(document.querySelectorAll('#data-tbody .scm-checkbox[aria-checked="true"]'));
-      openCancelModal((reason) => {
-        // 선택된 row 들에 cancelReason 기록 + status '입고취소' 로 전환 (red chip).
-        //   같은 outer 그룹의 다른 row 도 동일 status 로 일괄 전환 — 그룹 단위 cancel 이 자연스러움.
-        const affectedReqNos = new Set();
-        checkedCbs.forEach((cb) => {
-          const tr = cb.closest('tr');
-          if (!tr) return;
-          const rIdx = parseInt(tr.getAttribute('data-row-idx'), 10);
-          if (isNaN(rIdx) || !ROWS[rIdx]) return;
-          ROWS[rIdx].cancelReason = reason;
-          ROWS[rIdx].status       = '입고취소';
-          affectedReqNos.add(ROWS[rIdx].reqNo);
-        });
-        // 같은 신청번호 그룹 내 다른 row (예: outer-merge sub row) 도 함께 cancel 처리.
-        ROWS.forEach((r) => {
-          if (!affectedReqNos.has(r.reqNo)) return;
-          if (!r.cancelReason) r.cancelReason = reason;
-          r.status = '입고취소';
-        });
-        // 본문 재렌더 → 상태 칩 & 취소사유 컬럼 즉시 반영. (tbody 가 통째 교체되므로
-        //   기존 body cb 의 aria-checked='true' 도 새 markup 의 default 'false' 로 자연 리셋됨.)
-        const tb = document.getElementById('data-tbody');
-        if (tb && typeof rowsToHtml === 'function') tb.innerHTML = rowsToHtml(ROWS);
-        // 헤더 cb-all (mp-cb-all) 명시적 unchecked + 본문 cb 도 안전망으로 strip — 다중 reset 으로
-        //   stale "mixed" 표시 차단. tableSelection / refreshActionBar 등 다른 path 가 후속으로
-        //   상태 재계산하더라도 본문 모든 cb 가 false 라 mixed 가 다시 박힐 일 없음.
-        function _resetAllCheckboxState() {
-          document.querySelectorAll('#data-tbody .scm-checkbox[aria-checked="true"]').forEach((cb) => {
-            cb.setAttribute('aria-checked', 'false');
-          });
-          const cbAll = document.getElementById('mp-cb-all');
-          if (cbAll && cbAll.getAttribute('aria-checked') !== 'false') {
-            cbAll.setAttribute('aria-checked', 'false');
-          }
-        }
-        _resetAllCheckboxState();
-        // RAF + setTimeout 으로 다른 path (MutationObserver chain / tableSelection refresh 등)
-        // 가 후속으로 mixed 를 다시 박는 race 까지 방어. 마지막 호출이 최종 상태가 됨.
-        requestAnimationFrame(_resetAllCheckboxState);
-        setTimeout(_resetAllCheckboxState, 50);
-        // 액션바 상태 (cancelBtn disabled, stats-bar 전체/선택됨 morph) 즉시 재계산.
-        if (typeof refreshActionBar === 'function') refreshActionBar();
-        // 입고 취소 처리 시작 토스트 — figma snackbar spec (info variant: 파란 checkCircle 아이콘).
-        //   기존 "${N}건 접수되었습니다" 메시지를 figma 텍스트로 교체.
-        if (SCM.toast) SCM.toast.show({
-          variant: 'info',
-          title: '입고 취소 처리 시작',
-          desc: '화면을 닫아도 처리는 계속 진행됩니다.',
-        });
-        // 알림함 버튼 카운트 — 신청번호 그룹 단위. 진행중 / 완료 두 모드:
-        //   진행중 > 0          → "진행중 X/Y" (X=진행중, Y=총건수)  blue
-        //   진행중 0 + 완료 > 0 → "완료 N"                              green
-        //   모두 0              → divider/status 둘 다 hidden
-        // 데모: 입고 취소 직후 진행중 카운트 +N, 5초 후 절반 완료로 전환, 10초 후 전부 완료.
-        scheduleNotifyTransition(affectedReqNos.size);
-      });
-    });
-  }
-
   // 엑셀 다운로드 — 데모용 토스트
   const dlBtn = document.getElementById('excel-download-btn');
   if (dlBtn) {
@@ -2277,68 +1554,22 @@
   }
 
   // ============================================================
-  // 체크박스 선택 → 입고 취소 버튼 활성 + 하단 액션 바.
-  //   SCMTable selection 모듈이 어떤 방식으로 토글하든 aria-checked 변경을
-  //   MutationObserver 로 감지해 우리 상태(refreshActionBar) 갱신.
-  //   (이전: document click listener 만 — SCMTable 가 이벤트 stopPropagation
-  //    하거나 file:// 환경에서 selection 모듈이 부분 실패하면 호출 누락.)
+  // stats-bar 의 "전체 N" 표시 갱신 — 체크박스/선택 morph 제거됨.
+  //   필터 적용 시 visibleCount 가 window.__issTotalCount 로 들어오므로 그 값을 표시.
+  //   refreshActionBar 함수명은 다른 호출부 (applyDataFilter) 호환성 위해 유지.
   // ============================================================
-  // stats-bar 의 scm-stat 를 selection 상태에 맞춰 두 가지 modifier 로 swap:
-  //   0개 선택        → .scm-stat--all          → "전체 [N]"               (label=#666, num=#000)
-  //   1개 이상 선택   → .scm-stat--selected     → "선택됨 [X] / N"          (label=#000 bold, num=#245EFF, /N=#8A8A8A)
-  // 디자인 시스템 stat.css 의 modifier 가 컬러를 처리. JS 는 class swap + innerHTML 만.
-  // 별도 하단 액션바는 없으므로 stats-bar 가 선택 컨텍스트 표시 + iss-cancel-btn 활성 처리.
   const statEl = document.querySelector('.scm-stats-bar__counts .scm-stat');
   function refreshActionBar() {
-    const checked = document.querySelectorAll('#data-tbody .scm-checkbox[aria-checked="true"]').length;
     const total = (window.__issTotalCount != null) ? window.__issTotalCount : ROWS.length;
     if (statEl) {
-      if (checked > 0) {
-        statEl.classList.remove('scm-stat--all');
-        statEl.classList.add('scm-stat--selected');
-        statEl.innerHTML =
-          '<span class="scm-stat__label">선택됨</span> ' +
-          '<span class="scm-stat__num">' + checked + '</span>' +
-          '<span class="scm-stat__num-total">/ ' + total + '</span>';
-      } else {
-        statEl.classList.remove('scm-stat--selected');
-        statEl.classList.add('scm-stat--all');
-        statEl.innerHTML =
-          '<span class="scm-stat__label">전체</span> ' +
-          '<span class="scm-stat__num">' + total + '</span>';
-      }
-    }
-    if (cancelBtn) {
-      if (checked > 0) {
-        cancelBtn.disabled = false;
-        cancelBtn.removeAttribute('disabled');
-      } else {
-        cancelBtn.disabled = true;
-        cancelBtn.setAttribute('disabled', '');
-      }
+      statEl.classList.remove('scm-stat--selected');
+      statEl.classList.add('scm-stat--all');
+      statEl.innerHTML =
+        '<span class="scm-stat__label">전체</span> ' +
+        '<span class="scm-stat__num">' + total + '</span>';
     }
   }
-  // 1) attribute mutation observer — aria-checked 변경 직접 감지
-  (function observeSelection() {
-    const tbodyEl = document.getElementById('data-tbody');
-    if (!tbodyEl || typeof MutationObserver === 'undefined') return;
-    const mo = new MutationObserver(() => refreshActionBar());
-    mo.observe(tbodyEl, { attributes: true, attributeFilter: ['aria-checked'], subtree: true });
-    // 헤더 전체 선택 체크박스도 관찰
-    const headerCb = document.getElementById('mp-cb-all');
-    if (headerCb) mo.observe(headerCb, { attributes: true, attributeFilter: ['aria-checked'] });
-  })();
-  // 2) capture phase click — selection 모듈이 stopPropagation 해도 우리 핸들러 도달
-  document.addEventListener('click', (e) => {
-    if (e.target.closest('.scm-checkbox') || e.target.closest('td.cb-col')) {
-      setTimeout(refreshActionBar, 0);
-    }
-  }, true);
-  // 3) 초기 1회 호출 — 기본 상태 (전체 N 표시) 명시
   refreshActionBar();
-  // tab-clear / tab-bulk 버튼은 하단 액션바와 함께 제거됨. 입고 취소 진입점은 iss-cancel-btn
-  // (mini-action --primary) 하나로 통합. iss-cancel-btn 의 click 핸들러는 이 IIFE 위쪽 (~1750 line)
-  // 에서 openCancelModal 호출까지 wiring 완료.
 })();
 </script>
 
