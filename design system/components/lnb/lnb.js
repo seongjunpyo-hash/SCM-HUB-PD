@@ -107,7 +107,9 @@
       </span>
     </button>
     <div class="scm-lnb-l2-list">
-      <a class="scm-lnb-l2" href="otb-budget.html" data-key="otb-budget"><span class="scm-lnb-l2-text">OTB 예산 관리</span></a>
+      <a class="scm-lnb-l2" href="otb-budget.html" data-key="otb-budget"><span class="scm-lnb-l2-text">예산(OTB) 관리</span></a>
+      <a class="scm-lnb-l2" href="otb-adjustment-request.html" data-key="otb-adjustment-request"><span class="scm-lnb-l2-text">예산 조정 요청</span></a>
+      <a class="scm-lnb-l2" href="otb-adjustment-list.html" data-key="otb-adjustment-list"><span class="scm-lnb-l2-text">조정요청목록</span></a>
       <a class="scm-lnb-l2" href="product-arrival-status.html" data-key="product-arrival-status"><span class="scm-lnb-l2-text">위탁 상품 입고 현황</span></a>
     </div>
   </div>
@@ -130,7 +132,9 @@
       </span>
     </button>
     <div class="scm-lnb-l2-list">
-      <a class="scm-lnb-l2" href="otb-budget.html" data-key="otb-v2"><span class="scm-lnb-l2-text">OTB 예산 계획</span></a>
+      <a class="scm-lnb-l2" href="otb-budget.html" data-key="otb-v2"><span class="scm-lnb-l2-text">예산(OTB) 관리</span></a>
+      <a class="scm-lnb-l2" href="otb-adjustment-request.html" data-key="otb-adjustment-request-v2"><span class="scm-lnb-l2-text">예산 조정 요청</span></a>
+      <a class="scm-lnb-l2" href="otb-adjustment-list.html" data-key="otb-adjustment-list-v2"><span class="scm-lnb-l2-text">조정요청목록</span></a>
       <a class="scm-lnb-l2" href="product-arrival-status.html" data-key="arrival-v2"><span class="scm-lnb-l2-text">위탁 상품 입고 현황</span></a>
     </div>
   </div>

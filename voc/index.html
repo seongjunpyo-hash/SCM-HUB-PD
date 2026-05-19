@@ -6572,7 +6572,7 @@
     // when available — that way we get correct row1+row2+colgroup+tbody+frozen
     // class handling for free. Falls back to a flat row2/tbody reorder when
     // the API isn't there (e.g., uninitialized modal sub-tables).
-    function applyColumnOrderToIframe() {
+    function applyColumnOrderToIframe(opts) {
       const doc = iframe.contentDocument;
       if (!doc) return;
       const a = pageDraft();
@@ -6586,6 +6586,7 @@
       const tables = [...doc.querySelectorAll('.mp-table')].filter(_isElVisible);
       const seen = new Set();
       let applied = 0;
+      let sawTableWithoutApi = false;
       tables.forEach((tbl) => {
         const host = tbl.closest('.mp-table-host') || tbl;
         if (seen.has(host)) return;
@@ -6597,9 +6598,24 @@
         if (reorderApi) {
           applyOrderViaScmTable(reorderApi, a, doc);
           applied++;
+        } else {
+          sawTableWithoutApi = true;
         }
       });
       if (!applied) applyOrderFlat(doc, a);
+
+      // 일부 페이지 (예: product-arrival-status) 는 SCMTable.init 을
+      // document.fonts.ready.then(...) 으로 deferred 해서 iframe `load` 이벤트
+      // 시점엔 `_scmReorder` 가 아직 stamping 되지 않은 상태. 그 결과
+      // applyOrderFlat 으로 fallback 되어 columnOrder 만 반영되고 frozenCount /
+      // setFrozenCount 호출이 누락 → "마지막 고정 컬럼" 편집이 반영 안 되는
+      // 회귀가 발생함. _scmReorder 가 나타날 때까지 짧게 retry 해서 frozen 적용을
+      // 보장한다. (최대 ~2초 / 30회 * 60ms — 폰트 로드 끝나는 정상 시점은 100-300ms 이내)
+      const retry = opts || { tries: 0 };
+      if (sawTableWithoutApi && retry.tries < 30) {
+        retry.tries++;
+        setTimeout(() => applyColumnOrderToIframe(retry), 60);
+      }
     }
 
     // ----- scm-table-driven apply (preferred) -----

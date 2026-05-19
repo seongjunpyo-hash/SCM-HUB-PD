@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1440" />
+  <title>SCM-Hub · 예산 조정 요청</title>
+  <script src="/auth-gate.js"></script>
+  <script src="/scm-shell.js" defer></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <link rel="stylesheet" href="../design%20system/layer-desktop.css" />
+
+  <!-- SCM Components — 데이터 리스트 표준 -->
+  <link rel="stylesheet" href="../design%20system/components/backdrop/backdrop.css" />
+  <link rel="stylesheet" href="../design%20system/components/tag/tag.css" />
+  <link rel="stylesheet" href="../design%20system/components/toast/toast.css" />
+  <link rel="stylesheet" href="../design%20system/components/button/button.css" />
+  <link rel="stylesheet" href="../design%20system/components/download-btn/download-btn.css" />
+  <link rel="stylesheet" href="../design%20system/components/pager/pager.css" />
+  <link rel="stylesheet" href="../design%20system/components/pgsize-select/pgsize-select.css" />
+  <link rel="stylesheet" href="../design%20system/components/select/select.css" />
+  <link rel="stylesheet" href="../design%20system/components/icon-box/icon-box.css" />
+  <link rel="stylesheet" href="../design%20system/components/filter-bar/filter-bar.css" />
+  <link rel="stylesheet" href="../design%20system/components/stat/stat.css" />
+  <link rel="stylesheet" href="../design%20system/components/stats-bar/stats-bar.css" />
+  <link rel="stylesheet" href="../design%20system/components/page-head/page-head.css" />
+  <link rel="stylesheet" href="../design%20system/components/scm-table/scm-table.css" />
+  <link rel="stylesheet" href="../design%20system/components/topbar/topbar.css" />
+  <link rel="stylesheet" href="../design%20system/components/lnb/lnb.css" />
+
+  <style>
+    body { margin: 0; font-family: var(--ld-font-family-base); color: var(--ld-fg); background: #fff; min-width: 1440px; }
+    main { min-width: 0; padding: 0 28px 40px; }
+
+    /* sticky stack */
+    .scm-filter-bar { top: var(--scm-sticky-gnb); background: #fff; }
+    .scm-stats-bar--sticky { top: calc(var(--scm-sticky-gnb) + var(--scm-sticky-filter)); }
+    .mp-table-host { margin-top: 0; }
+    .mp-table .cell-numeric { font-variant-numeric: tabular-nums; text-align: right; }
+
+    /* page-head 우상단 — [+ 새 조정 요청] primary */
+    .scm-page-head__actions { display: inline-flex; align-items: center; gap: 8px; }
+    .otb-ph-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      height: 40px; padding: 0 14px;
+      background: #fff; border: 1px solid #E0E0E0; border-radius: 4px;
+      font-family: inherit; font-size: 14px; font-weight: 500; color: #000;
+      cursor: pointer; white-space: nowrap;
+    }
+    .otb-ph-btn:hover { background: #FAFBFC; }
+    .otb-ph-btn svg { width: 16px; height: 16px; }
+    .otb-ph-btn--primary { background: #000; border-color: #000; color: #fff; }
+    .otb-ph-btn--primary:hover { background: #1a1a1a; }
+
+    /* KPI 4 cards */
+    .otb-list-kpis {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px; margin: 20px 0 16px;
+    }
+    .otb-list-kpi {
+      background: #fff; border: 1px solid #E0E0E0; border-radius: 8px;
+      padding: 18px 20px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .otb-list-kpi__label { font-size: 13px; color: #666; font-weight: 500; }
+    .otb-list-kpi__value { font-size: 28px; font-weight: 700; color: #000; font-variant-numeric: tabular-nums; line-height: 1.15; }
+    .otb-list-kpi__value--pending  { color: #FFB020; }
+    .otb-list-kpi__value--approved { color: #1EA514; }
+    .otb-list-kpi__value--rejected { color: #F31110; }
+
+    /* filter row */
+    .otb-filter-inline {
+      display: flex; align-items: center; gap: 24px; flex-wrap: wrap; width: 100%;
+    }
+    .otb-filter-group { display: flex; align-items: center; gap: 8px; }
+    .otb-filter-group__label { font-size: 13px; font-weight: 500; color: #666; }
+    .otb-year-select {
+      display: inline-flex; align-items: center; position: relative;
+      height: 32px; padding: 0 28px 0 10px;
+      background: #fff; border: 1px solid #E0E0E0; border-radius: 4px;
+    }
+    .otb-year-select__native {
+      appearance: none; -webkit-appearance: none; border: 0; outline: 0; background: transparent;
+      font-family: inherit; font-size: 13px; font-weight: 500; color: #000;
+      cursor: pointer;
+    }
+    .otb-year-select__chev {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      pointer-events: none; width: 14px; height: 14px;
+    }
+    .otb-chip-group { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+    .otb-chip {
+      height: 28px; padding: 0 12px;
+      background: #fff; border: 1px solid #E0E0E0; border-radius: 99px;
+      font-family: inherit; font-size: 13px; font-weight: 500; color: #666;
+      cursor: pointer; display: inline-flex; align-items: center;
+      transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+    }
+    .otb-chip:hover { background: #FAFBFC; }
+    .otb-chip.is-active { background: #000; border-color: #000; color: #fff; }
+
+    /* 상태 chip */
+    .otb-status {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 22px; padding: 0 8px; border-radius: 4px;
+      font-size: 12px; font-weight: 600;
+    }
+    .otb-status--pending  { background: #FFF7E6; color: #C2710C; }
+    .otb-status--approved { background: #E8F5E9; color: #1EA514; }
+    .otb-status--rejected { background: #FFECEC; color: #F31110; }
+
+    /* 플랫폼 chip */
+    .otb-platform-chip {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 22px; padding: 0 8px; border-radius: 4px;
+      font-size: 12px; font-weight: 600; line-height: 1;
+    }
+    .otb-platform-chip--musinsa { background: #000; color: #fff; }
+    .otb-platform-chip--29cm    { background: #245EFF; color: #fff; }
+
+    /* FROM → TO tag cell */
+    .otb-ft-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
+    .otb-ft-tag__side {
+      display: inline-flex; align-items: center; gap: 4px;
+      height: 22px; padding: 0 8px; border-radius: 4px;
+      font-weight: 500;
+    }
+    .otb-ft-tag__side--from { background: #FEF2F2; color: #DC2626; }
+    .otb-ft-tag__side--to   { background: #ECFDF5; color: #16A34A; }
+    .otb-ft-tag__sep        { color: #8A8A8A; }
+    .otb-ft-tag__side em    { font-style: normal; font-weight: 600; }
+    .otb-ft-tag__amount     { font-variant-numeric: tabular-nums; font-weight: 600; margin-left: 2px; }
+
+    /* 처리 결과 cell — handler 정보 or 대기중 */
+    .otb-result-meta { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: #666; }
+    .otb-result-meta strong { color: #000; font-weight: 600; font-size: 13px; }
+    .otb-result-meta__date { color: #8A8A8A; }
+    .otb-result-meta__pending { color: #C2710C; font-style: normal; font-weight: 500; }
+
+    /* ============================================================
+       새 조정 요청 모달 — FROM/TO 폼
+       ============================================================ */
+    .otb-adj-modal-bd { position: fixed; inset: 0; z-index: 1099; background: rgba(0,0,0,0.45); }
+    .otb-adj-modal-bd[hidden] { display: none; }
+    .otb-adj-modal {
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 820px; max-width: calc(100vw - 80px);
+      max-height: calc(100vh - 80px);
+      background: #fff; border-radius: 8px;
+      box-shadow: 0 10px 15px 8px rgba(0,0,0,0.05);
+      display: flex; flex-direction: column;
+      z-index: 1100; font-family: inherit;
+    }
+    .otb-adj-modal[hidden] { display: none; }
+    .otb-adj-modal__head {
+      padding: 22px 24px 14px;
+      display: flex; align-items: flex-start; justify-content: space-between;
+      border-bottom: 1px solid #F0F0F0;
+    }
+    .otb-adj-modal__title { margin: 0; font-size: 18px; font-weight: 600; color: #000; line-height: 1.4; }
+    .otb-adj-modal__sub { font-size: 13px; color: #666; margin-top: 4px; }
+    .otb-adj-modal__close {
+      width: 28px; height: 28px;
+      background: transparent; border: 0; border-radius: 4px; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .otb-adj-modal__close:hover { background: var(--ld-bg-low, #F5F5F5); }
+    .otb-adj-modal__body {
+      padding: 18px 24px;
+      flex: 1 1 auto; min-height: 0; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 18px;
+    }
+    .otb-adj-modal__footer {
+      padding: 14px 24px;
+      display: flex; gap: 8px; justify-content: flex-end;
+      border-top: 1px solid #F0F0F0;
+    }
+
+    /* 플랫폼 toggle (모달 안) */
+    .otb-adj-platform-row { display: flex; align-items: center; gap: 12px; }
+    .otb-adj-platform-row__label { font-size: 13px; font-weight: 500; color: #666; min-width: 50px; }
+    .otb-adj-platform-chip-btn {
+      height: 32px; padding: 0 14px;
+      background: #fff; border: 1px solid #E0E0E0; border-radius: 4px;
+      font-family: inherit; font-size: 13px; font-weight: 500; color: #666;
+      cursor: pointer;
+    }
+    .otb-adj-platform-chip-btn.is-active { background: #000; border-color: #000; color: #fff; }
+    .otb-adj-platform-row__note { font-size: 12px; color: #8A8A8A; margin-left: 8px; }
+
+    /* FROM/TO grid */
+    .otb-ft-grid {
+      display: grid; grid-template-columns: 1fr 24px 1fr;
+      gap: 16px; align-items: stretch;
+    }
+    .otb-ft-arrow { align-self: center; display: inline-flex; align-items: center; justify-content: center; color: #8A8A8A; }
+    .otb-ft-card { border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .otb-ft-card--from { background: #FEF2F2; border: 1px solid #FECACA; }
+    .otb-ft-card--to   { background: #ECFDF5; border: 1px solid #BBF7D0; }
+    .otb-ft-card__head { display: flex; align-items: center; justify-content: space-between; }
+    .otb-ft-card__head-left { display: flex; align-items: center; gap: 6px; }
+    .otb-ft-card__head-title { font-size: 13px; font-weight: 700; }
+    .otb-ft-card--from .otb-ft-card__head-title { color: #DC2626; }
+    .otb-ft-card--to   .otb-ft-card__head-title { color: #16A34A; }
+    .otb-ft-card__count-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 22px; height: 22px; padding: 0 6px; border-radius: 99px;
+      font-size: 11px; font-weight: 700;
+    }
+    .otb-ft-card--from .otb-ft-card__count-badge { background: #FECACA; color: #B91C1C; }
+    .otb-ft-card--to   .otb-ft-card__count-badge { background: #BBF7D0; color: #166534; }
+    .otb-ft-card__add-btn {
+      display: inline-flex; align-items: center; gap: 2px;
+      height: 26px; padding: 0 8px;
+      background: rgba(255,255,255,0.7); border: 1px solid rgba(0,0,0,0.06); border-radius: 4px;
+      font-family: inherit; font-size: 12px; font-weight: 500; color: #000;
+      cursor: pointer;
+    }
+    .otb-ft-card__add-btn:hover { background: #fff; }
+    .otb-ft-card__add-btn svg { width: 12px; height: 12px; }
+    .otb-ft-item {
+      background: rgba(255,255,255,0.7);
+      border: 1px solid rgba(0,0,0,0.06); border-radius: 6px;
+      padding: 12px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .otb-ft-item__head { display: flex; align-items: center; justify-content: space-between; }
+    .otb-ft-item__brand-tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; background: rgba(0,0,0,0.04); border-radius: 4px;
+      font-size: 12px; font-weight: 600; color: #000;
+    }
+    .otb-ft-item__del {
+      width: 22px; height: 22px;
+      background: transparent; border: 0; border-radius: 4px;
+      cursor: pointer; color: #8A8A8A;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .otb-ft-item__del:hover { background: rgba(0,0,0,0.04); color: #000; }
+    .otb-ft-item__del svg { width: 12px; height: 12px; }
+    .otb-ft-item__row {
+      display: grid; grid-template-columns: 80px 1fr;
+      align-items: center; gap: 8px; font-size: 12px;
+    }
+    .otb-ft-item__label { color: #666; font-weight: 500; }
+    .otb-ft-item__select, .otb-ft-item__input {
+      width: 100%; height: 36px; padding: 0 10px;
+      background: #fff; border: 1px solid #E0E0E0; border-radius: 4px;
+      font-family: inherit; font-size: 13px; color: #000;
+      box-sizing: border-box;
+    }
+    .otb-ft-item__select {
+      appearance: none; -webkit-appearance: none; padding-right: 28px;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'><path d='M4 6L8 10L12 6' stroke='%23000' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+      background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;
+    }
+    .otb-ft-item__amount-wrap { position: relative; display: flex; align-items: stretch; }
+    .otb-ft-item__amount-wrap input { padding-right: 24px; text-align: right; font-variant-numeric: tabular-nums; }
+    .otb-ft-item__amount-wrap__suffix {
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      font-size: 12px; color: #666; pointer-events: none;
+    }
+    .otb-ft-card__total-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.08);
+      font-size: 13px;
+    }
+    .otb-ft-card__total-row-label { color: #666; font-weight: 500; }
+    .otb-ft-card--from .otb-ft-card__total-row-amount { color: #DC2626; font-weight: 700; }
+    .otb-ft-card--to   .otb-ft-card__total-row-amount { color: #16A34A; font-weight: 700; }
+    .otb-field { display: flex; flex-direction: column; gap: 6px; }
+    .otb-field__label {
+      font-size: 13px; font-weight: 500; color: #666;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .otb-field__optional { font-size: 11px; color: #8A8A8A; font-weight: 400; }
+    .otb-field__req      { color: #245EFF; }
+    .otb-field__textarea {
+      width: 100%; min-height: 76px; padding: 10px 12px;
+      background: #fff; border: 1px solid #E0E0E0; border-radius: 4px;
+      font-family: inherit; font-size: 13px; line-height: 1.5; color: #000;
+      box-sizing: border-box; resize: vertical;
+    }
+    .otb-field__textarea:focus { outline: 0; border-color: #245EFF; }
+    .otb-dropzone {
+      border: 1.5px dashed #E0E0E0; border-radius: 6px;
+      padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 6px;
+      color: #8A8A8A; font-size: 12px;
+      cursor: pointer;
+      transition: background-color 0.12s ease, border-color 0.12s ease;
+    }
+    .otb-dropzone:hover { background: #FAFBFC; border-color: #C0C0C0; }
+    .otb-dropzone svg { width: 22px; height: 22px; color: #B0B0B0; }
+    .otb-dropzone__main { color: #000; font-size: 13px; font-weight: 500; }
+    .otb-dropzone__sub  { color: #8A8A8A; font-size: 11px; }
+    .otb-btn {
+      min-width: 80px; height: 40px; padding: 0 16px;
+      background: #fff; border: 1px solid #E0E0E0; border-radius: 4px;
+      font-family: inherit; font-size: 14px; font-weight: 500; color: #000;
+      cursor: pointer;
+    }
+    .otb-btn:hover { background: #FAFBFC; }
+    .otb-btn--primary { background: #000; border-color: #000; color: #fff; }
+    .otb-btn--primary:hover { background: #1a1a1a; }
+    .otb-btn--primary[disabled] {
+      background: #E0E0E0; border-color: #E0E0E0; color: #8A8A8A; cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+
+<script src="/scm-icons.js"></script>
+
+<header class="scm-topbar" role="banner"></header>
+
+<div class="app">
+  <nav class="scm-lnb" data-active="otb-adjustment-request" aria-label="주메뉴"></nav>
+
+  <main>
+    <div class="scm-page-head scm-page-head--list">
+      <h1 class="scm-page-head__title">예산 조정 요청</h1>
+      <div class="scm-page-head__actions">
+        <button class="otb-ph-btn otb-ph-btn--primary" type="button" id="otb-adj-open-btn">
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          <span>새 조정 요청</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- KPI 4 cards — 내 요청 기준 -->
+    <div class="otb-list-kpis">
+      <div class="otb-list-kpi">
+        <span class="otb-list-kpi__label">내 요청</span>
+        <span class="otb-list-kpi__value" id="otb-mine-total">5</span>
+      </div>
+      <div class="otb-list-kpi">
+        <span class="otb-list-kpi__label">승인 대기</span>
+        <span class="otb-list-kpi__value otb-list-kpi__value--pending" id="otb-mine-pending">2</span>
+      </div>
+      <div class="otb-list-kpi">
+        <span class="otb-list-kpi__label">승인 완료</span>
+        <span class="otb-list-kpi__value otb-list-kpi__value--approved" id="otb-mine-approved">2</span>
+      </div>
+      <div class="otb-list-kpi">
+        <span class="otb-list-kpi__label">반려</span>
+        <span class="otb-list-kpi__value otb-list-kpi__value--rejected" id="otb-mine-rejected">1</span>
+      </div>
+    </div>
+
+    <!-- Filter bar (sticky) -->
+    <div class="scm-filter-bar" id="otb-mine-filter-bar">
+      <div class="otb-filter-inline">
+        <div class="otb-filter-group">
+          <span class="otb-filter-group__label">연도</span>
+          <span class="otb-year-select">
+            <select class="otb-year-select__native" id="otb-mine-year">
+              <option value="all" selected>전체 연도</option>
+              <option value="2025">2025년</option>
+              <option value="2026">2026년</option>
+            </select>
+            <svg class="otb-year-select__chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+        </div>
+        <div class="otb-filter-group">
+          <span class="otb-filter-group__label">플랫폼</span>
+          <div class="otb-chip-group" id="otb-mine-platform-chips" data-filter="platform">
+            <button class="otb-chip is-active" type="button" data-value="all">전체</button>
+            <button class="otb-chip" type="button" data-value="MUSINSA">MUSINSA</button>
+            <button class="otb-chip" type="button" data-value="29CM">29CM</button>
+          </div>
+        </div>
+        <div class="otb-filter-group">
+          <span class="otb-filter-group__label">상태</span>
+          <div class="otb-chip-group" id="otb-mine-status-chips" data-filter="status">
+            <button class="otb-chip is-active" type="button" data-value="all">전체</button>
+            <button class="otb-chip" type="button" data-value="승인 대기">승인 대기</button>
+            <button class="otb-chip" type="button" data-value="승인">승인</button>
+            <button class="otb-chip" type="button" data-value="반려">반려</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats bar (sticky) — 표준 -->
+    <div class="scm-stats-bar scm-stats-bar--sticky">
+      <div class="scm-stats-bar__left">
+        <div class="scm-stats-bar__counts-wrap">
+          <div class="scm-stats-bar__counts">
+            <span class="scm-stat scm-stat--all">
+              <span class="scm-stat__label">전체</span>
+              <span class="scm-stat__num" id="otb-mine-count">5</span>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="scm-stats-bar__right">
+        <button class="scm-download-btn" type="button" id="otb-mine-excel-download-btn">
+          <svg viewBox="0 0 20 20"><use href="#ic-download"/></svg>
+          <span>전체 엑셀 다운로드</span>
+        </button>
+        <span class="scm-stats-bar__v-divider"></span>
+        <span class="scm-pager">
+          <strong class="scm-pager__current">1</strong>
+          <span class="scm-pager__total">/ <span>1</span> 페이지</span>
+          <button class="scm-pager-btn" type="button" aria-label="이전 페이지" disabled><svg viewBox="0 0 20 20"><use href="#ic-chevronLeft"/></svg></button>
+          <button class="scm-pager-btn" type="button" aria-label="다음 페이지" disabled><svg viewBox="0 0 20 20"><use href="#ic-chevronRight"/></svg></button>
+        </span>
+        <span class="scm-pgsize-wrap" id="otb-mine-pgsize">
+          <button class="scm-pgsize" type="button" aria-haspopup="listbox" aria-expanded="false">
+            <span class="scm-pgsize__label">100개씩</span>
+            <svg class="scm-pgsize__chev" viewBox="0 0 16 16"><path d="M3 5.5l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+          <ul class="scm-pgsize-popup" role="listbox"></ul>
+        </span>
+      </div>
+    </div>
+
+    <!-- 테이블 — box 없음 -->
+    <div class="mp-table-host">
+      <div class="mp-thead-sticky"><div class="mp-thead-scroll"></div></div>
+      <div class="mp-table-scroll">
+        <table class="mp-table" id="otb-mine-table">
+          <thead>
+            <tr>
+              <th class="col-auto">상태</th>
+              <th class="col-auto">플랫폼</th>
+              <th class="col-auto">FROM → TO</th>
+              <th class="col-auto cell-numeric">금액</th>
+              <th class="col-auto">요청일</th>
+              <th class="col-auto">처리 결과</th>
+              <th class="col-spacer" aria-hidden="true"></th>
+            </tr>
+          </thead>
+          <tbody id="otb-mine-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ============== 새 조정 요청 modal ============== -->
+<div class="otb-adj-modal-bd" id="otb-adj-bd" hidden></div>
+<div class="otb-adj-modal" id="otb-adj-modal" hidden role="dialog" aria-labelledby="otb-adj-modal-title">
+  <div class="otb-adj-modal__head">
+    <div>
+      <h2 class="otb-adj-modal__title" id="otb-adj-modal-title">새 조정 요청</h2>
+      <div class="otb-adj-modal__sub">FROM · TO 각각 브랜드 또는 팀 단위로 이관 금액을 설정합니다</div>
+    </div>
+    <button class="otb-adj-modal__close" type="button" id="otb-adj-modal-close" aria-label="닫기">
+      <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <path d="M5 5L15 15M15 5L5 15" stroke="#000" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+  <div class="otb-adj-modal__body">
+    <div class="otb-adj-platform-row">
+      <span class="otb-adj-platform-row__label">플랫폼</span>
+      <div style="display:inline-flex; gap:4px;" id="otb-adj-platform-chips" data-filter="platform">
+        <button class="otb-adj-platform-chip-btn is-active" type="button" data-value="MUSINSA">MUSINSA</button>
+        <button class="otb-adj-platform-chip-btn" type="button" data-value="29CM">29CM</button>
+      </div>
+      <span class="otb-adj-platform-row__note">동일 플랫폼 내 이관만 가능</span>
+    </div>
+
+    <div class="otb-ft-grid">
+      <div class="otb-ft-card otb-ft-card--from" id="otb-from-card">
+        <div class="otb-ft-card__head">
+          <div class="otb-ft-card__head-left">
+            <span class="otb-ft-card__head-title">FROM</span>
+            <span class="otb-ft-card__head-title" style="font-weight:500;">감액</span>
+            <span class="otb-ft-card__count-badge" id="otb-from-count">1개</span>
+          </div>
+          <button class="otb-ft-card__add-btn" type="button" id="otb-from-add">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            항목 추가
+          </button>
+        </div>
+        <div class="otb-ft-items" id="otb-from-items"></div>
+        <div class="otb-ft-card__total-row">
+          <span class="otb-ft-card__total-row-label">감액 합계</span>
+          <span class="otb-ft-card__total-row-amount" id="otb-from-total">0.00억원</span>
+        </div>
+      </div>
+      <div class="otb-ft-arrow">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+          <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="otb-ft-card otb-ft-card--to" id="otb-to-card">
+        <div class="otb-ft-card__head">
+          <div class="otb-ft-card__head-left">
+            <span class="otb-ft-card__head-title">TO</span>
+            <span class="otb-ft-card__head-title" style="font-weight:500;">증액</span>
+            <span class="otb-ft-card__count-badge" id="otb-to-count">1개</span>
+          </div>
+          <button class="otb-ft-card__add-btn" type="button" id="otb-to-add">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            항목 추가
+          </button>
+        </div>
+        <div class="otb-ft-items" id="otb-to-items"></div>
+        <div class="otb-ft-card__total-row">
+          <span class="otb-ft-card__total-row-label">증액 합계</span>
+          <span class="otb-ft-card__total-row-amount" id="otb-to-total">0.00억원</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="otb-field">
+      <label class="otb-field__label" for="otb-supplement">보충/판매 목표를 맞추기 위한 계획 <span class="otb-field__optional">(선택)</span></label>
+      <textarea class="otb-field__textarea" id="otb-supplement" rows="2" placeholder="예: 풋웨어 팀 목표 30일 달성을 위해 여성 팀 예산 일부를 이관합니다"></textarea>
+    </div>
+    <div class="otb-field">
+      <label class="otb-field__label" for="otb-reason">이관 사유 <span class="otb-field__req">*</span></label>
+      <textarea class="otb-field__textarea" id="otb-reason" rows="2" placeholder="예산 이관이 필요한 사유를 입력하세요"></textarea>
+    </div>
+    <div class="otb-field">
+      <label class="otb-field__label">첨부파일 <span class="otb-field__optional">(선택)</span></label>
+      <div class="otb-dropzone" id="otb-dropzone">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 5l-4-3-4 3M12 2v12M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="otb-dropzone__main">파일을 드래그하거나 클릭하여 첨부</div>
+        <div class="otb-dropzone__sub">PDF, Excel, Word, 이미지 · 최대 20MB</div>
+      </div>
+    </div>
+  </div>
+  <div class="otb-adj-modal__footer">
+    <button class="otb-btn" type="button" id="otb-adj-cancel">취소</button>
+    <button class="otb-btn otb-btn--primary" type="button" id="otb-adj-submit" disabled>이관 요청 제출</button>
+  </div>
+</div>
+
+<script src="../design%20system/components/lnb/lnb.js"></script>
+<script src="../design%20system/components/topbar/topbar.js"></script>
+<script src="../design%20system/components/scroll-lock/scroll-lock.js"></script>
+<script src="../design%20system/components/toast/toast.js"></script>
+<script src="../design%20system/components/pgsize-select/pgsize-select.js"></script>
+<script src="../design%20system/components/scm-table/scm-table.js"></script>
+
+<script>
+(function () {
+  'use strict';
+
+  // ============================================================
+  // 내가 요청한 조정 데이터 (MD 본인이 올린 것만)
+  // ============================================================
+  var MY_REQUESTS = [
+    { status:'승인', platform:'MUSINSA',
+      from: [{ brand:'A 브랜드', team:'풋웨어', amount:0.50 }],
+      to:   [{ brand:'F 브랜드', team:'여성',   amount:0.50 }],
+      amount: 0.50, date:'2025-04-10', year:2025,
+      handler: { name:'이수진 PM', date:'2025-04-11' },
+    },
+    { status:'승인 대기', platform:'MUSINSA',
+      from: [{ brand:'C 브랜드', team:'글로벌', amount:0.30 }],
+      to:   [{ brand:'A 브랜드', team:'풋웨어', amount:0.30 }],
+      amount: 0.30, date:'2025-05-02', year:2025,
+      handler: null,
+    },
+    { status:'반려', platform:'29CM',
+      from: [{ brand:'여성',         amount:0.20 }],
+      to:   [{ brand:'라이프스타일', amount:0.20 }],
+      amount: 0.20, date:'2025-03-20', year:2025,
+      handler: { name:'이수진 PM', date:'2025-03-22', reason:'근거 자료 부족' },
+    },
+    { status:'승인', platform:'29CM',
+      from: [{ brand:'E 브랜드', team:'여성',   amount:0.80 }, { brand:'글로벌', amount:0.40 }],
+      to:   [{ brand:'E 브랜드', team:'글로벌', amount:1.20 }],
+      amount: 1.20, date:'2025-04-22', year:2025,
+      handler: { name:'이수진 PM', date:'2025-04-23' },
+    },
+    { status:'승인 대기', platform:'MUSINSA',
+      from: [{ brand:'남성',      amount:0.80 }],
+      to:   [{ brand:'F 브랜드', team:'여성', amount:0.80 }],
+      amount: 0.80, date:'2025-05-08', year:2025,
+      handler: null,
+    },
+  ];
+
+  function statusCls(s) {
+    if (s === '승인')      return 'otb-status--approved';
+    if (s === '승인 대기') return 'otb-status--pending';
+    if (s === '반려')      return 'otb-status--rejected';
+    return '';
+  }
+  function platformChip(p) {
+    var cls = p === 'MUSINSA' ? 'musinsa' : '29cm';
+    return '<span class="otb-platform-chip otb-platform-chip--' + cls + '">' + p + '</span>';
+  }
+  function ftSideHtml(side, items) {
+    var parts = items.map(function (it) {
+      var teamStr = it.team ? ' (' + it.team + ')' : '';
+      return '<em>' + it.brand + teamStr + '</em>' +
+             '<span class="otb-ft-tag__amount">' + it.amount.toFixed(2) + '억</span>';
+    }).join(' / ');
+    return '<span class="otb-ft-tag__side otb-ft-tag__side--' + side + '">' + parts + '</span>';
+  }
+  function resultCellHtml(r) {
+    if (r.status === '승인 대기') {
+      return '<span class="otb-result-meta__pending">처리 대기 중</span>';
+    }
+    if (r.handler) {
+      var reasonStr = (r.status === '반려' && r.handler.reason)
+        ? '<span class="otb-result-meta__date">반려 사유: ' + r.handler.reason + '</span>'
+        : '';
+      return '<div class="otb-result-meta">' +
+        '<strong>' + r.handler.name + '</strong>' +
+        '<span class="otb-result-meta__date">' + r.handler.date + '</span>' +
+        reasonStr +
+      '</div>';
+    }
+    return '—';
+  }
+  function rowHtml(r, idx) {
+    return '<tr data-idx="' + idx + '">' +
+      '<td class="col-auto"><span class="otb-status ' + statusCls(r.status) + '">' + r.status + '</span></td>' +
+      '<td class="col-auto">' + platformChip(r.platform) + '</td>' +
+      '<td class="col-auto">' +
+        '<span class="otb-ft-tag">' +
+          ftSideHtml('from', r.from) +
+          '<svg class="otb-ft-tag__sep" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+          ftSideHtml('to', r.to) +
+        '</span>' +
+      '</td>' +
+      '<td class="col-auto cell-numeric">' + r.amount.toFixed(2) + '억원</td>' +
+      '<td class="col-auto" style="color:#666;">' + r.date + '</td>' +
+      '<td class="col-auto">' + resultCellHtml(r) + '</td>' +
+      '<td class="col-spacer" aria-hidden="true"></td>' +
+    '</tr>';
+  }
+
+  var listFilter = { year:'all', platform:'all', status:'all' };
+  function renderMyList() {
+    var filtered = MY_REQUESTS.filter(function (r) {
+      if (listFilter.year !== 'all' && String(r.year) !== listFilter.year) return false;
+      if (listFilter.platform !== 'all' && r.platform !== listFilter.platform) return false;
+      if (listFilter.status !== 'all' && r.status !== listFilter.status) return false;
+      return true;
+    });
+    var tb = document.getElementById('otb-mine-tbody');
+    if (tb) tb.innerHTML = filtered.map(function (r, i) { return rowHtml(r, i); }).join('');
+    document.getElementById('otb-mine-count').textContent = filtered.length;
+    document.getElementById('otb-mine-total').textContent    = MY_REQUESTS.length;
+    document.getElementById('otb-mine-pending').textContent  = MY_REQUESTS.filter(function (r) { return r.status === '승인 대기'; }).length;
+    document.getElementById('otb-mine-approved').textContent = MY_REQUESTS.filter(function (r) { return r.status === '승인'; }).length;
+    document.getElementById('otb-mine-rejected').textContent = MY_REQUESTS.filter(function (r) { return r.status === '반려'; }).length;
+  }
+
+  function wireChipGroup(groupEl, onChange) {
+    if (!groupEl) return;
+    groupEl.addEventListener('click', function (e) {
+      var btn = e.target.closest('.otb-chip');
+      if (!btn || !groupEl.contains(btn)) return;
+      var v = btn.getAttribute('data-value');
+      Array.prototype.forEach.call(groupEl.querySelectorAll('.otb-chip'), function (b) {
+        b.classList.toggle('is-active', b === btn);
+      });
+      if (onChange) onChange(v);
+    });
+  }
+  document.getElementById('otb-mine-year').addEventListener('change', function (e) { listFilter.year = e.target.value; renderMyList(); });
+  wireChipGroup(document.getElementById('otb-mine-platform-chips'), function (v) { listFilter.platform = v; renderMyList(); });
+  wireChipGroup(document.getElementById('otb-mine-status-chips'),   function (v) { listFilter.status = v; renderMyList(); });
+
+  // SCMTable.init + pgsize
+  if (window.SCMTable) {
+    try { window.SCMTable.init({ root: document, frozenCount: 0 }); } catch (e) {}
+  }
+  if (window.SCM && SCM.pgsizeSelect) {
+    SCM.pgsizeSelect.mount(document.getElementById('otb-mine-pgsize'), { value: 100 });
+  }
+
+  // 엑셀 다운로드 토스트
+  var dlBtn = document.getElementById('otb-mine-excel-download-btn');
+  if (dlBtn) dlBtn.addEventListener('click', function () {
+    if (window.SCM && SCM.toast) SCM.toast.show({ variant: 'success', title: '엑셀 다운로드', desc: '내 조정 요청 내역을 엑셀로 내려받습니다.' });
+  });
+
+  renderMyList();
+
+  // ============================================================
+  // 새 조정 요청 modal — open / close + 폼 동작
+  // ============================================================
+  function openAdjModal() {
+    var bd = document.getElementById('otb-adj-bd');
+    var md = document.getElementById('otb-adj-modal');
+    if (!bd || bd.hidden === false) return;
+    bd.hidden = false; md.hidden = false;
+    if (window.SCM && SCM.scrollLock) SCM.scrollLock.lock();
+  }
+  function closeAdjModal() {
+    var bd = document.getElementById('otb-adj-bd');
+    var md = document.getElementById('otb-adj-modal');
+    if (!bd || bd.hidden) return;
+    bd.hidden = true; md.hidden = true;
+    if (window.SCM && SCM.scrollLock) SCM.scrollLock.unlock();
+  }
+  var adjOpenBtn = document.getElementById('otb-adj-open-btn');
+  if (adjOpenBtn) adjOpenBtn.addEventListener('click', openAdjModal);
+  var adjBd = document.getElementById('otb-adj-bd');
+  if (adjBd) adjBd.addEventListener('click', closeAdjModal);
+  var adjCloseBtn = document.getElementById('otb-adj-modal-close');
+  if (adjCloseBtn) adjCloseBtn.addEventListener('click', closeAdjModal);
+
+  var BRANDS = [
+    { name:'A 브랜드', team:'풋웨어',       platform:'MUSINSA' },
+    { name:'B 브랜드', team:'여성',         platform:'29CM'    },
+    { name:'C 브랜드', team:'글로벌',       platform:'MUSINSA' },
+    { name:'D 브랜드', team:'풋웨어',       platform:'MUSINSA' },
+    { name:'E 브랜드', team:'글로벌',       platform:'29CM'    },
+    { name:'F 브랜드', team:'여성',         platform:'MUSINSA' },
+    { name:'G 브랜드', team:'라이프스타일', platform:'29CM'    },
+  ];
+  var adjState = {
+    platform: 'MUSINSA',
+    from: [{ brand:'', team:'팀 전체', amount:0 }],
+    to:   [{ brand:'', team:'팀 전체', amount:0 }],
+  };
+  function brandsForPlatform(p) {
+    return BRANDS.filter(function (b) { return b.platform === p; });
+  }
+  function itemHtml(item, idx) {
+    var brandOptions = brandsForPlatform(adjState.platform).map(function (b) {
+      return '<option value="' + b.name + '"' + (b.name === item.brand ? ' selected' : '') + '>' + b.name + '</option>';
+    }).join('');
+    return '<div class="otb-ft-item" data-idx="' + idx + '">' +
+      '<div class="otb-ft-item__head">' +
+        '<span class="otb-ft-item__brand-tag">' +
+          '<svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><circle cx="6" cy="6" r="3.5" fill="currentColor"/></svg>' +
+          '브랜드 <span style="color:#8A8A8A; font-weight:500; margin-left:2px;">· 팀</span>' +
+        '</span>' +
+        '<button class="otb-ft-item__del" type="button" data-act="del" title="삭제">' +
+          '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>' +
+        '</button>' +
+      '</div>' +
+      '<div class="otb-ft-item__row">' +
+        '<span class="otb-ft-item__label">팀</span>' +
+        '<select class="otb-ft-item__select" data-field="team">' +
+          '<option value="팀 전체"' + (item.team === '팀 전체' ? ' selected' : '') + '>팀 전체</option>' +
+          '<option value="풋웨어">풋웨어</option>' +
+          '<option value="플레이어">플레이어</option>' +
+          '<option value="글로벌">글로벌</option>' +
+          '<option value="여성">여성</option>' +
+          '<option value="남성">남성</option>' +
+          '<option value="액세서리">액세서리</option>' +
+          '<option value="라이프스타일">라이프스타일</option>' +
+        '</select>' +
+      '</div>' +
+      '<div class="otb-ft-item__row">' +
+        '<select class="otb-ft-item__select" data-field="brand">' +
+          '<option value="">브랜드 선택</option>' +
+          brandOptions +
+        '</select>' +
+        '<div class="otb-ft-item__amount-wrap">' +
+          '<input class="otb-ft-item__input" data-field="amount" type="text" inputmode="numeric" placeholder="0.00" value="' + (item.amount ? item.amount.toFixed(2) : '') + '" />' +
+          '<span class="otb-ft-item__amount-wrap__suffix">억</span>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+  function sumAmounts(arr) {
+    return arr.reduce(function (s, it) { return s + (Number(it.amount) || 0); }, 0);
+  }
+  function renderAdj() {
+    var fromHost = document.getElementById('otb-from-items');
+    var toHost   = document.getElementById('otb-to-items');
+    if (fromHost) fromHost.innerHTML = adjState.from.map(function (it, i) { return itemHtml(it, i); }).join('');
+    if (toHost)   toHost.innerHTML   = adjState.to.map(function (it, i) { return itemHtml(it, i); }).join('');
+    var fromTotalEl = document.getElementById('otb-from-total');
+    var toTotalEl   = document.getElementById('otb-to-total');
+    var fromCntEl   = document.getElementById('otb-from-count');
+    var toCntEl     = document.getElementById('otb-to-count');
+    if (fromTotalEl) fromTotalEl.textContent = sumAmounts(adjState.from).toFixed(2) + '억원';
+    if (toTotalEl)   toTotalEl.textContent   = sumAmounts(adjState.to).toFixed(2) + '억원';
+    if (fromCntEl) fromCntEl.textContent = adjState.from.length + '개';
+    if (toCntEl)   toCntEl.textContent   = adjState.to.length + '개';
+    refreshAdjSubmit();
+  }
+  function wireBucket(bucket) {
+    var hostId = bucket === 'from' ? 'otb-from-items' : 'otb-to-items';
+    var host = document.getElementById(hostId);
+    if (!host) return;
+    host.addEventListener('input', function (e) {
+      var item = e.target.closest('.otb-ft-item');
+      if (!item) return;
+      var idx = parseInt(item.getAttribute('data-idx'), 10);
+      var field = e.target.getAttribute('data-field');
+      var st = adjState[bucket][idx];
+      if (!st) return;
+      if (field === 'amount') {
+        var raw = e.target.value.replace(/[^\d.]/g, '');
+        st.amount = parseFloat(raw) || 0;
+        refreshAdjSubmit();
+        var totalEl = document.getElementById(bucket === 'from' ? 'otb-from-total' : 'otb-to-total');
+        if (totalEl) totalEl.textContent = sumAmounts(adjState[bucket]).toFixed(2) + '억원';
+      }
+    });
+    host.addEventListener('change', function (e) {
+      var item = e.target.closest('.otb-ft-item');
+      if (!item) return;
+      var idx = parseInt(item.getAttribute('data-idx'), 10);
+      var field = e.target.getAttribute('data-field');
+      var st = adjState[bucket][idx];
+      if (!st) return;
+      if (field === 'brand') st.brand = e.target.value;
+      if (field === 'team')  st.team  = e.target.value;
+      refreshAdjSubmit();
+    });
+    host.addEventListener('click', function (e) {
+      var del = e.target.closest('[data-act="del"]');
+      if (!del) return;
+      var item = e.target.closest('.otb-ft-item');
+      var idx = parseInt(item.getAttribute('data-idx'), 10);
+      if (adjState[bucket].length <= 1) return;
+      adjState[bucket].splice(idx, 1);
+      renderAdj();
+    });
+  }
+  wireBucket('from'); wireBucket('to');
+  document.getElementById('otb-from-add').addEventListener('click', function () {
+    adjState.from.push({ brand:'', team:'팀 전체', amount:0 });
+    renderAdj();
+  });
+  document.getElementById('otb-to-add').addEventListener('click', function () {
+    adjState.to.push({ brand:'', team:'팀 전체', amount:0 });
+    renderAdj();
+  });
+  document.getElementById('otb-adj-platform-chips').addEventListener('click', function (e) {
+    var btn = e.target.closest('.otb-adj-platform-chip-btn');
+    if (!btn) return;
+    var v = btn.getAttribute('data-value');
+    Array.prototype.forEach.call(this.querySelectorAll('.otb-adj-platform-chip-btn'), function (b) {
+      b.classList.toggle('is-active', b === btn);
+    });
+    adjState.platform = v;
+    adjState.from.forEach(function (it) {
+      var ok = brandsForPlatform(v).some(function (b) { return b.name === it.brand; });
+      if (!ok) it.brand = '';
+    });
+    adjState.to.forEach(function (it) {
+      var ok = brandsForPlatform(v).some(function (b) { return b.name === it.brand; });
+      if (!ok) it.brand = '';
+    });
+    renderAdj();
+  });
+  function refreshAdjSubmit() {
+    var btn = document.getElementById('otb-adj-submit');
+    if (!btn) return;
+    var fromTotal = sumAmounts(adjState.from);
+    var toTotal   = sumAmounts(adjState.to);
+    var reason = document.getElementById('otb-reason').value.trim();
+    var ok = fromTotal > 0 && Math.abs(fromTotal - toTotal) < 0.001 && reason.length > 0;
+    btn.disabled = !ok;
+  }
+  var reasonEl = document.getElementById('otb-reason');
+  if (reasonEl) reasonEl.addEventListener('input', refreshAdjSubmit);
+  document.getElementById('otb-adj-cancel').addEventListener('click', closeAdjModal);
+  document.getElementById('otb-adj-submit').addEventListener('click', function () {
+    if (this.disabled) return;
+    // 새 요청을 리스트에 추가 (데모용)
+    var newRow = {
+      status: '승인 대기',
+      platform: adjState.platform,
+      from: adjState.from.filter(function (i) { return i.brand && i.amount > 0; }).map(function (i) {
+        return { brand: i.brand, team: i.team === '팀 전체' ? null : i.team, amount: i.amount };
+      }),
+      to: adjState.to.filter(function (i) { return i.brand && i.amount > 0; }).map(function (i) {
+        return { brand: i.brand, team: i.team === '팀 전체' ? null : i.team, amount: i.amount };
+      }),
+      amount: sumAmounts(adjState.from),
+      date: new Date().toISOString().slice(0, 10),
+      year: new Date().getFullYear(),
+      handler: null,
+    };
+    MY_REQUESTS.unshift(newRow);
+    // 폼 reset
+    adjState.from = [{ brand:'', team:'팀 전체', amount:0 }];
+    adjState.to   = [{ brand:'', team:'팀 전체', amount:0 }];
+    document.getElementById('otb-supplement').value = '';
+    document.getElementById('otb-reason').value = '';
+    renderAdj();
+    closeAdjModal();
+    renderMyList();
+    if (window.SCM && SCM.toast) SCM.toast.show({ variant: 'success', title: '이관 요청 제출', desc: '결재 라인의 승인 후 반영됩니다.' });
+  });
+  document.getElementById('otb-dropzone').addEventListener('click', function () {
+    if (window.SCM && SCM.toast) SCM.toast.show({ variant: 'info', title: '파일 첨부', desc: '데모에서는 동작하지 않습니다.' });
+  });
+
+  renderAdj();
+})();
+</script>
+
+</body>
+</html>
