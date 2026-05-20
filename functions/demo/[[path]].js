@@ -28,7 +28,10 @@
 
 import { KNOWN_DEMO_ASSETS } from './_known-assets.js';
 
-const KNOWN = new Set(KNOWN_DEMO_ASSETS);
+// 소문자 normalized 셋. macOS 의 case-insensitive 파일시스템에서 sync 가
+// 혼합 케이스 (예: 'Product-Arrival-Status.html') 로 자산을 기록해도, 사용자가
+// 소문자 URL 로 접근했을 때 정상 매칭되게.
+const KNOWN = new Set(KNOWN_DEMO_ASSETS.map((s) => s.toLowerCase()));
 
 const INLINE_BLANK_HTML =
   '<!DOCTYPE html><html><body><!-- demo blank fallback --></body></html>';
@@ -41,7 +44,7 @@ const NO_STORE_HEADERS = {
 export function isKnownAsset(pathname) {
   // /demo 또는 /demo/ 자체 (clean URL → index.html) 는 알려진 자산으로 간주
   if (pathname === '/demo' || pathname === '/demo/') return true;
-  const slug = pathname.replace(/^\/demo\//, '').replace(/\/$/, '');
+  const slug = pathname.replace(/^\/demo\//, '').replace(/\/$/, '').toLowerCase();
   if (!slug) return true;
   if (KNOWN.has(slug)) return true;
   // clean URL (확장자 없음) 도 .html 추가 시 화이트리스트에 있으면 known
