@@ -24,25 +24,12 @@
   var POP_GAP = 6; // 벨 하단과 팝오버 사이 간격
   var VIEWPORT_MARGIN = 8;
 
-  // ── 기본 데모 알림 데이터 (Figma 타임라인) ──────────────────
-  var DEFAULT_ITEMS = [
-    { time: '26.03.16. 12:00', unread: true, dot: 'active', entries: [
-      { title: 'MFS 물류중앙화 출고 취소', status: '성공', ref: 'TX-INB2603050000018' },
-      { title: 'MFS 물류중앙화 출고 취소', status: '실패', ref: 'TX-INB2603050000018', reason: '이미 취소 처리된 요청입니다.' },
-    ]},
-    { time: '26.03.16. 12:00', unread: true, entries: [
-      { title: 'MFS 재고보충 출고 취소', status: '성공', ref: 'OB94825-3850837NWH02' },
-    ]},
-    { time: '26.03.16. 12:00', unread: true, entries: [
-      { title: 'MFS 물류중앙화 출고 취소', status: '실패', ref: 'TX-INB2603050000018', reason: '이미 취소 처리된 요청입니다.' },
-    ]},
-    { time: '26.03.16. 12:00', unread: true, entries: [
-      { title: 'MFS 재고보충 출고 취소', status: '실패', ref: 'TX-INB2603050000018', reason: '이미 취소 처리된 요청입니다.' },
-    ]},
-    { time: '26.03.16. 12:00', unread: true, entries: [
-      { title: '2건 입고 취소', status: '성공', ref: 'TX-INB2603050000018' },
-    ]},
-  ];
+  // ── 기본 알림 데이터 ────────────────────────────────────────
+  // 디폴트는 빈 목록. 알림이 없어도 벨을 누르면 빈 상태 모달이 열린다.
+  // 출고취소 등 액션이 SCM.notifyBox.add() 로 알림을 쌓는다.
+  // (참고용 item 형태: { time, dot:'active'?, unread:true?,
+  //   entries:[{ title, status:'성공'|'실패', ref?, reason? }] })
+  var DEFAULT_ITEMS = [];
 
   var STYLE_ID = 'scm-notify-pop-style';
   var CSS = [
@@ -68,8 +55,8 @@
     '.scm-notify-row__line{flex:1 1 auto;width:0;border-left:1px solid #EBEBEB;margin-top:2px;}',
     '.scm-notify-row:last-child .scm-notify-row__line{display:none;}',
     '.scm-notify-row__content{flex:1 1 0;min-width:0;padding-bottom:28px;display:flex;flex-direction:column;gap:8px;}',
-    '.scm-notify-row__date{display:flex;align-items:center;gap:4px;color:#8A8A8A;font-size:14px;font-weight:400;line-height:19.6px;}',
-    '.scm-notify-row__unread{width:5px;height:5px;border-radius:9999px;background:#245EFF;flex:0 0 auto;align-self:center;}',
+    '.scm-notify-row__date{display:flex;align-items:flex-start;gap:4px;color:#8A8A8A;font-size:14px;font-weight:400;line-height:19.6px;}',
+    '.scm-notify-row__unread{width:5px;height:5px;border-radius:9999px;background:#245EFF;flex:0 0 auto;align-self:flex-start;margin-top:4px;}',
     '.scm-notify-entry{display:flex;flex-direction:column;gap:4px;}',
     '.scm-notify-entry + .scm-notify-entry{margin-top:8px;}',
     '.scm-notify-entry__title{display:flex;align-items:center;flex-wrap:wrap;gap:4px;color:#000;font-size:15px;font-weight:500;line-height:20.4px;}',
@@ -77,8 +64,8 @@
     '.scm-notify-entry__status{font-size:15px;font-weight:600;line-height:20.4px;}',
     '.scm-notify-entry__status--ok{color:#245EFF;}',
     '.scm-notify-entry__status--fail{color:#F31110;}',
-    '.scm-notify-entry__ref{display:flex;align-items:center;gap:2px;min-height:24px;color:rgba(0,0,0,0.88);font-size:14px;font-weight:400;line-height:19.6px;}',
-    '.scm-notify-entry__copy{width:16px;height:16px;padding:0;background:transparent;border:0;cursor:pointer;color:#000;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;}',
+    '.scm-notify-entry__ref{display:flex;align-items:center;gap:0;min-height:24px;color:rgba(0,0,0,0.88);font-size:14px;font-weight:400;line-height:19.6px;}',
+    '.scm-notify-entry__copy{width:16px;height:16px;padding:0 0 0 2px;background:transparent;border:0;cursor:pointer;color:#000;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;box-sizing:content-box;}',
     '.scm-notify-entry__copy:hover{color:#245EFF;}',
     '.scm-notify-entry__copy svg{width:16px;height:16px;}',
     '.scm-notify-entry__reason{color:#8A8A8A;font-size:14px;font-weight:400;line-height:19.6px;}',
@@ -148,9 +135,40 @@
 
   var popEl = null;
 
+  // 단일 mutable 상태 배열 — add()/markAllRead() 가 직접 변경.
+  // 최초 1회 SCM_NOTIFY_ITEMS(있으면) 또는 DEFAULT_ITEMS 를 복제해서 시작.
+  var STATE_ITEMS = null;
   function getItems() {
-    var custom = root.SCM_NOTIFY_ITEMS;
-    return (custom && custom.length) ? custom : DEFAULT_ITEMS;
+    if (!STATE_ITEMS) {
+      var custom = root.SCM_NOTIFY_ITEMS;
+      STATE_ITEMS = (custom && custom.length) ? custom.slice() : DEFAULT_ITEMS.slice();
+    }
+    return STATE_ITEMS;
+  }
+
+  // 현재 시각을 알림 타임스탬프 포맷("26.03.16. 12:00")으로.
+  function nowLabel() {
+    var d = new Date();
+    var p = function (n) { return String(n).padStart(2, '0'); };
+    return p(d.getFullYear() % 100) + '.' + p(d.getMonth() + 1) + '.' + p(d.getDate()) + '. ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  // 새 알림을 맨 위에 추가 — 신규(unread)로 표시되고 배지 증가.
+  // item: { time?, entries: [{ title, status('성공'|'실패'), ref?, reason? }] }
+  function add(item) {
+    if (!item) return;
+    var row = {
+      time: item.time || nowLabel(),
+      dot: 'active',
+      unread: true,
+      entries: (item.entries && item.entries.length) ? item.entries : [{ title: item.title || '', status: item.status || '성공', ref: item.ref, reason: item.reason }],
+    };
+    var list = getItems();
+    // 기존 최신(active) 레일 닷 강등 — 최신 1개만 active 유지.
+    list.forEach(function (r) { if (r && r.dot === 'active') r.dot = null; });
+    list.unshift(row);
+    updateBadge();
+    if (popEl) render();
   }
 
   function buildPop() {
@@ -204,6 +222,29 @@
     popEl.style.left = left + 'px';
   }
 
+  function getBadgeEl() {
+    return document.querySelector('.scm-topbar__notify-badge');
+  }
+  function countUnread() {
+    return getItems().filter(function (r) { return r && r.unread; }).length;
+  }
+  // GNB 벨 배지 = 실제 unread 개수. 0 이면 숨김 (디폴트). 하드코딩 카운트 X —
+  // 신규 표시(unread)와 항상 일치.
+  function updateBadge() {
+    var b = getBadgeEl();
+    if (!b) return;
+    var n = countUnread();
+    if (n > 0) { b.textContent = String(n); b.hidden = false; }
+    else { b.hidden = true; }
+  }
+  // 신규(unread) 표시 모두 해제 — 알림함을 닫을 때 읽음 처리.
+  function markAllRead() {
+    var changed = false;
+    getItems().forEach(function (r) { if (r && r.unread) { r.unread = false; changed = true; } });
+    updateBadge();
+    if (changed && popEl) render();
+  }
+
   function isOpen() {
     return popEl && !popEl.hidden;
   }
@@ -222,6 +263,8 @@
     popEl.hidden = true;
     var bell = getBellBtn();
     if (bell) bell.setAttribute('aria-expanded', 'false');
+    // 알림함을 닫으면 신규 표시 모두 해제 (읽음 처리) → 배지/점 사라짐.
+    markAllRead();
   }
 
   function toggle() {
@@ -257,10 +300,9 @@
     }
     var clearBtn = e.target.closest('.scm-notify-pop__clear');
     if (clearBtn && popEl.contains(clearBtn)) {
-      root.SCM_NOTIFY_ITEMS = [];
+      STATE_ITEMS = [];
       render();
-      var badge = document.querySelector('.scm-topbar__notify-badge');
-      if (badge) badge.hidden = true;
+      updateBadge();
       return;
     }
     // 팝오버 바깥 클릭 → 닫기
@@ -273,6 +315,14 @@
   window.addEventListener('resize', position);
   window.addEventListener('scroll', position, true);
 
+  // 초기 배지 동기화 — topbar mount 후 unread 개수 반영 (디폴트 0 → 숨김).
+  function initBadge() { updateBadge(); }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(initBadge, 0); }, { once: true });
+  } else {
+    setTimeout(initBadge, 0);
+  }
+
   root.SCM = root.SCM || {};
-  root.SCM.notifyBox = { open: open, close: close, toggle: toggle, render: render };
+  root.SCM.notifyBox = { open: open, close: close, toggle: toggle, render: render, add: add, refresh: updateBadge };
 })(typeof window !== 'undefined' ? window : globalThis);
