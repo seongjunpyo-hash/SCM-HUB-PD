@@ -193,6 +193,12 @@
        헤더 경계가 안 보이는 회귀. thead 의 등록일시 셀에만 border-right 명시. */
     .mp-table thead th.stm-c-regdate { border-right: 1px solid #EBEBEB; }
 
+    /* 출고 취소 사유 (마지막 데이터 컬럼) — 처리일시 + 취소 사유 2줄 */
+    .mp-table td.stm-c-cancel { white-space: normal; vertical-align: top; }
+    .stm-cancel-time { font-size: 14px; font-weight: 400; line-height: 19.6px; color: #1A1A1A; }
+    .stm-cancel-reason { margin-top: 2px; font-size: 13px; font-weight: 400; line-height: 18px; color: #8A8A8A; word-break: keep-all; }
+    .stm-cancel-dash { color: #8A8A8A; }
+
     /* === 셀 내 도메인 콘텐츠 === */
     /* 등록번호 셀 — 코드 + 자동승인 작은 라벨 */
     .stm-reg-code { color: #000; font-size: 15px; font-weight: 400; line-height: 20.4px; white-space: pre-line; }
@@ -800,6 +806,7 @@
               <th class="col-auto stm-c-amount cell-numeric" rowspan="2">요청 상품 총액 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
               <th class="col-auto stm-c-user" rowspan="2">등록자 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
               <th class="col-auto stm-c-regdate" rowspan="2">등록일시 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
+              <th class="col-medium stm-c-cancel" rowspan="2">출고 취소 사유 <svg class="sort-ic" viewBox="0 0 16 16"><use href="#ic-arrowUpDown"/></svg><span class="th-icons"><svg class="filter-ic" viewBox="0 0 20 20"><use href="#ic-funnel"/></svg><svg class="more-ic" viewBox="0 0 16 16"><use href="#ic-more-vertical"/></svg></span></th>
               <th class="col-spacer" data-empty="true" rowspan="2" aria-hidden="true"></th>
             </tr>
             <tr id="stm-leaf-row">
@@ -1109,7 +1116,8 @@
       items: [{ moveNo:'2508240000805', outNo:'TX-OTB2508220000491', inNo:'-', status:'출고취소',
         from:'여주1-무신사-오프라인', to:'무신사 스탠다드 포토팀',
         sku:'[쿨탠다드] 오버사이즈 블레이저 [블랙]', skuExtra:'3개',
-        reqQty:4, outQty:4, inQty:'-', totalAmount:'290,000원' }] },
+        reqQty:4, outQty:4, inQty:'-', totalAmount:'290,000원',
+        _cancelTime:'25.02.13 20:10', _cancelReason:'촬영 일정 취소로 반출 불필요' }] },
     { regNo: 'TX-MVR\n2508220000492', auto: '자동승인',
       reasonTitle: '촬영용 반출', reasonTitleWarn: true,
       reasonDesc: '[에디터팀] 0626 이시안 무진장 컨텐츠 촬영',
@@ -1117,7 +1125,8 @@
       items: [{ moveNo:'2508240000806', outNo:'TX-OTB2508220000492', inNo:'-', status:'출고취소',
         from:'여주1-무신사-오프라인', to:'무신사뷰티 콘텐츠팀',
         sku:'베이비 하프 문 백', skuExtra:'',
-        reqQty:1, outQty:1, inQty:'-', totalAmount:'19,900원' }] },
+        reqQty:1, outQty:1, inQty:'-', totalAmount:'19,900원',
+        _cancelTime:'25.02.13 20:15', _cancelReason:'이미 출고 처리된 상품' }] },
 
     // 7~12: 출고완료 ───────────────────────────────────────────
     { regNo: 'TX-MVR\n2508220000493', auto: '자동승인',
@@ -1276,6 +1285,10 @@
         const cbCnt     = isFirst ? '<span class="scm-checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="선택"></span>' : '';
         const userCnt    = isFirst ? `<div class="stm-author-name">${escapeHtml(r.author)}</div>` : '';
         const regDateCnt = isFirst ? `<div class="stm-author-name">${escapeHtml(r.time)}</div>` : '';
+        // 출고 취소 사유 — 출고취소 상태인 inner row 만 처리일시 + 사유 노출, 그 외 '-'
+        const cancelCnt = (it.status === '출고취소')
+          ? `<div class="stm-cancel-time">${escapeHtml(it._cancelTime || '-')}</div><div class="stm-cancel-reason">${escapeHtml(it._cancelReason || '-')}</div>`
+          : '<span class="stm-cancel-dash">-</span>';
 
         // inner content — 매 row 마다
         const chipVar = STATUS_CHIP[it.status] || 'waiting';
@@ -1329,6 +1342,8 @@
             // outer 등록 정보 — first row 만 콘텐츠 (등록자 / 등록일시 두 컬럼)
             `<td class="col-auto stm-c-user${oCls}">${userCnt}</td>` +
             `<td class="col-auto stm-c-regdate${oCls}">${regDateCnt}</td>` +
+            // 출고 취소 사유 — 처리일시 + 취소 사유 (inner row 단위)
+            `<td class="col-medium stm-c-cancel">${cancelCnt}</td>` +
             // 우측 빈 공간 흡수
             '<td class="col-spacer" aria-hidden="true"></td>' +
           '</tr>';
@@ -1540,6 +1555,9 @@
         // 선택된 row 들의 status 를 '출고취소' 로 전환 + cancelReason 기록 (메모리)
         // 재렌더 전에 첫 등록번호를 알림함 ref 로 캡처 (재렌더 후 tr detach 됨).
         let firstRef = '';
+        const _now = new Date();
+        const _p2 = (n) => String(n).padStart(2, '0');
+        const cancelTime = `${_p2(_now.getFullYear() % 100)}.${_p2(_now.getMonth() + 1)}.${_p2(_now.getDate())} ${_p2(_now.getHours())}:${_p2(_now.getMinutes())}`;
         checkedCbs.forEach((cbEl) => {
           const tr = cbEl.closest('tr');
           if (!tr) return;
@@ -1550,6 +1568,7 @@
           r.items.forEach((it) => {
             it.status = '출고취소';
             it._cancelReason = reason;
+            it._cancelTime = cancelTime;
           });
         });
         const cancelCount = checkedCbs.length;
@@ -1583,8 +1602,8 @@
   // 알림함은 GNB 공통(notify-box.js) 으로 이전 — 페이지 전용 notify 모달 로직 제거됨.
 
   // ----- 이동번호 펼치기 toggle — DOM 자체를 재구성 (colspan / leaf / body cell 일관) -----
-  // collapsed → moveno-head colspan=1, row2 leaf 1개, body 14 cell.
-  // expanded  → moveno-head colspan=3, row2 leaf 3개, body 16 cell.
+  // collapsed → moveno-head colspan=1, row2 leaf 1개, body 15 cell (출고취소사유 컬럼 포함).
+  // expanded  → moveno-head colspan=3, row2 leaf 3개, body 17 cell.
   const movenoToggle = document.getElementById('stm-moveno-toggle');
   const movenoHead   = document.getElementById('stm-moveno-head');
   const leafRow      = document.getElementById('stm-leaf-row');
