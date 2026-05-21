@@ -63,7 +63,7 @@
 
     /* ======== 재고이동 페이지 전용 ======== */
 
-    /* 페이지헤드 우측 액션 — "신규 등록" primary (filled) + "알림함" outlined */
+    /* 페이지헤드 우측 액션 — "신규 등록" primary (filled). 알림함은 GNB 공통으로 이전. */
     .stm-register-btn {
       display: inline-flex; align-items: center; gap: 4px;
       height: 44px; min-width: 84px;
@@ -74,18 +74,6 @@
     }
     .stm-register-btn:hover { background: #333; }
     .stm-register-btn svg { width: 20px; height: 20px; color: #fff; }
-
-    .stm-notify-btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      height: 44px; padding: 0 12px;
-      background: #fff; border: 1px solid #000; border-radius: 4px;
-      font-family: inherit; font-size: 15px; font-weight: 500; line-height: 20.4px;
-      color: #000; cursor: pointer; white-space: nowrap;
-    }
-    .stm-notify-btn:hover { background: var(--ld-bg-low, #F5F5F5); }
-    .stm-notify-btn__divider { width: 1px; height: 16px; background: #EBEBEB; }
-    .stm-notify-btn__status { display: inline-flex; align-items: center; gap: 2px; color: #245EFF; }
-    .stm-notify-btn__status-num { font-weight: 600; }
 
     /* stats-bar 의 "미반납 건 보기" 토글 — 우측 정렬 */
     .stm-toggle-wrap {
@@ -580,106 +568,7 @@
       cursor: pointer;
     }
 
-    /* ============================================================
-       알림함 모달 (640px) — Product-Arrival-Status 패턴 포팅
-       ============================================================ */
-    .stm-notify-modal-backdrop {
-      position: fixed; inset: 0; z-index: 1099;
-      background: rgba(0, 0, 0, 0.45);
-    }
-    .stm-notify-modal-backdrop[hidden] { display: none; }
-    .stm-notify-modal {
-      position: fixed; top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      width: 640px; max-width: 640px;
-      background: #fff; border-radius: 8px;
-      box-shadow: 0 10px 15px 8px rgba(0,0,0,0.05);
-      display: flex; flex-direction: column;
-      max-height: calc(100vh - 80px); overflow: hidden;
-      z-index: 1100;
-      font-family: inherit;
-    }
-    .stm-notify-modal[hidden] { display: none; }
-    .stm-notify-modal__head { padding: 24px 24px 0; }
-    .stm-notify-modal__title { margin: 0; color: #000; font-size: 18px; font-weight: 600; line-height: 24.48px; }
-    .stm-notify-modal__body {
-      flex: 1 1 auto;
-      padding: 20px 24px 0;
-      max-height: 628px;
-      overflow: hidden;
-      display: flex; flex-direction: column;
-    }
-    .stm-notify-table {
-      display: flex; flex-direction: column;
-      border-top: 1.5px solid #000;
-      border-bottom: 1px solid #EBEBEB;
-      overflow-y: auto;
-      min-height: 0;
-    }
-    .stm-notify-row {
-      display: flex; align-items: stretch;
-      border-top: 1px solid #EBEBEB;
-      min-height: 52px;
-      flex-shrink: 0;
-    }
-    .stm-notify-row:first-child { border-top: 0; }
-    .stm-notify-cell {
-      padding: 16px;
-      font-size: 15px; font-weight: 400; line-height: 20.4px;
-      color: #000;
-      box-sizing: border-box;
-    }
-    .stm-notify-row--head {
-      background: #fff; border-top: 0;
-      position: sticky; top: 0; z-index: 2;
-    }
-    .stm-notify-row--head .stm-notify-cell {
-      font-weight: 500; color: #000; background: #fff;
-      padding-top: 14px; padding-bottom: 14px;
-    }
-    .stm-notify-row--head::after {
-      content: ''; position: absolute; left: 0; right: 0; bottom: -1px;
-      height: 1px; background: #EBEBEB;
-    }
-    .stm-notify-cell--date { width: 152px; flex: 0 0 152px; white-space: nowrap; }
-    .stm-notify-cell--content {
-      width: 310px; flex: 0 0 310px;
-      border-left: 1px solid #EBEBEB;
-      display: flex; flex-direction: column; gap: 20px;
-    }
-    .stm-notify-cell--writer {
-      flex: 1 1 auto; min-width: 0;
-      border-left: 1px solid #EBEBEB;
-      white-space: nowrap;
-    }
-    .stm-notify-item { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-    .stm-notify-item__title { color: #1A1A1A; font-size: 15px; font-weight: 600; line-height: 20.4px; }
-    .stm-notify-item__title .stm-notify-success { color: #1A1A1A; }
-    .stm-notify-item__title .stm-notify-fail    { color: #FF4D4F; }
-    .stm-notify-item__row { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
-    .stm-notify-item__ref { color: #8A8A8A; font-size: 15px; font-weight: 400; line-height: 20.4px; }
-    .stm-notify-item__cta {
-      display: inline-flex; align-items: center; justify-content: center; gap: 2px;
-      height: 20px; min-height: 20px; max-height: 20px;
-      padding: 0; background: transparent;
-      border: 0; border-radius: 4px;
-      color: #245EFF; font-size: 14px; font-weight: 500; line-height: 19.6px;
-      font-family: inherit; cursor: pointer; white-space: nowrap;
-    }
-    .stm-notify-item__cta:hover { background: rgba(36, 94, 255, 0.06); }
-    .stm-notify-item__cta svg { width: 16px; height: 16px; flex-shrink: 0; color: #245EFF; }
-    .stm-notify-modal__footer {
-      padding: 24px 24px 16px;
-      display: flex; justify-content: flex-end; gap: 8px;
-      border-top: 0;
-    }
-    .stm-notify-modal__close-btn {
-      min-width: 56px; height: 44px; padding: 12px;
-      background: #fff; border: 1px solid #E0E0E0; border-radius: 4px;
-      font-family: inherit; font-size: 15px; font-weight: 500; color: #000;
-      cursor: pointer;
-    }
-    .stm-notify-modal__close-btn:hover { background: #FAFBFC; }
+    /* 알림함은 GNB 공통(notify-box.js) 으로 이전 — 페이지 전용 모달 CSS 제거됨 */
 
     /* ============================================================
        출고 취소 확인 모달 (360px)
@@ -783,14 +672,6 @@
       <div class="scm-page-head__actions">
         <button class="stm-register-btn" type="button" id="stm-register-btn">
           <span>신규 등록</span>
-        </button>
-        <button class="stm-notify-btn" type="button" id="stm-notify-btn" aria-label="알림함">
-          <span>알림함</span>
-          <span class="stm-notify-btn__divider"></span>
-          <span class="stm-notify-btn__status">
-            <span>진행중</span>
-            <span class="stm-notify-btn__status-num">2</span>
-          </span>
         </button>
       </div>
     </div>
@@ -1115,20 +996,6 @@
     <button class="stm-drawer__close-btn" type="button" id="stm-drawer-close-btn">닫기</button>
   </footer>
 </aside>
-
-<!-- 알림함 모달 -->
-<div class="stm-notify-modal-backdrop" id="stm-notify-modal-backdrop" hidden></div>
-<div class="stm-notify-modal" id="stm-notify-modal" hidden role="dialog" aria-labelledby="stm-notify-modal-title">
-  <header class="stm-notify-modal__head">
-    <h2 class="stm-notify-modal__title" id="stm-notify-modal-title">알림함</h2>
-  </header>
-  <div class="stm-notify-modal__body">
-    <div class="stm-notify-table" id="stm-notify-modal-tbody"></div>
-  </div>
-  <footer class="stm-notify-modal__footer">
-    <button class="stm-notify-modal__close-btn" type="button" id="stm-notify-modal-close-btn">닫기</button>
-  </footer>
-</div>
 
 <!-- 출고 취소 확인 모달 -->
 <div class="stm-cancel-modal-backdrop" id="stm-cancel-modal-backdrop" hidden></div>
@@ -1693,150 +1560,13 @@
         if (SCM.toast) SCM.toast.show({
           variant: 'info',
           title: '출고 취소 처리 시작',
-          desc: '화면을 닫아도 처리는 계속 진행됩니다.',
+          desc: '화면을 닫아도 처리는 계속 진행됩니다. 결과는 GNB 알림함에서 확인할 수 있습니다.',
         });
-        // 알림함 카운트 증가 (진행중)
-        _stmBumpNotifyProgress(checkedCbs.length);
-        // 데모 transition — 5초 후 절반 완료, 10초 후 전부 완료
-        const n = checkedCbs.length;
-        const half = Math.ceil(n / 2);
-        setTimeout(() => _stmCompleteNotify(half), 5000);
-        setTimeout(() => _stmCompleteNotify(n - half), 10000);
       });
     });
   }
 
-  // ============================================================
-  // 알림함 모달 (notify modal)
-  // ============================================================
-  const _stmNotifyState = { progress: 0, complete: 0 };
-  function _stmRefreshNotifyBtn() {
-    const btn = document.getElementById('stm-notify-btn');
-    if (!btn) return;
-    const divider = btn.querySelector('.stm-notify-btn__divider');
-    const status  = btn.querySelector('.stm-notify-btn__status');
-    const numEl   = btn.querySelector('.stm-notify-btn__status-num');
-    const labelEl = status ? status.querySelector('span:not(.stm-notify-btn__status-num)') : null;
-    if (!divider || !status || !numEl) return;
-    if (_stmNotifyState.progress > 0) {
-      if (labelEl) labelEl.textContent = '진행중';
-      numEl.textContent = `${_stmNotifyState.progress}/${_stmNotifyState.complete}`;
-      status.style.color = '#245EFF';
-    } else if (_stmNotifyState.complete > 0) {
-      if (labelEl) labelEl.textContent = '완료';
-      numEl.textContent = String(_stmNotifyState.complete);
-      status.style.color = '#1EA514';
-    } else {
-      if (labelEl) labelEl.textContent = '진행중';
-      numEl.textContent = '0';
-      status.style.color = '#245EFF';
-    }
-  }
-  function _stmBumpNotifyProgress(n) {
-    _stmNotifyState.progress += n;
-    _stmRefreshNotifyBtn();
-  }
-  function _stmCompleteNotify(k) {
-    if (k > _stmNotifyState.progress) k = _stmNotifyState.progress;
-    _stmNotifyState.progress -= k;
-    _stmNotifyState.complete += k;
-    _stmNotifyState.notifyHistory = (_stmNotifyState.notifyHistory || []).concat({
-      date: new Date().toLocaleString('ko-KR', { year:'2-digit', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false }).replace(/\. /g, '.').replace('.', ''),
-      writer: '정이삭',
-      items: [{ kind:'success', count: k, ref: 'TX-MVR' + Math.floor(Math.random()*10000) }],
-    });
-    _stmRefreshNotifyBtn();
-  }
-
-  // 더미 알림 데이터 — 처음 열었을 때 보이는 기본 row 들
-  const _STM_NOTIFY_ROWS = [
-    { date:'25.02.13 12:00', writer:'홍길동', items: [{ kind:'success', count:9,  ref:'TX-MVR2508220000487 외 5' }]},
-    { date:'25.02.13 12:00', writer:'홍길동', items: [
-      { kind:'success', count:9,  ref:'TX-MVR2508220000488 외 5' },
-      { kind:'fail',    count:1,  ref:'TX-MVR2508220000489' },
-    ]},
-    { date:'25.02.13 11:30', writer:'박지수', items: [{ kind:'success', count:12, ref:'TX-MVR2508220000490 외 5' }]},
-    { date:'25.02.13 10:00', writer:'정이삭', items: [
-      { kind:'success', count:20, ref:'TX-MVR2508220000491 외 5' },
-      { kind:'fail',    count:2,  ref:'TX-MVR2508220000492 외 1' },
-    ]},
-    { date:'25.02.12 18:00', writer:'홍길동', items: [{ kind:'success', count:5,  ref:'TX-MVR2508220000493 외 5' }]},
-  ];
-  function _stmNotifyItemHtml(it) {
-    const word = it.kind === 'success' ? '성공' : '실패';
-    const toneCls = it.kind === 'success' ? 'stm-notify-success' : 'stm-notify-fail';
-    return (
-      '<div class="stm-notify-item">' +
-        '<div class="stm-notify-item__title">' +
-          `<span>${it.count}건 출고 취소 </span>` +
-          `<span class="${toneCls}">${word}</span>` +
-        '</div>' +
-        '<div class="stm-notify-item__row">' +
-          `<span class="stm-notify-item__ref">${escapeHtml(it.ref)}</span>` +
-          `<button type="button" class="stm-notify-item__cta" data-ref="${escapeHtml(it.ref)}">` +
-            '<span>확인하기</span>' +
-            '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.2L10.8 8L6 12.8" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
-          '</button>' +
-        '</div>' +
-      '</div>'
-    );
-  }
-  function _stmRenderNotifyList() {
-    const root = document.getElementById('stm-notify-modal-tbody');
-    if (!root) return;
-    const allRows = [].concat(_stmNotifyState.notifyHistory || []).concat(_STM_NOTIFY_ROWS);
-    const headHtml = (
-      '<div class="stm-notify-row stm-notify-row--head">' +
-        '<div class="stm-notify-cell stm-notify-cell--date">처리일시</div>' +
-        '<div class="stm-notify-cell stm-notify-cell--content">내용</div>' +
-        '<div class="stm-notify-cell stm-notify-cell--writer">처리자</div>' +
-      '</div>'
-    );
-    root.innerHTML = headHtml + allRows.map(r => (
-      '<div class="stm-notify-row">' +
-        `<div class="stm-notify-cell stm-notify-cell--date">${escapeHtml(r.date)}</div>` +
-        '<div class="stm-notify-cell stm-notify-cell--content">' +
-          r.items.map(_stmNotifyItemHtml).join('') +
-        '</div>' +
-        `<div class="stm-notify-cell stm-notify-cell--writer">${escapeHtml(r.writer)}</div>` +
-      '</div>'
-    )).join('');
-  }
-  function _stmOpenNotifyModal() {
-    const bd = document.getElementById('stm-notify-modal-backdrop');
-    if (!bd || !bd.hidden) return;
-    _stmRenderNotifyList();
-    const md = document.getElementById('stm-notify-modal');
-    bd.hidden = false;
-    if (md) md.hidden = false;
-    if (SCM.scrollLock) SCM.scrollLock.lock();
-  }
-  function _stmCloseNotifyModal() {
-    const bd = document.getElementById('stm-notify-modal-backdrop');
-    if (!bd || bd.hidden) return;
-    const md = document.getElementById('stm-notify-modal');
-    bd.hidden = true;
-    if (md) md.hidden = true;
-    if (SCM.scrollLock) SCM.scrollLock.unlock();
-  }
-  const _stmNotifyBtn = document.getElementById('stm-notify-btn');
-  if (_stmNotifyBtn) _stmNotifyBtn.addEventListener('click', _stmOpenNotifyModal);
-  const _stmNotifyBd = document.getElementById('stm-notify-modal-backdrop');
-  if (_stmNotifyBd) _stmNotifyBd.addEventListener('click', _stmCloseNotifyModal);
-  const _stmNotifyCloseBtn = document.getElementById('stm-notify-modal-close-btn');
-  if (_stmNotifyCloseBtn) _stmNotifyCloseBtn.addEventListener('click', _stmCloseNotifyModal);
-  // 알림 row 내 "확인하기" → 토스트
-  (function wireNotifyCta() {
-    const root = document.getElementById('stm-notify-modal-tbody');
-    if (!root) return;
-    root.addEventListener('click', (e) => {
-      const btn = e.target.closest('.stm-notify-item__cta');
-      if (!btn) return;
-      const ref = btn.getAttribute('data-ref') || '';
-      _stmCloseNotifyModal();
-      if (SCM.toast) SCM.toast.show({ variant: 'info', title: '확인하기', desc: ref + ' 상세로 이동합니다.' });
-    });
-  })();
+  // 알림함은 GNB 공통(notify-box.js) 으로 이전 — 페이지 전용 notify 모달 로직 제거됨.
 
   // ----- 이동번호 펼치기 toggle — DOM 자체를 재구성 (colspan / leaf / body cell 일관) -----
   // collapsed → moveno-head colspan=1, row2 leaf 1개, body 14 cell.

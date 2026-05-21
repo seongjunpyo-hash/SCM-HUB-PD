@@ -39,18 +39,27 @@
     </a>
     <span class="scm-topbar__demo-tag" aria-label="데모 환경">DEMO</span>
   </div>
-  <div class="scm-topbar__right" role="button" tabindex="0">
-    <span class="scm-topbar__avatar">홍</span>
-    <div class="scm-topbar__name-group">
-      <span class="scm-topbar__name">
-        <span class="scm-topbar__name-first">홍길동</span>
-        <span class="scm-topbar__name-suffix">님</span>
-      </span>
-      <span class="scm-topbar__chev">
-        <svg viewBox="0 0 16 16" aria-hidden="true">
-          <path d="M3 6L8 11L13 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-        </svg>
-      </span>
+  <div class="scm-topbar__end">
+    <button class="scm-topbar__notify-btn" type="button" aria-label="알림함" aria-haspopup="dialog" aria-expanded="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+      <span class="scm-topbar__notify-badge" aria-hidden="true">2</span>
+    </button>
+    <div class="scm-topbar__right" role="button" tabindex="0">
+      <span class="scm-topbar__avatar">홍</span>
+      <div class="scm-topbar__name-group">
+        <span class="scm-topbar__name">
+          <span class="scm-topbar__name-first">홍길동</span>
+          <span class="scm-topbar__name-suffix">님</span>
+        </span>
+        <span class="scm-topbar__chev">
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M3 6L8 11L13 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+        </span>
+      </div>
     </div>
   </div>
 </header>

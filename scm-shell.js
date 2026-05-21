@@ -36,6 +36,7 @@
     '/voc/comment-overlay.js',
     '/dev-export.js',
     '/profile-menu.js',
+    '/notify-box.js',
   ];
 
   SCRIPTS.forEach(function (src) {
