@@ -1028,6 +1028,12 @@ ${jsxBody}
         margin-left: auto;
         margin-right: 12px;
       }
+      /* Left-aligned variant — sits inside .scm-topbar__left, right after
+         the version selector. Cancels the auto/right margins. */
+      .scm-dev-export-group.is-leftaligned {
+        margin-left: 12px;
+        margin-right: 0;
+      }
       .scm-dev-export-btn {
         display: inline-flex; align-items: center; gap: 6px;
         height: 32px; padding: 0 12px;
@@ -1345,9 +1351,14 @@ ${jsxBody}
     // selector — it lives in the VOC topbar after the L2 page select.
     // Skip both the handoff group AND the version selector here.
     if (isInIframe()) return;
+    // Version selector first — it lives on the LEFT side of the GNB
+    // (inside .scm-topbar__left, after the logo/DEMO tag).
+    injectVersionSelector(right);
     if (!document.querySelector('.scm-dev-export-group')) {
       const group = document.createElement('div');
-      group.className = 'scm-dev-export-group';
+      // is-leftaligned: sit next to the version selector on the LEFT,
+      // not flush-right against the profile.
+      group.className = 'scm-dev-export-group is-leftaligned';
 
       elDownload = document.createElement('button');
       elDownload.className = 'scm-dev-export-btn';
@@ -1368,15 +1379,19 @@ ${jsxBody}
       elAction.addEventListener('click', onActionClick);
       group.appendChild(elAction);
 
-      right.parentNode.insertBefore(group, right);
-      // Cancel the profile's own margin-left:auto so only the group +
-      // version selector absorb the leftover horizontal space.
-      right.style.marginLeft = '0';
+      // Place the handoff group immediately AFTER the version selector
+      // inside .scm-topbar__left. Falls back to the old right-side slot
+      // (before .scm-topbar__right) if the left container isn't present.
+      const leftEl = document.querySelector('.scm-topbar__left');
+      if (leftEl && elVersionWrap && elVersionWrap.parentNode === leftEl) {
+        if (elVersionWrap.nextSibling) leftEl.insertBefore(group, elVersionWrap.nextSibling);
+        else leftEl.appendChild(group);
+      } else if (leftEl) {
+        leftEl.appendChild(group);
+      } else {
+        right.parentNode.insertBefore(group, right);
+      }
     }
-    // Version selector — always injected (read-only badge inside VOC
-    // iframe, full dropdown standalone). Goes immediately to the LEFT
-    // of the profile, RIGHT of the handoff group.
-    injectVersionSelector(right);
     refresh();
   }
 

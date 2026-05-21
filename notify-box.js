@@ -68,8 +68,8 @@
     '.scm-notify-row__line{flex:1 1 auto;width:0;border-left:1px solid #EBEBEB;margin-top:2px;}',
     '.scm-notify-row:last-child .scm-notify-row__line{display:none;}',
     '.scm-notify-row__content{flex:1 1 0;min-width:0;padding-bottom:28px;display:flex;flex-direction:column;gap:8px;}',
-    '.scm-notify-row__date{display:flex;align-items:center;gap:6px;color:#8A8A8A;font-size:14px;font-weight:400;line-height:19.6px;}',
-    '.scm-notify-row__unread{width:4px;height:4px;border-radius:9999px;background:#245EFF;flex:0 0 auto;}',
+    '.scm-notify-row__date{display:flex;align-items:center;gap:4px;color:#8A8A8A;font-size:14px;font-weight:400;line-height:19.6px;}',
+    '.scm-notify-row__unread{width:5px;height:5px;border-radius:9999px;background:#245EFF;flex:0 0 auto;align-self:center;}',
     '.scm-notify-entry{display:flex;flex-direction:column;gap:4px;}',
     '.scm-notify-entry + .scm-notify-entry{margin-top:8px;}',
     '.scm-notify-entry__title{display:flex;align-items:center;flex-wrap:wrap;gap:4px;color:#000;font-size:15px;font-weight:500;line-height:20.4px;}',
@@ -99,8 +99,9 @@
   }
 
   var COPY_SVG =
-    '<svg viewBox="0 0 16 16" aria-hidden="true">' +
-    '<rect x="3.2" y="2.4" width="9.6" height="11.2" rx="1" stroke="currentColor" stroke-width="1" fill="none"/>' +
+    '<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">' +
+    '<rect x="5" y="5" width="8.5" height="8.5" rx="1.6" stroke="currentColor" stroke-width="1.1"/>' +
+    '<path d="M3 10.5H2.6A1.6 1.6 0 0 1 1 8.9V2.6A1.6 1.6 0 0 1 2.6 1H8.9A1.6 1.6 0 0 1 10.5 2.6V3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>' +
     '</svg>';
 
   function entryHtml(e) {
