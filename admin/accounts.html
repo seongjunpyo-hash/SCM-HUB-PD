@@ -147,12 +147,16 @@
       background: var(--warn); color: #fff; border-radius: 999px;
       font-size: 11px; font-weight: 700;
     }
-    .req-role-sel {
+    .req-role-sel,
+    .user-role-sel {
       height: 30px; padding: 0 8px;
       background: var(--surface); color: var(--fg);
       border: 1px solid var(--line); border-radius: 6px;
       font-family: inherit; font-size: 12px;
     }
+    .user-role-sel:hover { border-color: var(--line-2); }
+    .user-role-sel:focus { outline: none; border-color: var(--accent); }
+    .user-role-sel:disabled { opacity: 0.5; cursor: not-allowed; }
     .req-actions { display: flex; gap: 6px; justify-content: flex-end; }
     .btn--sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
 
@@ -483,6 +487,11 @@
       }
       empty.style.display = 'none'; tbl.style.display = 'table';
 
+      // 변경 가능한 역할 목록 — 초대 드롭다운과 동일 규칙.
+      // super → 전체, admin → 멤버 역할만.
+      const memberRoles = ['biz', 'pm', 'dev', 'pd'];
+      const assignableRoles = me.role === 'super' ? ['super', 'admin', ...memberRoles] : memberRoles;
+
       tbody.innerHTML = users.map(u => {
         const isMe = u.id === me.id;
         const canDel = !isMe && (
@@ -490,16 +499,25 @@
           (me.role === 'admin' && ['biz','pm','dev','pd'].includes(u.role))
         );
         const canToggle = canDel;
+        // 역할 변경 권한은 수정 권한(canModify)과 동일. 변경 대상 역할도
+        // assignableRoles 안에 있어야 옵션으로 노출 (admin 이 super/admin 으로
+        // 승격 못 하도록 — 백엔드 canCreateRole 과 일치).
+        const canChangeRole = canDel && assignableRoles.includes(u.role);
         const canReset = !isMe && me.role === 'super';
         const status = u.is_active
           ? '<span class="status">활성</span>'
           : '<span class="status status--inactive">비활성</span>';
         const meTag = isMe ? '<span class="meta"> (나)</span>' : '';
+        const roleCell = canChangeRole
+          ? `<select class="user-role-sel" data-act="role" data-id="${u.id}" data-current="${u.role}">
+               ${assignableRoles.map(r => `<option value="${r}"${r === u.role ? ' selected' : ''}>${roleLabel(r)}</option>`).join('')}
+             </select>`
+          : roleBadge(u.role);
         return `
         <tr>
           <td class="email">${escapeHtml(u.email)}${meTag}</td>
           <td>${escapeHtml(u.name || '—')}</td>
-          <td>${roleBadge(u.role)}</td>
+          <td>${roleCell}</td>
           <td>${status}</td>
           <td><span class="meta">${fmtTime(u.last_login_at)}</span></td>
           <td class="actions">
@@ -513,6 +531,36 @@
       tbody.querySelectorAll('button[data-act]').forEach(btn => {
         btn.addEventListener('click', onAction);
       });
+      tbody.querySelectorAll('select[data-act="role"]').forEach(sel => {
+        sel.addEventListener('change', onRoleChange);
+      });
+    }
+
+    async function onRoleChange(e) {
+      const sel = e.currentTarget;
+      const id = sel.dataset.id;
+      const current = sel.dataset.current;
+      const next = sel.value;
+      if (next === current) return;
+      if (!confirm(`역할을 ${roleLabel(current)} → ${roleLabel(next)} (으)로 변경하시겠습니까?`)) {
+        sel.value = current;
+        return;
+      }
+      sel.disabled = true;
+      const res = await api('/api/users/' + id, {
+        method: 'PATCH',
+        body: JSON.stringify({ role: next }),
+      });
+      sel.disabled = false;
+      if (!res.ok) {
+        const m = res.data?.error === 'forbidden_role' ? '해당 역할로 변경할 권한이 없습니다.' :
+                  res.data?.error === 'forbidden' ? '이 사용자를 변경할 권한이 없습니다.' :
+                  '역할 변경 실패: ' + (res.data?.error || res.status);
+        alert(m);
+        sel.value = current;
+        return;
+      }
+      await loadUsers();
     }
 
     function escapeHtml(s) {
