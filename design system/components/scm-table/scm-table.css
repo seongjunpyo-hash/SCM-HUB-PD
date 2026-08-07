@@ -209,6 +209,16 @@
  * ============================================================ */
 .mp-table {
   width: 100%;
+  /* colgroup col 들의 합이 scm-table 이 초기 measured 로 박은 inline
+     width 를 넘을 때 (예: voc/dev-export 가 saved columnWidths 프리셋을
+     적용해 large=360px 같은 큰 폭이 여러 col 에 들어간 케이스) 브라우저
+     가 table-layout:fixed 규칙에 따라 모든 col 을 비율 축소해 결과적으
+     로 모든 셀이 동일 폭이 되던 회귀 방지. min-width: max-content 로
+     테이블이 col 들의 합만큼 최소 커지도록 강제 — 넘치면 mp-table-scroll
+     의 overflow-x:auto 로 자연 스크롤. scm-table 의 inline min-width
+     보다 !important 로 우선 (interactions 는 inline width 를 안 건드
+     리므로 영향 없음). */
+  min-width: max-content !important;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 13px;
