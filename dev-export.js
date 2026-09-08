@@ -2615,6 +2615,12 @@ ${jsxBody}
     if (!cw || typeof cw !== 'object') return;
     const keys = Object.keys(cw);
     if (!keys.length) return;
+    // col widths 가 갱신된 host 들 — 끝에 scm-table 의 recomputeFromColgroup()
+    // 으로 table.style.width 도 같이 동기화. (voc 의 _applyColumnWidthsInline
+    // 과 동일 패턴) setupStickyThead 가 측정한 totalWidth 가 그대로 남아 있으면
+    // col 합이 그걸 초과할 때 table-layout:fixed 가 모든 col 을 비율 축소해
+    // 사용자 입력이 무효화되는 버그 방지.
+    const dirtyHosts = new Set();
     keys.forEach((sel) => {
       const preset = _COL_WIDTH_PRESETS[cw[sel]];
       if (!preset) return;
@@ -2632,6 +2638,7 @@ ${jsxBody}
       const colIdx = Array.prototype.indexOf.call(tr.children, th);
       if (colIdx < 0) return;
       const host = th.closest('.mp-table-host') || doc;
+      if (host && host.querySelector) dirtyHosts.add(host);
       const colgroups = host.querySelectorAll('colgroup');
       colgroups.forEach((cg) => {
         const col = cg.children[colIdx];
@@ -2655,6 +2662,14 @@ ${jsxBody}
         th.style.width = '';
         th.style.minWidth = preset.min + 'px';
         th.style.maxWidth = preset.max ? preset.max + 'px' : '';
+      }
+    });
+    // host 별 scm-table 에 width / frozen offset 재동기화.
+    dirtyHosts.forEach((host) => {
+      const t = host.querySelector && host.querySelector('.mp-table');
+      const api = t && t._scmReorder;
+      if (api && typeof api.recomputeFromColgroup === 'function') {
+        try { api.recomputeFromColgroup(); } catch (_) {}
       }
     });
   }

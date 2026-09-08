@@ -400,6 +400,13 @@ function setupStickyThead(root = document, opts = {}) {
   origTable.style.width = totalWidth + 'px';
   origTable.style.minWidth = totalWidth + 'px';
 
+  // 외부 (voc / dev-export) 가 col 을 'auto' 프리셋으로 비우면 col.style.width
+  // 가 '' 가 되어 그 시점의 offsetWidth 는 table-layout:fixed 가 stale
+  // table.style.width 에 맞춰 비율 축소한 값을 반환 → recomputeFromColgroup
+  // 의 sum 이 항상 옛 totalWidth 와 같아져 fix 가 안 됨. 측정한 natural widths
+  // 를 stamp 해 두고 recompute 시 fallback 으로 사용.
+  cloneTable._scmInitialColWidths = colWidths.slice();
+
   // 본문 가로 스크롤 → sticky thead 동기화
   bodyScroll.addEventListener('scroll', () => {
     stickyScroll.scrollLeft = bodyScroll.scrollLeft;
@@ -821,6 +828,35 @@ function setupTableInteractions(root = document, opts = {}) {
       const next = Math.max(0, Math.floor(Number(n) || 0));
       if (next === frozenCount) return;
       frozenCount = next;
+      refreshFrozenClassesAndOffsets();
+    },
+    // 외부(voc / dev-export)에서 colgroup col widths 만 inline 으로 덮어쓴 뒤
+    // table.style.width / minWidth 를 동기화해 달라고 요청. setupStickyThead 가
+    // 측정 totalWidth 로 박아둔 값이 그대로면 col 합 > table.width 일 때
+    // table-layout:fixed 가 모든 col 을 비율 축소해 사용자 입력이 무효화됨.
+    // 인자 없이 cloneColgroup 의 현재 col widths 를 합산해 양쪽 테이블에 박고,
+    // frozen 누적 offset 도 같이 갱신한다.
+    recomputeFromColgroup() {
+      // auto 프리셋은 col.style.width 를 비우는데, 그 시점의 offsetWidth 는
+      // table-layout:fixed 가 stale table.style.width 에 맞춰 비율 축소한 값
+      // 이라 신뢰할 수 없음. setupStickyThead 가 stamp 해둔 초기 측정값으로
+      // fallback.
+      const initial = cloneTable._scmInitialColWidths || [];
+      let total = 0;
+      for (let i = 0; i < cloneColgroup.children.length; i++) {
+        const col = cloneColgroup.children[i];
+        if (!col) continue;
+        let w = parseInt(col.style.width, 10);
+        if (!w || isNaN(w)) w = initial[i] || col.offsetWidth || 0;
+        total += w;
+      }
+      if (!total) return;
+      cloneTable.style.width = total + 'px';
+      cloneTable.style.minWidth = total + 'px';
+      if (shadowOrigTable) {
+        shadowOrigTable.style.width = total + 'px';
+        shadowOrigTable.style.minWidth = total + 'px';
+      }
       refreshFrozenClassesAndOffsets();
     },
   };
