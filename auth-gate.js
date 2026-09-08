@@ -25,6 +25,17 @@ try {
   }
 } catch (_) {}
 
+// PBO 토큰 selector 활성화 — design system/musinsa-tokens/layer-desktop-light-colors.css 의
+// :root[data-layer-theme='light'][data-layer-platform='desktop'] 조건을 매칭시키기 위해 root
+// 에 data-attribute 부여. sync 로드라 첫 paint 이전에 적용 → primitive/semantic 토큰이 모든
+// 스타일시트 평가 시점에 이미 정의됨 (FOUC 없음).
+try {
+  if (typeof document !== 'undefined' && document.documentElement) {
+    document.documentElement.dataset.layerTheme = 'light';
+    document.documentElement.dataset.layerPlatform = 'desktop';
+  }
+} catch (_) {}
+
 (function () {
   // 로컬 dev (localhost / 127.0.0.1 / file://) — 백엔드 (/api/*) 가 없어서 /api/auth/me 가
   //   404 HTML 응답을 받음 → JSON.parse 실패 → catch → login 리다이렉트 → login 페이지도
