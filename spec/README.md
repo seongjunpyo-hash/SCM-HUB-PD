@@ -5,6 +5,7 @@
 ```
 spec/
 ├── README.md           (이 파일)
+├── conductor-v3-dev-mirror-design.md   컨덕터 v3 설계 — dev 미러 + DS 거버넌스 (편집·핸드오프 제거)
 ├── glossary.md         도메인 용어집 (SKU / UID / 무탠 / 편집샵 등)
 ├── permissions.md      권한 매트릭스 (SCM-MD-Read / Write 등)
 │
